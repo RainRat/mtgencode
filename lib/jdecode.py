@@ -12,7 +12,7 @@ def mtg_open_json(fname, verbose = False):
     asides = {}
     bsides = {}
 
-    for k_set in jobj:
+    for k_set in jobj['data']:
         set = jobj[k_set]
         setname = set['name']
         if 'magicCardsInfoCode' in set:
@@ -68,10 +68,11 @@ def mtg_open_json(fname, verbose = False):
 
 # filters to ignore some undesirable cards, only used when opening json
 def default_exclude_sets(cardset):
-    return cardset == 'Unglued' or cardset == 'Unhinged' or cardset == 'Celebration'
+    #return cardset == 'Unglued' or cardset == 'Unhinged' or cardset == 'Celebration'
+    return false
 
 def default_exclude_types(cardtype):
-    return cardtype in ['conspiracy']
+    return cardtype in ['conspiracy', 'contraption']
 
 def default_exclude_layouts(layout):
     return layout in ['token', 'plane', 'scheme', 'phenomenon', 'vanguard']
