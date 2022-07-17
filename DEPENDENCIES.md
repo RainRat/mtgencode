@@ -7,20 +7,20 @@ First, you'll need the json corpus of Magic the Gathering cards, which can be fo
 
 http://mtgjson.com/
 
-You probably want the file AllSets.json, which you should also be able to download here:
+You probably want the file AllPrintings.json, which you should also be able to download here:
 
-http://mtgjson.com/json/AllSets.json
+https://mtgjson.com/downloads/all-files/#allprintings
 
 ## Python packages
 
-mtgencode uses a few additional Python packages which you should be able to install with Pip, Python's package manager. They aren'y mission critical, but they provide better capitalization of names and text in human-readable output formats. If they aren't installed, mtgencode will silently fall back to less effective workarounds.
+mtgencode uses a few additional Python packages which you should be able to install with Pip, Python's package manager. They aren't mission critical, but they provide better capitalization of names and text in human-readable output formats. If they aren't installed, mtgencode will silently fall back to less effective workarounds.
 
 On Ubuntu, you should be able to install the necessary packages with:
 
 ```
 sudo apt-get install python-pip
-sudo pip install titlecase
-sudo pip install nltk
+sudo pip install titlecase==0.12.0
+sudo pip install nltk==3.4.5
 ```
 
 nltk requires some additional data files to work, so you'll also have to do:
@@ -46,10 +46,11 @@ This will launch an absolutely massive compilation process for all of the numpy 
 Some additional packages will be needed for multithreading, but that doesn't work yet, so no worries.
 
 ## word2vec
+**Notice: This section currently does not work.**
 
 The creativity analysis is done using vector models produced by this tool:
 
-https://code.google.com/p/word2vec/
+https://code.google.com/archive/p/word2vec/
 
 You can install it pretty easily with subversion:
 
@@ -66,22 +67,22 @@ That should create some files, among them a binary called word2vec. Add this to 
 
 ## Rebuilding the data files
 
-The standard procedure to produce the derived data files from AllSets.json is the following:
+The standard procedure to produce the derived data files from AllPrintings.json is the following:
 
 ```
-./encode.py -v data/AllSets.json data/output.txt
+./encode.py -v data/AllPrintings.json data/output.txt
 ./encode.py -v data/output.txt data/cbow.txt -s -e vec
 cd data
 ./cbow.sh
 ```
 
-This of course assumes that you have AllSets.json in data/, and that you start from the root of the repo, in the same directory as encode.py.
+This of course assumes that you have AllPrintings.json in data/, and that you start from the root of the repo, in the same directory as encode.py.
 
 ## Magic Set Editor 2
 
 MSE2 is a tool for creating and viewing custom magic cards:
 
-http://magicseteditor.sourceforge.net/
+https://magicseteditor.boards.net/page/downloads
 
 Set files, with the extension .mse-set, can be produced by decode.py using the -mse option and then viewed in MSE2.
 
@@ -101,9 +102,7 @@ Once MSE2 is installed with Wine, you should be able to just click on the templa
 
 Some additional system fonts are required, specifically Beleren Bold, Beleren Small Caps Bold, and Relay Medium. Those can be found here:
 
-http://www.slightlymagic.net/forum/viewtopic.php?f=15&t=14730
-
-http://www.azfonts.net/download/relay-medium/ttf.html
+https://www.dropbox.com/sh/fbivmytc3pfoxa0/AADJ__DYG-qttvTLKOMdQ6Vla?dl=0
 
 Open them in Font Viewer and click install; you might then have to clear the caches so MSE2 can see them:
 
