@@ -6,20 +6,21 @@ import cardlib
 def mtg_open_json(fname, verbose = False):
 
     with open(fname, 'r') as f:
-        jobj = json.load(f)
+        jobj_old = json.load(f)
     
     allcards = {}
     asides = {}
     bsides = {}
 
-    for k_set in jobj['data']:
+    jobj = jobj_old['data']
+
+    for k_set in jobj:
         set = jobj[k_set]
         setname = set['name']
         if 'magicCardsInfoCode' in set:
             codename = set['magicCardsInfoCode']
         else:
             codename = ''
-        
         for card in set['cards']:
             card[utils.json_field_set_name] = setname
             card[utils.json_field_info_code] = codename
@@ -68,8 +69,7 @@ def mtg_open_json(fname, verbose = False):
 
 # filters to ignore some undesirable cards, only used when opening json
 def default_exclude_sets(cardset):
-    #return cardset == 'Unglued' or cardset == 'Unhinged' or cardset == 'Celebration'
-    return false
+    return cardset == 'Unglued' or cardset == 'Unhinged' or cardset == 'Celebration' or cardset['type'] == 'memorabilia' or cardset['type'] == 'funny'
 
 def default_exclude_types(cardtype):
     return cardtype in ['conspiracy', 'contraption']
@@ -82,7 +82,7 @@ def mtg_open_file(fname, verbose = False,
                   linetrans = True, fmt_ordered = cardlib.fmt_ordered_default,
                   exclude_sets = default_exclude_sets,
                   exclude_types = default_exclude_types,
-                  exclude_layouts = default_exclude_layouts):
+                  exclude_layouts = default_exclude_layouts, includeOnlineOnly = False):
 
     cards = []
     valid = 0
@@ -117,7 +117,7 @@ def mtg_open_file(fname, verbose = False,
 
                 skip = False
                 if (exclude_sets(jcards[idx][utils.json_field_set_name])
-                    or exclude_layouts(jcards[idx]['layout'])):
+                    or exclude_layouts(jcards[idx]['layout']) or (jcards[idx]['isOnlineOnly'] and not includeOnlineOnly)):
                     skip = True
                 for cardtype in card.types:
                     if exclude_types(cardtype):
@@ -174,6 +174,6 @@ def mtg_open_file(fname, verbose = False,
     # random heuristic
     if bad_count > 10:
         print 'WARNING: Saw a bunch of unparsed cards:'
-        print '         Is this a legacy format, you may need to specify the field order.'
+        print '         Is this a legacy format? You may need to specify the field order.'
 
     return cards
