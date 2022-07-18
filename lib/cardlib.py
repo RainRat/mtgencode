@@ -11,7 +11,20 @@ try:
     from titlecase import titlecase
 except ImportError:
     def titlecase(s):
-        return s.title()
+        s = s.title()
+        smallwords = [
+            "'S",
+            ' A ',
+            ' For ',
+            ' From ',
+            ' In ',
+            ' Of ',
+            ' The ',
+            ' To ',
+        ]
+        for word in smallwords:
+            s = s.replace(word, word.lower())
+        return s
 
 try:
     import textwrap
@@ -302,6 +315,7 @@ def fields_from_json(src_json, linetrans = True):
         text_val = transforms.text_pass_3_unary(text_val)
         text_val = transforms.text_pass_4a_dashes(text_val)
         text_val = transforms.text_pass_4b_x(text_val)
+        text_val = transforms.text_pass_4c_abilitywords(text_val)
         text_val = transforms.text_pass_5_counters(text_val)
         text_val = transforms.text_pass_6_uncast(text_val)
         text_val = transforms.text_pass_7_choice(text_val)
@@ -678,8 +692,9 @@ class Card:
             outstr += ' '.join(map(str.capitalize, self.__dict__[field_supertypes]) + basetypes)
 
             if self.__dict__[field_subtypes]:
-                outstr += (' ' + utils.dash_marker + ' ' + 
-                           ' '.join(self.__dict__[field_subtypes]).title())
+                outstr += (' ' + utils.dash_marker)
+                for subtype in self.__dict__[field_subtypes]:
+                    outstr += ' ' + titlecase(subtype)
 
             if self.__dict__[field_pt]:
                 outstr += ' (' + utils.from_unary(self.__dict__[field_pt]) + ')'
@@ -737,6 +752,10 @@ class Card:
             #cardname = transforms.name_unpass_1_dashes(self.__dict__[field_name])
             if vdump and not cardname:
                 cardname = '_NONAME_'
+            else:
+                cardname = titlecase(cardname)
+            if for_forum:
+                cardname = '[b]' + cardname + '[/b]'
             outstr += cardname
 
             coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html)
@@ -757,9 +776,17 @@ class Card:
             
             outstr += linebreak
 
-            outstr += ' '.join(self.__dict__[field_supertypes] + self.__dict__[field_types])
+            if self.__dict__[field_supertypes]:
+                for supertype in self.__dict__[field_supertypes]:
+                    outstr += titlecase(supertype) + ' '
+            for maintype in self.__dict__[field_types]:
+                outstr += titlecase(maintype) + ' '
             if self.__dict__[field_subtypes]:
-                outstr += ' ' + utils.dash_marker + ' ' + ' '.join(self.__dict__[field_subtypes])
+                outstr += utils.dash_marker
+                for subtype in self.__dict__[field_subtypes]:
+                    outstr += ' ' + titlecase(subtype)
+            else:
+                outstr = outstr.strip()
 
             if self.__dict__[field_rarity]:
                 if self.__dict__[field_rarity] in utils.json_rarity_unmap:
@@ -777,6 +804,7 @@ class Card:
                 #mtext = transforms.text_unpass_3_uncast(mtext)
                 mtext = transforms.text_unpass_4_unary(mtext)
                 mtext = transforms.text_unpass_5_symbols(mtext, for_forum, for_html)
+                mtext = sentencecase(mtext)
                 #mtext = transforms.text_unpass_6_cardname(mtext, cardname)
                 mtext = transforms.text_unpass_7_newlines(mtext)
                 #mtext = transforms.text_unpass_8_unicode(mtext)
@@ -864,7 +892,10 @@ class Card:
         outstr += '\tsuper type: ' + ' '.join(self.__dict__[field_supertypes] 
                                               + self.__dict__[field_types]).title() + '\n'
         if self.__dict__[field_subtypes]:
-            outstr += '\tsub type: ' + ' '.join(self.__dict__[field_subtypes]).title() + '\n'
+            outstr += ('\tsub type:')
+            for subtype in self.__dict__[field_subtypes]:
+                outstr += ' ' + titlecase(subtype)
+            outstr += '\n'
 
         if self.__dict__[field_pt]:
             ptstring = utils.from_unary(self.__dict__[field_pt]).split('/')
@@ -1040,5 +1071,3 @@ class Card:
 
     def get_cmc(self):
         return self.__dict__[field_cost].cmc
-
-        
