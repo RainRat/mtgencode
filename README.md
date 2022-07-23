@@ -187,7 +187,7 @@ cd ~/mtgencode
 ./encode.py --help
 ```
 
-Again, you should see a usage message; if you don't, make sure Python is working. mtgencode uses Python 2.7, so if you think your default python is Python 3, you can try:
+Again, you should see a usage message; if you don't, make sure Python is working. mtgencode uses Python 3., so if you think your default python is Python 2.7, you can try:
 
 ```
 python3 encode.py --help
