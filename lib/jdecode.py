@@ -3,11 +3,14 @@ import json
 import utils
 import cardlib
 
+bad_sets = set()
+
 def mtg_open_json(fname, verbose = False):
 
     with open(fname, 'r') as f:
-        jobj = json.load(f)
-    
+        jobj_old = json.load(f)
+    jobj = jobj_old['data']
+
     allcards = {}
     asides = {}
     bsides = {}
@@ -15,6 +18,12 @@ def mtg_open_json(fname, verbose = False):
     for k_set in jobj:
         set = jobj[k_set]
         setname = set['name']
+        # flag sets that should be excluded by default, like funny and art card sets
+        if (set['type'] in ['funny', 'memorabilia', 'alchemy']):
+            for card in set['cards']:
+                bad_sets.add(card['setCode'])
+                # I'm sorry for using a for loop in this way, but I don't know how to retrieve the first item in the collection
+                break
         if 'magicCardsInfoCode' in set:
             codename = set['magicCardsInfoCode']
         else:
@@ -71,7 +80,7 @@ def default_exclude_sets(cardset):
     return cardset == 'Unglued' or cardset == 'Unhinged' or cardset == 'Celebration'
 
 def default_exclude_types(cardtype):
-    return cardtype in ['conspiracy']
+    return cardtype in ['conspiracy', 'contraption']
 
 def default_exclude_layouts(layout):
     return layout in ['token', 'plane', 'scheme', 'phenomenon', 'vanguard']
@@ -116,7 +125,7 @@ def mtg_open_file(fname, verbose = False,
 
                 skip = False
                 if (exclude_sets(jcards[idx][utils.json_field_set_name])
-                    or exclude_layouts(jcards[idx]['layout'])):
+                    or exclude_layouts(jcards[idx]['layout']) or jcards[idx]['setCode'] in bad_sets):
                     skip = True
                 for cardtype in card.types:
                     if exclude_types(cardtype):
@@ -131,7 +140,7 @@ def mtg_open_file(fname, verbose = False,
                 elif card.parsed:
                     invalid += 1
                     if verbose:
-		        print ('Invalid card: ' + json_cardname)
+                        print ('Invalid card: ' + json_cardname)
                 else:
                     unparsed += 1
 
@@ -151,9 +160,9 @@ def mtg_open_file(fname, verbose = False,
                 elif card.parsed:
                     invalid += 1
                     if verbose:
-		        print ('Invalid card: ' + card_src)
-                else:
-                    unparsed += 1
+                        print ('Invalid card: ' + card_src)
+                    else:
+                        unparsed += 1
 
     if verbose:
         print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
