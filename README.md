@@ -4,15 +4,13 @@ Utilities to assist in the process of generating Magic the Gathering cards with 
 
 http://www.mtgsalvation.com/forums/creativity/custom-card-creation/612057-generating-magic-cards-using-deep-recurrent-neural
 
-The purpose of this code is mostly to wrangle text between various human and machine readable formats. The original input comes from [mtgjson](http://mtgjson.com); this is filtered and reduced to one of several input formats intended for neural network training, such as the standard encoded format used in [data/output.txt](https://github.com/billzorn/mtgencode/blob/master/data/output.txt). Any json or encoded data, including output from appropriately trained neural nets, can then be interpreted as cards and decoded to a human readable format, such as a text spoiler, [Magic Set Editor 2](http://magicseteditor.sourceforge.net) set file, or a pretty, portable html file that can be viewed in any browser.
+The purpose of this code is mostly to wrangle text between various human and machine readable formats. The original input comes from [mtgjson](http://mtgjson.com); this is filtered and reduced to one of several input formats intended for neural network training, such as the standard encoded format used in [data/output.txt](./data/output.txt). Any json or encoded data, including output from appropriately trained neural nets, can then be interpreted as cards and decoded to a human readable format, such as a text spoiler, [Magic Set Editor 2](http://magicseteditor.boards.net) set file, or a pretty, portable html file that can be viewed in any browser.
 
 ## Requirements
 
-Updated to Python 3; tested specifically on Python 3.4.3 on 64-bit Linux Mint 17.3
+For the most part it should work out of the box, though there are a few optional bonus features that will make it much better. See [DEPENDENCIES.md](./DEPENDENCIES.md#dependencies).
 
-For the most part it should work out of the box, though there are a few optional bonus features that will make it much better. See [DEPENDENCIES.md](https://github.com/billzorn/mtgencode/blob/master/DEPENDENCIES.md#dependencies).
-
-This code does not have anything to do with neural nets; if you want to generate cards with them, see the [tutorial](https://github.com/billzorn/mtgencode#tutorial).
+This code does not have anything to do with neural nets; if you want to generate cards with them, see the [tutorial](./README.md#tutorial).
 
 ## Usage
 
@@ -89,18 +87,18 @@ Finally, the -c and -d options will print out additional data about the quality 
 To generate the standard encoding in data/output.txt, I run:
 
 ```
-./encode.py -v data/AllSets.json data/output.txt
+./encode.py -v data/AllPrintings.json data/output.txt
 ```
 
-Of course, this requires that you've downloaded the mtgjson corpus to data/AllSets.json, and are running from the root of the repo.
+Of course, this requires that you've downloaded the mtgjson corpus to data/AllPrintings.json, and are running from the root of the repo.
 
 If I wanted to convert that standard output to a Magic Set Editor 2 set, I'd run:
 
 ```
-./decode.py -v data/output.txt data/allcards -f -g -d
+./decode.py -v data/output.txt data/allprintings -f -g -d
 ```
 
-This will produce a useless text file called data/allcards, and a set file called data/allcards.mse-set that you can open with MSE2. The -f and -g options will cause the text spoiler included in the notes field of each card in the set to be a pretty Gatherer-inspired affair that you could cut and paste onto the mtgsalvation forum. The -d option will dump additional information if any of the cards are invalidly formatted, which probably won't do anything because all existing magic cards are encoded correctly. Specifying the -c option here would be a bad idea; it would probably take several days to run.
+This will produce a useless text file called data/allprintings, and a set file called data/allprintings.mse-set that you can open with MSE2. The -f and -g options will cause the text spoiler included in the notes field of each card in the set to be a pretty Gatherer-inspired affair that you could cut and paste onto the mtgsalvation forum. The -d option will dump additional information if any of the cards are invalidly formatted, which probably won't do anything because all existing magic cards are encoded correctly. Specifying the -c option here would be a bad idea; it would probably take several days to run.
 
 ### Scripts
 
@@ -176,7 +174,7 @@ git clone https://github.com/billzorn/mtgencode.git
 
 This should create the folder mtgencode, also with a bunch of files in it.
 
-You'll need Python to run it; to get full functionality, consult [DEPENDENCIES.md](https://github.com/billzorn/mtgencode/blob/master/DEPENDENCIES.md#dependencies). But, it should work with just Python. To install Python:
+You'll need Python to run it; to get full functionality, consult [DEPENDENCIES.md](./DEPENDENCIES.md#dependencies). But, it should work with just Python. To install Python:
 
 ```
 sudo apt-get install python
@@ -192,7 +190,7 @@ cd ~/mtgencode
 Again, you should see a usage message; if you don't, make sure Python is working. mtgencode uses Python 2.7, so if you think your default python is Python 3, you can try:
 
 ```
-python2 encode.py --help
+python3 encode.py --help
 ```
 
 instead of running the script directly.
@@ -201,13 +199,13 @@ instead of running the script directly.
 
 If you just want to train with the default corpus, you can skip this step, as it already exists in mtg-rnn. Just replace all instances of 'custom_encoding' with 'mtgencode-std'.
 
-To generate an encoded corpus, you'll first need to download AllSets.json from [mtgjson.com](http://mtgjson.com/) to data/AllSets.json. Then to encode it:
+To generate an encoded corpus, you'll first need to download AllPrintings.json from [mtgjson.com](http://mtgjson.com/) to data/AllPrintings.json. Then to encode it:
 
 ```
-./encode.py -v data/AllSets.json data/custom_encoding.txt
+./encode.py -v data/AllPrintings.json data/custom_encoding.txt
 ```
 
-This will create a the file data/custom_encoding.txt with your encoding in it. You can add some options to create a different encoding; consult the usage of [encode.py](https://github.com/billzorn/mtgencode#encodepy).
+This will create a the file data/custom_encoding.txt with your encoding in it. You can add some options to create a different encoding; consult the usage of [encode.py](./README.md#encodepy).
 
 Now copy this encoded corpus over to mtg-rnn:
 
