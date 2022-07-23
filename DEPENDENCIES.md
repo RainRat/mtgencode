@@ -18,9 +18,9 @@ mtgencode uses a few additional Python packages which you should be able to inst
 On Ubuntu, you should be able to install the necessary packages with:
 
 ```
-sudo apt-get install python-pip
-sudo pip install titlecase==0.12.0
-sudo pip install nltk==3.4.5
+sudo apt-get install pip3
+sudo pip install titlecase
+sudo pip install nltk
 ```
 
 nltk requires some additional data files to work, so you'll also have to do:
