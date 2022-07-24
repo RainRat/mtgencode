@@ -3,32 +3,23 @@ import json
 import utils
 import cardlib
 
-bad_sets = set()
-
 def mtg_open_json(fname, verbose = False):
 
     with open(fname, 'r') as f:
-        jobj_old = json.load(f)
+        jobj = json.load(f)
     
     allcards = {}
     asides = {}
     bsides = {}
 
-    jobj = jobj_old['data']
-
     for k_set in jobj:
         set = jobj[k_set]
         setname = set['name']
-        # flag sets that should be excluded by default, like funny and art card sets
-        if (set['type'] in ['funny', 'memorabilia', 'alchemy']):
-            for card in set['cards']:
-                bad_sets.add(card['setCode'])
-                # I'm sorry for using a for loop in this way, but I don't know how to retrieve the first item in the collection
-                break
         if 'magicCardsInfoCode' in set:
             codename = set['magicCardsInfoCode']
         else:
             codename = ''
+        
         for card in set['cards']:
             card[utils.json_field_set_name] = setname
             card[utils.json_field_info_code] = codename
@@ -72,7 +63,7 @@ def mtg_open_json(fname, verbose = False):
             #print bsides[uid]
 
     if verbose:
-        print 'Opened ' + str(len(allcards)) + ' uniquely named cards.'
+        print('Opened ' + str(len(allcards)) + ' uniquely named cards.')
     return allcards
 
 # filters to ignore some undesirable cards, only used when opening json
@@ -80,7 +71,7 @@ def default_exclude_sets(cardset):
     return cardset == 'Unglued' or cardset == 'Unhinged' or cardset == 'Celebration'
 
 def default_exclude_types(cardtype):
-    return cardtype in ['conspiracy', 'contraption']
+    return cardtype in ['conspiracy']
 
 def default_exclude_layouts(layout):
     return layout in ['token', 'plane', 'scheme', 'phenomenon', 'vanguard']
@@ -100,7 +91,7 @@ def mtg_open_file(fname, verbose = False,
 
     if fname[-5:] == '.json':
         if verbose:
-            print 'This looks like a json file: ' + fname
+            print('This looks like a json file: ' + fname)
         json_srcs = mtg_open_json(fname, verbose)
         # sorted for stability
         for json_cardname in sorted(json_srcs):
@@ -125,7 +116,7 @@ def mtg_open_file(fname, verbose = False,
 
                 skip = False
                 if (exclude_sets(jcards[idx][utils.json_field_set_name])
-                    or exclude_layouts(jcards[idx]['layout']) or jcards[idx]['setCode'] in bad_sets):
+                    or exclude_layouts(jcards[idx]['layout'])):
                     skip = True
                 for cardtype in card.types:
                     if exclude_types(cardtype):
@@ -140,14 +131,14 @@ def mtg_open_file(fname, verbose = False,
                 elif card.parsed:
                     invalid += 1
                     if verbose:
-		        print 'Invalid card: ' + json_cardname
+		        print ('Invalid card: ' + json_cardname)
                 else:
                     unparsed += 1
 
     # fall back to opening a normal encoded file
     else:
         if verbose:
-            print 'Opening encoded card file: ' + fname
+            print('Opening encoded card file: ' + fname)
         with open(fname, 'rt') as f:
             text = f.read()
         for card_src in text.split(utils.cardsep):
@@ -160,13 +151,13 @@ def mtg_open_file(fname, verbose = False,
                 elif card.parsed:
                     invalid += 1
                     if verbose:
-		        print 'Invalid card: ' + card_src
+		        print ('Invalid card: ' + card_src)
                 else:
                     unparsed += 1
 
     if verbose:
-        print (str(valid) + ' valid, ' + str(skipped) + ' skipped, '
-               + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.')
+        print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
+               + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'))
 
     good_count = 0
     bad_count = 0
@@ -181,7 +172,7 @@ def mtg_open_file(fname, verbose = False,
             break
     # random heuristic
     if bad_count > 10:
-        print 'WARNING: Saw a bunch of unparsed cards:'
-        print '         Is this a legacy format? You may need to specify the field order.'
+        print ('WARNING: Saw a bunch of unparsed cards:')
+        print ('         Is this a legacy format? You may need to specify the field order.')
 
     return cards
