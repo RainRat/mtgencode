@@ -130,6 +130,8 @@ def mtg_open_file(fname, verbose = False,
                     cards += [card]
                 elif card.parsed:
                     invalid += 1
+                    if verbose:
+		        print ('Invalid card: ' + json_cardname)
                 else:
                     unparsed += 1
 
@@ -148,6 +150,8 @@ def mtg_open_file(fname, verbose = False,
                     valid += 1
                 elif card.parsed:
                     invalid += 1
+                    if verbose:
+		        print ('Invalid card: ' + card_src)
                 else:
                     unparsed += 1
 
@@ -168,7 +172,7 @@ def mtg_open_file(fname, verbose = False,
             break
     # random heuristic
     if bad_count > 10:
-        print('WARNING: Saw a bunch of unparsed cards:')
-        print('         Is this a legacy format, you may need to specify the field order.')
+        print ('WARNING: Saw a bunch of unparsed cards:')
+        print ('         Is this a legacy format? You may need to specify the field order.')
 
     return cards
