@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 def parse_keyfile(f, d, constructor = lambda x: x):
     for line in f:
