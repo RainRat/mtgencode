@@ -134,20 +134,25 @@ We're ultimately going to use the code from the [mtg-rnn repo](https://github.co
 
 First, we need to install some dependencies. The primary one is Torch, the scientific computing framework the neural net code is written. Directions are [here](http://torch.ch/docs/getting-started.html).
 
+You'll need git installed, if it isn't:
+
+```
+sudo apt-get install git
+```
+
 Next, open a terminal and install some additional lua packages:
 
 ```
 luarocks install nngraph
 luarocks install optim
 ```
-
-Now we'll clone the git repo with the neural net code. You'll need git installed, if it isn't:
+If you're having trouble connecting to GitHub during this, it could be from the git:// address that luarocks uses to clone repositories. If so, try this:
 
 ```
-sudo apt-get install git
+git config --global url."https://".insteadOf git://
 ```
 
-Then go to your home directory (or wherever you want to put the repo, it can be anywhere really) and clone it:
+Now we'll clone the git repo with the neural net code. Go to your home directory (or wherever you want to put the repo, it can be anywhere really) and clone it:
 
 ```
 cd ~
