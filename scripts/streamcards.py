@@ -9,7 +9,7 @@ import signal
 import traceback
 import psutil
 
-# correctly setting up a stream that won't get orphaned and left clutting the operating
+# correctly setting up a stream that won't get orphaned and left cluttering the operating
 # system proceeds in 3 parts:
 #   1) invoke install_suicide_handlers() to ensure correct behavior on interrupt
 #   2) get threads by invoking spawn_stream_threads

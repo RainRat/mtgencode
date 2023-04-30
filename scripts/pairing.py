@@ -55,7 +55,7 @@ def writecard(card, name, writer):
     oldname = card.name
     # alter name used in image
     card.name = name
-    writer.write(card.to_mse().encode('utf-8'))
+    writer.write(card.to_mse())
     card.name = oldname
     fstring = ''
     if card.json:
@@ -65,8 +65,8 @@ def writecard(card, name, writer):
     fstring += '\n'
     fstring +=  fmt + '\n'
     fstring = fstring.replace('<', '(').replace('>', ')')
-    writer.write(('\n' + fstring[:-1]).replace('\n', '\n\t\t').encode('utf-8'))
-    writer.write('\n'.encode('utf-8'))
+    writer.write(('\n' + fstring[:-1]).replace('\n', '\n\t\t'))
+    writer.write('\n')
 
 def main(fname, oname, n=20, verbose=False):
     cbow = CBOW()
@@ -88,7 +88,7 @@ def main(fname, oname, n=20, verbose=False):
 
     if verbose:
         print(('computing nearest cards for ' +
-               str(len(selected)) + ' candindates...'))
+               str(len(selected)) + ' candidates...'))
     cbow_nearest = cbow.nearest_par([i_c[1] for i_c in selected])
     for i in range(0, len(selected)):
         (j, card) = selected[i]
@@ -118,7 +118,7 @@ def main(fname, oname, n=20, verbose=False):
         print('----')
 
     if not oname is None:
-        with open(oname, 'wt') as ofile:
+        with open(oname, 'wt', encoding='utf8') as ofile:
             ofile.write(utils.mse_prepend)
             for (i, card, realcard, dist) in final:
                 name = realcard.name

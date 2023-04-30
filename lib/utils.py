@@ -91,6 +91,7 @@ unicode_trans = {
     '\xe6': 'ae',  # ae symbol
     '\xfb': 'u',  # u with caret
     '\xfa': 'u',  # u with accent
+    '\xfc': 'u',  # u with umlaut
     '\xe9': 'e',  # e with accent
     '\xe1': 'a',  # a with accent
     '\xe0': 'a',  # a with accent going the other way
@@ -136,7 +137,7 @@ def from_unary(s):
     numbers = re.findall(re.escape(unary_marker + unary_counter) + '*', s)
     # again, largest first so we don't replace substrings and break everything
     for n in sorted(numbers, key=len, reverse=True):
-        i = (len(n) - len(unary_marker)) / len(unary_counter)
+        i = (len(n) - len(unary_marker)) // len(unary_counter)
         s = s.replace(n, str(i))
     return s
 
@@ -168,6 +169,7 @@ mana_P = 'P' # colorless phyrexian
 mana_S = 'S' # snow
 mana_X = 'X' # colorless X
 mana_C = 'C' # colorless only 'eldrazi'
+mana_E = 'E' # energy
 mana_WP = 'WP' # single color phyrexian
 mana_UP = 'UP'
 mana_BP = 'BP'
@@ -223,6 +225,7 @@ mana_syms = [
     mana_S,
     mana_X,
     mana_C,
+    mana_E,
     mana_WP,
     mana_UP,
     mana_BP,

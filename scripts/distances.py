@@ -50,7 +50,7 @@ def main(fname, oname, verbose = True, parallel = True):
     # write to a file to store the data, this is a terribly long computation
     # we could also just store this same info in the cards themselves as more fields...
     sep = '|'
-    with open(oname, 'w') as ofile:
+    with open(oname, 'w', encoding='utf8') as ofile:
         for i in range(0, len(cards)):
             card = cards[i]
             ostr = str(i) + sep + card.name + sep
@@ -60,7 +60,7 @@ def main(fname, oname, verbose = True, parallel = True):
             ostr += str(cdist) + '\n'
             # tdist, _ = nearest_cards_text[i][0]
             # ostr += str(tdist) + '\n'
-            ofile.write(ostr.encode('utf-8'))
+            ofile.write(ostr)
 
 if __name__ == '__main__':
     

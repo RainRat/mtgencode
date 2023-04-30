@@ -44,7 +44,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         ## end of custom format ######################################
         pass
     else:
-        raise ValueError('encode.py: unknown encoding: ' + encoding)
+        raise ValueError('decode.py: unknown encoding: ' + encoding)
 
     cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered)
 
@@ -86,26 +86,26 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             writer.write(utils.mse_prepend)
 
         if for_html:
-            # have to preapend html info
+            # have to prepend html info
             writer.write(utils.html_prepend)
-            # seperate the write function to allow for writing smaller chunks of cards at a time
+            # separate the write function to allow for writing smaller chunks of cards at a time
             segments = sort_colors(cards)
             for i in range(len(segments)):
                 # sort color by CMC
                 segments[i] = sort_type(segments[i])
                 # this allows card boxes to be colored for each color 
-                # for coloring of each box seperately cardlib.Card.format() must change non-minimaly
+                # for coloring of each box separately cardlib.Card.format() must change non-minimally
                 writer.write('<div id="' + utils.segment_ids[i] + '">')
                 writehtml(writer, segments[i])
                 writer.write("</div><hr>")
             # closing the html file
             writer.write(utils.html_append)
-            return #break out of the write cards funcrion to avoid writing cards twice
+            return #break out of the write cards function to avoid writing cards twice
 
 
         for card in cards:
             if for_mse:
-                writer.write(card.to_mse().encode('utf-8'))
+                writer.write(card.to_mse())
                 fstring = ''
                 if card.json:
                     fstring += 'JSON:\n' + card.json + '\n'
@@ -119,7 +119,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             else:
                 fstring = card.format(gatherer = gatherer, for_forum = for_forum,
                                       vdump = vdump, for_html = for_html)
-                writer.write((fstring + '\n').encode('utf-8'))
+                writer.write((fstring + '\n'))
 
             if creativity:
                 cstring = '~~ closest cards ~~\n'
@@ -132,9 +132,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                     cstring += hoverimg(cardname, dist, namediff)
                 if for_mse:
                     cstring = ('\n\n' + cstring[:-1]).replace('\n', '\n\t\t')
-                writer.write(cstring.encode('utf-8'))
+                writer.write(cstring)
 
-            writer.write('\n'.encode('utf-8'))
+            writer.write('\n')
 
         if for_mse:
             # more formatting info
@@ -147,7 +147,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                       vdump = vdump, for_html = for_html)
             if creativity:
                 fstring = fstring[:-6] # chop off the closing </div> to stick stuff in
-            writer.write((fstring + '\n').encode('utf-8'))
+            writer.write((fstring + '\n'))
 
             if creativity:
                 cstring = '~~ closest cards ~~\n<br>\n'
@@ -160,9 +160,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 for dist, cardname in nearest:
                     cstring += hoverimg(cardname, dist, namediff)
                 cstring = '<hr><div>' + cstring + '</div>\n</div>'
-                writer.write(cstring.encode('utf-8'))
+                writer.write(cstring)
 
-            writer.write('\n'.encode('utf-8'))
+            writer.write('\n')
 
     # Sorting by colors
     def sort_colors(card_set):
@@ -243,7 +243,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             #     oname += '.html'
         if verbose:
             print('Writing output to: ' + oname)
-        with open(oname, 'w') as ofile:
+        with open(oname, 'w', encoding='utf8') as ofile:
             writecards(ofile)
         if for_mse:
             # Copy whatever output file is produced, name the copy 'set' (yes,
