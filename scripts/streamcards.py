@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # -- STOLEN FROM torch-rnn/scripts/streamfile.py -- #
 

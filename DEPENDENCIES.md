@@ -19,8 +19,8 @@ On Ubuntu, you should be able to install the necessary packages with:
 
 ```
 sudo apt-get install pip3
-sudo pip install titlecase
-sudo pip install nltk
+pip install titlecase
+pip install nltk
 ```
 
 nltk requires some additional data files to work, so you'll also have to do:
@@ -37,8 +37,7 @@ You don't have to put the files in ~/nltk_data, that's just one of the places it
 mtgencode can also use numpy to speed up some of the long calculations required to generate the creativity statistics comparing similarity of generated and existing cards. You can install numpy with:
 
 ```
-sudo apt-get install python-dev python-pip
-sudo pip install numpy
+pip install numpy
 ```
 
 This will launch an absolutely massive compilation process for all of the numpy C sources. Go get a cup of coffee, and if it fails consult google. You'll probably need to at least have GCC installed, I'm not sure what else.
