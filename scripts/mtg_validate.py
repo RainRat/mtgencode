@@ -204,9 +204,9 @@ def check_equipment(card):
 
 def check_vehicles(card):
     if 'vehicle' in card.subtypes:
-	return 'crew' in card.text.text
+        return 'crew' in card.text.text
     else:
-	return None
+        return None
 
 def check_planeswalkers(card):
     if 'planeswalker' in card.types:

@@ -259,7 +259,7 @@ The numbers are important; the first is the epoch, which tells you how many pass
 
 Once you're done training, or you've got enough checkpoints and you're just impatient, you can sample to generate actual cards. If the network is still training, you'll probably want to pause it by typing Control-Z in the terminal; you can resume it later with the command 'fg'. Training will use all available CPU resources all by itself, so trying to sample at the same time is a recipe for slow.
 
-Once you're ready, go the the mtg-rnn repo. A typical sampling command might look like this:
+Once you're ready, go to the mtg-rnn repo. A typical sampling command might look like this:
 
 ```
 th sample.lua cv/custom_format-256/lm_lstm_epochXX.XX_X.XXXX.t7 -gpuid -1 -temperature 0.9 -length 2000 | tee cards.txt

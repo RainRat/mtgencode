@@ -265,7 +265,7 @@ def fields_from_json(src_json, linetrans = True):
 
     if 'supertypes' in src_json:
         fields[field_supertypes] = [
-            (-1, [utils.to_ascii(s.lower()) for s in src_json['supertypes']])]
+            (-1, list(map(lambda s: utils.to_ascii(s.lower()), src_json['supertypes'])))]
 
     if 'types' in src_json:
         fields[field_types] = [(-1, [utils.to_ascii(s.lower())

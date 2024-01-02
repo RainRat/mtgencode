@@ -13,51 +13,46 @@ parser.add_argument('filename1', help='CSV filename (input)')
 parser.add_argument('filename2', help='JSON filename (output)')
 args = parser.parse_args()
 
-csvfile = open(args.filename1)
-jsonfile = open(args.filename2, 'w')
-spamreader = csv.reader(csvfile)
+rarity_mapping = {"R": "rare", "U": "uncommon", "C": "common", "M": "mythic"}
 
-json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
-for row in spamreader:
-    if row[0] == "name":
-        continue
-    temprarity=row[6]
-    if temprarity=="R":
-        temprarity="rare"
-    if temprarity=="U":
-        temprarity="uncommon"
-    if temprarity=="C":
-        temprarity="common"
-    if temprarity=="M":
-        temprarity="mythic"
-    card = {
-        "layout": "normal",
-        "manaCost": row[1],
-        "name": row[0].replace("\"", ""),
-        "rarity": temprarity,
-        "setCode": "CUS",
-        "text": row[4].replace("\\", "\\n").replace("\"", "\\\""),
-    }
-    if row[5] != "":
-        pt = row[5].split("/")
-        card["power"] = pt[0]
-        card["toughness"] = pt[1]
+with open(args.csv_filename) as csvfile, open(args.json_filename, 'w') as jsonfile:
+    reader = csv.reader(csvfile)
+    json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
 
-    # supertypes, types, subtypes
-    typelist = row[2].split(" ")
-    if typelist[0] == "Legendary":
-        card["supertypes"] = [typelist[0]]
-        typelist.remove("Legendary")
-    card["types"] = typelist
-    if row[3] != "":
-        card["subtypes"] = row[3].split(" ")
+    for row in reader:
+        if row[0] == "name":
+            continue
+        
+        temprarity = rarity_mapping.get(row[6], row[6])
 
-    # create "type"
-    fulltypes = row[2]
-    if row[3] != "":
-        fulltypes = fulltypes + " — " + row[3]
-    card["type"] = fulltypes
+        card = {
+            "layout": "normal",
+            "manaCost": row[1],
+            "name": row[0].replace("\"", ""),
+            "rarity": temprarity,
+            "setCode": "CUS",
+            "text": row[4].replace("\\", "\\n").replace("\"", "\\\""),
+        }
+        if row[5] != "":
+            pt = row[5].split("/")
+            card["power"] = pt[0]
+            card["toughness"] = pt[1]
 
-    json_data["data"]["CUS"]["cards"].append(card)
+        # supertypes, types, subtypes
+        typelist = row[2].split(" ")
+        if typelist[0] == "Legendary":
+            card["supertypes"] = [typelist[0]]
+            typelist.remove("Legendary")
+        card["types"] = typelist
+        if row[3] != "":
+            card["subtypes"] = row[3].split(" ")
 
-json.dump(json_data, jsonfile)
+        # create "type"
+        fulltypes = row[2]
+        if row[3] != "":
+            fulltypes = fulltypes + " — " + row[3]
+        card["type"] = fulltypes
+
+        json_data["data"]["CUS"]["cards"].append(card)
+
+    json.dump(json_data, jsonfile)

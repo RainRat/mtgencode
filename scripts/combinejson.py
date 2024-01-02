@@ -11,23 +11,29 @@ def merge_dicts(dict1, dict2):
             merged_dict[key] = value
     return merged_dict
     
-parser = argparse.ArgumentParser()
-parser.add_argument('filename1', help='JSON filename 1 (input)')
-parser.add_argument('filename2', help='JSON filename 2 (input)')
-parser.add_argument('filename3', help='JSON filename 3 (output)')
-args = parser.parse_args()
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename1', help='JSON filename 1 (input)')
+    parser.add_argument('filename2', help='JSON filename 2 (input)')
+    parser.add_argument('filename3', help='JSON filename 3 (output)')
+    args = parser.parse_args()
 
-jsonfile1 = args.filename1
-jsonfile2 = args.filename2
-jsonfile3 = args.filename3
-print (jsonfile1,jsonfile2,jsonfile3)
-with open(jsonfile1, encoding='utf8') as fo:
-    data1 = json.load(fo)
+    try:
+        with open(args.filename1, encoding='utf8') as fo:
+            data1 = json.load(fo)
 
-with open(jsonfile2, encoding='latin1') as fo:
-    data2 = json.load(fo)
+        with open(args.filename2, encoding='latin1') as fo:
+            data2 = json.load(fo)
 
-merged_data = merge_dicts(data1, data2)
+        merged_data = merge_dicts(data1, data2)
 
-with open(jsonfile3, "w", encoding='utf8') as fo:
-    json.dump(merged_data, fo)
+        with open(args.filename3, "w", encoding='utf8') as fo:
+            json.dump(merged_data, fo)
+
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON file: {e}")
+
+if __name__ == "__main__":
+    main()
