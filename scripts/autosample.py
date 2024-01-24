@@ -22,7 +22,7 @@ def sample(cp, temp, count, seed = None, ident = 'output'):
            + ' -seed ' + str(seed)
            + ' >> ' + outfile)
     if os.path.exists(outfile):
-        print((outfile + ' already exists, skipping'))
+        print(f"{outfile} already exists, skipping")
         return False
     else:
         # UNSAFE SHELL=TRUE FOR CONVENIENCE

@@ -15,7 +15,7 @@ args = parser.parse_args()
 
 rarity_mapping = {"R": "rare", "U": "uncommon", "C": "common", "M": "mythic"}
 
-with open(args.csv_filename) as csvfile, open(args.json_filename, 'w') as jsonfile:
+with open(args.filename1) as csvfile, open(args.filename2, 'w') as jsonfile:
     reader = csv.reader(csvfile)
     json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
 

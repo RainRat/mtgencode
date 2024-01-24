@@ -8,12 +8,7 @@ def parse_keyfile(f, d, constructor = lambda x: x):
         d[kv[0]] = constructor(kv[1])
 
 def merge_dicts(d1, d2):
-    d = {}
-    for k in d1:
-        d[k] = (d1[k], d2[k] if k in d2 else None)
-    for k in d2:
-        if not k in d:
-            d[k] = (None, d2[k])
+    d = {k: (d1.get(k), d2.get(k)) for k in set(d1) | set(d2)}
     return d
 
 def main(fname1, fname2, verbose = True):
