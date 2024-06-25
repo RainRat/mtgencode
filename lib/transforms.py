@@ -316,6 +316,22 @@ def text_pass_5_counters(s):
         'shred counter',
         'pupa counter',
         'crystal counter',
+        'point counter',
+        'stun counter',
+        'oil counter',
+        'foreshadow counter',
+        'reprieve counter',
+        'hit counter',
+        'fetch counter',
+        'husk counter',
+        'stash counter',
+        'brick counter',
+        'coin counter',
+        'isolation counter',
+        'soul counter',
+        'hour counter',
+        'descent counter',
+        'task counter',
     ]
     usedcounters = []
     for countername in allcounters:
@@ -337,7 +353,7 @@ def text_pass_5_counters(s):
     
     # miraculously this doesn't seem to happen
     # if len(usedcounters) > 1:
-    #     print usedcounters
+    #     print (usedcounters)
 
     # we haven't done newline replacement yet, so use actual newlines
     if len(usedcounters) == 1:

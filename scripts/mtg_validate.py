@@ -111,7 +111,7 @@ def check_X(card):
                 else:
                     return False # bad, defined X is unused
 
-        # we've checked all cases where an X ocurrs in an activiation cost
+        # we've checked all cases where an X occurs in an activation cost
         linetext = mt.encode()
         intext = len(re.findall(r'X', linetext))
         defs = (len(re.findall(r'X is', linetext))
@@ -196,7 +196,7 @@ def check_auras(card):
         return None
 
 def check_equipment(card):
-    # probably even looser, chould check for actual equip abilities and noncreatureness
+    # probably even looser, could check for actual equip abilities and noncreatureness
     if 'equipment' in card.subtypes:
         return 'equip' in card.text.text
     else:
@@ -204,9 +204,9 @@ def check_equipment(card):
 
 def check_vehicles(card):
     if 'vehicle' in card.subtypes:
-	return 'crew' in card.text.text
+        return 'crew' in card.text.text
     else:
-	return None
+        return None
 
 def check_planeswalkers(card):
     if 'planeswalker' in card.types:
@@ -458,7 +458,7 @@ def main(fname, oname = None, verbose = False, dump = False):
         print(('  good      : ' + str(total_good) +
                ' ' + pct(total_good, total_all)))
         print(('  bad       : ' + str(total_bad) + ' ' + pct(total_bad, total_all)))
-        print(('  uncocoverd: ' + str(total_uncovered) +
+        print(('  uncovered : ' + str(total_uncovered) +
                ' ' + pct(total_uncovered, total_all)))
         print('----')
 

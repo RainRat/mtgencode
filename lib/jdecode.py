@@ -7,16 +7,14 @@ bad_sets = set()
 
 def mtg_open_json(fname, verbose = False):
 
-    with open(fname, 'r') as f:
-        jobj_old = json.load(f)
-    jobj = jobj_old['data']
+    with open(fname, 'r', encoding='utf8') as f:
+        jobj = json.load(f)['data']
 
     allcards = {}
     asides = {}
     bsides = {}
 
-    for k_set in jobj:
-        set = jobj[k_set]
+    for set in jobj.values():
         setname = set['name']
         # flag sets that should be excluded by default, like funny and art card sets
         if (set['type'] in ['funny', 'memorabilia', 'alchemy']):
@@ -24,10 +22,7 @@ def mtg_open_json(fname, verbose = False):
                 bad_sets.add(card['setCode'])
                 # I'm sorry for using a for loop in this way, but I don't know how to retrieve the first item in the collection
                 break
-        if 'magicCardsInfoCode' in set:
-            codename = set['magicCardsInfoCode']
-        else:
-            codename = ''
+        codename = set.get('magicCardsInfoCode', '')
         
         for card in set['cards']:
             card[utils.json_field_set_name] = setname
@@ -83,7 +78,7 @@ def default_exclude_types(cardtype):
     return cardtype in ['conspiracy', 'contraption']
 
 def default_exclude_layouts(layout):
-    return layout in ['token', 'plane', 'scheme', 'phenomenon', 'vanguard']
+    return layout in ['token', 'planar', 'scheme', 'phenomenon', 'vanguard']
 
 # centralized logic for opening files of cards, either encoded or json
 def mtg_open_file(fname, verbose = False,
@@ -98,7 +93,7 @@ def mtg_open_file(fname, verbose = False,
     invalid = 0
     unparsed = 0
 
-    if fname[-5:] == '.json':
+    if fname.endswith('.json'):
         if verbose:
             print('This looks like a json file: ' + fname)
         json_srcs = mtg_open_json(fname, verbose)
@@ -142,13 +137,14 @@ def mtg_open_file(fname, verbose = False,
                     if verbose:
                         print ('Invalid card: ' + json_cardname)
                 else:
-                    unparsed += 1
+                        print(card.name)
+                        unparsed += 1
 
     # fall back to opening a normal encoded file
     else:
         if verbose:
             print('Opening encoded card file: ' + fname)
-        with open(fname, 'rt') as f:
+        with open(fname, 'rt', encoding='utf8') as f:
             text = f.read()
         for card_src in text.split(utils.cardsep):
             if card_src:

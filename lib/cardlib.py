@@ -265,7 +265,7 @@ def fields_from_json(src_json, linetrans = True):
 
     if 'supertypes' in src_json:
         fields[field_supertypes] = [
-            (-1, [utils.to_ascii(s.lower()) for s in src_json['supertypes']])]
+            (-1, list(map(lambda s: utils.to_ascii(s.lower()), src_json['supertypes'])))]
 
     if 'types' in src_json:
         fields[field_types] = [(-1, [utils.to_ascii(s.lower())
@@ -573,7 +573,7 @@ class Card:
                 self.__dict__[field_other] += [(idx, '<text> ' + str(value))]
         
     def _set_other(self, values):
-        # just record these, we could do somthing unset valid if we really wanted
+        # just record these, we could do something unset valid if we really wanted
         for idx, value in values:
             self.__dict__[field_other] += [(idx, value)]
 
@@ -707,7 +707,7 @@ class Card:
                 mtext = self.__dict__[field_text].text
                 mtext = transforms.text_unpass_1_choice(mtext, delimit = False)
                 mtext = transforms.text_unpass_2_counters(mtext)
-                #mtext = transforms.text_unpass_3_uncast(mtext)
+                mtext = transforms.text_unpass_3_uncast(mtext)
                 mtext = transforms.text_unpass_4_unary(mtext)
                 mtext = transforms.text_unpass_5_symbols(mtext, for_forum, for_html)
                 mtext = sentencecase(mtext)
@@ -800,7 +800,7 @@ class Card:
                 mtext = self.__dict__[field_text].text
                 mtext = transforms.text_unpass_1_choice(mtext, delimit = True)
                 #mtext = transforms.text_unpass_2_counters(mtext)
-                #mtext = transforms.text_unpass_3_uncast(mtext)
+                mtext = transforms.text_unpass_3_uncast(mtext)
                 mtext = transforms.text_unpass_4_unary(mtext)
                 mtext = transforms.text_unpass_5_symbols(mtext, for_forum, for_html)
                 mtext = sentencecase(mtext)

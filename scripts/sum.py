@@ -1,41 +1,25 @@
 #!/usr/bin/env python3
 import sys
 import os
+import argparse
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 
+def calculate_stats(data):
+    nonempty = len(data)
+    name_avg = sum(item[2] for item in data) / nonempty
+    name_dupes = sum(item[2] == 1.0 for item in data)
+    card_avg = sum(item[3] for item in data) / nonempty
+    card_dupes = sum(item[3] == 1.0 for item in data)
+    return nonempty, name_avg, name_dupes, card_avg, card_dupes
+
 def main(fname):
     with open(fname, 'rt') as f:
-        text = f.read()
-    
-    cardstats = text.split('\n')
-    nonempty = 0
-    name_avg = 0
-    name_dupes = 0
-    card_avg = 0
-    card_dupes = 0
+        cardstats = [line.split('|') for line in f if len(line.split('|')) >= 4]
 
-    for c in cardstats:
-        fields = c.split('|')
-        if len(fields) < 4:
-            continue
-        nonempty += 1
-        idx = int(fields[0])
-        name = str(fields[1])
-        ndist = float(fields[2])
-        cdist = float(fields[3])
+    nonempty, name_avg, name_dupes, card_avg, card_dupes = calculate_stats(cardstats)
 
-        name_avg += ndist
-        if ndist == 1.0:
-            name_dupes += 1
-        card_avg += cdist
-        if cdist == 1.0:
-            card_dupes += 1
-
-    name_avg = name_avg / float(nonempty)
-    card_avg = card_avg / float(nonempty)
-    
     print(str(nonempty) + ' cards')
     print('-- names --')
     print('avg distance:   ' + str(name_avg))
@@ -46,13 +30,11 @@ def main(fname):
     print('----')
 
 if __name__ == '__main__':
-    
-    import argparse
+
     parser = argparse.ArgumentParser()
-    
+
     parser.add_argument('infile', #nargs='?'. default=None,
                         help='data file to process')
 
     args = parser.parse_args()
     main(args.infile)
-    exit(0)

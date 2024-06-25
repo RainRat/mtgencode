@@ -34,15 +34,9 @@ def list_flatten(l):
 
 # isolated logic for multiprocessing
 def f_nearest(name, matchers, n):
-    for m in matchers:
-        m.set_seq1(name)
-    ratios = [(m.ratio(), m.b) for m in matchers]
-    ratios.sort(reverse = True)
-
-    if ratios[0][0] >= 1:
-        return ratios[:1]
-    else:
-        return ratios[:n]
+    ratios = [(m.set_seq1(name).ratio(), m.b) for m in matchers]
+    ratios.sort(reverse=True)
+    return ratios[:1] if ratios[0][0] >= 1 else ratios[:n]
 
 def f_nearest_per_thread(workitem):
     (worknames, names, n) = workitem

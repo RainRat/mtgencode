@@ -42,7 +42,7 @@ unary_exceptions = {
     25 : 'twenty' + dash_marker + 'five',
     30 : 'thirty',
     40 : 'forty',
-    50 : 'fifly',
+    50 : 'fifty',
     100: 'one hundred',
     200: 'two hundred',
 }

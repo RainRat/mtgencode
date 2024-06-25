@@ -95,7 +95,7 @@ try:
         # inverse squared magnitude
         inv_square_mag = 1 / square_mag
 
-        # if it doesn't occur, set it's inverse magnitude to zero (instead of inf)
+        # if it doesn't occur, set its inverse magnitude to zero (instead of inf)
         inv_square_mag[numpy.isinf(inv_square_mag)] = 0
 
         # inverse of the magnitude

@@ -3,3 +3,7 @@
 AllSets.json
 AllSets-x.json
 lib/__init__.py
+AllPrintings.json
+VintagePrintings.json
+*.zip
+Vintage.json

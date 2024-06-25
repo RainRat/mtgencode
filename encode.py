@@ -52,7 +52,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if stable:
             print('  NOT randomizing order of cards.')
         if randomize_mana:
-            print('  Randomizing order of symobls in manacosts.')
+            print('  Randomizing order of symbols in manacosts.')
         if not fmt_labeled:
             print('  NOT labeling fields for this run (may be harder to decode).')
         if not line_transformations:
@@ -83,7 +83,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     if oname:
         if verbose:
             print('Writing output to: ' + oname)
-        with open(oname, 'w') as ofile:
+        with open(oname, 'w', encoding='utf8') as ofile:
             writecards(ofile)
     else:
         writecards(sys.stdout)

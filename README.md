@@ -49,7 +49,7 @@ rfields    | Randomize the order of the fields, using only the label to distingu
 old        | Legacy format: `|name|supertype|type|loyalty|subtype|rarity|pt|cost|text|`. No field labels.
 norarity   | Older legacy format: `|name|supertype|type|loyalty|subtype|pt|cost|text|`. No field labels.
 vec        | Produce a content vector for each card; used with [word2vec](https://code.google.com/p/word2vec/).
-custom     | Blank format slot, inteded to help users add their own formats to the python source.
+custom     | Blank format slot, intended to help users add their own formats to the python source.
 
 ### decode.py
 
@@ -259,7 +259,7 @@ The numbers are important; the first is the epoch, which tells you how many pass
 
 Once you're done training, or you've got enough checkpoints and you're just impatient, you can sample to generate actual cards. If the network is still training, you'll probably want to pause it by typing Control-Z in the terminal; you can resume it later with the command 'fg'. Training will use all available CPU resources all by itself, so trying to sample at the same time is a recipe for slow.
 
-Once you're ready, go the the mtg-rnn repo. A typical sampling command might look like this:
+Once you're ready, go to the mtg-rnn repo. A typical sampling command might look like this:
 
 ```
 th sample.lua cv/custom_format-256/lm_lstm_epochXX.XX_X.XXXX.t7 -gpuid -1 -temperature 0.9 -length 2000 | tee cards.txt
@@ -281,19 +281,19 @@ Go back to mtgencode, and run something like:
 
 This should create a file called cards.pretty.txt with a text spoiler in it that's actually designed for human consumption. Open it in your favorite text editor and enjoy!
 
-The -d option ensures you'll still be able to see anything that went wrong with the cards. You can change the formatting with -f and -g, and produce a set file for MSE2 with -mse. The -c option produces some intersting comparisons to existing cards, but it's slow, so be prepared to wait a long time if you use it on a large dump.
+The -d option ensures you'll still be able to see anything that went wrong with the cards. You can change the formatting with -f and -g, and produce a set file for MSE2 with -mse. The -c option produces some interesting comparisons to existing cards, but it's slow, so be prepared to wait a long time if you use it on a large dump.
 
 ## Gory details of the format
 
 Individual cards are separated by two newlines. Multifaced cards (split, flip, etc.) are encoded together, with the castable one first if applicable, and separated by only one newline.
 
-All decimal numbers are in represented in unary, with numbers over 20 special-cased into english. Fun fact: the only numbers over 20 on cards are 25, 30, 40, 50, 100, and 200. The unary represenation uses one character to mark the start of the number, and another to count. So 0 is &, 1 is &^, 2 is &^^, 11 is &^^^^^^^^^^^, and so on.
+All decimal numbers are in represented in unary, with numbers over 20 special-cased into english. Fun fact: the only numbers over 20 on cards are 25, 30, 40, 50, 100, and 200. The unary representation uses one character to mark the start of the number, and another to count. So 0 is &, 1 is &^, 2 is &^^, 11 is &^^^^^^^^^^^, and so on.
 
 Mana costs are specially encoded between braces {}. I use the unary counter to encode the colorless part, and then special two-character symbols for everything else. So, {3}{W}{W} becomes {^^^WWWW}, {U/B}{U/B} becomes {UBUB}, and {X}{X}{X} becomes {XXXXXX}. The details are controlled in lib/utils.py, and handled with the Manacost and Manatext objects in lib/manalib.py.
 
 The name of the card becomes @ in the text. I try to handle all the stupid special cases correctly. For example, Crovax the Cursed is referred to in his text box as simply 'Crovax'. Yuch.
 
-The names of counters are similarly replaced with %, and then a speial line of text is added to tell what kind of counter % refers to. Fun fact: there's more than a hundred different kinds used in real cards.
+The names of counters are similarly replaced with %, and then a special line of text is added to tell what kind of counter % refers to. Fun fact: there's more than a hundred different kinds used in real cards.
 
 Several ambiguous words are resolved. Most directly, the word 'counter' as in 'counter target spell' is replaced with 'uncast'. This should prevent confusion with +&^/+&^ counters and % counters.
 
@@ -329,7 +329,7 @@ Here's an attempt at a list of all the things I do:
 
 * Put choices into [&^ = effect x = effect y] format
 
-* Replace acutal newline characters with \ so that we can use those to separate cards
+* Replace actual newline characters with \ so that we can use those to separate cards
 
 * Clean all the unicode junk like accents and unicode minus signs out of the text so there are fewer characters
 
