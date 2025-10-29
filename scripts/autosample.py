@@ -16,18 +16,27 @@ def sample(cp, temp, count, seed = None, ident = 'output'):
     if seed is None:
         seed = random.randint(-1000000000, 1000000000)
     outfile = cp + '.' + ident + '.' + str(temp) + '.txt'
-    cmd = ('th sample.lua ' + cp 
-           + ' -temperature ' + str(temp) 
-           + ' -length ' + str(count)
-           + ' -seed ' + str(seed)
-           + ' >> ' + outfile)
+
+    cmd_for_log = ('th sample.lua ' + cp
+                   + ' -temperature ' + str(temp)
+                   + ' -length ' + str(count)
+                   + ' -seed ' + str(seed)
+                   + ' >> ' + outfile)
+
+    cmd_for_exec = ['th', 'sample.lua', cp,
+                    '-temperature', str(temp),
+                    '-length', str(count),
+                    '-seed', str(seed)]
+
     if os.path.exists(outfile):
         print(f"{outfile} already exists, skipping")
         return False
     else:
-        # UNSAFE SHELL=TRUE FOR CONVENIENCE
-        subprocess.call('echo "' + cmd + '" | tee ' + outfile, shell=True)
-        subprocess.call(cmd, shell=True)
+        with open(outfile, 'w') as f:
+            f.write(cmd_for_log + '\n')
+
+        with open(outfile, 'a') as f:
+            subprocess.run(cmd_for_exec, stdout=f)
 
 def find_best_cp(cpdir):
     best = None
