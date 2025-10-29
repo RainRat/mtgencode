@@ -661,7 +661,7 @@ class Card:
                 outstr += ' ' + coststr
 
             if for_html and for_forum:
-               #force for_html to false to create tootip with forum spoiler
+               #force for_html to false to create tooltip with forum spoiler
                 outstr += ('<div class="hover_img"><a href="#">[F]</a> <span><p>' 
                            + self.format(gatherer=gatherer, for_forum=for_forum, for_html=False, vdump=vdump).replace('\n', '<br>')
                            + '</p></span></div><a href="#top" style="float: right;">back to top</a>')
@@ -768,7 +768,7 @@ class Card:
                     outstr += ' _INVALID_'
 
             if for_html and for_forum:
-               #force for_html to false to create tootip with forum spoiler
+               #force for_html to false to create tooltip with forum spoiler
                 outstr += ('<div class="hover_img"><a href="#">[F]</a> <span><p>' 
                            + self.format(gatherer=gatherer, for_forum=for_forum, for_html=False, vdump=vdump).replace('\n', '<br>')
                            + '</p></span></div><a href="#top" style="float: right;">back to top</a>')
