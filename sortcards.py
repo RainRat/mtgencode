@@ -143,7 +143,7 @@ def main(fname, oname = None, verbose = True):
     if verbose:
         print('Opening encoded card file: ' + fname)
 
-    f = open(fname, 'r')
+    f = open(fname, 'r', encoding='utf-8')
     text = f.read()
     f.close()
 
@@ -154,7 +154,7 @@ def main(fname, oname = None, verbose = True):
     if not oname == None:
         if verbose:
             print('Writing output to: ' + oname)
-        ofile = codecs.open(oname, 'w', 'utf-8')
+        ofile = open(oname, 'w', encoding='utf-8')
 
     for cardclass in classes:
         if classes[cardclass] == None:
@@ -183,13 +183,17 @@ def main(fname, oname = None, verbose = True):
 
     
 if __name__ == '__main__':
-    import sys
-    if len(sys.argv) == 2:
-        main(sys.argv[1])
-    elif len(sys.argv) == 3:
-        main(sys.argv[1], oname = sys.argv[2])
-    else:
-        print('Usage: ' + sys.argv[0] + ' ' +
-              '<encoded file> [output filename]')
-        exit(1)
+    import argparse
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('infile',
+                        help='encoded card file to sort')
+    parser.add_argument('outfile', nargs='?', default=None,
+                        help='output file, defaults to stdout')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='verbose output')
+
+    args = parser.parse_args()
+    main(args.infile, args.outfile, args.verbose)
+    exit(0)
 
