@@ -237,10 +237,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
 
     if oname:
-        if for_html:
-            print(oname)
-            # if ('.html' != oname[-])
-            #     oname += '.html'
+        if for_html and not oname.endswith('.html'):
+            oname += '.html'
         if verbose:
             print('Writing output to: ' + oname)
         with open(oname, 'w', encoding='utf8') as ofile:
