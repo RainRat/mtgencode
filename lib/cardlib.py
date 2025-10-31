@@ -5,6 +5,8 @@ import random
 import utils
 import transforms
 from manalib import Manacost, Manatext
+import textwrap
+import nltk.data
 
 # Some text prettification stuff that people may not have installed
 try:
@@ -26,44 +28,23 @@ except ImportError:
             s = s.replace(word, word.lower())
         return s
 
-try:
-    import textwrap
-    import nltk.data
-    sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-    # This could me made smarter - MSE will capitalize for us after :,
-    # but we still need to capitalize the first english component of an activation
-    # cost that starts with symbols, such as {2U}, *R*emove a +1/+1 counter from @: etc.
-    def cap(s):
-        return s[:1].capitalize() + s[1:]
-    # This crazy thing is actually invoked as an unpass, so newlines are still
-    # encoded.
-    def sentencecase(s):
-        s = s.replace(utils.x_marker, utils.reserved_marker)
-        lines = s.split(utils.newline)
-        clines = []
-        for line in lines:
-            if line:
-                sentences = sent_tokenizer.tokenize(line)
-                clines += [' '.join([cap(sent) for sent in sentences])]
-        return utils.newline.join(clines).replace(utils.reserved_marker, utils.x_marker)
-except ImportError:
-    # non-nltk implementation provided by PAK90
-    def uppercaseNewLineAndFullstop(string):
-        # ok, let's capitalize every letter after a full stop and newline. 
-        # first let's find all indices of '.' and '\n'
-        indices = [0] # initialise with 0, since we always want to capitalise the first letter.
-        newlineIndices = [0] # also need to keep track of pure newlines (for planeswalkers).
-        for i in range (len(string)):
-            if string[i] == '\\':
-                indices.append(i + 1) # we want the index of the letter after the \n, so add one.
-                newlineIndices.append(i + 1)
-            if string[i] == '.' or string[i] == "=": # also handle the choice bullets.
-                indices.append(i + 2) # we want the index of the letter after the ., so we need to count the space as well.
-        indexSet = set(indices) # convert it to a set for the next part; the capitalisation.
-        return "".join(c.upper() if i in indexSet else c for i, c in enumerate(string))
-
-    def sentencecase(s):
-        return uppercaseNewLineAndFullstop(s)
+sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+# This could me made smarter - MSE will capitalize for us after :,
+# but we still need to capitalize the first english component of an activation
+# cost that starts with symbols, such as {2U}, *R*emove a +1/+1 counter from @: etc.
+def cap(s):
+    return s[:1].capitalize() + s[1:]
+# This crazy thing is actually invoked as an unpass, so newlines are still
+# encoded.
+def sentencecase(s):
+    s = s.replace(utils.x_marker, utils.reserved_marker)
+    lines = s.split(utils.newline)
+    clines = []
+    for line in lines:
+        if line:
+            sentences = sent_tokenizer.tokenize(line)
+            clines += [' '.join([cap(sent) for sent in sentences])]
+    return utils.newline.join(clines).replace(utils.reserved_marker, utils.x_marker)
 
 # These are used later to determine what the fields of the Card object are called.
 # Define them here because they have nothing to do with the actual format.
