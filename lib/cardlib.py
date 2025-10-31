@@ -972,23 +972,27 @@ class Card:
                 outstr += '\trule text 2:\n\t\t' + newtext2 + '\n'
 
         # Need to do Special Things if it's a planeswalker.
-        # This code mostly works, but it won't get quite the right thing if the planeswalker
-        # abilities don't come before any other ones. Should be fixed.
         elif "planeswalker" in str(self.__dict__[field_types]):
             outstr += '\tstylesheet: m15-planeswalker\n'
 
             # set up the loyalty cost fields using regex to find how many there are.
             i = 0
-            lcost_regex = r'[-+]?\d+: ' # 1+ figures, might be 0.
-            for lcost in re.findall(lcost_regex, newtext):
-                i += 1
-                outstr += '\tloyalty cost ' + str(i) + ': ' + lcost + '\n'
-            # sub out the loyalty costs.
-            newtext = re.sub(lcost_regex, '', newtext)
+            lcost_regex = r'([-+]?\d+): (.*)' # 1+ figures, might be 0.
+
+            abilities = []
+            for line in newtext.split('\n'):
+                match = re.match(lcost_regex, line)
+                if match:
+                    i += 1
+                    outstr += '\tloyalty cost ' + str(i) + ': ' + match.group(1) + '\n'
+                    abilities.append(match.group(2))
+                elif line:
+                    abilities.append(line)
 
             # We need to uppercase again, because MSE won't magically capitalize for us
             # like it does after semicolons.
             # Abusing passes like this is terrible, should really fix sentencecase.
+            newtext = '\n'.join(abilities)
             newtext = transforms.text_pass_9_newlines(newtext)
             newtext = sentencecase(newtext)
             newtext = transforms.text_unpass_7_newlines(newtext)
