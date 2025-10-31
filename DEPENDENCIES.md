@@ -13,14 +13,13 @@ https://mtgjson.com/downloads/all-files/#allprintings
 
 ## Python packages
 
-mtgencode uses a few additional Python packages which you should be able to install with Pip, Python's package manager. They aren't mission critical, but they provide better capitalization of names and text in human-readable output formats. If they aren't installed, mtgencode will silently fall back to less effective workarounds.
+mtgencode uses a few additional Python packages which you should be able to install with Pip, Python's package manager.
 
 On Ubuntu, you should be able to install the necessary packages with:
 
 ```
 sudo apt-get install pip3
-pip install titlecase
-pip install nltk
+pip install -r requirements.txt
 ```
 
 nltk requires some additional data files to work, so you'll also have to do:

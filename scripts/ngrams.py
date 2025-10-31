@@ -6,7 +6,7 @@ import pickle
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 import jdecode
-import nltk_model as model
+from nltk import model
 
 def update_ngrams(lines, gramdict, grams):
     for line in lines:
