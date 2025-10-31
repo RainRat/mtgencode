@@ -18,10 +18,7 @@ def mtg_open_json(fname, verbose = False):
         setname = set['name']
         # flag sets that should be excluded by default, like funny and art card sets
         if (set['type'] in ['funny', 'memorabilia', 'alchemy']):
-            for card in set['cards']:
-                bad_sets.add(card['setCode'])
-                # I'm sorry for using a for loop in this way, but I don't know how to retrieve the first item in the collection
-                break
+            bad_sets.add(set['code'])
         codename = set.get('magicCardsInfoCode', '')
         
         for card in set['cards']:
