@@ -613,7 +613,7 @@ class Card:
 
         return outstr
 
-    def format(self, gatherer = False, for_forum = False, vdump = False, for_html = False):
+    def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False):
         linebreak = '\n'
         if for_html:
             linebreak = '<hr>' + linebreak
@@ -624,225 +624,123 @@ class Card:
 
         if gatherer:
             cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
-            if vdump and not cardname:
-                cardname = '_NONAME_'
-            # in general, for_html overrides for_forum
-            if for_html: 
-                outstr += '<b>'
-            elif for_forum:
-                outstr += '[b]'
+        else:
+            cardname = titlecase(self.__dict__[field_name])
+
+        if vdump and not cardname:
+            cardname = '_NONAME_'
+
+        coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html)
+        rarity = self.__dict__[field_rarity]
+        if rarity in utils.json_rarity_unmap:
+            rarity = utils.json_rarity_unmap[rarity]
+
+        mtext = self.__dict__[field_text].text
+        if gatherer:
+            mtext = transforms.text_unpass_1_choice(mtext, delimit=False)
+            mtext = transforms.text_unpass_2_counters(mtext)
+            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
+        else:
+            mtext = transforms.text_unpass_1_choice(mtext, delimit=True)
+
+        mtext = transforms.text_unpass_3_uncast(mtext)
+        mtext = transforms.text_unpass_4_unary(mtext)
+        mtext = transforms.text_unpass_5_symbols(mtext, for_forum, for_html)
+        mtext = sentencecase(mtext)
+        mtext = transforms.text_unpass_7_newlines(mtext)
+        newtext = Manatext('')
+        newtext.text = mtext
+        newtext.costs = self.__dict__[field_text].costs
+        formatted_mtext = newtext.format(for_forum=for_forum, for_html=for_html)
+
+        if for_html:
+            outstr += '<b>' + cardname + '</b>'
+        elif for_forum:
+            outstr += '[b]' + cardname + '[/b]'
+        else:
             outstr += cardname
-            if for_html: 
-                outstr += '</b>'
-            elif for_forum:
-                outstr += '[/b]'
 
-            coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html)
-            if vdump or not coststr == '_NOCOST_':
-                outstr += ' ' + coststr
+        if vdump or not coststr == '_NOCOST_':
+            outstr += ' ' + coststr
 
-            if for_html and for_forum:
-               #force for_html to false to create tooltip with forum spoiler
-                outstr += ('<div class="hover_img"><a href="#">[F]</a> <span><p>' 
-                           + self.format(gatherer=gatherer, for_forum=for_forum, for_html=False, vdump=vdump).replace('\n', '<br>')
-                           + '</p></span></div><a href="#top" style="float: right;">back to top</a>')
+        if for_html and for_forum:
+            outstr += ('<div class="hover_img"><a href="#">[F]</a> <span><p>'
+                       + self.format(gatherer=gatherer, for_forum=True, for_html=False, vdump=vdump).replace('\n', '<br>')
+                       + '</p></span></div><a href="#top" style="float: right;">back to top</a>')
 
+        if rarity and gatherer:
+            outstr += ' (' + rarity + ')'
 
-            if self.__dict__[field_rarity]:
-                if self.__dict__[field_rarity] in utils.json_rarity_unmap:
-                    rarity = utils.json_rarity_unmap[self.__dict__[field_rarity]]
-                else:
-                    rarity = self.__dict__[field_rarity]
-                outstr += ' (' + rarity + ')'
+        if vdump:
+            if not self.parsed:
+                outstr += ' _UNPARSED_'
+            if not self.valid:
+                outstr += ' _INVALID_'
 
-            
-            if vdump:
-                if not self.parsed:
-                    outstr += ' _UNPARSED_'
-                if not self.valid:
-                    outstr += ' _INVALID_'
-                
-            outstr += linebreak
+        outstr += linebreak
 
+        if gatherer:
             basetypes = list(map(str.capitalize, self.__dict__[field_types]))
             if vdump and len(basetypes) < 1:
                 basetypes = ['_NOTYPE_']
+            outstr += ' '.join(list(map(str.capitalize, self.__dict__[field_supertypes])) + basetypes)
+        else:
+            supertypes = [titlecase(s) for s in self.__dict__[field_supertypes]]
+            types = [titlecase(t) for t in self.__dict__[field_types]]
+            outstr += ' '.join(supertypes + types)
 
-            outstr += ' '.join(list(map(str.capitalize,
-                                        self.__dict__[field_supertypes])) + basetypes)
+        if self.__dict__[field_subtypes]:
+            outstr += (' ' + utils.dash_marker)
+            for subtype in self.__dict__[field_subtypes]:
+                outstr += ' ' + titlecase(subtype)
 
-            if self.__dict__[field_subtypes]:
-                outstr += (' ' + utils.dash_marker)
-                for subtype in self.__dict__[field_subtypes]:
-                    outstr += ' ' + titlecase(subtype)
+        if rarity and not gatherer:
+            outstr += ' (' + rarity.lower() + ')'
 
+        if gatherer:
             if self.__dict__[field_pt]:
                 outstr += ' (' + utils.from_unary(self.__dict__[field_pt]) + ')'
 
             if self.__dict__[field_loyalty]:
                 outstr += ' ((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
 
-            if self.__dict__[field_text].text:
-                outstr += linebreak
+        if formatted_mtext:
+            outstr += linebreak + formatted_mtext
 
-                mtext = self.__dict__[field_text].text
-                mtext = transforms.text_unpass_1_choice(mtext, delimit = False)
-                mtext = transforms.text_unpass_2_counters(mtext)
-                mtext = transforms.text_unpass_3_uncast(mtext)
-                mtext = transforms.text_unpass_4_unary(mtext)
-                mtext = transforms.text_unpass_5_symbols(mtext, for_forum, for_html)
-                mtext = sentencecase(mtext)
-                mtext = transforms.text_unpass_6_cardname(mtext, cardname)
-                mtext = transforms.text_unpass_7_newlines(mtext)
-                #mtext = transforms.text_unpass_8_unicode(mtext)
-                newtext = Manatext('')
-                newtext.text = mtext
-                newtext.costs = self.__dict__[field_text].costs
-
-                outstr += newtext.format(for_forum = for_forum, for_html = for_html)
-            
-            if vdump and self.__dict__[field_other]:
-                outstr += linebreak
-
-                if for_html:
-                    outstr += '<i>'
-                elif for_forum:
-                    outstr += '[i]'
-                else:
-                    outstr += utils.dash_marker * 2
-
-                first = True
-                for idx, value in self.__dict__[field_other]:
-                    if for_html:
-                        if not first:
-                            outstr += '<br>\n'
-                        else:
-                            first = False
-                    else:
-                        outstr += linebreak
-                    outstr += '(' + str(idx) + ') ' + str(value)
-                    
-                if for_html:
-                    outstr += '</i>'
-                if for_forum:
-                    outstr += '[/i]'
-
-        else:
-            cardname = self.__dict__[field_name]
-            #cardname = transforms.name_unpass_1_dashes(self.__dict__[field_name])
-            if vdump and not cardname:
-                cardname = '_NONAME_'
-            else:
-                cardname = titlecase(cardname)
-            if for_forum:
-                cardname = '[b]' + cardname + '[/b]'
-            outstr += cardname
-
-            coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html)
-            if vdump or not coststr == '_NOCOST_':
-                outstr += ' ' + coststr
-
-            if vdump:
-                if not self.parsed:
-                    outstr += ' _UNPARSED_'
-                if not self.valid:
-                    outstr += ' _INVALID_'
-
-            if for_html and for_forum:
-               #force for_html to false to create tooltip with forum spoiler
-                outstr += ('<div class="hover_img"><a href="#">[F]</a> <span><p>' 
-                           + self.format(gatherer=gatherer, for_forum=for_forum, for_html=False, vdump=vdump).replace('\n', '<br>')
-                           + '</p></span></div><a href="#top" style="float: right;">back to top</a>')
-            
-            outstr += linebreak
-
-            if self.__dict__[field_supertypes]:
-                for supertype in self.__dict__[field_supertypes]:
-                    outstr += titlecase(supertype) + ' '
-            for maintype in self.__dict__[field_types]:
-                outstr += titlecase(maintype) + ' '
-            if self.__dict__[field_subtypes]:
-                outstr += utils.dash_marker
-                for subtype in self.__dict__[field_subtypes]:
-                    outstr += ' ' + titlecase(subtype)
-            else:
-                outstr = outstr.strip()
-
-            if self.__dict__[field_rarity]:
-                if self.__dict__[field_rarity] in utils.json_rarity_unmap:
-                    rarity = utils.json_rarity_unmap[self.__dict__[field_rarity]]
-                else:
-                    rarity = self.__dict__[field_rarity]
-                outstr += ' (' + rarity.lower() + ')'
-            
-            if self.__dict__[field_text].text:
-                outstr += linebreak
-
-                mtext = self.__dict__[field_text].text
-                mtext = transforms.text_unpass_1_choice(mtext, delimit = True)
-                #mtext = transforms.text_unpass_2_counters(mtext)
-                mtext = transforms.text_unpass_3_uncast(mtext)
-                mtext = transforms.text_unpass_4_unary(mtext)
-                mtext = transforms.text_unpass_5_symbols(mtext, for_forum, for_html)
-                mtext = sentencecase(mtext)
-                #mtext = transforms.text_unpass_6_cardname(mtext, cardname)
-                mtext = transforms.text_unpass_7_newlines(mtext)
-                #mtext = transforms.text_unpass_8_unicode(mtext)
-                newtext = Manatext('')
-                newtext.text = mtext
-                newtext.costs = self.__dict__[field_text].costs
-
-                outstr += newtext.format(for_forum=for_forum, for_html=for_html)
-
+        if not gatherer:
             if self.__dict__[field_pt]:
-                outstr += linebreak
-                outstr += '(' + utils.from_unary(self.__dict__[field_pt]) + ')'
+                outstr += linebreak + '(' + utils.from_unary(self.__dict__[field_pt]) + ')'
 
             if self.__dict__[field_loyalty]:
-                outstr += linebreak
-                outstr += '((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
-                
-            if vdump and self.__dict__[field_other]:
-                outstr += linebreak
+                outstr += linebreak + '((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
 
-                if for_html:
-                    outstr += '<i>'
+        if vdump and self.__dict__[field_other]:
+            outstr += linebreak
+            if for_html:
+                outstr += '<i>'
+            elif for_forum:
+                outstr += '[i]'
+            else:
+                outstr += utils.dash_marker * 2
+
+            for i, (idx, value) in enumerate(self.__dict__[field_other]):
+                if for_html and i > 0:
+                    outstr += '<br>\n'
                 else:
-                    outstr += utils.dash_marker * 2
+                    outstr += linebreak
+                outstr += '(' + str(idx) + ') ' + str(value)
 
-                first = True
-                for idx, value in self.__dict__[field_other]:
-                    if for_html:
-                        if not first:
-                            outstr += '<br>\n'
-                        else:
-                            first = False
-                    else:
-                        outstr += linebreak
-                    outstr += '(' + str(idx) + ') ' + str(value)
-
-                if for_html:
-                    outstr += '</i>'
+            if for_html:
+                outstr += '</i>'
+            elif for_forum:
+                outstr += '[/i]'
 
         if self.bside:
-            if for_html:
-                outstr += '\n'
-                # force for_forum to false so that the inner div doesn't duplicate the forum
-                # spoiler of the bside
-                outstr += self.bside.format(gatherer=gatherer, for_forum=False, for_html=for_html, vdump=vdump)
-            else:
-                outstr += linebreak
-                outstr += utils.dash_marker * 8
-                outstr += linebreak
-                outstr += self.bside.format(gatherer=gatherer, for_forum=for_forum, for_html=for_html, vdump=vdump)
+            outstr += linebreak
+            if not for_html:
+                outstr += utils.dash_marker * 8 + linebreak
+            outstr += self.bside.format(gatherer=gatherer, for_forum=for_forum and not for_html, for_html=for_html, vdump=vdump)
 
-        # if for_html:
-        #     if for_forum:
-        #         outstr += linebreak
-        #         # force for_html to false to create a copyable forum spoiler div
-        #         outstr += ('<div>' 
-        #                    + self.format(gatherer=gatherer, for_forum=for_forum, for_html=False, vdump=vdump).replace('\n', '<br>')
-        #                    + '</div>')
         if for_html:
             outstr += "</div>"
 
