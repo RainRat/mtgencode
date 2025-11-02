@@ -28,6 +28,29 @@ def test_card_initialization_from_json(sample_card_json):
     assert card.text.text == "flying"
     assert card.valid
 
+
+def test_card_format(sample_card_json):
+    card = Card(sample_card_json)
+
+    # Test with gatherer=True
+    gatherer_output = card.format(gatherer=True)
+    expected_gatherer_output = (
+        "Ornithopter {0} (Uncommon)\n"
+        "Artifact Creature ~ Thopter (0/2)\n"
+        "Flying"
+    )
+    assert gatherer_output == expected_gatherer_output
+
+    # Test with gatherer=False
+    default_output = card.format(gatherer=False)
+    expected_default_output = (
+        "Ornithopter {0}\n"
+        "Artifact Creature ~ Thopter (uncommon)\n"
+        "Flying\n"
+        "(0/2)"
+    )
+    assert default_output == expected_default_output
+
 def test_planeswalker_to_mse_formatting():
     planeswalker_json = {
         "name": "Jules, the Wise",
