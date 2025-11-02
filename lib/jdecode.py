@@ -3,13 +3,12 @@ import json
 import utils
 import cardlib
 
-bad_sets = set()
-
 def mtg_open_json(fname, verbose = False):
 
     with open(fname, 'r', encoding='utf8') as f:
         jobj = json.load(f)['data']
 
+    bad_sets = set()
     allcards = {}
     asides = {}
     bsides = {}
@@ -65,7 +64,7 @@ def mtg_open_json(fname, verbose = False):
 
     if verbose:
         print('Opened ' + str(len(allcards)) + ' uniquely named cards.')
-    return allcards
+    return allcards, bad_sets
 
 # filters to ignore some undesirable cards, only used when opening json
 def default_exclude_sets(cardset):
@@ -93,7 +92,7 @@ def mtg_open_file(fname, verbose = False,
     if fname.endswith('.json'):
         if verbose:
             print('This looks like a json file: ' + fname)
-        json_srcs = mtg_open_json(fname, verbose)
+        json_srcs, bad_sets = mtg_open_json(fname, verbose)
         # sorted for stability
         for json_cardname in sorted(json_srcs):
             if len(json_srcs[json_cardname]) > 0:
@@ -117,7 +116,8 @@ def mtg_open_file(fname, verbose = False,
 
                 skip = False
                 if (exclude_sets(jcards[idx][utils.json_field_set_name])
-                    or exclude_layouts(jcards[idx]['layout']) or jcards[idx]['setCode'] in bad_sets):
+                    or exclude_layouts(jcards[idx]['layout'])
+                    or jcards[idx]['setCode'] in bad_sets):
                     skip = True
                 for cardtype in card.types:
                     if exclude_types(cardtype):
