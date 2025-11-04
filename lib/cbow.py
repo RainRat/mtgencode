@@ -155,28 +155,40 @@ class CBOW:
                  card_fname = os.path.join(datadir, 'output.txt')):
         self.verbose = verbose
         self.cardvecs = []
+        self.vocab = []
+        self.vecs = []
+        self.disabled = False
 
         if self.verbose:
             print('Building a cbow model...')
 
         if self.verbose:
             print('  Reading binary vector data from: ' + vector_fname)
-        (vocab, vecs) = read_vector_file(vector_fname)
-        self.vocab = vocab
-        self.vecs = vecs
+        try:
+            (vocab, vecs) = read_vector_file(vector_fname)
+            self.vocab = vocab
+            self.vecs = vecs
+        except struct.error:
+            print('WARNING: cbow.bin is malformed, CBOW will be disabled.')
+            self.disabled = True
+            return
 
         if self.verbose:
             print('  Reading encoded cards from: ' + card_fname)
             print(
                 '  They\'d better be in the same order as the file used to build the vector model!')
+        if not os.path.isfile(card_fname):
+            print('WARNING: could not find ' + card_fname + ', CBOW will be disabled.')
+            self.disabled = True
+            return
         with open(card_fname, 'rt') as f:
             text = f.read()
         for card_src in text.split(utils.cardsep):
             if card_src:
                 card = cardlib.Card(card_src)
                 name = card.name
-                self.cardvecs += [(name, makevector(self.vocab, 
-                                                    self.vecs, 
+                self.cardvecs += [(name, makevector(self.vocab,
+                                                    self.vecs,
                                                     card.vectorize()))]
                 
         if self.verbose:
@@ -186,9 +198,13 @@ class CBOW:
             print('  card vecs:  ' + str(len(self.cardvecs)))
 
     def nearest(self, card, n=5):
+        if self.disabled:
+            return []
         return f_nearest(card, self.vocab, self.vecs, self.cardvecs, n)
 
     def nearest_par(self, cards, n=5, threads=cores):
+        if self.disabled:
+            return [[]] * len(cards)
         workpool = multiprocessing.Pool(threads)
         proto_worklist = namediff.list_split(cards, threads)
         worklist = [(x, self.vocab, self.vecs, self.cardvecs, n)

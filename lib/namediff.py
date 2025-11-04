@@ -22,10 +22,10 @@ cores = multiprocessing.cpu_count()
 def list_split(l, n):
     if n <= 0:
         return l
-    split_size = len(l) / n
+    split_size = len(l) // n
     if len(l) % n > 0:
         split_size += 1
-    return [l[i:i+split_size] for i in range(0, len(l), split_size)]
+    return [l[i:i+split_size] for i in range(0, len(l), int(split_size))]
 
 # flatten a list of lists into a single list of all their contents, in order
 def list_flatten(l):
@@ -34,7 +34,10 @@ def list_flatten(l):
 
 # isolated logic for multiprocessing
 def f_nearest(name, matchers, n):
-    ratios = [(m.set_seq1(name).ratio(), m.b) for m in matchers]
+    ratios = []
+    for m in matchers:
+        m.set_seq1(name)
+        ratios.append((m.ratio(), m.b))
     ratios.sort(reverse=True)
     return ratios[:1] if ratios[0][0] >= 1 else ratios[:n]
 
@@ -57,9 +60,9 @@ class Namediff:
 
         if self.verbose:
             print('  Reading names from: ' + json_fname)
-        json_srcs = jdecode.mtg_open_json(json_fname, verbose)
+        json_srcs, _ = jdecode.mtg_open_json(json_fname, verbose)
         namecount = 0
-        for json_cardname in sorted(json_srcs):
+        for json_cardname in sorted(json_srcs.keys()):
             if len(json_srcs[json_cardname]) > 0:
                 jcards = json_srcs[json_cardname]
 
@@ -68,7 +71,7 @@ class Namediff:
                 card = cardlib.Card(jcards[idx])
                 name = card.name
                 jname = jcards[idx]['name']
-                jcode = jcards[idx][utils.json_field_info_code]
+                jcode = jcards[idx].get(utils.json_field_info_code)
                 if 'number' in jcards[idx]:
                     jnum = jcards[idx]['number']
                 else:
