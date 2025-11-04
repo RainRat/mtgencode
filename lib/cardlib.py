@@ -1,6 +1,7 @@
 # card representation
 import re
 import random
+import sys
 
 import utils
 import transforms
@@ -274,7 +275,9 @@ def fields_from_json(src_json, linetrans = True):
 
     p_t = ''
     parsed_pt = True
-    if 'power' in src_json:
+    if 'pt' in src_json:
+        p_t = src_json['pt']
+    elif 'power' in src_json:
         p_t = utils.to_ascii(utils.to_unary(src_json['power'])) + '/' # hardcoded
         parsed_pt = False
         if 'toughness' in src_json:
@@ -392,7 +395,8 @@ class Card:
 
     def __init__(self, src, fmt_ordered = fmt_ordered_default, 
                             fmt_labeled = fmt_labeled_default, 
-                            fieldsep = utils.fieldsep, linetrans = True):
+                            fieldsep = utils.fieldsep, linetrans = True,
+                            verbose = False):
 
         # source fields, exactly one will be set
         self.json = None
@@ -400,6 +404,7 @@ class Card:
         # flags
         self.parsed = True
         self.valid = True # doesn't record that much
+        self.verbose = verbose
         # placeholders to fill in with expensive distance metrics
         self.nearest_names = []
         self.nearest_cards = []
@@ -502,11 +507,15 @@ class Card:
                 self.__dict__[field_loyalty] = value
                 try:
                     self.__dict__[field_loyalty + '_value'] = int(value)
-                except ValueError:
+                except (ValueError, TypeError):
                     self.__dict__[field_loyalty + '_value'] = None
+                    if self.verbose:
+                        sys.stderr.write("Invalid loyalty value for card '" + self.name + "': " + str(value) + "\n")
                     # Technically '*' could still be valid, but it's unlikely...
             else:
                 self.valid = False
+                if self.verbose:
+                    sys.stderr.write("Multiple loyalty values for card '" + self.name + "': " + str(value) + "\n")
                 self.__dict__[field_other] += [(idx, '<loyalty> ' + str(value))]
 
     def _set_pt(self, values):
@@ -515,22 +524,28 @@ class Card:
             if first:
                 first = False
                 self.__dict__[field_pt] = value
-                p_t = value.split('/') # hardcoded
-                if len(p_t) == 2:
-                    self.__dict__[field_pt + '_p'] = p_t[0]
+                # Tolerant P/T parsing
+                match = re.match(r'^\s*([^\s/]+)\s*/\s*([^\s/]+)\s*$', value)
+                if match:
+                    p, t = match.groups()
+                    self.__dict__[field_pt + '_p'] = p
                     try:
-                        self.__dict__[field_pt + '_p_value'] = int(p_t[0])
-                    except ValueError:
+                        self.__dict__[field_pt + '_p_value'] = int(p)
+                    except (ValueError, TypeError):
                         self.__dict__[field_pt + '_p_value'] = None
-                    self.__dict__[field_pt + '_t'] = p_t[1]
+                    self.__dict__[field_pt + '_t'] = t
                     try:
-                        self.__dict__[field_pt + '_t_value'] = int(p_t[1])
-                    except ValueError:
+                        self.__dict__[field_pt + '_t_value'] = int(t)
+                    except (ValueError, TypeError):
                         self.__dict__[field_pt + '_t_value'] = None
                 else:
                     self.valid = False
+                    if self.verbose:
+                        sys.stderr.write("Invalid P/T value for card '" + self.name + "': " + str(value) + "\n")
             else:
                 self.valid = False
+                if self.verbose:
+                    sys.stderr.write("Multiple P/T values for card '" + self.name + "': " + str(value) + "\n")
                 self.__dict__[field_other] += [(idx, '<pt> ' + str(value))]
     
     def _set_text(self, values):
@@ -875,7 +890,7 @@ class Card:
 
             # set up the loyalty cost fields using regex to find how many there are.
             i = 0
-            lcost_regex = r'([-+]?\d+): (.*)' # 1+ figures, might be 0.
+            lcost_regex = r'([-−+−]?\d+): (.*)' # 1+ figures, might be 0.
 
             abilities = []
             for line in newtext.split('\n'):
