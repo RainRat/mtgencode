@@ -28,6 +28,53 @@ def test_card_initialization_from_json(sample_card_json):
     assert card.text.text == "flying"
     assert card.valid
 
+def test_verbose_logging(capsys):
+    invalid_card_json = {
+        "name": "Invalid Card",
+        "types": ["Creature"],
+        "power": "1",
+        "toughness": "1",
+        "loyalty": "X"
+    }
+    card = Card(invalid_card_json, verbose=True)
+
+    # Test multiple P/T values
+    card._set_pt([(-1, '1/1'), (-1, '2/2')])
+    captured = capsys.readouterr()
+    assert "Multiple P/T values for card 'invalid card': 2/2" in captured.err
+
+    # Test invalid loyalty
+    card._set_loyalty([(-1, 'X')])
+    captured = capsys.readouterr()
+    assert "Invalid loyalty value for card 'invalid card': X" in captured.err
+
+def test_planeswalker_negative_loyalty_to_mse():
+    planeswalker_json = {
+        "name": "Liliana of the Veil",
+        "manaCost": "{1}{B}{B}",
+        "type": "Legendary Planeswalker — Liliana",
+        "supertypes": ["Legendary"],
+        "types": ["Planeswalker"],
+        "subtypes": ["Liliana"],
+        "rarity": "Mythic",
+        "text": "+1: Each player discards a card.\n-2: Target player sacrifices a creature.\n-6: Separate all permanents target player controls into two piles. That player sacrifices all permanents in the pile of their choice.",
+        "loyalty": 3
+    }
+    card = Card(planeswalker_json)
+    mse_output = card.to_mse()
+    assert "\tloyalty cost 2: -2\n" in mse_output
+
+@pytest.mark.parametrize("pt_string, expected_p, expected_t", [
+    ("1/2", "1", "2"),
+    (" 1 / 2 ", "1", "2"),
+    ("*/*", "*", "*"),
+    ("*/ *+1", "*", "*+1"),
+])
+def test_pt_parsing(pt_string, expected_p, expected_t):
+    card = Card({"name": "Test Creature", "types": ["Creature"], "pt": pt_string})
+    assert card.pt_p == expected_p
+    assert card.pt_t == expected_t
+
 
 def test_card_format(sample_card_json):
     card = Card(sample_card_json)
