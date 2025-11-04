@@ -1,8 +1,40 @@
+# General
 *~
+*.swp
+*.swo
+
+# Python
+__pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.so
+.Python
+*.~
+*.log
+*.pot
+*.py,cover
+.coverage
+.coverage.*
+.cache
+.hypothesis/
+.pytest_cache/
+
+# Virtualenv
+.env
+.venv
+env/
+venv/
+ENV/
+VENV/
+
+# IDE
+.idea/
+.vscode/
+
+# Project-specific
 AllSets.json
 AllSets-x.json
-lib/__init__.py
 AllPrintings.json
 VintagePrintings.json
 *.zip

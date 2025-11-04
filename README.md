@@ -24,6 +24,55 @@ To get started, build the Docker image and start an interactive session by runni
 
 This will drop you into a bash shell within the Docker container, with the project directory mounted and all necessary dependencies available.
 
+### Getting Started in Docker
+
+Once inside the Docker container, you can start using the encoding and decoding scripts immediately. Here are a few examples to get you started:
+
+1.  **Encode the sample data:**
+
+    ```bash
+    ./encode.py -v testdata/Standard.json > encoded_cards.txt
+    ```
+
+    *Output:*
+    ```
+    processed 2621 cards
+    invalid cards: 0
+    unique cards: 2521
+    ```
+
+2.  **Decode the encoded data back to a human-readable format:**
+
+    ```bash
+    ./decode.py -v encoded_cards.txt > decoded_cards.txt
+    ```
+
+    *Output:*
+    ```
+    2521 cards decoded
+    0 bad cards
+    ```
+
+3.  **View the decoded cards:**
+
+    ```bash
+    head decoded_cards.txt
+    ```
+
+    *Output:*
+    ```
+    ================================
+    Chandra, Torch of Defiance
+    {2}{R}{R}
+    Legendary Planeswalker ~ Chandra
+    Loyalty: 4
+    +1: Exile the top card of your library. You may cast that card. If you don't, Chandra, Torch of Defiance deals 2 damage to each opponent.
+    +1: Add {R}{R} to your mana pool.
+    -3: Chandra, Torch of Defiance deals 4 damage to target creature.
+    -7: You get an emblem with "Whenever you cast a spell, this emblem deals 5 damage to target creature or player."
+    ================================
+    ```
+
 ## Usage
 
 Functionality is provided by two main driver scripts: encode.py and decode.py. Logically, encode.py handles encoding to formats intended to feed into a neural network, while decode.py handles decoding to formats intended to be read by a human.
