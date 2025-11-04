@@ -12,6 +12,18 @@ For the most part it should work out of the box, though there are a few optional
 
 This code does not have anything to do with neural nets; if you want to generate cards with them, see the [tutorial](./README.md#tutorial).
 
+## Docker Environment
+
+For a consistent and isolated development environment, you can use the provided Docker setup. This will ensure all dependencies are correctly installed and configured.
+
+To get started, build the Docker image and start an interactive session by running the following command from the root of the project:
+
+```bash
+./docker-interactive.sh
+```
+
+This will drop you into a bash shell within the Docker container, with the project directory mounted and all necessary dependencies available.
+
 ## Usage
 
 Functionality is provided by two main driver scripts: encode.py and decode.py. Logically, encode.py handles encoding to formats intended to feed into a neural network, while decode.py handles decoding to formats intended to be read by a human.
