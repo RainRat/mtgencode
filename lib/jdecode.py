@@ -6,48 +6,60 @@ import cardlib
 def mtg_open_json(fname, verbose = False):
 
     with open(fname, 'r', encoding='utf8') as f:
-        jobj = json.load(f)['data']
+        jobj = json.load(f)
+
+    is_mtgjson_format = isinstance(jobj, dict)
+    if is_mtgjson_format:
+        jobj = jobj['data']
 
     bad_sets = set()
     allcards = {}
     asides = {}
     bsides = {}
 
-    for set in jobj.values():
-        setname = set['name']
-        # flag sets that should be excluded by default, like funny and art card sets
-        if (set['type'] in ['funny', 'memorabilia', 'alchemy']):
-            bad_sets.add(set['code'])
-        codename = set.get('magicCardsInfoCode', '')
-        
-        for card in set['cards']:
-            card[utils.json_field_set_name] = setname
-            card[utils.json_field_info_code] = codename
+    if is_mtgjson_format:
+        for set_data in jobj.values():
+            setname = set_data['name']
+            # flag sets that should be excluded by default, like funny and art card sets
+            if (set_data['type'] in ['funny', 'memorabilia', 'alchemy']):
+                bad_sets.add(set_data['code'])
+            codename = set_data.get('magicCardsInfoCode', '')
 
-            cardnumber = None
-            if 'number' in card:
-                cardnumber = card['number']
-            # the lower avoids duplication of at least one card (Will-o/O'-the-Wisp)
-            cardname = card['name'].lower()
+            for card in set_data['cards']:
+                card[utils.json_field_set_name] = setname
+                card[utils.json_field_info_code] = codename
 
-            uid = set['code']
-            if cardnumber == None:
-                uid = uid + '_' + cardname + '_'
-            else:
-                uid = uid + '_' + cardnumber
+                cardnumber = None
+                if 'number' in card:
+                    cardnumber = card['number']
+                # the lower avoids duplication of at least one card (Will-o/O'-the-Wisp)
+                cardname = card['name'].lower()
 
-            # aggregate by name to avoid duplicates, not counting bsides
-            if not uid[-1] == 'b':
-                if cardname in allcards:
-                    allcards[cardname] += [card]
+                uid = set_data['code']
+                if cardnumber == None:
+                    uid = uid + '_' + cardname + '_'
                 else:
-                    allcards[cardname] = [card]
-                    
-            # also aggregate aside cards by uid so we can add bsides later
-            if uid[-1:] == 'a':
-                asides[uid] = card
-            if uid[-1:] == 'b':
-                bsides[uid] = card
+                    uid = uid + '_' + cardnumber
+
+                # aggregate by name to avoid duplicates, not counting bsides
+                if not uid[-1] == 'b':
+                    if cardname in allcards:
+                        allcards[cardname] += [card]
+                    else:
+                        allcards[cardname] = [card]
+
+                # also aggregate aside cards by uid so we can add bsides later
+                if uid[-1:] == 'a':
+                    asides[uid] = card
+                if uid[-1:] == 'b':
+                    bsides[uid] = card
+    else: # It is a list of cards
+        for card in jobj:
+            cardname = card['name'].lower()
+            if cardname in allcards:
+                allcards[cardname] += [card]
+            else:
+                allcards[cardname] = [card]
 
     for uid in bsides:
         aside_uid = uid[:-1] + 'a'
@@ -103,7 +115,7 @@ def mtg_open_file(fname, verbose = False,
                 card = cardlib.Card(jcards[idx], linetrans=linetrans)
                 while (idx < len(jcards)
                        and (card.rarity == utils.rarity_special_marker
-                            or exclude_sets(jcards[idx][utils.json_field_set_name]))):
+                            or exclude_sets(jcards[idx].get(utils.json_field_set_name)))):
                     idx += 1
                     if idx < len(jcards):
                         card = cardlib.Card(jcards[idx], linetrans=linetrans)
@@ -115,9 +127,9 @@ def mtg_open_file(fname, verbose = False,
                 # but eh
 
                 skip = False
-                if (exclude_sets(jcards[idx][utils.json_field_set_name])
-                    or exclude_layouts(jcards[idx]['layout'])
-                    or jcards[idx]['setCode'] in bad_sets):
+                if (exclude_sets(jcards[idx].get(utils.json_field_set_name))
+                    or exclude_layouts(jcards[idx].get('layout'))
+                    or jcards[idx].get('setCode') in bad_sets):
                     skip = True
                 for cardtype in card.types:
                     if exclude_types(cardtype):

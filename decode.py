@@ -14,11 +14,14 @@ from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = False, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, for_html = False):
+         creativity = False, vdump = False, html = False, text = False):
+
+    if not (html or text or for_mse):
+        text = True
 
     # there is a sane thing to do here (namely, produce both at the same time)
     # but we don't support it yet.
-    if for_mse and for_html:
+    if for_mse and html:
         print('ERROR - decode.py - incompatible formats "mse" and "html"')
         return
 
@@ -63,13 +66,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if verbose:
             print('...Done.')
 
-    def hoverimg(cardname, dist, nd):
+    def hoverimg(cardname, dist, nd, for_html=False):
         truename = nd.names[cardname]
         code = nd.codes[cardname]
         namestr = ''
         if for_html:
             if code:
-                namestr = ('<div class="hover_img"><a href="#">' + truename 
+                namestr = ('<div class="hover_img"><a href="#">' + truename
                            + '<span><img style="background: url(http://magiccards.info/scans/en/' + code
                            + ');" alt=""/></span></a>' + ': ' + str(dist) + '\n</div>\n')
             else:
@@ -78,14 +81,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             namestr = '[card]' + truename + '[/card]' + ': ' + str(dist) + '\n'
         else:
             namestr = truename + ': ' + str(dist) + '\n'
-        return namestr 
+        return namestr
 
-    def writecards(writer):
+    def writecards(writer, for_html=False):
         if for_mse:
             # have to prepend a massive chunk of formatting info
             writer.write(utils.mse_prepend)
-
-        if for_html:
+        elif for_html:
             # have to prepend html info
             writer.write(utils.html_prepend)
             # separate the write function to allow for writing smaller chunks of cards at a time
@@ -93,76 +95,69 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             for i in range(len(segments)):
                 # sort color by CMC
                 segments[i] = sort_type(segments[i])
-                # this allows card boxes to be colored for each color 
+                # this allows card boxes to be colored for each color
                 # for coloring of each box separately cardlib.Card.format() must change non-minimally
                 writer.write('<div id="' + utils.segment_ids[i] + '">')
-                writehtml(writer, segments[i])
+                for card in segments[i]:
+                    writecard(writer, card, for_html=True)
                 writer.write("</div><hr>")
             # closing the html file
             writer.write(utils.html_append)
-            return #break out of the write cards function to avoid writing cards twice
-
+            return
 
         for card in cards:
-            if for_mse:
-                writer.write(card.to_mse())
-                fstring = ''
-                if card.json:
-                    fstring += 'JSON:\n' + card.json + '\n'
-                if card.raw: 
-                    fstring += 'raw:\n' + card.raw + '\n'
-                fstring += '\n'
-                fstring += card.format(gatherer = gatherer, for_forum = for_forum,
-                                       vdump = vdump) + '\n'
-                fstring = fstring.replace('<', '(').replace('>', ')')
-                writer.write(('\n' + fstring[:-1]).replace('\n', '\n\t\t'))
-            else:
-                fstring = card.format(gatherer = gatherer, for_forum = for_forum,
-                                      vdump = vdump, for_html = for_html)
-                writer.write((fstring + '\n'))
-
-            if creativity:
-                cstring = '~~ closest cards ~~\n'
-                nearest = card.nearest_cards
-                for dist, cardname in nearest:
-                    cstring += hoverimg(cardname, dist, namediff)
-                cstring += '~~ closest names ~~\n'
-                nearest = card.nearest_names
-                for dist, cardname in nearest:
-                    cstring += hoverimg(cardname, dist, namediff)
-                if for_mse:
-                    cstring = ('\n\n' + cstring[:-1]).replace('\n', '\n\t\t')
-                writer.write(cstring)
-
-            writer.write('\n')
+            writecard(writer, card)
 
         if for_mse:
             # more formatting info
             writer.write('version control:\n\ttype: none\napprentice code: ')
-            
 
-    def writehtml(writer, card_set):
-        for card in card_set:
-            fstring = card.format(gatherer = gatherer, for_forum = True,
-                                      vdump = vdump, for_html = for_html)
-            if creativity:
+    def writecard(writer, card, for_html=False):
+        if for_mse:
+            writer.write(card.to_mse())
+            fstring = ''
+            if card.json:
+                fstring += 'JSON:\n' + card.json + '\n'
+            if card.raw:
+                fstring += 'raw:\n' + card.raw + '\n'
+            fstring += '\n'
+            fstring += card.format(gatherer = gatherer, for_forum = for_forum,
+                                   vdump = vdump) + '\n'
+            fstring = fstring.replace('<', '(').replace('>', ')')
+            writer.write(('\n' + fstring[:-1]).replace('\n', '\n\t\t'))
+        else:
+            fstring = card.format(gatherer = gatherer, for_forum = for_forum,
+                                  vdump = vdump, for_html = for_html)
+            if for_html and creativity:
                 fstring = fstring[:-6] # chop off the closing </div> to stick stuff in
+
             writer.write((fstring + '\n'))
 
-            if creativity:
+        if creativity:
+            if for_html:
                 cstring = '~~ closest cards ~~\n<br>\n'
-                nearest = card.nearest_cards
-                for dist, cardname in nearest:
-                    cstring += hoverimg(cardname, dist, namediff)
+            else:
+                cstring = '~~ closest cards ~~\n'
+            nearest = card.nearest_cards
+            for dist, cardname in nearest:
+                cstring += hoverimg(cardname, dist, namediff, for_html=for_html)
+
+            if for_html:
                 cstring += "<br>\n"
                 cstring += '~~ closest names ~~\n<br>\n'
-                nearest = card.nearest_names
-                for dist, cardname in nearest:
-                    cstring += hoverimg(cardname, dist, namediff)
-                cstring = '<hr><div>' + cstring + '</div>\n</div>'
-                writer.write(cstring)
+            else:
+                cstring += '~~ closest names ~~\n'
 
-            writer.write('\n')
+            nearest = card.nearest_names
+            for dist, cardname in nearest:
+                cstring += hoverimg(cardname, dist, namediff, for_html=for_html)
+            if for_mse:
+                cstring = ('\n\n' + cstring[:-1]).replace('\n', '\n\t\t')
+            elif for_html:
+                cstring = '<hr><div>' + cstring + '</div>\n</div>'
+            writer.write(cstring)
+
+        writer.write('\n')
 
     # Sorting by colors
     def sort_colors(card_set):
@@ -237,12 +232,19 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
 
     if oname:
-        if for_html and not oname.endswith('.html'):
-            oname += '.html'
-        if verbose:
-            print('Writing output to: ' + oname)
-        with open(oname, 'w', encoding='utf8') as ofile:
-            writecards(ofile)
+        if text:
+            if verbose:
+                print('Writing text output to: ' + oname)
+            with open(oname, 'w', encoding='utf8') as ofile:
+                writecards(ofile)
+        if html:
+            fname = oname
+            if not fname.endswith('.html'):
+                fname += '.html'
+            if verbose:
+                print('Writing html output to: ' + fname)
+            with open(fname, 'w', encoding='utf8') as ofile:
+                writecards(ofile, for_html=True)
         if for_mse:
             # Copy whatever output file is produced, name the copy 'set' (yes,
             # no extension).
@@ -254,13 +256,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             with zipfile.ZipFile(oname+'.mse-set', mode='w') as zf:
                 try:
                     # Zip up the set file into oname.mse-set.
-                    zf.write('set') 
+                    zf.write('set')
                 finally:
                     if verbose:
                         print('Made an MSE set file called ' +
                               oname + '.mse-set.')
                     # The set file is useless outside the .mse-set, delete it.
-                    os.remove('set') 
+                    os.remove('set')
     else:
         writecards(sys.stdout)
         sys.stdout.flush()
@@ -269,7 +271,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    
+
     parser.add_argument('infile', #nargs='?'. default=None,
                         help='encoded card file or json corpus to encode')
     parser.add_argument('outfile', nargs='?', default=None,
@@ -286,16 +288,17 @@ if __name__ == '__main__':
                         help='use CBOW fuzzy matching to check creativity of cards')
     parser.add_argument('-d', '--dump', action='store_true',
                         help='dump out lots of information about invalid cards')
-    parser.add_argument('-v', '--verbose', action='store_true', 
+    parser.add_argument('-v', '--verbose', action='store_true',
                         help='verbose output')
-    parser.add_argument('-mse', '--mse', action='store_true', 
+    parser.add_argument('--mse', action='store_true',
                         help='use Magic Set Editor 2 encoding; will output as .mse-set file')
-    parser.add_argument('-html', '--html', action='store_true', help='create a .html file with pretty forum formatting')
+    parser.add_argument('--html', action='store_true', help='create a .html file with pretty forum formatting')
+    parser.add_argument('--text', action='store_true', help='create a text file with pretty forum formatting')
 
     args = parser.parse_args()
 
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
-         creativity = args.creativity, vdump = args.dump, for_html = args.html)
+         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text)
 
     exit(0)
