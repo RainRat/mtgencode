@@ -93,13 +93,17 @@ def mtg_open_file(fname, verbose = False,
                   linetrans = True, fmt_ordered = cardlib.fmt_ordered_default,
                   exclude_sets = default_exclude_sets,
                   exclude_types = default_exclude_types,
-                  exclude_layouts = default_exclude_layouts):
+                  exclude_layouts = default_exclude_layouts,
+                  report_file=None):
 
     cards = []
     valid = 0
     skipped = 0
     invalid = 0
     unparsed = 0
+    report_fobj = None
+    if report_file:
+        report_fobj = open(report_file, 'w', encoding='utf-8')
 
     if fname.endswith('.json'):
         if verbose:
@@ -146,8 +150,10 @@ def mtg_open_file(fname, verbose = False,
                     if verbose:
                         print ('Invalid card: ' + json_cardname)
                 else:
-                        print(card.name)
-                        unparsed += 1
+                    print(card.name)
+                    unparsed += 1
+                    if report_fobj:
+                        report_fobj.write(json.dumps(jcards, indent=2))
 
     # fall back to opening a normal encoded file
     else:
@@ -188,5 +194,7 @@ def mtg_open_file(fname, verbose = False,
     if bad_count > 10:
         print ('WARNING: Saw a bunch of unparsed cards:')
         print ('         Is this a legacy format? You may need to specify the field order.')
+    if report_fobj:
+        report_fobj.close()
 
     return cards
