@@ -10,8 +10,9 @@ import utils
 import jdecode
 import cardlib
 
-def main(fname, oname = None, verbose = True, encoding = 'std', 
-         nolinetrans = False, randomize = False, nolabel = False, stable = False):
+def main(fname, oname = None, verbose = True, encoding = 'std',
+         nolinetrans = False, randomize = False, nolabel = False, stable = False,
+         report_file=None):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
     fieldsep = utils.fieldsep
@@ -58,7 +59,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if not line_transformations:
             print('  NOT using line reordering transformations')
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations)
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations, report_file=report_file)
 
     # This should give a random but consistent ordering, to make comparing changes
     # between the output of different versions easier.
@@ -110,11 +111,13 @@ if __name__ == '__main__':
                         help="don't label fields")
     parser.add_argument('-s', '--stable', action='store_true',
                         help="don't randomize the order of the cards")
-    parser.add_argument('-v', '--verbose', action='store_true', 
+    parser.add_argument('-v', '--verbose', action='store_true',
                         help='verbose output')
-    
+    parser.add_argument('--report-unparsed',
+                        help='file to save unparsed cards to')
+
     args = parser.parse_args()
-    main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding, 
-         nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel, 
-         stable = args.stable)
+    main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
+         nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
+         stable = args.stable, report_file = args.report_unparsed)
     exit(0)
