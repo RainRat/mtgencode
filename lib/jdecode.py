@@ -153,7 +153,11 @@ def mtg_open_file(fname, verbose = False,
                     print(card.name)
                     unparsed += 1
                     if report_fobj:
-                        report_fobj.write(json.dumps(jcards, indent=2))
+                        unparsed_card_repr = {
+                            "name": card.name,
+                            "fields": jcards[idx]
+                        }
+                        report_fobj.write(json.dumps(unparsed_card_repr, indent=2))
 
     # fall back to opening a normal encoded file
     else:

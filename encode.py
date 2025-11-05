@@ -9,10 +9,11 @@ import random
 import utils
 import jdecode
 import cardlib
+from tqdm import tqdm
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, randomize = False, nolabel = False, stable = False,
-         report_file=None):
+         report_file=None, quiet=False):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
     fieldsep = utils.fieldsep
@@ -68,7 +69,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         random.shuffle(cards)
 
     def writecards(writer):
-        for card in cards:
+        for card in tqdm(cards, disable=quiet):
             if encoding in ['vec']:
                 writer.write(card.vectorize() + '\n\n')
             else:
@@ -113,11 +114,13 @@ if __name__ == '__main__':
                         help="don't randomize the order of the cards")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='verbose output')
+    parser.add_argument('-q', '--quiet', action='store_true',
+                        help='suppress progress bar')
     parser.add_argument('--report-unparsed',
                         help='file to save unparsed cards to')
 
     args = parser.parse_args()
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
-         stable = args.stable, report_file = args.report_unparsed)
+         stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet)
     exit(0)
