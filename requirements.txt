@@ -1,3 +1,6 @@
 pytest
 nltk
 tqdm
+numpy
+scipy
+titlecase

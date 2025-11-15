@@ -580,6 +580,29 @@ class Card:
     def encode(self, fmt_ordered = fmt_ordered_default, fmt_labeled = fmt_labeled_default, 
                fieldsep = utils.fieldsep, initial_sep = True, final_sep = True,
                randomize_fields = False, randomize_mana = False, randomize_lines = False):
+        """Encodes the card data into a string format suitable for machine learning.
+
+        Args:
+            fmt_ordered (list, optional): The order of fields in the output string.
+                Defaults to fmt_ordered_default.
+            fmt_labeled (dict, optional): A dictionary mapping field names to labels.
+                Defaults to fmt_labeled_default.
+            fieldsep (str, optional): The separator to use between fields.
+                Defaults to utils.fieldsep.
+            initial_sep (bool, optional): Whether to add a separator at the beginning of the string.
+                Defaults to True.
+            final_sep (bool, optional): Whether to add a separator at the end of the string.
+                Defaults to True.
+            randomize_fields (bool, optional): Whether to randomize the order of fields.
+                Defaults to False.
+            randomize_mana (bool, optional): Whether to randomize the order of mana symbols.
+                Defaults to False.
+            randomize_lines (bool, optional): Whether to randomize the order of lines in the text.
+                Defaults to False.
+
+        Returns:
+            str: The encoded card data.
+        """
         outfields = []
 
         for field in fmt_ordered:
@@ -629,6 +652,21 @@ class Card:
         return outstr
 
     def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False):
+        """Formats the card data into a human-readable string.
+
+        Args:
+            gatherer (bool, optional): Whether to emulate the Gatherer visual spoiler.
+                Defaults to False.
+            for_forum (bool, optional): Whether to use pretty mana encoding for mtgsalvation forum.
+                Defaults to False.
+            vdump (bool, optional): Whether to dump out lots of information about invalid cards.
+                Defaults to False.
+            for_html (bool, optional): Whether to create a .html file with pretty forum formatting.
+                Defaults to False.
+
+        Returns:
+            str: The formatted card data.
+        """
         linebreak = '\n'
         if for_html:
             linebreak = '<hr>' + linebreak
@@ -762,6 +800,17 @@ class Card:
         return outstr
     
     def to_mse(self, print_raw = False, vdump = False):
+        """Formats the card data into a string suitable for Magic Set Editor.
+
+        Args:
+            print_raw (bool, optional): Whether to print the raw card data.
+                Defaults to False.
+            vdump (bool, optional): Whether to dump out lots of information about invalid cards.
+                Defaults to False.
+
+        Returns:
+            str: The formatted card data.
+        """
         outstr = ''
 
         # need a 'card' string first
@@ -926,6 +975,11 @@ class Card:
         return outstr
 
     def vectorize(self):
+        """Vectorizes the card data into a string format suitable for machine learning.
+
+        Returns:
+            str: The vectorized card data.
+        """
         ld = '('
         rd = ')'
         outstr = ''
