@@ -76,7 +76,7 @@ class Manacost:
                     self.cmc += 1
                 else:
                     old_idx = idx
-                    for symlen in range(utils.mana_symlen_min, utils.mana_symlen_max + 1):
+                    for symlen in range(utils.mana_symlen_max, utils.mana_symlen_min - 1, -1):
                         encoded_sym = self.inner[idx:idx+symlen]
                         if encoded_sym in utils.mana_symall_decode:
                             idx += symlen

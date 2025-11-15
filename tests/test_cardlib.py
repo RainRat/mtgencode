@@ -82,7 +82,7 @@ def test_card_format(sample_card_json):
     # Test with gatherer=True
     gatherer_output = card.format(gatherer=True)
     expected_gatherer_output = (
-        "Ornithopter {0} (Uncommon)\n"
+        "Ornithopter {0} (uncommon)\n"
         "Artifact Creature ~ Thopter (0/2)\n"
         "Flying"
     )
