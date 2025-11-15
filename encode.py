@@ -117,7 +117,12 @@ if __name__ == '__main__':
     parser.add_argument('-q', '--quiet', action='store_true',
                         help='suppress progress bar')
     parser.add_argument('--report-unparsed',
-                        help='file to save unparsed cards to')
+                        help='''file to save unparsed cards to.
+                        This option is used to report cards that could not be parsed.
+                        For example, you can use it like this:
+                        --report-unparsed unparsed_cards.json
+                        The output file will contain the JSON representation of the unparsed cards.
+                        ''')
 
     args = parser.parse_args()
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,

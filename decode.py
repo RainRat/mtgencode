@@ -161,40 +161,25 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     # Sorting by colors
     def sort_colors(card_set):
-        # Initialize sections
-        red_cards = []
-        blue_cards = []
-        green_cards = []
-        black_cards = []
-        white_cards = []
-        multi_cards = []
-        colorless_cards = []
-        lands = []
+        colors = {
+            'W': [], 'U': [], 'B': [], 'R': [], 'G': [],
+            'multi': [], 'colorless': [], 'lands': []
+        }
+
         for card in card_set:
-            if len(card.get_colors())>1:
-                multi_cards += [card]
-                continue
-            if 'R' in card.get_colors():
-                red_cards += [card]
-                continue
-            elif 'U' in card.get_colors():
-                blue_cards += [card]
-                continue
-            elif 'B' in card.get_colors():
-                black_cards += [card]
-                continue
-            elif 'G' in card.get_colors():
-                green_cards += [card]
-                continue
-            elif 'W' in card.get_colors():
-                white_cards += [card]
-                continue
+            card_colors = card.get_colors()
+            if len(card_colors) > 1:
+                colors['multi'].append(card)
+            elif len(card_colors) == 1:
+                colors[card_colors[0]].append(card)
             else:
                 if "land" in card.get_types():
-                    lands += [card]
-                    continue
-                colorless_cards += [card]
-        return[white_cards, blue_cards, black_cards, red_cards, green_cards, multi_cards, colorless_cards, lands]
+                    colors['lands'].append(card)
+                else:
+                    colors['colorless'].append(card)
+
+        return [colors['W'], colors['U'], colors['B'], colors['R'], colors['G'],
+                colors['multi'], colors['colorless'], colors['lands']]
 
     def sort_type(card_set):
         sorting = ["creature", "enchantment", "instant", "sorcery", "artifact", "planeswalker"]
