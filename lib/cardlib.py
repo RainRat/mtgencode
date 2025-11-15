@@ -163,15 +163,30 @@ def fields_check_valid(fields):
         return False
     # creatures and vehicles have p/t, other things don't
     iscreature = False
+    isartifact = False
     for idx, value in fields[field_types]:
         if 'creature' in value:
             iscreature = True
+        if 'artifact' in value:
+            isartifact = True
         elif field_subtypes in fields:
             for idx, value in fields[field_subtypes]:
                 if 'vehicle' in value:
                     iscreature = True
+
+    text = ''
+    if field_text in fields:
+        for idx, value in fields[field_text]:
+            text += value.text
+
     if iscreature:
         return field_pt in fields
+    # Station cards can become creatures
+    elif isartifact and 'station' in text:
+        return True
+    # Planeswalkers don't have p/t
+    elif 'planeswalker' in fields[field_types][0][1]:
+        return True
     else:
         return not field_pt in fields
 
@@ -293,6 +308,8 @@ def fields_from_json(src_json, linetrans = True):
     # similarly, return the actual Manatext object
     if 'text' in src_json:
         text_val = src_json['text'].lower()
+        if 'station' in text_val:
+            text_val = re.sub(r'station\s*\d+\+*', 'station', text_val)
         text_val = transforms.text_pass_1_strip_rt(text_val)
         text_val = transforms.text_pass_2_cardname(text_val, name_orig)
         text_val = transforms.text_pass_3_unary(text_val)

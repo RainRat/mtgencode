@@ -54,10 +54,16 @@ rarity_basic_land_marker = config.rarity_basic_land_marker
 
 json_rarity_map = {
     'Common' : rarity_common_marker,
+    'common' : rarity_common_marker,
     'Uncommon' : rarity_uncommon_marker,
+    'uncommon' : rarity_uncommon_marker,
     'Rare' : rarity_rare_marker,
+    'rare' : rarity_rare_marker,
     'Mythic Rare' : rarity_mythic_marker,
+    'Mythic' : rarity_mythic_marker,
+    'mythic' : rarity_mythic_marker,
     'Special' : rarity_special_marker,
+    'special' : rarity_special_marker,
     'Basic Land' : rarity_basic_land_marker,
 }
 json_rarity_unmap = {json_rarity_map[k] : k for k in json_rarity_map}
@@ -190,6 +196,15 @@ mana_GU = 'GU'
 mana_BR = 'BR'
 mana_BG = 'BG'
 mana_RG = 'RG'
+mana_GWP = 'GWP'
+mana_RGP = 'RGP'
+mana_RWP = 'RWP'
+mana_GUP = 'GUP'
+mana_CW = 'CW'
+mana_CU = 'CU'
+mana_CB = 'CB'
+mana_CR = 'CR'
+mana_CG = 'CG'
 # alternative order symbols
 mana_WP_alt = 'PW' # single color phyrexian
 mana_UP_alt = 'PU'
@@ -246,6 +261,15 @@ mana_syms = [
     mana_BR,
     mana_BG,
     mana_RG,
+    mana_GWP,
+    mana_RGP,
+    mana_RWP,
+    mana_GUP,
+    mana_CW,
+    mana_CU,
+    mana_CB,
+    mana_CR,
+    mana_CG,
 ]
 mana_symalt = [
     mana_WP_alt,
@@ -295,6 +319,9 @@ def mana_sym_to_json(sym):
         raise ValueError('invalid mana symbol for mana_sym_to_json(): ' + repr(sym))
     if len(sym) < 2:
         return mana_json_open_delimiter + sym + mana_json_close_delimiter
+    elif len(sym) > 2:
+        return (mana_json_open_delimiter + sym[0] + mana_json_hybrid_delimiter
+                + sym[1] + mana_json_hybrid_delimiter + sym[2] + mana_json_close_delimiter)
     else:
         return (mana_json_open_delimiter + sym[0] + mana_json_hybrid_delimiter
                 + sym[1] + mana_json_close_delimiter)
@@ -422,7 +449,7 @@ def mana_untranslate(manastr, for_forum = False, for_html = False):
             colorless_total += 1
         else:
             old_idx = idx
-            for symlen in range(mana_symlen_min, mana_symlen_max + 1):
+            for symlen in range(mana_symlen_max, mana_symlen_min - 1, -1):
                 sym = inner[idx:idx+symlen]
                 if sym in mana_symall_decode:
                     idx += symlen
