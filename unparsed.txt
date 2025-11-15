@@ -23,7 +23,7 @@
       "W"
     ],
     "convertedManaCost": 4.0,
-    "edhrecRank": 5705,
+    "edhrecRank": 5755,
     "edhrecSaltiness": 0.29,
     "finishes": [
       "nonfoil",
@@ -233,68 +233,6 @@
     "magicCardsInfoCode": ""
   }
 }{
-  "name": "aswan jaguar",
-  "fields": {
-    "artist": "Pat Lewis",
-    "artistIds": [
-      "3130411f-ddd5-4cab-a2f4-0a9c3b95a26e"
-    ],
-    "availability": [
-      "shandalar"
-    ],
-    "borderColor": "black",
-    "colorIdentity": [
-      "G"
-    ],
-    "colors": [
-      "G"
-    ],
-    "convertedManaCost": 3.0,
-    "finishes": [
-      "nonfoil"
-    ],
-    "foreignData": [],
-    "frameVersion": "1997",
-    "hasFoil": false,
-    "hasNonFoil": true,
-    "identifiers": {
-      "mtgjsonV4Id": "e8826f0c-962e-51a5-ae0f-7d3c3690fb94",
-      "scryfallCardBackId": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-      "scryfallId": "76fab0bc-abc0-4e9f-ae06-b7d748cb073d",
-      "scryfallIllustrationId": "5fd55524-5cdc-4a17-b907-e8e594567a1c",
-      "scryfallOracleId": "9ab97610-76ad-4631-825e-8596dc9cfd4c"
-    },
-    "isOnlineOnly": true,
-    "isStarter": true,
-    "language": "English",
-    "layout": "normal",
-    "legalities": {},
-    "manaCost": "{1}{G}{G}",
-    "manaValue": 3.0,
-    "name": "Aswan Jaguar",
-    "number": "1",
-    "power": "2",
-    "printings": [
-      "PAST",
-      "PMIC"
-    ],
-    "purchaseUrls": {},
-    "rarity": "common",
-    "setCode": "PAST",
-    "subtypes": [],
-    "supertypes": [],
-    "text": "When Aswan Jaguar comes into play, choose a random creature type from those in target opponent's deck.\n{G}{G}, {T}: Bury target creature of the chosen type.",
-    "toughness": "2",
-    "type": "Summon Jaguar",
-    "types": [
-      "Summon",
-      "Jaguar"
-    ],
-    "uuid": "d5ea3e37-a6a9-5ff1-8216-58b0ece03a4c",
-    "setName": "Astral Cards",
-    "magicCardsInfoCode": ""
-  }
-}{
   "name": "atmospheric greenhouse",
   "fields": {
     "artist": "Sergey Glushakov",
@@ -317,13 +255,59 @@
       "G"
     ],
     "convertedManaCost": 5.0,
-    "edhrecRank": 15366,
+    "edhrecRank": 15140,
     "edhrecSaltiness": 0.14,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "92084f8c-a87e-4087-bbd9-bb43675cd8d9"
+        },
+        "language": "German",
+        "name": "Atmosph\u00e4risches Gew\u00e4chshaus",
+        "text": "When this Spacecraft enters, put a +1/+1 counter on each creature you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying, trample",
+        "uuid": "f81e3733-f887-5e97-a9c8-725cefc76744"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "bfb644d7-251c-4744-95f5-82db1f3b4ec3"
+        },
+        "language": "Spanish",
+        "name": "Invernadero atmosf\u00e9rico",
+        "text": "When this Spacecraft enters, put a +1/+1 counter on each creature you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying, trample",
+        "uuid": "4055034a-dc20-5466-a3c9-e971510037c3"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "caa93c2c-3812-44eb-9b69-221c3535ad73"
+        },
+        "language": "French",
+        "name": "Serre atmosph\u00e9rique",
+        "text": "When this Spacecraft enters, put a +1/+1 counter on each creature you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying, trample",
+        "uuid": "177db86d-a413-5330-8b58-4ec53b351242"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "7e0d7402-5979-41c8-ace1-021d56217a68"
+        },
+        "language": "Italian",
+        "name": "Serra Atmosferica",
+        "text": "When this Spacecraft enters, put a +1/+1 counter on each creature you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying, trample",
+        "uuid": "55b49ac3-7740-5d23-84dd-d1b2a6086986"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "56c2c6a0-beaf-4324-b6fc-a2122e8e9b61"
+        },
+        "language": "Japanese",
+        "name": "\u5927\uff08\u305f\u3044\uff09\u6c17\uff08\u304d\uff09\u6e29\uff08\u304a\u3093\uff09\u5ba4\uff08\u3057\u3064\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "When this Spacecraft enters, put a +1/+1 counter on each creature you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying, trample",
+        "uuid": "c619b3cf-b0a0-5c0c-8cba-7273708b01ae"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -381,6 +365,60 @@
       "tcgplayer": "https://mtgjson.com/links/7d8df3b88f9fc889"
     },
     "rarity": "uncommon",
+    "rulings": [
+      {
+        "date": "2025-07-25",
+        "text": "A station card is a card with the station keyword ability. The station keyword means \u201cTap another untapped creature you control: Put a number of charge counters on this permanent equal to the tapped creature\u2019s power. Activate only as a sorcery.\u201d"
+      },
+      {
+        "date": "2025-07-25",
+        "text": "Each station card has one or more striations in its text box. Each striation is preceded by a station symbol\u2014a circle surrounding a number and a plus sign."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "Each station symbol represents an ability. A station symbol means \u201cAs long as this permanent has N or more charge counters on it, it has [abilities],\u201d where N is the number inside the symbol and [abilities] are all the abilities found inside the same striation as that symbol."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "Even if a permanent with station has equal or greater charge counters than the number in its last station symbol, you can still activate its station ability. Adding more charge counters won\u2019t give it additional abilities, but other effects or cards might make those extra counters relevant."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "If a permanent with station becomes a creature, it will be able to attack if it\u2019s been under your control continuously since the turn began. That is, it doesn\u2019t matter how long it\u2019s been a creature, just how long it\u2019s been on the battlefield."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "If a station card has a power and toughness box printed in one of the striations in its text box, it\u2019s not a creature unless it has the appropriate number of charge counters on it. That card also doesn\u2019t have that power and toughness in any zone other than the battlefield."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "If an effect causes a permanent with station to become a creature by some means other than having the appropriate number of charge counters on it, it won\u2019t use any power and toughness values printed in its text box. Instead, it will use whatever base power and toughness was set by the effect that made it a creature."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "If another permanent becomes a copy of a permanent represented by a station card, all of its printed abilities, including the ones represented by station symbols, are copied. Its current characteristics and the number of charge counters on it are not copied. The abilities (and in some cases, types, power, and toughness) are determined based on the number of charge counters on the copy."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "If that station symbol is in the same striation as a power and toughness box, it instead means \u201cAs long as this permanent has N or more charge counters on it, it has [abilities] and is a creature with base power and toughness [P/T] in addition to its other types.\u201d"
+      },
+      {
+        "date": "2025-07-25",
+        "text": "If the tapped creature has negative power, no charge counters are put onto or removed from the permanent with station."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "Spacecraft is an artifact type with no special meaning. It doesn\u2019t grant the artifact any intrinsic abilities. Other cards may care about which artifacts are Spacecraft."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "The abilities of a permanent with station are based on the number of charge counters it has. This means that if a permanent with station gets charge counters due to some other effect (such as proliferate) or loses charge counters somehow, its abilities change accordingly. The same is true for determining whether or not that permanent is a creature."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "Use the tapped creature\u2019s power as the station ability resolves to determine how many charge counters to put on the permanent with station. If that creature isn\u2019t on the battlefield at that time, use its power as it last existed on the battlefield."
+      }
+    ],
     "setCode": "EOE",
     "sourceProducts": {
       "foil": [
@@ -407,109 +445,6 @@
     "magicCardsInfoCode": ""
   }
 }{
-  "name": "boulder jockey",
-  "fields": {
-    "artist": "Marika Lord",
-    "artistIds": [
-      "aee368ad-c274-453a-9690-1384f30b4bf8"
-    ],
-    "availability": [
-      "paper"
-    ],
-    "borderColor": "black",
-    "colorIdentity": [
-      "R"
-    ],
-    "colors": [
-      "R"
-    ],
-    "convertedManaCost": 3.0,
-    "finishes": [
-      "nonfoil"
-    ],
-    "foreignData": [],
-    "frameVersion": "2015",
-    "hasFoil": false,
-    "hasNonFoil": true,
-    "identifiers": {
-      "cardKingdomId": "301234",
-      "cardsphereId": "129251",
-      "deckboxId": "95378",
-      "mtgjsonV4Id": "5f86caee-ef30-50ce-ae89-9ae0950614a9",
-      "multiverseId": "677616",
-      "scryfallCardBackId": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-      "scryfallId": "fb089ab0-3d40-4d5c-beba-6251d1591ffe",
-      "scryfallIllustrationId": "9f35fe44-d811-4d0a-b97b-cf59a4303cfb",
-      "scryfallOracleId": "e8b11347-69ea-4703-9625-c998b45a198a",
-      "tcgplayerProductId": "564013"
-    },
-    "language": "English",
-    "layout": "normal",
-    "legalities": {},
-    "manaCost": "{2}{R}{D}",
-    "manaValue": 3.0,
-    "name": "Boulder Jockey",
-    "number": "560",
-    "originalText": "(D is a land drop. You may give up one potential land drop this turn to pay for D.)\nWhenever Boulder Jockey attacks, you may pay D. If you do, create a 3/3 colorless Construct artifact creature token named Boulder that's tapped and attacking. Sacrifice that token at the beginning of the next end step.",
-    "power": "4",
-    "printings": [
-      "MB2"
-    ],
-    "promoTypes": [
-      "playtest"
-    ],
-    "purchaseUrls": {
-      "cardKingdom": "https://mtgjson.com/links/8a328005a4b25569",
-      "tcgplayer": "https://mtgjson.com/links/be3516dbc755119f"
-    },
-    "rarity": "rare",
-    "rulings": [
-      {
-        "date": "2024-11-08",
-        "text": "For many playtest cards, you\u2019ll need to make a generous assumption that basic game rules would be updated to allow them to work. The Mystery Booster 2 Playtest Card Notes section (reproduced here in individual Gatherer rulings) provides guidance for fitting these cards into the existing rules structure."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Playtest cards aren\u2019t legal for play in any tournament format other than\u00a0Mystery Booster\u00a0Limited formats. On the other hand, we expect they will spice up a wide variety of non-tournament games (as long as everyone\u2019s on the same page about using them!)."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Playtest cards use a modified version of game symbols, such as {T} and {W}. These modified symbols should be treated as the standard symbols during play."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "To determine how many land drops you have remaining this turn, compare the number of lands you can play (which is normally one but can be increased by other effects) with the number of lands you\u2019ve played and land drops you\u2019ve given up this turn. If the number of lands you can play is greater, you can play a land or give up a land drop. You can\u2019t give up a land drop you don\u2019t have."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "You can never pay for {D} when it\u2019s not your turn."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "{D} represents an additional cost, not a mana symbol. {D} can be paid for by giving up one potential land play you have remaining this turn. Boulder Jockey\u2019s mana value is 3."
-      }
-    ],
-    "setCode": "MB2",
-    "sourceProducts": {
-      "nonfoil": [
-        "1db93605-0a4e-5e5b-80a2-18a6e177f51d"
-      ]
-    },
-    "subtypes": [
-      "Goblin"
-    ],
-    "supertypes": [],
-    "text": "({D} is a land drop. You may give up one potential land drop this turn to pay for {D}.)\nWhenever Boulder Jockey attacks, you may pay {D}. If you do, create a 3/3 colorless Construct artifact creature token named Boulder that's tapped and attacking. Sacrifice that token at the beginning of the next end step.",
-    "toughness": "4",
-    "type": "Creature \u2014 Goblin",
-    "types": [
-      "Creature"
-    ],
-    "uuid": "ceecaa84-de43-5514-954f-77e5ca48b8d9",
-    "setName": "Mystery Booster 2",
-    "magicCardsInfoCode": ""
-  }
-}{
   "name": "dawnsire, sunstar dreadnought",
   "fields": {
     "artist": "Jaime Jones",
@@ -528,13 +463,59 @@
     "colorIdentity": [],
     "colors": [],
     "convertedManaCost": 5.0,
-    "edhrecRank": 5649,
+    "edhrecRank": 5427,
     "edhrecSaltiness": 0.58,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "a21169d5-5416-4f2b-8b8a-b8008f6bb70e"
+        },
+        "language": "German",
+        "name": "Tagbringer, Sonnenstern-Schlachtschiff",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 20+.)\n10+ | Whenever you attack, Dawnsire deals 100 damage to up to one target creature or planeswalker.\n20+ | Flying",
+        "uuid": "fc82447b-bd9f-5bb9-9f9d-2d7fd11b0d42"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "44fb794c-3d83-4634-9445-318771b861b7"
+        },
+        "language": "Spanish",
+        "name": "Se\u00f1or del Alba, nao de Solestrella",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 20+.)\n10+ | Whenever you attack, Dawnsire deals 100 damage to up to one target creature or planeswalker.\n20+ | Flying",
+        "uuid": "6410a366-9b46-5162-8e9a-a3ae81c93948"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "adb48095-9f01-41ab-a537-2ab48e88981e"
+        },
+        "language": "French",
+        "name": "P\u00e8re de l'aube, cuirass\u00e9 de Sol\u00e9toile",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 20+.)\n10+ | Whenever you attack, Dawnsire deals 100 damage to up to one target creature or planeswalker.\n20+ | Flying",
+        "uuid": "e7ad4d98-87b3-533a-93ee-f67fff35629b"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "12eaa288-b354-46a0-b68b-3af681925ac1"
+        },
+        "language": "Italian",
+        "name": "Iperalba, Corazzata della Stella Madre",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 20+.)\n10+ | Whenever you attack, Dawnsire deals 100 damage to up to one target creature or planeswalker.\n20+ | Flying",
+        "uuid": "b1b942ee-49d7-5de5-9dcc-40653b10a85b"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "a52dc548-bd6f-4b64-bbee-6466b4dcf416"
+        },
+        "language": "Japanese",
+        "name": "\u30b5\u30f3\u30b9\u30bf\u30fc\u306e\u5f29\uff08\u3069\uff09\u7d1a\uff08\u304d\u3085\u3046\uff09\u8266\uff08\u304b\u3093\uff09\u3001\u30c9\u30fc\u30f3\u30b5\u30a4\u30a2\u30fc",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 20+.)\n10+ | Whenever you attack, Dawnsire deals 100 damage to up to one target creature or planeswalker.\n20+ | Flying",
+        "uuid": "4c43e5af-9bd9-5530-9abc-d2bfe3cf76fc"
+      }
+    ],
     "frameEffects": [
       "legendary"
     ],
@@ -654,13 +635,59 @@
       "R"
     ],
     "convertedManaCost": 5.0,
-    "edhrecRank": 18620,
+    "edhrecRank": 18549,
     "edhrecSaltiness": 0.23,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "a7358bf0-4da3-46da-be31-381e19c8fb9b"
+        },
+        "language": "German",
+        "name": "Tr\u00fcmmerfeld-Malmer",
+        "text": "When this Spacecraft enters, it deals 3 damage to any target.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying\n{1R}: This Spacecraft gets +2/+0 until end of turn.",
+        "uuid": "6692a806-6669-586e-8787-f5a635407366"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "bba44409-74c6-4306-939f-5e9367bef72b"
+        },
+        "language": "Spanish",
+        "name": "Trituradora de escombros",
+        "text": "When this Spacecraft enters, it deals 3 damage to any target.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying\n{1R}: This Spacecraft gets +2/+0 until end of turn.",
+        "uuid": "549859be-830d-5e76-9e02-dfc6ebe21383"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "01067216-524d-41e0-9b12-180b250f9108"
+        },
+        "language": "French",
+        "name": "\u00c9crabouilleur de champ de d\u00e9bris",
+        "text": "When this Spacecraft enters, it deals 3 damage to any target.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying\n{1R}: This Spacecraft gets +2/+0 until end of turn.",
+        "uuid": "5cc5fb1e-b13d-5c21-aa67-53f97745700d"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "0be6a5e1-10fe-4861-af08-dfd87c1ea3ee"
+        },
+        "language": "Italian",
+        "name": "Frantumatrice del Campo di Detriti",
+        "text": "When this Spacecraft enters, it deals 3 damage to any target.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying\n{1R}: This Spacecraft gets +2/+0 until end of turn.",
+        "uuid": "a2e2b692-c037-5bff-bdf3-a8e1b185560d"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "1bdf8ac0-e9dc-4c3e-8c4e-8ee441962c89"
+        },
+        "language": "Japanese",
+        "name": "\u30c7\u30d6\u30ea\u5b99\uff08\u3061\u3085\u3046\uff09\u57df\uff08\u3044\u304d\uff09\u306e\u7834\uff08\u306f\uff09\u7815\uff08\u3055\u3044\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "When this Spacecraft enters, it deals 3 damage to any target.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying\n{1R}: This Spacecraft gets +2/+0 until end of turn.",
+        "uuid": "0add803c-bbbe-5039-8299-c18614baa6fa"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -765,13 +792,59 @@
       "B"
     ],
     "convertedManaCost": 4.0,
-    "edhrecRank": 9790,
+    "edhrecRank": 9549,
     "edhrecSaltiness": 0.31,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "251315d8-dd43-4ba6-bbc6-37cf8eb918a1"
+        },
+        "language": "German",
+        "name": "Entropischer Schlachtkreuzer",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n1+ | Whenever an opponent discards a card, they lose 3 life.\n8+ | Flying, deathtouch\nWhenever this Spacecraft attacks, each opponent discards a card. Each opponent who can't loses 3 life.",
+        "uuid": "f2ddc5c9-1f8b-5413-82a8-0c9c17edeb53"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "69f32101-d4f4-4b3f-ba4b-208be0af48e4"
+        },
+        "language": "Spanish",
+        "name": "Crucero de batalla entr\u00f3pico",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n1+ | Whenever an opponent discards a card, they lose 3 life.\n8+ | Flying, deathtouch\nWhenever this Spacecraft attacks, each opponent discards a card. Each opponent who can't loses 3 life.",
+        "uuid": "e8b882ff-ffd3-543a-8034-2fac23c0096d"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "b0c637fd-2b9b-44e9-abc0-bdc0fde0ef54"
+        },
+        "language": "French",
+        "name": "Croiseur entropique",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n1+ | Whenever an opponent discards a card, they lose 3 life.\n8+ | Flying, deathtouch\nWhenever this Spacecraft attacks, each opponent discards a card. Each opponent who can't loses 3 life.",
+        "uuid": "265a2b04-2f59-57be-9e48-29a50da1ea2e"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "d6c39224-6c3c-4d95-8b95-f9bcae39df04"
+        },
+        "language": "Italian",
+        "name": "Incrociatore Entropico",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n1+ | Whenever an opponent discards a card, they lose 3 life.\n8+ | Flying, deathtouch\nWhenever this Spacecraft attacks, each opponent discards a card. Each opponent who can't loses 3 life.",
+        "uuid": "bc7919c5-58c5-55db-81a2-bb7c7656a80c"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "020a5ae7-6ebb-4968-904c-1544623b880b"
+        },
+        "language": "Japanese",
+        "name": "\u9ad8\uff08\u3053\u3046\uff09\u30a8\u30f3\u30c8\u30ed\u30d4\u30fc\u5de1\uff08\u3058\u3085\u3093\uff09\u6d0b\uff08\u3088\u3046\uff09\u6226\uff08\u305b\u3093\uff09\u8266\uff08\u304b\u3093\uff09",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n1+ | Whenever an opponent discards a card, they lose 3 life.\n8+ | Flying, deathtouch\nWhenever this Spacecraft attacks, each opponent discards a card. Each opponent who can't loses 3 life.",
+        "uuid": "f9e5a838-acc3-58a2-8a2c-f1304cd993db"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -879,12 +952,58 @@
       "G"
     ],
     "convertedManaCost": 1.0,
-    "edhrecRank": 3627,
+    "edhrecRank": 3436,
     "edhrecSaltiness": 0.32,
     "finishes": [
       "nonfoil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "4a85eca8-2c44-4e15-9cb6-53b4b3bfe3e4"
+        },
+        "language": "German",
+        "name": "Erkundungs-Brutschiff",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n3+ | You may play an additional land on each of your turns.\n8+ | Flying\nOnce during each of your turns, you may cast a permanent spell from your graveyard by sacrificing a land in addition to paying its other costs.",
+        "uuid": "1d2f7916-292f-5ed1-b090-ed764629c9ca"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "da964e0a-f600-49f1-baad-b37b4e4296d7"
+        },
+        "language": "Spanish",
+        "name": "Progenave exploradora",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n3+ | You may play an additional land on each of your turns.\n8+ | Flying\nOnce during each of your turns, you may cast a permanent spell from your graveyard by sacrificing a land in addition to paying its other costs.",
+        "uuid": "a8c1f5dd-474f-5ccb-af43-adb348fc1782"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "9e5984bf-5382-4034-80f1-381c44e08f53"
+        },
+        "language": "French",
+        "name": "Vaisseau-couv\u00e9e d'exploration",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n3+ | You may play an additional land on each of your turns.\n8+ | Flying\nOnce during each of your turns, you may cast a permanent spell from your graveyard by sacrificing a land in addition to paying its other costs.",
+        "uuid": "dfea623d-c227-55c1-a597-70abb10f5621"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "44bbe829-4d4a-4bd0-9f1d-c1e3151a9585"
+        },
+        "language": "Italian",
+        "name": "Nave Nidiata da Esplorazione",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n3+ | You may play an additional land on each of your turns.\n8+ | Flying\nOnce during each of your turns, you may cast a permanent spell from your graveyard by sacrificing a land in addition to paying its other costs.",
+        "uuid": "bb33257a-852e-51dd-8ae3-c180d265682c"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "06c4c0e1-688f-43c5-bdc4-bb503d3f5f12"
+        },
+        "language": "Japanese",
+        "name": "\u63a2\uff08\u305f\u3093\uff09\u67fb\uff08\u3055\uff09\u5e7c\uff08\u3088\u3046\uff09\u751f\uff08\u305b\u3044\uff09\u8266\uff08\u304b\u3093\uff09",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n3+ | You may play an additional land on each of your turns.\n8+ | Flying\nOnce during each of your turns, you may cast a permanent spell from your graveyard by sacrificing a land in addition to paying its other costs.",
+        "uuid": "40062c77-1f9f-5d92-b6e1-4b2b4beca00b"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": false,
     "hasNonFoil": true,
@@ -928,6 +1047,12 @@
       "tcgplayer": "https://mtgjson.com/links/f50da143a1cc2256"
     },
     "rarity": "rare",
+    "rulings": [
+      {
+        "date": "2025-07-25",
+        "text": "You pay all costs and follow all timing rules for cards cast with the permission granted by Exploration Broodship\u2019s last ability. For example, you may cast a creature spell from your graveyard only during your main phase while the stack is empty."
+      }
+    ],
     "securityStamp": "oval",
     "setCode": "EOC",
     "sourceProducts": {
@@ -971,13 +1096,59 @@
     "colorIdentity": [],
     "colors": [],
     "convertedManaCost": 8.0,
-    "edhrecRank": 7309,
+    "edhrecRank": 7109,
     "edhrecSaltiness": 0.29,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "e103b35a-28be-4c32-b2d6-40c0f6e22726"
+        },
+        "language": "German",
+        "name": "Ausl\u00f6scher-Schlachtschiff",
+        "text": "When this Spacecraft enters, destroy target noncreature permanent. Then this Spacecraft deals 4 damage to each creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 5+.)\n5+ | Flying, trample",
+        "uuid": "9a7ba6b9-3f54-56c8-86f6-210c7bf30503"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "bcc2a073-1991-4cba-9e15-c353d9526127"
+        },
+        "language": "Spanish",
+        "name": "Acorazado extintor",
+        "text": "When this Spacecraft enters, destroy target noncreature permanent. Then this Spacecraft deals 4 damage to each creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 5+.)\n5+ | Flying, trample",
+        "uuid": "952300eb-8287-53d9-9e4a-51a739243cb3"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "a7236b48-e6bd-454c-b3fb-6b10df2cb066"
+        },
+        "language": "French",
+        "name": "Vaisseau de combat extincteur",
+        "text": "When this Spacecraft enters, destroy target noncreature permanent. Then this Spacecraft deals 4 damage to each creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 5+.)\n5+ | Flying, trample",
+        "uuid": "b5ffc0a3-6d4d-5cbf-beb5-52930d7da3a4"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "3f13469c-8800-40b5-8238-8a1f66446a41"
+        },
+        "language": "Italian",
+        "name": "Corazzata Polverizzante",
+        "text": "When this Spacecraft enters, destroy target noncreature permanent. Then this Spacecraft deals 4 damage to each creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 5+.)\n5+ | Flying, trample",
+        "uuid": "0389bc37-b3f6-52b7-b574-a26c0281494b"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "7ef92f1f-fbc5-41fa-9d1e-966e4694aacd"
+        },
+        "language": "Japanese",
+        "name": "\u6bb2\uff08\u305b\u3093\uff09\u6ec5\uff08\u3081\u3064\uff09\u6226\uff08\u305b\u3093\uff09\u8266\uff08\u304b\u3093\uff09",
+        "text": "When this Spacecraft enters, destroy target noncreature permanent. Then this Spacecraft deals 4 damage to each creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 5+.)\n5+ | Flying, trample",
+        "uuid": "aaeb90a0-6e1f-5669-91ee-cc9cc80d37e3"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -1036,6 +1207,12 @@
       "tcgplayer": "https://mtgjson.com/links/81e4c33f0f651d8c"
     },
     "rarity": "rare",
+    "rulings": [
+      {
+        "date": "2025-07-25",
+        "text": "If the target permanent is an illegal target as Extinguisher Battleship\u2019s first ability tries to resolve, it won\u2019t resolve and none of its effects will happen. No creatures will be dealt damage."
+      }
+    ],
     "securityStamp": "oval",
     "setCode": "EOE",
     "sourceProducts": {
@@ -1066,70 +1243,6 @@
     "magicCardsInfoCode": ""
   }
 }{
-  "name": "faerie dragon",
-  "fields": {
-    "artist": "N\u00e9N\u00e9 Thomas",
-    "artistIds": [
-      "c74ef1dd-0341-44c4-8f9f-5f243151cce3"
-    ],
-    "availability": [
-      "shandalar"
-    ],
-    "borderColor": "black",
-    "colorIdentity": [
-      "G"
-    ],
-    "colors": [
-      "G"
-    ],
-    "convertedManaCost": 4.0,
-    "finishes": [
-      "nonfoil"
-    ],
-    "foreignData": [],
-    "frameVersion": "1997",
-    "hasFoil": false,
-    "hasNonFoil": true,
-    "identifiers": {
-      "mtgjsonV4Id": "ccf39f75-d6c7-5e9e-811c-6007750b0313",
-      "scryfallCardBackId": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-      "scryfallId": "3e8a5cc8-5565-4372-bdfe-a82d672b644c",
-      "scryfallIllustrationId": "f4c01adf-4603-4dc6-a5cb-80c32a671676",
-      "scryfallOracleId": "412da1dc-83dc-4cf7-8135-98f729f67ef1"
-    },
-    "isOnlineOnly": true,
-    "isStarter": true,
-    "keywords": [
-      "Flying"
-    ],
-    "language": "English",
-    "layout": "normal",
-    "legalities": {},
-    "manaCost": "{2}{G}{G}",
-    "manaValue": 4.0,
-    "name": "Faerie Dragon",
-    "number": "3",
-    "power": "1",
-    "printings": [
-      "PAST"
-    ],
-    "purchaseUrls": {},
-    "rarity": "common",
-    "setCode": "PAST",
-    "subtypes": [],
-    "supertypes": [],
-    "text": "Flying\n{1}{G}{G}: Play a random effect.",
-    "toughness": "3",
-    "type": "Summon Dragon",
-    "types": [
-      "Summon",
-      "Dragon"
-    ],
-    "uuid": "4904b7e5-19df-5d3f-8d01-f7f14afa2c94",
-    "setName": "Astral Cards",
-    "magicCardsInfoCode": ""
-  }
-}{
   "name": "fell gravship",
   "fields": {
     "artist": "David \u00c1lvarez",
@@ -1152,13 +1265,59 @@
       "B"
     ],
     "convertedManaCost": 3.0,
-    "edhrecRank": 15630,
+    "edhrecRank": 15501,
     "edhrecSaltiness": 0.1,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "ed5bf22c-f544-48cf-b600-8b1b6af0336b"
+        },
+        "language": "German",
+        "name": "Todbringendes Grav-Schiff",
+        "text": "When this Spacecraft enters, mill three cards, then return a creature or Spacecraft card from your graveyard to your hand.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying, lifelink",
+        "uuid": "582b56de-fe5b-5ebe-ab89-2574a4585390"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "549be7bc-f018-4de8-a68d-da6f0e333b46"
+        },
+        "language": "Spanish",
+        "name": "Gravinave yermadora",
+        "text": "When this Spacecraft enters, mill three cards, then return a creature or Spacecraft card from your graveyard to your hand.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying, lifelink",
+        "uuid": "e6fc6726-55dc-54a0-87c3-84d80827a057"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "f1807b57-8a6a-470f-a664-1d826b1044c6"
+        },
+        "language": "French",
+        "name": "Vaisseau gravitique pr\u00e9dateur",
+        "text": "When this Spacecraft enters, mill three cards, then return a creature or Spacecraft card from your graveyard to your hand.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying, lifelink",
+        "uuid": "cc7c82f2-62f8-56fe-b476-205896aef7e6"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "cff70f9b-af7b-4245-ab5a-a13cc70289ae"
+        },
+        "language": "Italian",
+        "name": "Gravitazionave Letale",
+        "text": "When this Spacecraft enters, mill three cards, then return a creature or Spacecraft card from your graveyard to your hand.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying, lifelink",
+        "uuid": "1fdead9f-c87c-5cd7-a2eb-801909264d3c"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "26ff0fb2-4ed8-4f8b-9108-aebb67cd904c"
+        },
+        "language": "Japanese",
+        "name": "\u4e0d\uff08\u3075\uff09\u5409\uff08\u304d\u3064\uff09\u306a\u5893\uff08\u307c\uff09\u6a19\uff08\u3072\u3087\u3046\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "When this Spacecraft enters, mill three cards, then return a creature or Spacecraft card from your graveyard to your hand.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying, lifelink",
+        "uuid": "6f67b6f6-7755-5947-9fb1-693df3838869"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -1244,112 +1403,6 @@
     "magicCardsInfoCode": ""
   }
 }{
-  "name": "flanking licid",
-  "fields": {
-    "artist": "Nikolai Maslakov",
-    "artistIds": [
-      "073f5a70-94f4-48d8-8286-74d2f312c7d3"
-    ],
-    "availability": [
-      "paper"
-    ],
-    "borderColor": "black",
-    "colorIdentity": [
-      "R"
-    ],
-    "colors": [
-      "R"
-    ],
-    "convertedManaCost": 2.0,
-    "finishes": [
-      "nonfoil"
-    ],
-    "foreignData": [],
-    "frameVersion": "2015",
-    "hasFoil": false,
-    "hasNonFoil": true,
-    "identifiers": {
-      "cardKingdomId": "301236",
-      "cardsphereId": "129148",
-      "deckboxId": "95380",
-      "mtgjsonV4Id": "5eaedb7e-fd4b-55d1-afc4-9595ab48ead6",
-      "multiverseId": "677618",
-      "scryfallCardBackId": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-      "scryfallId": "21bda5a9-4faf-4f7c-a04b-20934657f8ee",
-      "scryfallIllustrationId": "20b86a6b-1bbd-44f5-ae82-cababc4ff024",
-      "scryfallOracleId": "36596e3b-786c-40b7-94e7-333513e393ac",
-      "tcgplayerProductId": "564015"
-    },
-    "language": "English",
-    "layout": "normal",
-    "legalities": {},
-    "manaCost": "{1}{R}",
-    "manaValue": 2.0,
-    "name": "Flanking Licid",
-    "number": "562",
-    "originalText": "{R}, {T}: Flanking Licid loses this ability and becomes a creature enchantment that reads \"Enchanted creature gains flanking\" instead of a creature. Move Flanking Licid onto target creature. You may pay {R} to end this effect.",
-    "power": "1",
-    "printings": [
-      "MB2"
-    ],
-    "promoTypes": [
-      "playtest"
-    ],
-    "purchaseUrls": {
-      "cardKingdom": "https://mtgjson.com/links/db3fd37fa640f6a1",
-      "tcgplayer": "https://mtgjson.com/links/a99821de8963e400"
-    },
-    "rarity": "rare",
-    "rulings": [
-      {
-        "date": "2024-11-08",
-        "text": "Flanking means \u201cWhenever a creature without flanking blocks this creature, the blocking creature gets -1/-1 until end of turn.\u201d"
-      },
-      {
-        "date": "2024-11-08",
-        "text": "For many playtest cards, you\u2019ll need to make a generous assumption that basic game rules would be updated to allow them to work. The Mystery Booster 2 Playtest Card Notes section (reproduced here in individual Gatherer rulings) provides guidance for fitting these cards into the existing rules structure."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "If a creature gains flanking during combat, that has no effect on any creature already blocking it. A creature needs to already have flanking before blockers are declared in order for its flanking ability to trigger."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Paying {R} to end the effect is a special action and can\u2019t be responded to."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Playtest cards aren\u2019t legal for play in any tournament format other than\u00a0Mystery Booster\u00a0Limited formats. On the other hand, we expect they will spice up a wide variety of non-tournament games (as long as everyone\u2019s on the same page about using them!)."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Playtest cards use a modified version of game symbols, such as {T} and {W}. These modified symbols should be treated as the standard symbols during play."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "\u201cCreature enchantment\u201d here means \u201cAura enchantment with enchant creature.\u201d"
-      }
-    ],
-    "setCode": "MB2",
-    "sourceProducts": {
-      "nonfoil": [
-        "1db93605-0a4e-5e5b-80a2-18a6e177f51d"
-      ]
-    },
-    "subtypes": [],
-    "supertypes": [],
-    "text": "{R}, {T}: Flanking Licid loses this ability and becomes a creature enchantment that reads \"Enchanted creature gains flanking\" instead of a creature. Move Flanking Licid onto target creature. You may pay {R} to end this effect.",
-    "toughness": "1",
-    "type": "Summon Licid",
-    "types": [
-      "Summon",
-      "Licid"
-    ],
-    "uuid": "4fe40bbd-e35d-52b9-b25a-16a6bb013344",
-    "setName": "Mystery Booster 2",
-    "magicCardsInfoCode": ""
-  }
-}{
   "name": "galvanizing sawship",
   "fields": {
     "artist": "Constantin Marin",
@@ -1372,13 +1425,59 @@
       "R"
     ],
     "convertedManaCost": 6.0,
-    "edhrecRank": 18081,
+    "edhrecRank": 17964,
     "edhrecSaltiness": 0.06,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "1b933107-739f-4f4f-9036-e259a9fd9e62"
+        },
+        "language": "German",
+        "name": "Galvanisierendes S\u00e4geschiff",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 3+.)\n3+ | Flying, haste",
+        "uuid": "a2b6eb38-0292-5de0-b648-4440534eaee2"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "7e87db69-731a-441b-8c45-147a45d4a2d1"
+        },
+        "language": "Spanish",
+        "name": "Sierranave galvanizada",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 3+.)\n3+ | Flying, haste",
+        "uuid": "10267ddc-7d04-542d-8480-339233b829ed"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "05667d21-9311-44f3-89c3-9af6860fe9e4"
+        },
+        "language": "French",
+        "name": "Vaisseau \u00e0 scies zingant",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 3+.)\n3+ | Flying, haste",
+        "uuid": "bc3c98e2-f3eb-56ee-94d3-f5b43b3e986a"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "9f65fd45-5c78-4ce3-9967-0cc2199424b6"
+        },
+        "language": "Italian",
+        "name": "Cosmonave Dentellata Galvanizzante",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 3+.)\n3+ | Flying, haste",
+        "uuid": "10259ebc-71bb-5028-8c5f-926acebe9519"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "e33b2b60-5e0d-43cc-953f-bcd708a3b51e"
+        },
+        "language": "Japanese",
+        "name": "\u5e2f\uff08\u305f\u3044\uff09\u96fb\uff08\u3067\u3093\uff09\u92f8\uff08\u306e\u3053\u304e\u308a\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 3+.)\n3+ | Flying, haste",
+        "uuid": "d7fc925a-dca4-5f24-8ac7-bf5cc638cc18"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -1462,67 +1561,6 @@
     "magicCardsInfoCode": ""
   }
 }{
-  "name": "goblin polka band",
-  "fields": {
-    "artist": "Quinton Hoover",
-    "artistIds": [
-      "1a2db619-92a5-431a-822b-101cdcc5bd5d"
-    ],
-    "availability": [
-      "shandalar"
-    ],
-    "borderColor": "black",
-    "colorIdentity": [
-      "R"
-    ],
-    "colors": [
-      "R"
-    ],
-    "convertedManaCost": 2.0,
-    "finishes": [
-      "nonfoil"
-    ],
-    "foreignData": [],
-    "frameVersion": "1997",
-    "hasFoil": false,
-    "hasNonFoil": true,
-    "identifiers": {
-      "mtgjsonV4Id": "5d5ce360-f9f0-51de-9486-d6fcb95a18c1",
-      "scryfallCardBackId": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-      "scryfallId": "86419b05-8199-4137-86a2-b341ad380770",
-      "scryfallIllustrationId": "aec6067d-b479-4ae3-aecd-8fcb2323f523",
-      "scryfallOracleId": "ca1bc31a-2cb1-4630-8513-a68816938c8a"
-    },
-    "isOnlineOnly": true,
-    "isStarter": true,
-    "language": "English",
-    "layout": "normal",
-    "legalities": {},
-    "manaCost": "{R}{R}",
-    "manaValue": 2.0,
-    "name": "Goblin Polka Band",
-    "number": "4",
-    "power": "1",
-    "printings": [
-      "PAST"
-    ],
-    "purchaseUrls": {},
-    "rarity": "common",
-    "setCode": "PAST",
-    "subtypes": [],
-    "supertypes": [],
-    "text": "{2}, {T}, Pay {R} for each target: Tap any number of random target creatures. Goblins tapped in this way do not untap during their controllers' next untap phases.",
-    "toughness": "1",
-    "type": "Summon Goblin",
-    "types": [
-      "Summon",
-      "Goblin"
-    ],
-    "uuid": "0837763b-6181-5f83-9e59-5fb6e10a6e7a",
-    "setName": "Astral Cards",
-    "magicCardsInfoCode": ""
-  }
-}{
   "name": "hearthhull, the worldseed",
   "fields": {
     "artist": "Daniel Ljunggren",
@@ -1546,13 +1584,41 @@
       "R"
     ],
     "convertedManaCost": 4.0,
-    "edhrecRank": 5870,
+    "edhrecRank": 5706,
     "edhrecSaltiness": 0.46,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "14a1ce42-509e-4f41-82bc-0c06538c0ddb"
+        },
+        "language": "German",
+        "name": "Heimschiff, die Weltensaat",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n2+ | {1}, {T}, Sacrifice a land: Draw two cards. You may play an additional land this turn.\n8+ | Flying, vigilance, haste\nWhenever you sacrifice a land, each opponent loses 2 life.",
+        "uuid": "6ab5cc01-de61-5184-a450-7607d4cdef4f"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "72b263ed-0d04-4175-94fa-193ecef447db"
+        },
+        "language": "French",
+        "name": "Coquefoyer, la Semence de monde",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n2+ | {1}, {T}, Sacrifice a land: Draw two cards. You may play an additional land this turn.\n8+ | Flying, vigilance, haste\nWhenever you sacrifice a land, each opponent loses 2 life.",
+        "uuid": "59c59700-3d22-5dba-a588-6044b2b854c5"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "1bf8f946-5242-4a8d-bd63-1df2d76983fa"
+        },
+        "language": "Japanese",
+        "name": "\u4e16\uff08\u305b\uff09\u754c\uff08\u304b\u3044\uff09\u64ad\uff08\u306f\uff09\u7a2e\uff08\u3057\u3085\uff09\u3001\u30cf\u30fc\u30b9\u30cf\u30eb",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n2+ | {1}, {T}, Sacrifice a land: Draw two cards. You may play an additional land this turn.\n8+ | Flying, vigilance, haste\nWhenever you sacrifice a land, each opponent loses 2 life.",
+        "uuid": "7e6af70b-d6d2-5c9c-bdaa-a96b16da0a9b"
+      }
+    ],
     "frameEffects": [
       "inverted",
       "legendary"
@@ -1614,6 +1680,16 @@
       "tcgplayer": "https://mtgjson.com/links/7308ac1a22d73d84"
     },
     "rarity": "mythic",
+    "rulings": [
+      {
+        "date": "2025-07-25",
+        "text": "Hearthhull\u2019s second ability doesn\u2019t allow you to play lands on other players\u2019 turns."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "The effect of Hearthhull\u2019s second ability is cumulative with similar effects. For example, if you control Icetill Explorer and you activate Hearthhull\u2019s ability, you\u2019ll be able to play three lands on that turn."
+      }
+    ],
     "securityStamp": "oval",
     "setCode": "EOC",
     "sourceProducts": {
@@ -1671,13 +1747,59 @@
       "W"
     ],
     "convertedManaCost": 5.0,
-    "edhrecRank": 10987,
+    "edhrecRank": 10780,
     "edhrecSaltiness": 0.21,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "e7fd58a2-c348-47c7-9845-eb89e90736e3"
+        },
+        "language": "German",
+        "name": "Station Unendliche Richtlinie",
+        "text": "When Infinite Guideline Station enters, create a tapped 2/2 colorless Robot artifact creature token for each multicolored permanent you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n12+ | Flying\nWhenever Infinite Guideline Station attacks, draw a card for each multicolored permanent you control.",
+        "uuid": "1dde2856-6b5f-59ce-b0c6-38ddc512aaf4"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "6e52b311-3cab-4612-ab67-0b7c4ceaed27"
+        },
+        "language": "Spanish",
+        "name": "Estaci\u00f3n Gu\u00eda Infinita",
+        "text": "When Infinite Guideline Station enters, create a tapped 2/2 colorless Robot artifact creature token for each multicolored permanent you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n12+ | Flying\nWhenever Infinite Guideline Station attacks, draw a card for each multicolored permanent you control.",
+        "uuid": "f08a451f-554b-50f7-89ec-16a30ee38e1d"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "fa12f284-a485-4b12-b98b-3fd5619e22ee"
+        },
+        "language": "French",
+        "name": "Station de la R\u00e9glementation Infinie",
+        "text": "When Infinite Guideline Station enters, create a tapped 2/2 colorless Robot artifact creature token for each multicolored permanent you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n12+ | Flying\nWhenever Infinite Guideline Station attacks, draw a card for each multicolored permanent you control.",
+        "uuid": "918676ef-85a4-51af-b432-9c5797e8f77b"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "3b0194a7-3e6b-44f4-bdd8-ed62e8402d36"
+        },
+        "language": "Italian",
+        "name": "Stazione Guida dell'Infinito",
+        "text": "When Infinite Guideline Station enters, create a tapped 2/2 colorless Robot artifact creature token for each multicolored permanent you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n12+ | Flying\nWhenever Infinite Guideline Station attacks, draw a card for each multicolored permanent you control.",
+        "uuid": "4694e0b7-3d6e-5a31-8bf3-8d6b89569aaa"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "6b030271-84c5-47c1-9ddf-89505eac73e8"
+        },
+        "language": "Japanese",
+        "name": "\u7121\uff08\u3080\uff09\u9650\uff08\u3052\u3093\uff09\u5c0e\uff08\u3069\u3046\uff09\u7dda\uff08\u305b\u3093\uff09\u57fa\uff08\u304d\uff09\u5730\uff08\u3061\uff09",
+        "text": "When Infinite Guideline Station enters, create a tapped 2/2 colorless Robot artifact creature token for each multicolored permanent you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n12+ | Flying\nWhenever Infinite Guideline Station attacks, draw a card for each multicolored permanent you control.",
+        "uuid": "d5427fe8-2ce4-5b1c-98e4-938b5d8c062e"
+      }
+    ],
     "frameEffects": [
       "legendary"
     ],
@@ -1799,13 +1921,41 @@
       "W"
     ],
     "convertedManaCost": 3.0,
-    "edhrecRank": 6402,
+    "edhrecRank": 6223,
     "edhrecSaltiness": 0.44,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "f2f8baab-4776-4c8d-8b96-449d9d6d0b44"
+        },
+        "language": "German",
+        "name": "Beleberin, das Flaggschiff",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n1+ | At the beginning of combat on your turn, put your choice of a +1/+1 counter or two charge counters on up to one other target artifact.\n8+ | Flying\nOther artifacts you control have hexproof and indestructible.",
+        "uuid": "a5012be7-2dc2-5603-a0ec-c686961118ee"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "25bbe6d8-23a2-42dd-8057-6feb80e7eb9e"
+        },
+        "language": "French",
+        "name": "Exhortation, vaisseau amiral",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n1+ | At the beginning of combat on your turn, put your choice of a +1/+1 counter or two charge counters on up to one other target artifact.\n8+ | Flying\nOther artifacts you control have hexproof and indestructible.",
+        "uuid": "ef8491a0-a9c2-5a4c-820f-73e47fb73ba4"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "2b5a15bf-0084-4c02-832c-2d3b52abf692"
+        },
+        "language": "Japanese",
+        "name": "\u65d7\uff08\u304d\uff09\u8266\uff08\u304b\u3093\uff09\u3001\u30a4\u30f3\u30b9\u30d4\u30ea\u30c3\u30c8",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n1+ | At the beginning of combat on your turn, put your choice of a +1/+1 counter or two charge counters on up to one other target artifact.\n8+ | Flying\nOther artifacts you control have hexproof and indestructible.",
+        "uuid": "85e1f114-ffe6-507a-add3-cfde01bfd51e"
+      }
+    ],
     "frameEffects": [
       "inverted",
       "legendary"
@@ -1892,289 +2042,6 @@
     "magicCardsInfoCode": ""
   }
 }{
-  "name": "keeper of the crown // coronation of the wilds",
-  "fields": {
-    "artist": "Elliot Stevens",
-    "artistIds": [
-      "78335d6c-e04f-450c-9b1b-741e54af893a"
-    ],
-    "availability": [
-      "paper"
-    ],
-    "borderColor": "black",
-    "colorIdentity": [
-      "G"
-    ],
-    "colorIndicator": [
-      "G"
-    ],
-    "colors": [
-      "G"
-    ],
-    "convertedManaCost": 3.0,
-    "faceConvertedManaCost": 3.0,
-    "faceManaValue": 3.0,
-    "faceName": "Keeper of the Crown",
-    "finishes": [
-      "nonfoil"
-    ],
-    "foreignData": [],
-    "frameVersion": "2015",
-    "hasFoil": false,
-    "hasNonFoil": true,
-    "identifiers": {
-      "cardKingdomId": "301249",
-      "cardsphereId": "129151",
-      "deckboxId": "95393",
-      "mtgjsonV4Id": "eeba676e-c19a-5fbe-9676-ee6f9813482d",
-      "multiverseId": "677633",
-      "scryfallCardBackId": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-      "scryfallId": "294fed54-63a7-40f2-a924-c07b3554adb2",
-      "scryfallIllustrationId": "ef2442c6-514c-4c65-8e8a-60b56e5a0574",
-      "scryfallOracleId": "8ba8b599-f724-4845-9169-81adf2aa6142",
-      "tcgplayerProductId": "564029"
-    },
-    "language": "English",
-    "layout": "adventure",
-    "legalities": {},
-    "manaCost": "{2}{L}",
-    "manaValue": 3.0,
-    "name": "Keeper of the Crown // Coronation of the Wilds",
-    "number": "577",
-    "originalText": "(L can be paid with one mana from a legendary source.)\nOther legendary creatures you control get +1/+1 and have indestructible.\n--\nCoronation of the Wilds  {2}{G}\nSorcery \u2014 Adventure\nTarget creature you control becomes a legendary Noble in addition to its other types and gains \"{T}: Add one mana of any color.\"\nDraw a card.",
-    "otherFaceIds": [
-      "31a3e404-3bf0-533c-aef8-95cd771a9db4"
-    ],
-    "power": "3",
-    "printings": [
-      "MB2"
-    ],
-    "promoTypes": [
-      "playtest"
-    ],
-    "purchaseUrls": {
-      "cardKingdom": "https://mtgjson.com/links/ac13281724884e64",
-      "tcgplayer": "https://mtgjson.com/links/f042acf59627368d"
-    },
-    "rarity": "rare",
-    "rulings": [
-      {
-        "date": "2024-11-08",
-        "text": "A \u201clegendary source\u201d is a permanent, spell, or card in any zone with the supertype \u201clegendary.\u201d Notably, a creature that becomes legendary due to Coronation of the Wilds is a legendary source."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "An adventurer card is a permanent card in every zone except the stack, as well as while on the stack if not cast as an Adventure. Ignore its alternative characteristics in those cases. For example, while it\u2019s in your graveyard, Keeper of the Crown is a green creature card with mana value 3."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "An effect may refer to a card, spell, or permanent that \u201chas an Adventure.\u201d This refers to a card, spell, or permanent that has an adventurer card\u2019s set of alternative characteristics, even if they\u2019re not being used and even if that card was never cast as an Adventure."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Casting a card as an Adventure isn\u2019t casting it for an alternative cost. Effects that allow you to cast a spell for an alternative cost or without paying its mana cost may allow you to apply those to the Adventure."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Due to its color indicator (appearing to the left of its type line), Keeper of the Crown is green. Color indicators apply in all zones, not just the battlefield."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "For many playtest cards, you\u2019ll need to make a generous assumption that basic game rules would be updated to allow them to work. The Mystery Booster 2 Playtest Card Notes section (reproduced here in individual Gatherer rulings) provides guidance for fitting these cards into the existing rules structure."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "If a spell is cast as an Adventure, its controller exiles it instead of putting it into its owner\u2019s graveyard as it resolves. For as long as it remains exiled, that player may cast it as a permanent spell. If an Adventure spell leaves the stack in any way other than resolving (most likely by being countered or by failing to resolve because its targets have all become illegal), that card won\u2019t be exiled and the spell\u2019s controller won\u2019t be able to cast it as a permanent later."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "If an adventurer card ends up in exile for any other reason than by exiling itself while resolving, it won\u2019t give you permission to cast it as a permanent spell."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "If an effect copies an Adventure spell, that copy is exiled as it resolves. It ceases to exist as a state-based action; it\u2019s not possible to cast the copy as a permanent."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "If an effect instructs you to choose a card name, you may choose the alternative Adventure name. Consider only the alternative characteristics to determine whether that is an appropriate name to choose."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "If an effect refers to a card, spell, or permanent that has an Adventure, it won\u2019t find an instant or sorcery spell on the stack that\u2019s been cast as an Adventure."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "If an object becomes a copy of an object that has an Adventure, the copy also has an Adventure. If it changes zones, it will either cease to exist (if it\u2019s a token) or cease to be a copy (if it\u2019s a nontoken permanent), and so you won\u2019t be able to cast it as an Adventure."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "If the target is illegal as Coronation of the Wilds tries to resolve, it won\u2019t resolve and none of its effects will happen. You won\u2019t draw a card, and since it failed to resolve, it will go to your graveyard rather than being exiled. You won\u2019t be able to cast Keeper of the Crown later."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "If you cast an adventurer card as an Adventure, use only its alternative characteristics to determine whether it\u2019s legal to cast that spell. For example, if you control Elsha of the Infinite (\u201cYou may cast noncreature spells from the top of your library\u201d) and Keeper of the Crown is on top of your library, you can cast Coronation of the Wilds, but not Keeper of the Crown."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Playtest cards aren\u2019t legal for play in any tournament format other than\u00a0Mystery Booster\u00a0Limited formats. On the other hand, we expect they will spice up a wide variety of non-tournament games (as long as everyone\u2019s on the same page about using them!)."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Playtest cards use a modified version of game symbols, such as {T} and {W}. These modified symbols should be treated as the standard symbols during play."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "The effect of Coronation of the Wilds lasts indefinitely. It\u2019ll only expire if the targeted creature leaves the battlefield."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "When casting a spell as an Adventure, use the alternative characteristics and ignore all of the card\u2019s normal characteristics. The spell\u2019s color, mana cost, mana value, and so on are determined by only those alternative characteristics. If the spell leaves the stack, it immediately resumes using its normal characteristics."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "You must still follow any timing restrictions and permissions for the permanent spell you cast from exile. Normally, you\u2019ll be able to cast it only during your main phase while the stack is empty."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "{L} is a mana symbol. It can be paid with one mana of any type as long as that mana was produced by a legendary source. Keeper of the Crown\u2019s mana value is 3."
-      }
-    ],
-    "setCode": "MB2",
-    "side": "a",
-    "sourceProducts": {
-      "nonfoil": [
-        "1db93605-0a4e-5e5b-80a2-18a6e177f51d"
-      ]
-    },
-    "subtypes": [
-      "Human",
-      "Noble"
-    ],
-    "supertypes": [],
-    "text": "({L} can be paid with one mana from a legendary source.)\nOther legendary creatures you control get +1/+1 and have indestructible.",
-    "toughness": "4",
-    "type": "Creature \u2014 Human Noble",
-    "types": [
-      "Creature"
-    ],
-    "uuid": "dfba1f23-d8dc-5f9f-9b8b-fd7baf7a8abf",
-    "setName": "Mystery Booster 2",
-    "magicCardsInfoCode": ""
-  }
-}{
-  "name": "kozilek, compleated",
-  "fields": {
-    "artist": "Will Liu",
-    "artistIds": [
-      "e2f97e1d-f557-411c-bb80-e8a23f82e815"
-    ],
-    "availability": [
-      "paper"
-    ],
-    "borderColor": "black",
-    "colorIdentity": [],
-    "colors": [],
-    "convertedManaCost": 10.0,
-    "finishes": [
-      "nonfoil"
-    ],
-    "foreignData": [],
-    "frameEffects": [
-      "legendary"
-    ],
-    "frameVersion": "2015",
-    "hasFoil": false,
-    "hasNonFoil": true,
-    "identifiers": {
-      "cardKingdomId": "301167",
-      "cardsphereId": "129196",
-      "mtgjsonV4Id": "cf133d05-cd6d-5107-9652-94b7b98dae57",
-      "multiverseId": "677558",
-      "scryfallCardBackId": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-      "scryfallId": "8a5d0caf-8f15-4c25-958d-19ffc7ed462e",
-      "scryfallIllustrationId": "ad890b05-cd44-4eb0-94e5-2aac5f3d260a",
-      "scryfallOracleId": "fd0592e0-021a-450f-b0fb-e4a242dc16bf",
-      "tcgplayerProductId": "563960"
-    },
-    "language": "English",
-    "layout": "normal",
-    "leadershipSkills": {
-      "brawl": false,
-      "commander": true,
-      "oathbreaker": false
-    },
-    "legalities": {},
-    "manaCost": "{8}{C/P}{C/P}",
-    "manaValue": 10.0,
-    "name": "Kozilek, Compleated",
-    "number": "502",
-    "originalText": "({(}c/p} can be paid with either {C} or 2 life.)\nWhen you cast this spell, each opponent gets two poison counters, then each opponent with more than two cards in hand discards cards equal to the difference.\nAnnihinfect (Whenever this creature attacks, defending player sacrifices a permanent for each poison counter they have.)",
-    "power": "12",
-    "printings": [
-      "MB2"
-    ],
-    "promoTypes": [
-      "playtest"
-    ],
-    "purchaseUrls": {
-      "cardKingdom": "https://mtgjson.com/links/4cacefc31dbba75b",
-      "tcgplayer": "https://mtgjson.com/links/e1bb4d6ee54f3c0f"
-    },
-    "rarity": "rare",
-    "rulings": [
-      {
-        "date": "2024-11-08",
-        "text": "Annihinfect abilities trigger and resolve during the declare attackers step. The defending player chooses and sacrifices the required number of permanents before they declare blockers. Any creatures sacrificed this way won\u2019t be able to block."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "For many playtest cards, you\u2019ll need to make a generous assumption that basic game rules would be updated to allow them to work. The Mystery Booster 2 Playtest Card Notes section (reproduced here in individual Gatherer rulings) provides guidance for fitting these cards into the existing rules structure."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "If a creature with annihinfect is attacking a planeswalker, and the defending player chooses to sacrifice that planeswalker, the attacking creature continues to attack. It may be blocked. If it isn\u2019t blocked, it simply won\u2019t deal combat damage to anything."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Kozilek\u2019s first ability will resolve before Kozilek does. If Kozilek is countered or otherwise leaves the stack in response to that triggered ability, the triggered ability will resolve as normal."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Playtest cards aren\u2019t legal for play in any tournament format other than\u00a0Mystery Booster\u00a0Limited formats. On the other hand, we expect they will spice up a wide variety of non-tournament games (as long as everyone\u2019s on the same page about using them!)."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "Playtest cards use a modified version of game symbols, such as {T} and {W}. These modified symbols should be treated as the standard symbols during play."
-      },
-      {
-        "date": "2024-11-08",
-        "text": "The number of cards each opponent discards is calculated as Kozilek\u2019s first ability resolves. If an opponent has two or fewer cards in their hand at that time, they won\u2019t discard any cards."
-      }
-    ],
-    "setCode": "MB2",
-    "sourceProducts": {
-      "nonfoil": [
-        "1db93605-0a4e-5e5b-80a2-18a6e177f51d"
-      ]
-    },
-    "subtypes": [
-      "Phyrexian",
-      "Eldrazi"
-    ],
-    "supertypes": [
-      "Legendary"
-    ],
-    "text": "({C/P} can be paid with either {C} or 2 life.)\nWhen you cast this spell, each opponent gets two poison counters, then each opponent with more than two cards in hand discards cards equal to the difference.\nAnnihinfect (Whenever this creature attacks, defending player sacrifices a permanent for each poison counter they have.)",
-    "toughness": "12",
-    "type": "Legendary Creature \u2014 Phyrexian Eldrazi",
-    "types": [
-      "Creature"
-    ],
-    "uuid": "0110702e-0151-574a-af73-7259033dcc4e",
-    "setName": "Mystery Booster 2",
-    "magicCardsInfoCode": ""
-  }
-}{
   "name": "larval scoutlander",
   "fields": {
     "artist": "Javier Charro",
@@ -2197,13 +2064,59 @@
       "G"
     ],
     "convertedManaCost": 3.0,
-    "edhrecRank": 10905,
+    "edhrecRank": 10672,
     "edhrecSaltiness": 0.12,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "781fa6d3-c7bd-495a-b5f6-c8d368b247bd"
+        },
+        "language": "German",
+        "name": "Larvaler Erkundungslander",
+        "text": "When this Spacecraft enters, you may sacrifice a land or Lander. If you do, search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "7cbeb8fb-223a-5a83-91ed-c145c7257bfa"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "5f967fab-a2f7-4bde-8c2e-18bb5fdbef3d"
+        },
+        "language": "Spanish",
+        "name": "Descendedora larval",
+        "text": "When this Spacecraft enters, you may sacrifice a land or Lander. If you do, search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "9c545f73-ebfb-57c1-9684-aabb756270b0"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "23a9ad32-f95b-4f15-b9f9-db89368e620e"
+        },
+        "language": "French",
+        "name": "Module d'\u00e9claireur larval",
+        "text": "When this Spacecraft enters, you may sacrifice a land or Lander. If you do, search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "f5d1a44a-06da-5d18-8d89-9305c8162d00"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "f97fdb9a-1f64-41b6-85a1-8647b047cb51"
+        },
+        "language": "Italian",
+        "name": "Astroricognitore Larvale",
+        "text": "When this Spacecraft enters, you may sacrifice a land or Lander. If you do, search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "71630378-bbea-54d0-bd28-3aa9cb944774"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "8eebce82-d112-4739-9f70-3e400b4ac4aa"
+        },
+        "language": "Japanese",
+        "name": "\u672a\uff08\u307f\uff09\u767a\uff08\u306f\u3063\uff09\u9054\uff08\u305f\u3064\uff09\u306e\u5075\uff08\u3066\u3044\uff09\u5bdf\uff08\u3055\u3064\uff09\u7740\uff08\u3061\u3083\u304f\uff09\u9678\uff08\u308a\u304f\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "When this Spacecraft enters, you may sacrifice a land or Lander. If you do, search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "99ffd6d2-7e3c-5f8c-8142-b1e3f5460fac"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -2310,7 +2223,7 @@
       "R"
     ],
     "convertedManaCost": 5.0,
-    "edhrecRank": 11511,
+    "edhrecRank": 11585,
     "edhrecSaltiness": 0.21,
     "finishes": [
       "nonfoil",
@@ -2550,13 +2463,59 @@
       "W"
     ],
     "convertedManaCost": 2.0,
-    "edhrecRank": 12021,
+    "edhrecRank": 11849,
     "edhrecSaltiness": 0.18,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "4c315492-e645-416e-a234-1f46a23efd62"
+        },
+        "language": "German",
+        "name": "Fregatte der Lumen-Klasse",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n2+ | Other creatures you control get +1/+1.\n12+ | Flying, lifelink",
+        "uuid": "abfe897c-b9cd-5ca4-98bb-a504a49d5982"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "36648130-a142-448e-a200-a91be9046188"
+        },
+        "language": "Spanish",
+        "name": "Fragata de clase lumen",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n2+ | Other creatures you control get +1/+1.\n12+ | Flying, lifelink",
+        "uuid": "906f0aaf-ae37-589b-a31a-f947a50221db"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "fecea0ed-222d-4bb7-aa86-56dd76ff6d07"
+        },
+        "language": "French",
+        "name": "Fr\u00e9gate de classe Lumen",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n2+ | Other creatures you control get +1/+1.\n12+ | Flying, lifelink",
+        "uuid": "0d41c849-48da-54a9-a78f-6c48047b66eb"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "ed1f00fc-f258-45d7-837a-a129cf4e3592"
+        },
+        "language": "Italian",
+        "name": "Fregata di Classe Lumen",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n2+ | Other creatures you control get +1/+1.\n12+ | Flying, lifelink",
+        "uuid": "43bc46e5-789b-5bd8-9239-ed50138beb5f"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "879f0dea-3fef-4dbd-8d8f-39b78fc4344b"
+        },
+        "language": "Japanese",
+        "name": "\u30eb\u30fc\u30e1\u30f3\u7d1a\uff08\u304d\u3085\u3046\uff09\u30d5\u30ea\u30b2\u30fc\u30c8\u8266\uff08\u304b\u3093\uff09",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n2+ | Other creatures you control get +1/+1.\n12+ | Flying, lifelink",
+        "uuid": "fb88e3d5-b81a-57af-a536-51c549b621e5"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -2670,7 +2629,7 @@
       "W"
     ],
     "convertedManaCost": 4.0,
-    "edhrecRank": 14456,
+    "edhrecRank": 14534,
     "edhrecSaltiness": 0.35,
     "finishes": [
       "nonfoil",
@@ -2902,13 +2861,59 @@
     "colorIdentity": [],
     "colors": [],
     "convertedManaCost": 7.0,
-    "edhrecRank": 12515,
+    "edhrecRank": 12310,
     "edhrecSaltiness": 0.07,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "0297a727-0d18-4fd5-a41a-efff31d5ab55"
+        },
+        "language": "German",
+        "name": "Vernichtungsschiff des Kulminats",
+        "text": "When this Spacecraft enters, it deals 10 damage to up to one target creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "963e83ee-93c0-53ab-8746-6e7f5830fd62"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "6d003381-bd3d-435b-8c4e-900970b47814"
+        },
+        "language": "Spanish",
+        "name": "Asesinave de la Cumbre",
+        "text": "When this Spacecraft enters, it deals 10 damage to up to one target creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "c5a107ab-b224-5ba2-85d0-2b1509b417b4"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "93ca2bb2-6b5f-4c74-9ac0-c60c815f6223"
+        },
+        "language": "French",
+        "name": "Vaisseau-tueur d'Apog\u00e9e",
+        "text": "When this Spacecraft enters, it deals 10 damage to up to one target creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "89eec72c-014a-5dc2-9f60-32d0b69e7c26"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "8d478287-cfe8-444d-ab3c-b0004ba665db"
+        },
+        "language": "Italian",
+        "name": "Sterminave del Vertice",
+        "text": "When this Spacecraft enters, it deals 10 damage to up to one target creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "b946faba-d0c0-5f95-9897-4da94b0becf5"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "b6f7162b-00a2-4ca7-b991-fcb647848364"
+        },
+        "language": "Japanese",
+        "name": "\u30d4\u30ca\u30af\u30eb\u306e\u7a81\uff08\u3068\u3064\uff09\u6483\uff08\u3052\u304d\uff09\u8247\uff08\u3066\u3044\uff09",
+        "text": "When this Spacecraft enters, it deals 10 damage to up to one target creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "203d43ee-1e32-5e0c-a3ef-15886c34fb5b"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -2993,70 +2998,6 @@
     "magicCardsInfoCode": ""
   }
 }{
-  "name": "prismatic dragon",
-  "fields": {
-    "artist": "Amy Weber",
-    "artistIds": [
-      "c1160787-e72e-4f89-b361-c6864f7a4e3a"
-    ],
-    "availability": [
-      "shandalar"
-    ],
-    "borderColor": "black",
-    "colorIdentity": [
-      "W"
-    ],
-    "colors": [
-      "W"
-    ],
-    "convertedManaCost": 4.0,
-    "finishes": [
-      "nonfoil"
-    ],
-    "foreignData": [],
-    "frameVersion": "1997",
-    "hasFoil": false,
-    "hasNonFoil": true,
-    "identifiers": {
-      "mtgjsonV4Id": "07502ef1-aa3c-511d-aa31-8bfdd5503a31",
-      "scryfallCardBackId": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-      "scryfallId": "ef59f284-dc3c-4b4f-acc4-fc8080d8dc23",
-      "scryfallIllustrationId": "6c7a3623-351e-45d6-b769-1bca632e854e",
-      "scryfallOracleId": "0499a59d-5bb1-4907-874e-e89ee5e4b992"
-    },
-    "isOnlineOnly": true,
-    "isStarter": true,
-    "keywords": [
-      "Flying"
-    ],
-    "language": "English",
-    "layout": "normal",
-    "legalities": {},
-    "manaCost": "{2}{W}{W}",
-    "manaValue": 4.0,
-    "name": "Prismatic Dragon",
-    "number": "8",
-    "power": "2",
-    "printings": [
-      "PAST"
-    ],
-    "purchaseUrls": {},
-    "rarity": "common",
-    "setCode": "PAST",
-    "subtypes": [],
-    "supertypes": [],
-    "text": "Flying\nDuring your upkeep, Prismatic Dragon becomes a random color permanently.\n{2}: Prismatic Dragon becomes a random color permanently.",
-    "toughness": "3",
-    "type": "Summon Dragon",
-    "types": [
-      "Summon",
-      "Dragon"
-    ],
-    "uuid": "6ea40899-a909-516c-9872-2953f1289b21",
-    "setName": "Astral Cards",
-    "magicCardsInfoCode": ""
-  }
-}{
   "name": "rage extractor",
   "fields": {
     "artist": "Raymond Swanland",
@@ -3078,7 +3019,7 @@
       "R"
     ],
     "convertedManaCost": 5.0,
-    "edhrecRank": 28711,
+    "edhrecRank": 28942,
     "edhrecSaltiness": 0.87,
     "finishes": [
       "nonfoil",
@@ -3304,67 +3245,6 @@
     "magicCardsInfoCode": ""
   }
 }{
-  "name": "rainbow knights",
-  "fields": {
-    "artist": "Douglas Shuler",
-    "artistIds": [
-      "a9ddb513-51c7-455c-ab8f-5b90aae9f75b"
-    ],
-    "availability": [
-      "shandalar"
-    ],
-    "borderColor": "black",
-    "colorIdentity": [
-      "W"
-    ],
-    "colors": [
-      "W"
-    ],
-    "convertedManaCost": 2.0,
-    "finishes": [
-      "nonfoil"
-    ],
-    "foreignData": [],
-    "frameVersion": "1997",
-    "hasFoil": false,
-    "hasNonFoil": true,
-    "identifiers": {
-      "mtgjsonV4Id": "89cf545b-1ddf-5e8b-820f-a4571284a4c8",
-      "scryfallCardBackId": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
-      "scryfallId": "8205deb1-4dcc-4c0b-9dc9-a2bb65b251c1",
-      "scryfallIllustrationId": "792a41a4-662c-4447-ac9b-ff1dc5570b17",
-      "scryfallOracleId": "5ae62bf3-ab1e-4968-ad7d-6f06a7254cfa"
-    },
-    "isOnlineOnly": true,
-    "isStarter": true,
-    "language": "English",
-    "layout": "normal",
-    "legalities": {},
-    "manaCost": "{W}{W}",
-    "manaValue": 2.0,
-    "name": "Rainbow Knights",
-    "number": "9",
-    "power": "2",
-    "printings": [
-      "PAST"
-    ],
-    "purchaseUrls": {},
-    "rarity": "common",
-    "setCode": "PAST",
-    "subtypes": [],
-    "supertypes": [],
-    "text": "When Rainbow Knights comes into play, it gains protection from a random color permanently.\n{1}: First strike until end of turn.\n{W}{W}: +0/+0, +1/+0 or +2/+0 until end of turn chosen at random.",
-    "toughness": "1",
-    "type": "Summon Knights",
-    "types": [
-      "Summon",
-      "Knights"
-    ],
-    "uuid": "a83fadbc-59fa-5944-b721-e8b4b1f7822f",
-    "setName": "Astral Cards",
-    "magicCardsInfoCode": ""
-  }
-}{
   "name": "rescue skiff",
   "fields": {
     "artist": "Viko Menezes",
@@ -3387,13 +3267,59 @@
       "W"
     ],
     "convertedManaCost": 6.0,
-    "edhrecRank": 14580,
+    "edhrecRank": 14430,
     "edhrecSaltiness": 0.17,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "e319f8a8-dcef-4e0e-a3fe-81198ee70348"
+        },
+        "language": "German",
+        "name": "Rettungsbarke",
+        "text": "When this Spacecraft enters, return target creature or enchantment card from your graveyard to the battlefield.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 10+.)\n10+ | Flying",
+        "uuid": "d07cb1b7-708e-5960-833a-2d745e4745e0"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "a087acdd-0af8-4c06-a03c-a231330f81ee"
+        },
+        "language": "Spanish",
+        "name": "Esquife de rescate",
+        "text": "When this Spacecraft enters, return target creature or enchantment card from your graveyard to the battlefield.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 10+.)\n10+ | Flying",
+        "uuid": "14311e4a-1cb5-5fa1-bb6b-d590c703f789"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "23db91c9-de07-4e40-9196-ee01370b5dcc"
+        },
+        "language": "French",
+        "name": "Esquif de sauvetage",
+        "text": "When this Spacecraft enters, return target creature or enchantment card from your graveyard to the battlefield.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 10+.)\n10+ | Flying",
+        "uuid": "be20718a-ae5a-51a3-b0c3-605f7cf74cbd"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "67f361eb-2289-44cc-833e-39a032de64b9"
+        },
+        "language": "Italian",
+        "name": "Avioscafo da Salvataggio",
+        "text": "When this Spacecraft enters, return target creature or enchantment card from your graveyard to the battlefield.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 10+.)\n10+ | Flying",
+        "uuid": "391ce6b4-e843-5900-a504-9670c7445ed1"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "27a32fac-f4ea-4f7d-9c4c-dac122258bba"
+        },
+        "language": "Japanese",
+        "name": "\u6551\uff08\u304d\u3085\u3046\uff09\u52a9\uff08\u3058\u3087\uff09\u7528\uff08\u3088\u3046\uff09\u30dc\u30fc\u30c8",
+        "text": "When this Spacecraft enters, return target creature or enchantment card from your graveyard to the battlefield.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 10+.)\n10+ | Flying",
+        "uuid": "283cff15-5463-5759-954f-25a86cef720d"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -3450,6 +3376,12 @@
       "tcgplayer": "https://mtgjson.com/links/4e21dfb91a896766"
     },
     "rarity": "uncommon",
+    "rulings": [
+      {
+        "date": "2025-07-25",
+        "text": "If an Aura is put onto the battlefield without being cast, the Aura\u2019s controller-to-be chooses what it will enchant as it comes back onto the battlefield. An Aura put onto the battlefield this way doesn\u2019t target anything (so it could be attached to an opponent\u2019s permanent with hexproof, for example), but the Aura\u2019s enchant ability restricts what it can be attached to. If the Aura can\u2019t legally be attached to anything, it remains in its current zone."
+      }
+    ],
     "setCode": "EOE",
     "sourceProducts": {
       "foil": [
@@ -3498,13 +3430,59 @@
       "G"
     ],
     "convertedManaCost": 3.0,
-    "edhrecRank": 12346,
+    "edhrecRank": 12065,
     "edhrecSaltiness": 0.18,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "5eda3459-e144-4ea7-9e1a-b78d07192139"
+        },
+        "language": "German",
+        "name": "Saatschiff der Schlitten-Klasse",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying\nWhenever this Spacecraft attacks, you may put a creature card from your hand onto the battlefield.",
+        "uuid": "6de1caaa-6246-5d94-aef3-58444f067abb"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "b3438bb9-f3a7-4ce6-aedb-0613cb14275b"
+        },
+        "language": "Spanish",
+        "name": "Germinave de clase trineo",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying\nWhenever this Spacecraft attacks, you may put a creature card from your hand onto the battlefield.",
+        "uuid": "1d1da105-5e11-5e92-a750-4d3c487165c8"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "6e27a0cc-5382-4fa3-a3da-c4f43a680b5b"
+        },
+        "language": "French",
+        "name": "Vaisseau ensemenceur classe Pilon",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying\nWhenever this Spacecraft attacks, you may put a creature card from your hand onto the battlefield.",
+        "uuid": "4a00af49-3be5-5507-ac3e-1e905d12ba13"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "0d0550fe-ffc0-44ea-b7af-4f4fb22470d1"
+        },
+        "language": "Italian",
+        "name": "Nave Colonia di Classe Algor",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying\nWhenever this Spacecraft attacks, you may put a creature card from your hand onto the battlefield.",
+        "uuid": "016f19d7-528b-51df-9ef8-90c653e0a1f6"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "b27d1a14-4847-48ca-ab99-c1e9345447f0"
+        },
+        "language": "Japanese",
+        "name": "\u30b9\u30ec\u30c3\u30b8\u7d1a\uff08\u304d\u3085\u3046\uff09\u30b7\u30fc\u30c9\u30b7\u30c3\u30d7",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying\nWhenever this Spacecraft attacks, you may put a creature card from your hand onto the battlefield.",
+        "uuid": "1ebb6b2e-c86e-5425-baad-60fb0ee0dc03"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -3615,13 +3593,59 @@
       "U"
     ],
     "convertedManaCost": 6.0,
-    "edhrecRank": 16715,
+    "edhrecRank": 16545,
     "edhrecSaltiness": 0.14,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "f1593fdf-0033-420e-a74c-bbbfc217eda8"
+        },
+        "language": "German",
+        "name": "Spezimen-Frachter",
+        "text": "When this Spacecraft enters, return up to two target non-Spacecraft creatures to their owners' hands.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n9+ | Flying\nWhenever this Spacecraft attacks, defending player mills four cards.",
+        "uuid": "0491515a-033d-5d89-8d34-3a90acf94932"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "149f09ba-f164-47de-bb30-63ab6563af1c"
+        },
+        "language": "Spanish",
+        "name": "Carguero de espec\u00edmenes",
+        "text": "When this Spacecraft enters, return up to two target non-Spacecraft creatures to their owners' hands.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n9+ | Flying\nWhenever this Spacecraft attacks, defending player mills four cards.",
+        "uuid": "d5265e10-407b-5283-a8c1-a39df6967733"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "b28dba2d-34af-40c5-a85e-56cd1d8cef0a"
+        },
+        "language": "French",
+        "name": "Cargo de sp\u00e9cimens",
+        "text": "When this Spacecraft enters, return up to two target non-Spacecraft creatures to their owners' hands.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n9+ | Flying\nWhenever this Spacecraft attacks, defending player mills four cards.",
+        "uuid": "fa344697-0628-50da-b827-2df8076b4b3d"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "6eb0c1e5-c635-404b-8fd2-7d97d77f32eb"
+        },
+        "language": "Italian",
+        "name": "Cargo di Esemplari",
+        "text": "When this Spacecraft enters, return up to two target non-Spacecraft creatures to their owners' hands.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n9+ | Flying\nWhenever this Spacecraft attacks, defending player mills four cards.",
+        "uuid": "562f31c9-eb36-5c18-84fe-3ce165be6c08"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "9cef8392-ee1a-471a-b191-13426d71e2e3"
+        },
+        "language": "Japanese",
+        "name": "\u691c\uff08\u3051\u3093\uff09\u4f53\uff08\u305f\u3044\uff09\u8f38\uff08\u3086\uff09\u9001\uff08\u305d\u3046\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "When this Spacecraft enters, return up to two target non-Spacecraft creatures to their owners' hands.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n9+ | Flying\nWhenever this Spacecraft attacks, defending player mills four cards.",
+        "uuid": "4cae8aac-f337-5c72-b1a4-f9285780e7a8"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -3727,13 +3751,59 @@
       "B"
     ],
     "convertedManaCost": 5.0,
-    "edhrecRank": 17234,
+    "edhrecRank": 17083,
     "edhrecSaltiness": 0.19,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "6c760888-24f9-4d25-b66e-90dc93aef02d"
+        },
+        "language": "German",
+        "name": "Susurianisches Klageschiff",
+        "text": "When this Spacecraft enters, each opponent sacrifices a nontoken creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "baaad7ff-e53c-55cc-ae50-291f11115094"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "0e88d71b-b7b9-479e-a890-951d5deb6a6d"
+        },
+        "language": "Spanish",
+        "name": "Navendecha susuriana",
+        "text": "When this Spacecraft enters, each opponent sacrifices a nontoken creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "244828d1-012a-5372-9697-3f705e85d607"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "c16f816a-ef01-492c-b674-e61eda0ef7d6"
+        },
+        "language": "French",
+        "name": "Vaisseau fun\u00e8bre susurien",
+        "text": "When this Spacecraft enters, each opponent sacrifices a nontoken creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "0150f981-0ade-5ba5-8dd6-bb88e3be5a88"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "1f835690-ba38-416a-b08b-53a79af9a632"
+        },
+        "language": "Italian",
+        "name": "Lamentonave Susuriana",
+        "text": "When this Spacecraft enters, each opponent sacrifices a nontoken creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "95119b6d-5523-5834-a48f-62baa1134e4a"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "ce5285d0-4eac-421d-8dc1-3b0d4b3ec29a"
+        },
+        "language": "Japanese",
+        "name": "\u30b9\u30b9\u30ea\u30a2\u30f3\u306e\u846c\uff08\u305d\u3046\uff09\u594f\uff08\u305d\u3046\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "When this Spacecraft enters, each opponent sacrifices a nontoken creature.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying",
+        "uuid": "f871fcfe-b32d-5e4b-8bba-3097abde45aa"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -3838,13 +3908,59 @@
       "U"
     ],
     "convertedManaCost": 1.0,
-    "edhrecRank": 14237,
+    "edhrecRank": 14073,
     "edhrecSaltiness": 0.1,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "bbfba96a-ab0c-40bc-94d4-6477c7736bb0"
+        },
+        "language": "German",
+        "name": "Synthetisierendes Laborschiff",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n2+ | At the beginning of combat on your turn, up to one other target artifact you control becomes an artifact creature with base power and toughness 2/2 and gains flying until end of turn.\n9+ | Flying, vigilance",
+        "uuid": "8a43d547-d4ae-5371-91dd-87ea88654723"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "7f204eb7-3fb0-41bc-9bdd-d6e61b73cd37"
+        },
+        "language": "Spanish",
+        "name": "Labnave sintetizadora",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n2+ | At the beginning of combat on your turn, up to one other target artifact you control becomes an artifact creature with base power and toughness 2/2 and gains flying until end of turn.\n9+ | Flying, vigilance",
+        "uuid": "19657904-c09f-587f-9d4d-53880d4ac008"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "fda84402-20ca-405c-a126-b0ebe4496504"
+        },
+        "language": "French",
+        "name": "Vaisseau laboratoire synth\u00e9tiseur",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n2+ | At the beginning of combat on your turn, up to one other target artifact you control becomes an artifact creature with base power and toughness 2/2 and gains flying until end of turn.\n9+ | Flying, vigilance",
+        "uuid": "f27d50d7-4d40-5fe7-b28e-2cb56ffb8703"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "0de1c789-b1e2-4bdb-ba4e-2df2bac96b65"
+        },
+        "language": "Italian",
+        "name": "Nave Laboratorio Sintetizzatrice",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n2+ | At the beginning of combat on your turn, up to one other target artifact you control becomes an artifact creature with base power and toughness 2/2 and gains flying until end of turn.\n9+ | Flying, vigilance",
+        "uuid": "682e4160-6d7b-56cf-989a-bd87f51107e7"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "6196be2d-8afd-4f7a-9851-e6be9ddfe8d9"
+        },
+        "language": "Japanese",
+        "name": "\u5408\uff08\u3054\u3046\uff09\u6210\uff08\u305b\u3044\uff09\u7814\uff08\u3051\u3093\uff09\u7a76\uff08\u304d\u3085\u3046\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n2+ | At the beginning of combat on your turn, up to one other target artifact you control becomes an artifact creature with base power and toughness 2/2 and gains flying until end of turn.\n9+ | Flying, vigilance",
+        "uuid": "5550c4ed-7fe2-53d1-8719-f86cff749e5c"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -3904,6 +4020,24 @@
       "tcgplayer": "https://mtgjson.com/links/057ac74a639bcc63"
     },
     "rarity": "rare",
+    "rulings": [
+      {
+        "date": "2025-07-25",
+        "text": "If Synthesizer Labship\u2019s second ability causes a Vehicle to become an artifact creature, it doesn\u2019t count as \u201ccrewing\u201d that Vehicle for any ability that would trigger due to a Vehicle becoming crewed."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "If Synthesizer Labship\u2019s second ability causes a Vehicle to become an artifact creature, its base power and toughness will be set to 2/2. Crewing that Vehicle will not restore its power and toughness. Similarly, if the ability causes a permanent with station to become an artifact creature, putting an amount of charge counters on it greater than or equal to the amount required for it to become an artifact creature won\u2019t overwrite the base power and toughness set by Synthesizer Labship\u2019s second ability."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "If the target of Synthesizer Labship\u2019s second ability was already a creature, its base power and toughness will become 2/2 until end of turn. This overwrites any previous effects that set its base power and/or toughness to specific values. Any power- or toughness-setting effects that start to apply after Synthesizer Labship\u2019s second ability resolves will overwrite this effect. Effects that otherwise modify the target\u2019s power and toughness, including +1/+1 counters, will still apply no matter when they took effect."
+      },
+      {
+        "date": "2025-07-25",
+        "text": "The resulting artifact creature will be able to attack if it\u2019s been under your control continuously since the turn began. That is, it doesn\u2019t matter how long it\u2019s been a creature, just how long it\u2019s been on the battlefield."
+      }
+    ],
     "securityStamp": "oval",
     "setCode": "EOE",
     "sourceProducts": {
@@ -3958,7 +4092,7 @@
       "U"
     ],
     "convertedManaCost": 5.0,
-    "edhrecRank": 7563,
+    "edhrecRank": 7626,
     "edhrecSaltiness": 0.5,
     "finishes": [
       "nonfoil",
@@ -4136,7 +4270,6 @@
     "manaValue": 5.0,
     "name": "Tamiyo, Compleated Sage",
     "number": "238",
-    "originalText": "Compleated ({(}g/u/p)} can be paid with {G}, {U}, or 2 life. If life was paid, this planeswalker enters with two fewer loyalty counters.)\n+1: Tap up to one target artifact or creature. It doesn't untap during its controller's next untap step.\n\u2212X: Exile target nonland permanent card with mana value X from your graveyard. Create a token that's a copy of that card.\n\u22127: Create Tamiyo's Notebook, a legendary colorless artifact token with \"Spells you cast cost {2} less to cast\" and \"{T}: Draw a card.\"",
     "printings": [
       "NEO",
       "PNEO",
@@ -4227,7 +4360,7 @@
       "W"
     ],
     "convertedManaCost": 5.0,
-    "edhrecRank": 14379,
+    "edhrecRank": 14422,
     "edhrecSaltiness": 0.31,
     "finishes": [
       "nonfoil"
@@ -4369,13 +4502,59 @@
       "W"
     ],
     "convertedManaCost": 3.0,
-    "edhrecRank": 5609,
+    "edhrecRank": 5417,
     "edhrecSaltiness": 0.37,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "7c8e0585-2034-41ea-833a-28a6b774b9cc"
+        },
+        "language": "German",
+        "name": "Die Seriema",
+        "text": "When The Seriema enters, search your library for a legendary creature card, reveal it, put it into your hand, then shuffle.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying\nOther tapped legendary creatures you control have indestructible.",
+        "uuid": "721dce36-2009-5ba4-91d3-8d02d40a352a"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "c7d5fc6d-ba1f-4dbb-86ca-40ff24fd451d"
+        },
+        "language": "Spanish",
+        "name": "La Seriema",
+        "text": "When The Seriema enters, search your library for a legendary creature card, reveal it, put it into your hand, then shuffle.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying\nOther tapped legendary creatures you control have indestructible.",
+        "uuid": "9679e484-8419-5a26-bbf8-316799a03f36"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "eb7be6af-0a24-4e23-b904-c9536d02ad82"
+        },
+        "language": "French",
+        "name": "Le Seriema",
+        "text": "When The Seriema enters, search your library for a legendary creature card, reveal it, put it into your hand, then shuffle.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying\nOther tapped legendary creatures you control have indestructible.",
+        "uuid": "f1efd574-4198-59e3-8883-80f1c426d700"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "f2a41fbb-fa29-4d27-9b38-3fa343ee37aa"
+        },
+        "language": "Italian",
+        "name": "Il Seriema",
+        "text": "When The Seriema enters, search your library for a legendary creature card, reveal it, put it into your hand, then shuffle.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying\nOther tapped legendary creatures you control have indestructible.",
+        "uuid": "d14fbeae-1722-54f9-850a-3e61afb3785d"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "4c10fb59-729f-4178-b2a9-597a20c62429"
+        },
+        "language": "Japanese",
+        "name": "\u30bb\u30ea\u30fc\u30de\u53f7\uff08\u3054\u3046\uff09",
+        "text": "When The Seriema enters, search your library for a legendary creature card, reveal it, put it into your hand, then shuffle.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 7+.)\n7+ | Flying\nOther tapped legendary creatures you control have indestructible.",
+        "uuid": "40396712-c967-5aed-aa3d-3cd847f34ef0"
+      }
+    ],
     "frameEffects": [
       "legendary"
     ],
@@ -4496,7 +4675,7 @@
     ],
     "colors": [],
     "convertedManaCost": 5.0,
-    "edhrecRank": 4235,
+    "edhrecRank": 4220,
     "edhrecSaltiness": 1.32,
     "finishes": [
       "nonfoil",
@@ -4719,12 +4898,58 @@
       "U"
     ],
     "convertedManaCost": 3.0,
-    "edhrecRank": 4046,
+    "edhrecRank": 3862,
     "edhrecSaltiness": 0.28,
     "finishes": [
       "nonfoil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "91df4e61-5b2d-407a-9e14-7cb1ca64c09e"
+        },
+        "language": "German",
+        "name": "Uthros-Forschungsschiff",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n3+ | Whenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\n12+ | Flying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+        "uuid": "d62598fc-623e-509b-999b-f3e8b6724d05"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "3f35c816-1a1b-4b69-97c7-9eaec6e73e45"
+        },
+        "language": "Spanish",
+        "name": "Nav\u00edo de investigaci\u00f3n de Uthros",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n3+ | Whenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\n12+ | Flying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+        "uuid": "55a8b15a-31ae-557b-b925-42654b0da3e6"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "2ffcef68-b959-4090-896c-ff46f9a21f05"
+        },
+        "language": "French",
+        "name": "Navire de recherche d'Uthros",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n3+ | Whenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\n12+ | Flying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+        "uuid": "c2727f09-a44c-5222-8ca5-35fe80e3b7bf"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "2b8fd987-3f88-417c-bf8d-b8a9b8e3d852"
+        },
+        "language": "Italian",
+        "name": "Nave da Ricerca di Uthros",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n3+ | Whenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\n12+ | Flying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+        "uuid": "0fdec672-397a-5371-b1da-65fe5b767b6f"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "8237abb4-ac77-4082-8484-ca338854db87"
+        },
+        "language": "Japanese",
+        "name": "\u30a6\u30b9\u30ed\u30b9\u306e\u8abf\uff08\u3061\u3087\u3046\uff09\u67fb\uff08\u3055\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n3+ | Whenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\n12+ | Flying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+        "uuid": "f84d8347-86d1-5696-9161-14e017772f91"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": false,
     "hasNonFoil": true,
@@ -4768,6 +4993,12 @@
       "tcgplayer": "https://mtgjson.com/links/65bc5e41dd4f6edb"
     },
     "rarity": "rare",
+    "rulings": [
+      {
+        "date": "2025-07-25",
+        "text": "The triggered ability granted by Uthros Research Craft\u2019s second ability resolves before the spell that caused it to trigger. It resolves even if that spell is countered or otherwise leaves the stack without resolving."
+      }
+    ],
     "securityStamp": "oval",
     "setCode": "EOC",
     "sourceProducts": {
@@ -4815,13 +5046,59 @@
       "U"
     ],
     "convertedManaCost": 4.0,
-    "edhrecRank": 16683,
+    "edhrecRank": 16497,
     "edhrecSaltiness": 0.14,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "96b89bd0-edce-4814-96e5-d5dd1106d884"
+        },
+        "language": "German",
+        "name": "Uthros-Analyseschiff",
+        "text": "When this Spacecraft enters, draw two cards, then discard a card.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying",
+        "uuid": "3a7cacae-ce30-56d2-b029-75234f752029"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "15463676-6b0c-442e-a23e-da977f43dc00"
+        },
+        "language": "Spanish",
+        "name": "Examinave de Uthros",
+        "text": "When this Spacecraft enters, draw two cards, then discard a card.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying",
+        "uuid": "ecde176f-959d-5d6c-85c3-9a78a5005171"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "9ab92bdd-793a-4122-8cca-6409bdab4539"
+        },
+        "language": "French",
+        "name": "Vaisseau scanner d'Uthros",
+        "text": "When this Spacecraft enters, draw two cards, then discard a card.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying",
+        "uuid": "eae7f35a-ef77-5b73-9c41-e6b60e1d3e3c"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "f14bae1f-a7bf-4005-b4d8-7e6f4f3d659d"
+        },
+        "language": "Italian",
+        "name": "Scansionave di Uthros",
+        "text": "When this Spacecraft enters, draw two cards, then discard a card.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying",
+        "uuid": "a24c9260-6e84-5c0a-8ac6-7d3c3c4f9255"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "3fe94c9f-f20a-43a8-b56b-0674767185c4"
+        },
+        "language": "Japanese",
+        "name": "\u30a6\u30b9\u30ed\u30b9\u306e\u63a2\uff08\u305f\u3093\uff09\u67fb\uff08\u3055\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "When this Spacecraft enters, draw two cards, then discard a card.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 8+.)\n8+ | Flying",
+        "uuid": "f0be617e-dbcf-59fd-9233-d95d8ef5fab1"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -4926,13 +5203,59 @@
       "R"
     ],
     "convertedManaCost": 3.0,
-    "edhrecRank": 12785,
+    "edhrecRank": 12581,
     "edhrecSaltiness": 0.15,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "3081acdf-ad8d-4458-82a8-c664f306bab0"
+        },
+        "language": "German",
+        "name": "Kriegsbringer-Angriffsschiff",
+        "text": "When this Spacecraft enters, it deals damage equal to the number of artifacts you control to target creature an opponent controls.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 6+.)\n6+ | Flying",
+        "uuid": "1b7996f3-c308-5655-9076-7008565c57a7"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "c462a814-9598-403b-87c2-9c486b0aae60"
+        },
+        "language": "Spanish",
+        "name": "Ca\u00f1onave combatidora",
+        "text": "When this Spacecraft enters, it deals damage equal to the number of artifacts you control to target creature an opponent controls.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 6+.)\n6+ | Flying",
+        "uuid": "111d5fc1-1f7b-5c5a-85aa-16c5763779ee"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "4535206e-ec89-4f29-ae42-ab30099488b4"
+        },
+        "language": "French",
+        "name": "Canonni\u00e8re du faiseur de guerre",
+        "text": "When this Spacecraft enters, it deals damage equal to the number of artifacts you control to target creature an opponent controls.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 6+.)\n6+ | Flying",
+        "uuid": "9f68b8dd-ed9c-5171-9519-a3e730539f44"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "71f2e515-c3a7-4666-bdd0-a33b9f06d77b"
+        },
+        "language": "Italian",
+        "name": "Astrobombardiere Bellico",
+        "text": "When this Spacecraft enters, it deals damage equal to the number of artifacts you control to target creature an opponent controls.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 6+.)\n6+ | Flying",
+        "uuid": "e7fe82b0-1378-5733-9214-8f87984c5421"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "a259db08-a8d9-44cf-a7e0-eddeddac48e7"
+        },
+        "language": "Japanese",
+        "name": "\u5927\uff08\u305f\u3044\uff09\u6226\uff08\u305b\u3093\uff09\u7528\uff08\u3088\u3046\uff09\u30ac\u30f3\u30b7\u30c3\u30d7",
+        "text": "When this Spacecraft enters, it deals damage equal to the number of artifacts you control to target creature an opponent controls.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 6+.)\n6+ | Flying",
+        "uuid": "47e8e1cf-84a9-5678-ae43-19be7c78a13d"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -5043,13 +5366,59 @@
       "W"
     ],
     "convertedManaCost": 4.0,
-    "edhrecRank": 16691,
+    "edhrecRank": 16592,
     "edhrecSaltiness": 0.04,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "edcb9e0f-f37a-4282-96e4-c9814a4cea7d"
+        },
+        "language": "German",
+        "name": "Lichtkeil-Rammschiff",
+        "text": "When this Spacecraft enters, create a 2/2 colorless Robot artifact creature token.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n9+ | Flying, first strike",
+        "uuid": "ea0b4ec7-d233-5c56-adb7-57598e0d2215"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "035f1e8f-d8e8-4fc1-9cc4-9baa54864f47"
+        },
+        "language": "Spanish",
+        "name": "Ariete cu\u00f1aluminosa",
+        "text": "When this Spacecraft enters, create a 2/2 colorless Robot artifact creature token.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n9+ | Flying, first strike",
+        "uuid": "f3169810-e588-553b-a4f3-d5d1473db4fb"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "f225d9a2-da7c-43a9-bd4b-965fb5b387d1"
+        },
+        "language": "French",
+        "name": "B\u00e9lier cun\u00e9ilux",
+        "text": "When this Spacecraft enters, create a 2/2 colorless Robot artifact creature token.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n9+ | Flying, first strike",
+        "uuid": "25ee6e4d-5bde-5610-b0da-e3f9eab0895e"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "e5e951ea-c4d7-485a-9dbd-fec8efa3957b"
+        },
+        "language": "Italian",
+        "name": "Sfondatore Cuneiluce",
+        "text": "When this Spacecraft enters, create a 2/2 colorless Robot artifact creature token.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n9+ | Flying, first strike",
+        "uuid": "d2ac427c-92ef-5456-bae8-c1bb207e5081"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "bb7dd283-5606-4687-bc06-f506675bae96"
+        },
+        "language": "Japanese",
+        "name": "\u6954\uff08\u304f\u3055\u3073\uff09\u5149\uff08\u3053\u3046\uff09\u306e\u7a81\uff08\u3068\u3064\uff09\u6483\uff08\u3052\u304d\uff09\u8266\uff08\u304b\u3093\uff09",
+        "text": "When this Spacecraft enters, create a 2/2 colorless Robot artifact creature token.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 9+.)\n9+ | Flying, first strike",
+        "uuid": "4cf0be0e-5c2e-54ca-b8b7-15ccf96730fd"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
@@ -5151,13 +5520,59 @@
     "colorIdentity": [],
     "colors": [],
     "convertedManaCost": 2.0,
-    "edhrecRank": 15291,
+    "edhrecRank": 15130,
     "edhrecSaltiness": 0.19,
     "finishes": [
       "nonfoil",
       "foil"
     ],
-    "foreignData": [],
+    "foreignData": [
+      {
+        "identifiers": {
+          "scryfallId": "e7e15d27-6cac-4e37-9998-a80e28618531"
+        },
+        "language": "German",
+        "name": "Wurmwall-St\u00f6berer",
+        "text": "When this Spacecraft enters, surveil 2.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 4+.)\n4+ | Flying",
+        "uuid": "9223d9de-2adb-5e79-b07b-ce0b566b8ea9"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "30a62d12-2a3d-4472-8ffd-ada8b0fda773"
+        },
+        "language": "Spanish",
+        "name": "Exploradora del Sierpemuro",
+        "text": "When this Spacecraft enters, surveil 2.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 4+.)\n4+ | Flying",
+        "uuid": "31cb7db3-e921-5a8d-8e3b-03b31084eefa"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "ac71c3a8-ac44-4cae-b606-40171fcb7691"
+        },
+        "language": "French",
+        "name": "Balayeur du Mur-guivre",
+        "text": "When this Spacecraft enters, surveil 2.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 4+.)\n4+ | Flying",
+        "uuid": "ca2b0bc3-34a8-58b6-9b9c-b14174e96cb3"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "ada20968-a55d-4f32-a5f2-aeb2b712604f"
+        },
+        "language": "Italian",
+        "name": "Perlustratore della Fascia Alfa",
+        "text": "When this Spacecraft enters, surveil 2.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 4+.)\n4+ | Flying",
+        "uuid": "fafeff3d-b119-5f7f-bbed-73d0468e022d"
+      },
+      {
+        "identifiers": {
+          "scryfallId": "46da4b51-7cf3-4e1c-8c6f-dec30bf98c77"
+        },
+        "language": "Japanese",
+        "name": "\u30ef\u30fc\u30e0\u30a6\u30a9\u30fc\u30eb\u306e\u6383\uff08\u305d\u3046\uff09\u8a0e\uff08\u3068\u3046\uff09\u8239\uff08\u305b\u3093\uff09",
+        "text": "When this Spacecraft enters, surveil 2.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 4+.)\n4+ | Flying",
+        "uuid": "570fd384-8fb5-599b-814b-e8ca8210a2df"
+      }
+    ],
     "frameVersion": "2015",
     "hasFoil": true,
     "hasNonFoil": true,
