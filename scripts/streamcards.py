@@ -91,8 +91,10 @@ def main(args):
     cards = jdecode.mtg_open_file(fname, verbose=True, linetrans=True)
 
     def write_stream(i, fd):
-        local_random = random.Random(main_seed)
-        local_random.jumpahead(i)
+        if main_seed is not None:
+            local_random = random.Random(main_seed + i)
+        else:
+            local_random = random.Random()
         local_cards = [card for card in cards]
         with open('/proc/self/fd/'+str(fd), 'wt') as f:
             while True:
