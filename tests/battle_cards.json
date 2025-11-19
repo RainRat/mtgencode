@@ -1,0 +1,22 @@
+{
+    "data": {
+        "BTL": {
+            "name": "Battle Test",
+            "type": "test",
+            "code": "BTL",
+            "cards": [
+                {
+                    "name": "Invasion of Zendikar",
+                    "type": "Battle - Siege",
+                    "types": ["Battle"],
+                    "subtypes": ["Siege"],
+                    "defense": 4,
+                    "text": "...",
+                    "color": "G",
+                    "rarity": "Uncommon",
+                    "manaCost": "{3}{G}"
+                }
+            ]
+        }
+    }
+}

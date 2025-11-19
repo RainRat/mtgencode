@@ -59,10 +59,17 @@ def check_types(card):
         return list_only(card.types, ['tribal', 'creature', 'artifact', 'land', 'enchantment'])
     if 'planeswalker' in card.types:
         return list_only(card.types, ['tribal', 'planeswalker', 'artifact', 'land', 'enchantment'])
+    if 'battle' in card.types:
+        return list_only(card.types, ['tribal', 'battle', 'artifact', 'land', 'enchantment'])
     else:
         return list_only(card.types, ['tribal', 'artifact', 'land', 'enchantment'])
 
 def check_pt(card):
+    if 'battle' in card.types:
+        return None
+    # "Station" cards are artifacts that can become creatures, so they are exempt from P/T checks.
+    if "station" in card.text.text.lower():
+        return None
     if ('creature' in card.types or 'vehicle' in card.subtypes) or card.pt:
         return ((('creature' in card.types or 'vehicle' in card.subtypes) and len(re.findall(re.escape('/'), card.pt)) == 1)
                 and not card.loyalty)
