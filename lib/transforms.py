@@ -351,9 +351,6 @@ def text_pass_5_counters(s):
             usedcounters += [countername]
             s = s.replace(countername, counter_marker + ' counter')
 
-    if 'station' in s:
-        s = s.replace('station', 'station counter')
-    
     # miraculously this doesn't seem to happen
     # if len(usedcounters) > 1:
     #     print (usedcounters)
