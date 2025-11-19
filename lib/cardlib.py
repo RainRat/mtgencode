@@ -18,12 +18,23 @@ except ImportError:
         smallwords = [
             "'S",
             ' A ',
+            ' And ',
+            ' As ',
+            ' At ',
+            ' But ',
+            ' By ',
             ' For ',
             ' From ',
+            ' If ',
             ' In ',
+            ' Nor ',
             ' Of ',
+            ' On ',
+            ' Or ',
+            ' So ',
             ' The ',
             ' To ',
+            ' Yet ',
         ]
         for word in smallwords:
             s = s.replace(word, word.lower())
@@ -410,10 +421,13 @@ def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep):
 class Card:
     '''card representation with data'''
 
-    def __init__(self, src, fmt_ordered = fmt_ordered_default, 
-                            fmt_labeled = fmt_labeled_default, 
-                            fieldsep = utils.fieldsep, linetrans = True,
-                            verbose = False):
+    def __init__(self, src, fmt_ordered=None, fmt_labeled=None,
+                 fieldsep=utils.fieldsep, linetrans=True,
+                 verbose=False):
+        if fmt_ordered is None:
+            fmt_ordered = fmt_ordered_default
+        if fmt_labeled is None:
+            fmt_labeled = fmt_labeled_default
 
         # source fields, exactly one will be set
         self.json = None
