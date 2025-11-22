@@ -1,0 +1,288 @@
+{
+    "artist": "Darren Tan",
+    "artistIds": [
+        "14c7f83c-d0fb-43f0-90f3-703f910f8bb9"
+    ],
+    "availability": [
+        "arena",
+        "mtgo",
+        "paper"
+    ],
+    "boosterTypes": [
+        "default"
+    ],
+    "borderColor": "black",
+    "colorIdentity": [
+        "R"
+    ],
+    "colors": [
+        "R"
+    ],
+    "convertedManaCost": 2.0,
+    "defense": "5",
+    "edhrecRank": 6752,
+    "edhrecSaltiness": 0.44,
+    "faceConvertedManaCost": 2.0,
+    "faceManaValue": 2.0,
+    "faceName": "Invasion of Tarkir",
+    "finishes": [
+        "nonfoil",
+        "foil"
+    ],
+    "foreignData": [
+        {
+            "faceName": "Invasion von Tarkir",
+            "flavorText": "\u201eDie Phyrexianer sind Narren, wenn sie glauben, dass sie einen solchen Sturm \u00fcberstehen k\u00f6nnen.\"\n\u2014Sarkhan Vol",
+            "identifiers": {
+                "multiverseId": "607530",
+                "scryfallId": "8f23bb47-4d1c-4197-9971-b23d2c1b4b45"
+            },
+            "language": "German",
+            "multiverseId": 607530,
+            "name": "Invasion von Tarkir // Trotzendes Donnermaul",
+            "text": "(Sowie eine Belagerung ins Spiel kommt, bestimme einen Gegner, der sie besch\u00fctzt. Du und andere k\u00f6nnt sie angreifen. Wenn sie \u00fcberwunden wird, schicke sie ins Exil und wirke sie dann transformiert.)\nWenn die Invasion von Tarkir ins Spiel kommt, zeige eine beliebige Anzahl an Drache-Karten aus deiner Hand offen vor. Wenn du dies tust, f\u00fcgt die Invasion von Tarkir einem anderen Ziel deiner Wahl X plus 2 Schadenspunkte zu, wobei X gleich der Anzahl der auf diese Weise vorgezeigten Karten ist. (X kann 0 sein.)",
+            "type": "Schlacht \u2014 Belagerung",
+            "uuid": "6385ee90-be0e-5548-8d70-ddf6f39d23ee"
+        },
+        {
+            "faceName": "Invasi\u00f3n de Tarkir",
+            "flavorText": "\"Los pirexianos son unos necios si creen que pueden soportar una tormenta as\u00ed\".\n\u2014Sarkhan Vol",
+            "identifiers": {
+                "multiverseId": "607867",
+                "scryfallId": "3ce08da3-29af-484a-a162-b6cdef709924"
+            },
+            "language": "Spanish",
+            "multiverseId": 607867,
+            "name": "Invasi\u00f3n de Tarkir // Fauces de trueno desafiante",
+            "text": "(En cuanto un Asedio entre, elige un oponente para que lo proteja. T\u00fa y otros jugadores pueden atacarlo. Cuando sea derrotado, ex\u00edlialo y luego l\u00e1nzalo transformado.)\nCuando la Invasi\u00f3n de Tarkir entre al campo de batalla, muestra cualquier cantidad de cartas de Drag\u00f3n de tu mano. Cuando lo hagas, la Invasi\u00f3n de Tarkir hace X m\u00e1s 2 puntos de da\u00f1o a cualquier otro objetivo, donde X es la cantidad de cartas mostradas de esta manera. (X puede ser 0.)",
+            "type": "Batalla \u2014 Asedio",
+            "uuid": "e35fe8e7-683d-5edb-9295-cdf306d2febc"
+        },
+        {
+            "faceName": "Invasion de Tarkir",
+            "flavorText": "\u00ab Les Phyrexians sont fous s'ils s'imaginent r\u00e9sister \u00e0 un orage pareil. \u00bb\n\u2014Sarkhan Vol",
+            "identifiers": {
+                "multiverseId": "608204",
+                "scryfallId": "ffd2c97d-1a2f-46d6-b074-8f2e5ab1b5de"
+            },
+            "language": "French",
+            "multiverseId": 608204,
+            "name": "Invasion de Tarkir // Foudregueule provocateur",
+            "text": "(Au moment o\u00f9 un si\u00e8ge arrive, choisissez un adversaire pour le prot\u00e9ger. Vous et les autres pouvez l'attaquer. Quand il est vaincu, exilez-le, puis lancez-le transform\u00e9.)\nQuand l'Invasion de Tarkir arrive sur le champ de bataille, r\u00e9v\u00e9lez n'importe quel nombre de cartes de dragon depuis votre main. Quand vous faites ainsi, l'Invasion de Tarkir inflige X plus 2 blessures \u00e0 n'importe quelle autre cible, X \u00e9tant le nombre de cartes r\u00e9v\u00e9l\u00e9es de cette mani\u00e8re. (X peut \u00eatre 0.)",
+            "type": "Bataille \u2014 si\u00e8ge",
+            "uuid": "0cae719a-6ac5-5534-8156-4ce673dd2f67"
+        },
+        {
+            "faceName": "Invasione di Tarkir",
+            "flavorText": "\"I Phyrexiani sono degli sciocchi se pensano di poter affrontare una simile tempesta.\"\n\u2014Sarkhan Vol",
+            "identifiers": {
+                "multiverseId": "608541",
+                "scryfallId": "6bd43f8a-c53d-4152-8df3-9233fae211bf"
+            },
+            "language": "Italian",
+            "multiverseId": 608541,
+            "name": "Invasione di Tarkir // Mascella Tonante Spavalda",
+            "text": "(Mentre un Assedio entra, scegli un avversario che lo protegga. Tu e gli altri giocatori potete attaccare l'Assedio. Quando viene sconfitto, esilialo, poi lancialo trasformato.)\nQuando l'Invasione di Tarkir entra nel campo di battaglia, rivela un qualsiasi numero di carte Drago dalla tua mano. Quando lo fai, l'Invasione di Tarkir infligge X pi\u00f9 2 danni a un qualsiasi altro bersaglio, dove X \u00e8 il numero di carte rivelate in questo modo. (X pu\u00f2 essere 0.)",
+            "type": "Battaglia \u2014 Assedio",
+            "uuid": "09a7e780-94c7-5ce2-b833-35f01715e9b8"
+        },
+        {
+            "faceName": "\u30bf\u30eb\u30ad\u30fc\u30eb\u3078\u306e\u4fb5\u653b",
+            "flavorText": "\u300c\u3042\u306e\u3088\u3046\u306a\u5d50\u3092\u5207\u308a\u629c\u3051\u3089\u308c\u308b\u3068\u4fe1\u3058\u3066\u3044\u308b\u3068\u3057\u305f\u3089\u3001\u30d5\u30a1\u30a4\u30ec\u30af\u30b7\u30a2\u306e\u9023\u4e2d\u306f\u3068\u3093\u3060\u611a\u304b\u8005\u3060\u3002\u300d\n\u2015\u2015\u30b5\u30eb\u30ab\u30f3\u30fb\u30f4\u30a9\u30eb",
+            "identifiers": {
+                "multiverseId": "608878",
+                "scryfallId": "7f4c9b8f-47b2-4c5f-b05b-6687f53c6b76"
+            },
+            "language": "Japanese",
+            "multiverseId": 608878,
+            "name": "\u30bf\u30eb\u30ad\u30fc\u30eb\u3078\u306e\u4fb5\u653b // \u679c\u6562\u306a\u96f7\u53e3",
+            "text": "\uff08\u5305\u56f2\u6226\uff11\u3064\u304c\u6226\u5834\u306b\u51fa\u308b\u306b\u969b\u3057\u3001\u305d\u308c\u3092\u5b88\u308b\u5bfe\u6226\u76f8\u624b\uff11\u4eba\u3092\u9078\u3076\u3002\u3042\u306a\u305f\u3084\u4ed6\u306e\u30d7\u30ec\u30a4\u30e4\u30fc\u306f\u305d\u308c\u3092\u653b\u6483\u3067\u304d\u308b\u3002\u305d\u308c\u304c\u5012\u3055\u308c\u305f\u3068\u304d\u3001\u305d\u308c\u3092\u8ffd\u653e\u3059\u308b\u3002\u305d\u306e\u5f8c\u3001\u305d\u308c\u3092\u5909\u8eab\u3055\u305b\u305f\u72b6\u614b\u3067\u5531\u3048\u308b\u3002\uff09\n\u30bf\u30eb\u30ad\u30fc\u30eb\u3078\u306e\u4fb5\u653b\u304c\u6226\u5834\u306b\u51fa\u305f\u3068\u304d\u3001\u3042\u306a\u305f\u306e\u624b\u672d\u306b\u3042\u308b\u671b\u3080\u679a\u6570\u306e\u30c9\u30e9\u30b4\u30f3\u30fb\u30ab\u30fc\u30c9\u3092\u516c\u958b\u3059\u308b\u3002\u305d\u3046\u3057\u305f\u3068\u304d\u3001\u3053\u308c\u3067\u306a\u3044\uff11\u3064\u3092\u5bfe\u8c61\u3068\u3059\u308b\u3002\u30bf\u30eb\u30ad\u30fc\u30eb\u3078\u306e\u4fb5\u653b\u306f\u305d\u308c\u306b\u3001\uff38\u306b\uff12\u3092\u8db3\u3057\u305f\u70b9\u6570\u306e\u30c0\u30e1\u30fc\u30b8\u3092\u4e0e\u3048\u308b\u3002\uff38\u306f\u3053\u308c\u306b\u3088\u308a\u516c\u958b\u3055\u308c\u305f\u30ab\u30fc\u30c9\u306e\u679a\u6570\u306b\u7b49\u3057\u3044\u3002\uff08\uff38\u306f\uff10\u3067\u3082\u3088\u3044\u3002\uff09",
+            "type": "\u30d0\u30c8\u30eb \u2014 \u5305\u56f2\u6226",
+            "uuid": "9c0dec7a-fd1e-52bb-8b95-023ac690a0d9"
+        },
+        {
+            "faceName": "Invas\u00e3o de Tarkir",
+            "flavorText": "\"Os phyrexianos s\u00e3o tolos se acham que aguentam uma tempestade dessas.\"\n\u2014 Sarkhan Vol",
+            "identifiers": {
+                "multiverseId": "609552",
+                "scryfallId": "bfc37d91-7391-4764-971e-47a273db8dbc"
+            },
+            "language": "Portuguese (Brazil)",
+            "multiverseId": 609552,
+            "name": "Invas\u00e3o de Tarkir // Drag\u00e3o Trovejante Desafiador",
+            "text": "(Conforme um Cerco entrar no campo de batalha, escolha um oponente para proteg\u00ea-lo. Voc\u00ea e outros podem atac\u00e1-lo. Quando ele for derrotado, exile-o e depois o conjure transformado.)\nQuando Invas\u00e3o de Tarkir entrar no campo de batalha, revele qualquer n\u00famero de cards de Drag\u00e3o de sua m\u00e3o. Quando voc\u00ea faz isso, Invas\u00e3o de Tarkir causa X mais 2 pontos de dano a qualquer outro alvo, sendo X o n\u00famero de cards revelados dessa forma. (X pode ser 0.)",
+            "type": "Batalha \u2014 Cerco",
+            "uuid": "0766753f-b452-5690-8552-7f9c52f39d65"
+        },
+        {
+            "faceName": "\u8fdb\u519b\u9791\u5951",
+            "flavorText": "\u300c\u5982\u679c\u975e\u745e\u514b\u897f\u4e9a\u4eba\u89c9\u5f97\u4ed6\u4eec\u80fd\u633a\u8fc7\u8fd9\u573a\u98ce\u66b4\uff0c\u90a3\u5c31\u771f\u7684\u592a\u8822\u4e86\u3002\u300d\n\uff5e\u8428\u574e\u6c83",
+            "identifiers": {
+                "multiverseId": "610226",
+                "scryfallId": "d24d207f-1032-4d3f-94b6-5c38aa7672db"
+            },
+            "language": "Chinese Simplified",
+            "multiverseId": 610226,
+            "name": "\u8fdb\u519b\u9791\u5951 // \u65e0\u754f\u96f7\u5589",
+            "text": "(\u4e8e\u56f4\u653b\u8fdb\u6218\u573a\u65f6\uff0c\u9009\u62e9\u4e00\u4f4d\u5bf9\u624b\u6765\u9632\u536b\u4e4b\u3002\u4f60\u548c\u5176\u4ed6\u724c\u624b\u80fd\u653b\u51fb\u56f4\u653b\u3002\u5f53\u56f4\u653b\u5931\u5b88\u65f6\uff0c\u5c06\u5b83\u653e\u9010\uff0c\u7136\u540e\u4f60\u65bd\u653e\u5df2\u8f6c\u5316\u7684\u6b64\u724c\u3002\uff09\n\u5f53\u8fdb\u519b\u9791\u5951\u8fdb\u6218\u573a\u65f6\uff0c\u4ece\u4f60\u624b\u4e0a\u5c55\u793a\u4efb\u610f\u6570\u91cf\u7684\u9f99\u724c\u3002\u5f53\u4f60\u5982\u6b64\u4f5c\u65f6\uff0c\u8fdb\u519b\u9791\u5951\u5bf9\u4efb\u610f\u53e6\u4e00\u4e2a\u76ee\u6807\u9020\u6210X\u52a02\u70b9\u4f24\u5bb3\uff0cX\u4e3a\u4ee5\u6b64\u6cd5\u6240\u5c55\u793a\u4e4b\u724c\u7684\u6570\u91cf\u3002\uff08X\u53ef\u4ee5\u4e3a0\u3002\uff09",
+            "type": "\u6218\u5f79 \u2014 \u56f4\u653b",
+            "uuid": "a0a2b876-d276-5106-b8bc-e87b329b2b8d"
+        }
+    ],
+    "frameVersion": "2015",
+    "hasFoil": true,
+    "hasNonFoil": true,
+    "identifiers": {
+        "cardKingdomFoilId": "275867",
+        "cardKingdomId": "275175",
+        "cardsphereId": "101105",
+        "deckboxId": "77243",
+        "mcmId": "703493",
+        "mcmMetaId": "418106",
+        "mtgArenaId": "84429",
+        "mtgjsonV4Id": "fe0a5d9e-76a4-53f7-89f8-32a8ae63f947",
+        "mtgoId": "110158",
+        "multiverseId": "607193",
+        "scryfallId": "a98f71a0-7c99-4cee-8f70-877e698cca84",
+        "scryfallIllustrationId": "17dfa61d-bf8e-40d0-b736-2a065b3530d7",
+        "scryfallOracleId": "5c7f02ad-1daf-4d1a-bef0-0b2064f9b67e",
+        "tcgplayerProductId": "490493"
+    },
+    "keywords": [
+        "Transform"
+    ],
+    "language": "English",
+    "layout": "transform",
+    "legalities": {
+        "brawl": "Legal",
+        "commander": "Legal",
+        "duel": "Legal",
+        "gladiator": "Legal",
+        "historic": "Legal",
+        "legacy": "Legal",
+        "modern": "Legal",
+        "oathbreaker": "Legal",
+        "pioneer": "Legal",
+        "timeless": "Legal",
+        "vintage": "Legal"
+    },
+    "manaCost": "{1}{R}",
+    "manaValue": 2.0,
+    "name": "Invasion of Tarkir // Defiant Thundermaw",
+    "number": "149",
+    "originalText": "(As a Siege enters, choose an opponent to protect it. You and others can attack it. When it's defeated, exile it, then cast it transformed.)\nWhen Invasion of Tarkir enters the battlefield, reveal any number of Dragon cards from your hand. When you do, Invasion of Tarkir deals X plus 2 damage to any other target, where X is the number of cards revealed this way. (X can be 0.)",
+    "otherFaceIds": [
+        "1a45e310-8c99-5f04-a6a2-28c23cc02a8f"
+    ],
+    "printings": [
+        "MOM",
+        "PMOM"
+    ],
+    "purchaseUrls": {
+        "cardKingdom": "https://mtgjson.com/links/5cadcac5d13c4b81",
+        "cardKingdomFoil": "https://mtgjson.com/links/c8f9603c7b6c1d68",
+        "cardmarket": "https://mtgjson.com/links/fedcb825154c3ac5",
+        "tcgplayer": "https://mtgjson.com/links/aebc215a115412f5"
+    },
+    "rarity": "mythic",
+    "rulings": [
+        {
+            "date": "2023-04-14",
+            "text": "A Siege\u2019s controller can\u2019t be its protector. If a Siege\u2019s protector ever gains control of it, they choose a new player to be its protector. This is a state-based action."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "A battle can be attacked by all players other than its protector. Notably, this means a Siege\u2019s controller can attack it."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "A battle can be dealt damage and be target of spells and/or abilities that target \u201cany target.\u201d"
+        },
+        {
+            "date": "2023-04-14",
+            "text": "A battle\u2019s \u201cdefense\u201d is displayed in the bottom right corner of the card. A battle enters the battlefield with that number of defense counters. If another permanent enters the battlefield as a copy of a battle, it also enters with that number of defense counters."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "As a Siege enters the battlefield, its controller chooses an opponent to be its protector."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "Battles can\u2019t attack or block, even if one also becomes a creature. If an attacking or blocking creature somehow becomes a battle in addition to being a creature, it is removed from combat."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "Damage dealt to a battle causes that many defense counters to be removed from it."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "If a Siege never had defense counters on it (perhaps because a permanent became a copy of one), it can\u2019t have its last defense counter removed. It will be put into its owner\u2019s graveyard. You won\u2019t exile it or cast the other face."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "If a battle has no defense counters, and it isn\u2019t the source of a triggered ability that has triggered but not yet left the stack, that battle is put into its owner\u2019s graveyard. This is a state-based action. This doesn\u2019t cause a Siege\u2019s intrinsic triggered ability to trigger."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "If a battle that\u2019s being attacked somehow stops being a battle, it is removed from combat. Similarly, if its controller changes in the middle of combat, it is removed from combat."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "If a non-battle permanent that is already on the battlefield become a copy of a Siege, its controller chooses one of their opponents to be that battle\u2019s protector. However, it will most likely be put into its owner\u2019s graveyard because it has no defense counters (see below)."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "If a permanent that is represented by a transforming double-faced card becomes a copy of a Siege, it will be exiled as that Siege\u2019s triggered ability resolves, then it will be cast transformed. Note that this applies only to transforming double-faced cards, not to modal double-faced cards that can normally be played using either face."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "If a token or a card that isn\u2019t represented by a transforming double-faced card becomes a copy of a Siege, it can\u2019t be cast as its triggered ability resolves. It will remain in exile. If it\u2019s a token, it will cease to exist the next time state-based actions are performed."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "If you don\u2019t reveal any Dragon cards from your hand, the reflexive triggered ability will cause Invasion of Tarkir to deal 2 damage to the target of the ability."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "In a multiplayer game, if the protector of a battle leaves the game and that battle is not currently being attacked, its controller chooses a new protector for it as a state-based action. If it is being attacked, its controller chooses a new protector for it once no creatures are attacking it. This means that it continues to be attacked and can be dealt combat damage as normal."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "Invasion of Tarkir\u2019s enters-the-battlefield ability triggers and goes on the stack without a target. As it resolves, you\u2019ll reveal any number of Dragon cards from your hand. As the card reminds you, that number can be zero. Then the second \u201creflexive\u201d triggered ability will trigger. You\u2019ll choose the target for that second ability at that time."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "Only creatures controlled by a battle\u2019s protector can block creatures that are attacking that battle. This means a Siege\u2019s controller can never assign creatures to block for it."
+        },
+        {
+            "date": "2023-04-14",
+            "text": "Sieges each have an intrinsic triggered ability. That ability is \u201cWhen the last defense counter is removed from this permanent, exile it, then you may cast it transformed without paying its mana cost.\u201d"
+        }
+    ],
+    "securityStamp": "oval",
+    "setCode": "MOM",
+    "side": "a",
+    "sourceProducts": {
+        "foil": [
+            "229d89f3-2b86-54ca-b07c-e74c8421ff9c",
+            "78441b62-b849-5262-a30f-9039ac252373",
+            "8acde1c9-b392-57c3-a2e4-27f7c1c9ab46",
+            "ffe20569-1726-5abf-921a-7667d2fbe138"
+        ],
+        "nonfoil": [
+            "8acde1c9-b392-57c3-a2e4-27f7c1c9ab46",
+            "a6e09d61-f6f4-5eb2-8359-110258c772d3",
+            "ffe20569-1726-5abf-921a-7667d2fbe138"
+        ]
+    },
+    "subtypes": [
+        "Siege"
+    ],
+    "supertypes": [],
+    "text": "(As a Siege enters, choose an opponent to protect it. You and others can attack it. When it's defeated, exile it, then cast it transformed.)\nWhen this Siege enters, reveal any number of Dragon cards from your hand. When you do, this Siege deals X plus 2 damage to any other target, where X is the number of cards revealed this way. (X can be 0.)",
+    "type": "Battle \u2014 Siege",
+    "types": [
+        "Battle"
+    ],
+    "uuid": "bb42b46d-365b-58ab-940d-b804f3392633"
+}

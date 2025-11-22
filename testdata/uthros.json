@@ -1,0 +1,140 @@
+{
+    "artist": "Piotr Dura",
+    "artistIds": [
+        "aff176e8-1d15-432e-ad1d-207a474decba"
+    ],
+    "availability": [
+        "mtgo",
+        "paper"
+    ],
+    "borderColor": "black",
+    "colorIdentity": [
+        "U"
+    ],
+    "colors": [
+        "U"
+    ],
+    "convertedManaCost": 3.0,
+    "edhrecRank": 3862,
+    "edhrecSaltiness": 0.28,
+    "finishes": [
+        "nonfoil"
+    ],
+    "foreignData": [
+        {
+            "identifiers": {
+                "scryfallId": "91df4e61-5b2d-407a-9e14-7cb1ca64c09e"
+            },
+            "language": "German",
+            "name": "Uthros-Forschungsschiff",
+            "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n3+ | Whenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\n12+ | Flying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+            "uuid": "d62598fc-623e-509b-999b-f3e8b6724d05"
+        },
+        {
+            "identifiers": {
+                "scryfallId": "3f35c816-1a1b-4b69-97c7-9eaec6e73e45"
+            },
+            "language": "Spanish",
+            "name": "Nav\u00edo de investigaci\u00f3n de Uthros",
+            "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n3+ | Whenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\n12+ | Flying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+            "uuid": "55a8b15a-31ae-557b-b925-42654b0da3e6"
+        },
+        {
+            "identifiers": {
+                "scryfallId": "2ffcef68-b959-4090-896c-ff46f9a21f05"
+            },
+            "language": "French",
+            "name": "Navire de recherche d'Uthros",
+            "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n3+ | Whenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\n12+ | Flying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+            "uuid": "c2727f09-a44c-5222-8ca5-35fe80e3b7bf"
+        },
+        {
+            "identifiers": {
+                "scryfallId": "2b8fd987-3f88-417c-bf8d-b8a9b8e3d852"
+            },
+            "language": "Italian",
+            "name": "Nave da Ricerca di Uthros",
+            "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n3+ | Whenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\n12+ | Flying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+            "uuid": "0fdec672-397a-5371-b1da-65fe5b767b6f"
+        },
+        {
+            "identifiers": {
+                "scryfallId": "8237abb4-ac77-4082-8484-ca338854db87"
+            },
+            "language": "Japanese",
+            "name": "\u30a6\u30b9\u30ed\u30b9\u306e\u8abf\uff08\u3061\u3087\u3046\uff09\u67fb\uff08\u3055\uff09\u8239\uff08\u305b\u3093\uff09",
+            "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n3+ | Whenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\n12+ | Flying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+            "uuid": "f84d8347-86d1-5696-9161-14e017772f91"
+        }
+    ],
+    "frameVersion": "2015",
+    "hasFoil": false,
+    "hasNonFoil": true,
+    "identifiers": {
+        "cardKingdomId": "316707",
+        "cardsphereId": "139515",
+        "mcmId": "834244",
+        "mtgjsonV4Id": "ad83553b-31b6-58aa-a715-e0b7f4f5907f",
+        "mtgoId": "142191",
+        "scryfallCardBackId": "0aeebaf5-8c7d-4636-9e82-8c27447861f7",
+        "scryfallId": "6ade097b-349f-4876-bdc8-7bcd051e9952",
+        "scryfallIllustrationId": "cea8d232-5194-4396-9202-b7a617faee0f",
+        "scryfallOracleId": "e1c9783a-1d1b-40d7-872e-0ca11b229ce6",
+        "tcgplayerProductId": "642790"
+    },
+    "isFullArt": true,
+    "isStarter": true,
+    "keywords": [
+        "Flying",
+        "Station"
+    ],
+    "language": "English",
+    "layout": "normal",
+    "legalities": {
+        "commander": "Legal",
+        "duel": "Legal",
+        "legacy": "Legal",
+        "oathbreaker": "Legal",
+        "vintage": "Legal"
+    },
+    "manaCost": "{2}{U}",
+    "manaValue": 3.0,
+    "name": "Uthros Research Craft",
+    "number": "7",
+    "power": "0",
+    "printings": [
+        "EOC"
+    ],
+    "purchaseUrls": {
+        "cardKingdom": "https://mtgjson.com/links/5fb92ed999b0fb69",
+        "tcgplayer": "https://mtgjson.com/links/65bc5e41dd4f6edb"
+    },
+    "rarity": "rare",
+    "rulings": [
+        {
+            "date": "2025-07-25",
+            "text": "The triggered ability granted by Uthros Research Craft\u2019s second ability resolves before the spell that caused it to trigger. It resolves even if that spell is countered or otherwise leaves the stack without resolving."
+        }
+    ],
+    "securityStamp": "oval",
+    "setCode": "EOC",
+    "sourceProducts": {
+        "nonfoil": [
+            "32c97686-3e06-5ff4-962a-ca0c512d0c7b"
+        ]
+    },
+    "subtypes": [
+        "Spacecraft"
+    ],
+    "supertypes": [],
+    "text": "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\nSTATION 3+\nWhenever you cast an artifact spell, draw a card. Put a charge counter on this Spacecraft.\nSTATION 12+\nFlying\nThis Spacecraft gets +1/+0 for each artifact you control.",
+    "toughness": "8",
+    "type": "Artifact \u2014 Spacecraft",
+    "types": [
+        "Artifact"
+    ],
+    "uuid": "5487df47-873d-5ef2-955d-5049b0203eef",
+    "variations": [
+        "e682e78e-2164-5728-855b-71eef000d884"
+    ]
+}
