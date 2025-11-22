@@ -25,10 +25,7 @@ pip install -r requirements.txt
 nltk requires some additional data files to work, so you'll also have to do:
 
 ```
-mkdir ~/nltk_data
-cd ~/nltk_data
-python -c "import nltk; nltk.download('punkt')"
-cd -
+python3 -m nltk.downloader punkt punkt_tab
 ```
 
 You don't have to put the files in ~/nltk_data, that's just one of the places it will look automatically. If you try to run decode.py with nltk but without the additional files, the error message is pretty helpful.
