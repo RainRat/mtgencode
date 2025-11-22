@@ -19,6 +19,7 @@ def sortcards(cards):
         ('levelers', []),
         ('legendary', []),
         ('Exclusive classes:', None),
+        ('battles', []),
         ('planeswalkers', []),
         ('lands', []),
         ('instants', []),
@@ -72,7 +73,9 @@ def sortcards(cards):
             classes['legendary'] += [card]
 
         # exclusive classes
-        if '|planeswalker|' in card:
+        if '|battle|' in card:
+            classes['battles'] += [card]
+        elif '|planeswalker|' in card:
             classes['planeswalkers'] += [card]
         elif '|land|' in card:
             classes['lands'] += [card]
