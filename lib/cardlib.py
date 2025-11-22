@@ -198,6 +198,9 @@ def fields_check_valid(fields):
     # Planeswalkers don't have p/t
     elif 'planeswalker' in fields[field_types][0][1]:
         return True
+    # Battles don't have p/t
+    elif 'battle' in fields[field_types][0][1]:
+        return field_loyalty in fields
     else:
         return not field_pt in fields
 
@@ -298,6 +301,8 @@ def fields_from_json(src_json, linetrans = True):
 
     if 'loyalty' in src_json:
         fields[field_loyalty] = [(-1, utils.to_unary(str(src_json['loyalty'])))]
+    elif 'defense' in src_json:
+        fields[field_loyalty] = [(-1, utils.to_unary(str(src_json['defense'])))]
 
     p_t = ''
     parsed_pt = True
@@ -319,8 +324,8 @@ def fields_from_json(src_json, linetrans = True):
     # similarly, return the actual Manatext object
     if 'text' in src_json:
         text_val = src_json['text'].lower()
-        if 'station' in text_val:
-            text_val = re.sub(r'station\s*\d+\+*', 'station', text_val)
+        # if 'station' in text_val:
+        #    text_val = re.sub(r'station\s*\d+\+*', 'station', text_val)
         text_val = transforms.text_pass_1_strip_rt(text_val)
         text_val = transforms.text_pass_2_cardname(text_val, name_orig)
         text_val = transforms.text_pass_3_unary(text_val)
@@ -786,7 +791,10 @@ class Card:
                 outstr += ' (' + utils.from_unary(self.__dict__[field_pt]) + ')'
 
             if self.__dict__[field_loyalty]:
-                outstr += ' ((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
+                if 'battle' in self.get_types():
+                    outstr += ' [[' + utils.from_unary(self.__dict__[field_loyalty]) + ']]'
+                else:
+                    outstr += ' ((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
 
         if formatted_mtext:
             outstr += linebreak + formatted_mtext
@@ -796,7 +804,10 @@ class Card:
                 outstr += linebreak + '(' + utils.from_unary(self.__dict__[field_pt]) + ')'
 
             if self.__dict__[field_loyalty]:
-                outstr += linebreak + '((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
+                if 'battle' in self.get_types():
+                    outstr += linebreak + '[[' + utils.from_unary(self.__dict__[field_loyalty]) + ']]'
+                else:
+                    outstr += linebreak + '((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
 
         if vdump and self.__dict__[field_other]:
             outstr += linebreak
@@ -1036,7 +1047,10 @@ class Card:
             outstr += ' '
         
         if self.__dict__[field_loyalty]:
-            outstr += '((' + self.__dict__[field_loyalty] + ')) '
+            if 'battle' in self.get_types():
+                outstr += '[[' + self.__dict__[field_loyalty] + ']] '
+            else:
+                outstr += '((' + self.__dict__[field_loyalty] + ')) '
             
         outstr += self.__dict__[field_text].vectorize()
 
