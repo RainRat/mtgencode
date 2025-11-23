@@ -72,8 +72,18 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         namestr = ''
         if for_html:
             if code:
+                # Transform legacy magiccards.info code (set/number.jpg) to Scryfall API URL
+                # Expected format: "set/number.jpg"
+                try:
+                    set_code, number_jpg = code.split('/')
+                    number = number_jpg.replace('.jpg', '')
+                    image_url = 'https://api.scryfall.com/cards/' + set_code + '/' + number + '?format=image&version=normal'
+                except ValueError:
+                    # In case code format is different than expected
+                    image_url = 'http://magiccards.info/scans/en/' + code
+
                 namestr = ('<div class="hover_img"><a href="#">' + truename
-                           + '<span><img style="background: url(http://magiccards.info/scans/en/' + code
+                           + '<span><img style="background: url(' + image_url
                            + ');" alt=""/></span></a>' + ': ' + str(dist) + '\n</div>\n')
             else:
                 namestr = '<div>' + truename + ': ' + str(dist) + '</div>'
