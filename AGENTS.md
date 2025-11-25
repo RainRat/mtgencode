@@ -1,6 +1,8 @@
 Run the test suite before completing work. When features change, update or add tests accordingly.
 
-testdata/Standard.json contains data of cards in Standard, downloaded from mtgjson.com as a preview of the full data of cards in Vintage. Still it is 34MB, so don't try to load the whole thing into LLM context, nor create a test that involves verifying every value. You can still have a test that loads it into memory, or pulls specific items from it.
+This project was originally written for Python 2. You may update code to use Python 3 idiom as you encounter it.
+
+You may be provided with a .json for a full set, downloaded from mtgjson.com to debug processing a specific type of card. Still they are quite large, don't try to load the whole thing into LLM context, nor create a test that involves verifying every card. The .json will be removed from the repository after the bug is fixed. Copy only the specific card you need for a test, using a program like scripts/extract_one.py or a custom process.
 
 ## Docker Usage
 
