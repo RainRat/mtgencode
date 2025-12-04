@@ -66,7 +66,7 @@ json_rarity_map = {
     'special' : rarity_special_marker,
     'Basic Land' : rarity_basic_land_marker,
 }
-json_rarity_unmap = {json_rarity_map[k] : k for k in json_rarity_map}
+json_rarity_unmap = {v: k for k, v in json_rarity_map.items()}
 
 # unambiguous synonyms
 counter_rename = config.counter_rename
@@ -124,28 +124,31 @@ unary_max = config.unary_max
 unary_exceptions = config.unary_exceptions
 
 def to_unary(s, warn = False):
-    numbers = re.findall(r'[0123456789]+', s)
-    # replace largest first to avoid accidentally replacing shared substrings
-    for n in sorted(numbers, key=int, reverse=True):
+    def replace_number(match):
+        n = match.group(0)
         i = int(n)
         if i in unary_exceptions:
-            s = s.replace(n, unary_exceptions[i])
+            return unary_exceptions[i]
         elif i > unary_max:
-            i = unary_max
+            # original code capped it at unary_max (20)
             if warn:
                 print(s)
-            s = s.replace(n, unary_marker + unary_counter * i)
+            i = unary_max
+            return unary_marker + unary_counter * i
         else:
-            s = s.replace(n, unary_marker + unary_counter * i)
-    return s
+            return unary_marker + unary_counter * i
+
+    return re.sub(r'[0123456789]+', replace_number, s)
 
 def from_unary(s):
-    numbers = re.findall(re.escape(unary_marker + unary_counter) + '*', s)
-    # again, largest first so we don't replace substrings and break everything
-    for n in sorted(numbers, key=len, reverse=True):
+    pattern = re.escape(unary_marker) + re.escape(unary_counter) + '*'
+
+    def replace_unary(match):
+        n = match.group(0)
         i = (len(n) - len(unary_marker)) // len(unary_counter)
-        s = s.replace(n, str(i))
-    return s
+        return str(i)
+
+    return re.sub(pattern, replace_unary, s)
 
 # mana syntax
 mana_open_delimiter = '{'
