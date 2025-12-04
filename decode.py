@@ -123,25 +123,32 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             writer.write('version control:\n\ttype: none\napprentice code: ')
 
     def writecard(writer, card, for_html=False):
-        if for_mse:
-            writer.write(card.to_mse())
-            fstring = ''
-            if card.json:
-                fstring += 'JSON:\n' + card.json + '\n'
-            if card.raw:
-                fstring += 'raw:\n' + card.raw + '\n'
-            fstring += '\n'
-            fstring += card.format(gatherer = gatherer, for_forum = for_forum,
-                                   vdump = vdump) + '\n'
-            fstring = fstring.replace('<', '(').replace('>', ')')
-            writer.write(('\n' + fstring[:-1]).replace('\n', '\n\t\t'))
-        else:
-            fstring = card.format(gatherer = gatherer, for_forum = for_forum,
-                                  vdump = vdump, for_html = for_html)
-            if for_html and creativity:
-                fstring = fstring[:-6] # chop off the closing </div> to stick stuff in
+        try:
+            if for_mse:
+                writer.write(card.to_mse())
+                fstring = ''
+                if card.json:
+                    fstring += 'JSON:\n' + card.json + '\n'
+                if card.raw:
+                    fstring += 'raw:\n' + card.raw + '\n'
+                fstring += '\n'
+                fstring += card.format(gatherer = gatherer, for_forum = for_forum,
+                                       vdump = vdump) + '\n'
+                fstring = fstring.replace('<', '(').replace('>', ')')
+                writer.write(('\n' + fstring[:-1]).replace('\n', '\n\t\t'))
+            else:
+                fstring = card.format(gatherer = gatherer, for_forum = for_forum,
+                                      vdump = vdump, for_html = for_html)
+                if for_html and creativity:
+                    fstring = fstring[:-6] # chop off the closing </div> to stick stuff in
 
-            writer.write((fstring + '\n'))
+                writer.write((fstring + '\n'))
+        except Exception as e:
+            if vdump:
+                # Assuming writer is a file object or stdout
+                writer.write('ERROR processing card: ' + str(e) + '\n')
+            else:
+                raise
 
         if creativity:
             if for_html:

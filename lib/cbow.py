@@ -78,45 +78,33 @@ def makevector(vocabulary,vecs,sequence):
 #### !snip ####
 
 
-try:
-    import numpy
-    def cosine_similarity(v1,v2):
-        A = numpy.array([v1,v2])
+import numpy
+def cosine_similarity(v1,v2):
+    A = numpy.array([v1,v2])
 
-        # from http://stackoverflow.com/questions/17627219/whats-the-fastest-way-in-python-to-calculate-cosine-similarity-given-sparse-mat
+    # from http://stackoverflow.com/questions/17627219/whats-the-fastest-way-in-python-to-calculate-cosine-similarity-given-sparse-mat
 
-        # base similarity matrix (all dot products)
-        # replace this with A.dot(A.T).todense() for sparse representation
-        similarity = numpy.dot(A, A.T)
-        
-        # squared magnitude of preference vectors (number of occurrences)
-        square_mag = numpy.diag(similarity)
+    # base similarity matrix (all dot products)
+    # replace this with A.dot(A.T).todense() for sparse representation
+    similarity = numpy.dot(A, A.T)
 
-        # inverse squared magnitude
-        inv_square_mag = 1 / square_mag
+    # squared magnitude of preference vectors (number of occurrences)
+    square_mag = numpy.diag(similarity)
 
-        # if it doesn't occur, set its inverse magnitude to zero (instead of inf)
-        inv_square_mag[numpy.isinf(inv_square_mag)] = 0
+    # inverse squared magnitude
+    inv_square_mag = 1 / square_mag
 
-        # inverse of the magnitude
-        inv_mag = numpy.sqrt(inv_square_mag)
-        
-        # cosine similarity (elementwise multiply by inverse magnitudes)
-        cosine = similarity * inv_mag
-        cosine = cosine.T * inv_mag
+    # if it doesn't occur, set its inverse magnitude to zero (instead of inf)
+    inv_square_mag[numpy.isinf(inv_square_mag)] = 0
+
+    # inverse of the magnitude
+    inv_mag = numpy.sqrt(inv_square_mag)
     
-        return cosine[0][1]
+    # cosine similarity (elementwise multiply by inverse magnitudes)
+    cosine = similarity * inv_mag
+    cosine = cosine.T * inv_mag
 
-except ImportError:
-    def cosine_similarity(v1,v2):
-        #compute cosine similarity of v1 to v2: (v1 dot v1)/{||v1||*||v2||)
-        sumxx, sumxy, sumyy = 0, 0, 0
-        for i in range(len(v1)):
-            x = v1[i]; y = v2[i]
-            sumxx += x*x
-            sumyy += y*y
-            sumxy += x*y
-        return sumxy/math.sqrt(sumxx*sumyy)
+    return cosine[0][1]
 
 def cosine_similarity_name(cardvec, v, name):
     return (cosine_similarity(cardvec, v), name)

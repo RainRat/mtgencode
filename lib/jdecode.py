@@ -89,6 +89,37 @@ def default_exclude_layouts(layout):
     return layout in ['token', 'planar', 'scheme', 'phenomenon', 'vanguard']
 
 # centralized logic for opening files of cards, either encoded or json
+def _find_best_candidate(jcards, exclude_sets, linetrans):
+    # look for a normal rarity version, in a set we can use
+    for idx, jcard in enumerate(jcards):
+        card = cardlib.Card(jcard, linetrans=linetrans)
+        if (card.rarity != utils.rarity_special_marker and
+            not exclude_sets(jcard.get(utils.json_field_set_name))):
+            return idx, card
+
+    # if there isn't one, settle with index 0
+    return 0, cardlib.Card(jcards[0], linetrans=linetrans)
+
+def _check_parsing_quality(cards, report_fobj):
+    good_count = 0
+    bad_count = 0
+    for card in cards:
+        if not card.parsed and not card.text.text:
+            bad_count += 1
+        elif len(card.name) > 50 or len(card.rarity) > 3:
+            bad_count += 1
+        else:
+            good_count += 1
+        if good_count + bad_count > 15:
+            break
+    # random heuristic
+    if bad_count > 10:
+        print ('WARNING: Saw a bunch of unparsed cards:')
+        print ('         Is this a legacy format? You may need to specify the field order.')
+    if report_fobj:
+        report_fobj.close()
+    return cards
+
 def mtg_open_file(fname, verbose = False,
                   linetrans = True, fmt_ordered = cardlib.fmt_ordered_default,
                   exclude_sets = default_exclude_sets,
@@ -105,62 +136,7 @@ def mtg_open_file(fname, verbose = False,
     if report_file:
         report_fobj = open(report_file, 'w', encoding='utf-8')
 
-    if fname.endswith('.json'):
-        if verbose:
-            print('This looks like a json file: ' + fname)
-        json_srcs, bad_sets = mtg_open_json(fname, verbose)
-        # sorted for stability
-        for json_cardname in sorted(json_srcs):
-            if len(json_srcs[json_cardname]) > 0:
-                jcards = json_srcs[json_cardname]
-
-                # look for a normal rarity version, in a set we can use
-                idx = 0
-                card = cardlib.Card(jcards[idx], linetrans=linetrans)
-                while (idx < len(jcards)
-                       and (card.rarity == utils.rarity_special_marker
-                            or exclude_sets(jcards[idx].get(utils.json_field_set_name)))):
-                    idx += 1
-                    if idx < len(jcards):
-                        card = cardlib.Card(jcards[idx], linetrans=linetrans)
-                # if there isn't one, settle with index 0
-                if idx >= len(jcards):
-                    idx = 0
-                    card = cardlib.Card(jcards[idx], linetrans=linetrans)
-                # we could go back and look for a card satisfying one of the criteria,
-                # but eh
-
-                skip = False
-                if (exclude_sets(jcards[idx].get(utils.json_field_set_name))
-                    or exclude_layouts(jcards[idx].get('layout'))
-                    or jcards[idx].get('setCode') in bad_sets):
-                    skip = True
-                for cardtype in card.types:
-                    if exclude_types(cardtype):
-                        skip = True
-                if skip:
-                    skipped += 1
-                    continue
-
-                if card.valid:
-                    valid += 1
-                    cards += [card]
-                elif card.parsed:
-                    invalid += 1
-                    if verbose:
-                        print ('Invalid card: ' + json_cardname)
-                else:
-                    print(card.name)
-                    unparsed += 1
-                    if report_fobj:
-                        unparsed_card_repr = {
-                            "name": card.name,
-                            "fields": jcards[idx]
-                        }
-                        report_fobj.write(json.dumps(unparsed_card_repr, indent=2))
-
-    # fall back to opening a normal encoded file
-    else:
+    if not fname.endswith('.json'):
         if verbose:
             print('Opening encoded card file: ' + fname)
         with open(fname, 'rt', encoding='utf8') as f:
@@ -179,26 +155,52 @@ def mtg_open_file(fname, verbose = False,
                     else:
                         unparsed += 1
 
+        if verbose:
+             print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
+                    + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'))
+        return _check_parsing_quality(cards, report_fobj)
+
+    if verbose:
+        print('This looks like a json file: ' + fname)
+    json_srcs, bad_sets = mtg_open_json(fname, verbose)
+    # sorted for stability
+    for json_cardname in sorted(json_srcs):
+        if len(json_srcs[json_cardname]) > 0:
+            jcards = json_srcs[json_cardname]
+
+            idx, card = _find_best_candidate(jcards, exclude_sets, linetrans)
+
+            skip = False
+            if (exclude_sets(jcards[idx].get(utils.json_field_set_name))
+                or exclude_layouts(jcards[idx].get('layout'))
+                or jcards[idx].get('setCode') in bad_sets):
+                skip = True
+            for cardtype in card.types:
+                if exclude_types(cardtype):
+                    skip = True
+            if skip:
+                skipped += 1
+                continue
+
+            if card.valid:
+                valid += 1
+                cards += [card]
+            elif card.parsed:
+                invalid += 1
+                if verbose:
+                    print ('Invalid card: ' + json_cardname)
+            else:
+                print(card.name)
+                unparsed += 1
+                if report_fobj:
+                    unparsed_card_repr = {
+                        "name": card.name,
+                        "fields": jcards[idx]
+                    }
+                    report_fobj.write(json.dumps(unparsed_card_repr, indent=2))
+
     if verbose:
         print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
                + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'))
 
-    good_count = 0
-    bad_count = 0
-    for card in cards:
-        if not card.parsed and not card.text.text:
-            bad_count += 1
-        elif len(card.name) > 50 or len(card.rarity) > 3:
-            bad_count += 1
-        else:
-            good_count += 1
-        if good_count + bad_count > 15:
-            break
-    # random heuristic
-    if bad_count > 10:
-        print ('WARNING: Saw a bunch of unparsed cards:')
-        print ('         Is this a legacy format? You may need to specify the field order.')
-    if report_fobj:
-        report_fobj.close()
-
-    return cards
+    return _check_parsing_quality(cards, report_fobj)

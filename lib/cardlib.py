@@ -15,30 +15,19 @@ try:
 except ImportError:
     def titlecase(s):
         s = s.title()
-        smallwords = [
-            "'S",
-            ' A ',
-            ' And ',
-            ' As ',
-            ' At ',
-            ' But ',
-            ' By ',
-            ' For ',
-            ' From ',
-            ' If ',
-            ' In ',
-            ' Nor ',
-            ' Of ',
-            ' On ',
-            ' Or ',
-            ' So ',
-            ' The ',
-            ' To ',
-            ' Yet ',
-        ]
-        for word in smallwords:
-            s = s.replace(word, word.lower())
-        return s
+        smallwords = {
+            'A', 'An', 'And', 'As', 'At', 'But', 'By', 'For', 'From', 'If', 'In', 'Nor', 'Of', 'On', 'Or', 'So', 'The', 'To', 'Yet'
+        }
+        words = s.split(' ')
+        for i, word in enumerate(words):
+            if "'S" in word:
+                word = word.replace("'S", "'s")
+                words[i] = word
+
+            if word in smallwords:
+                if 0 < i < len(words) - 1:
+                    words[i] = word.lower()
+        return ' '.join(words)
 
 sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 # This could me made smarter - MSE will capitalize for us after :,
@@ -444,25 +433,7 @@ class Card:
         # placeholders to fill in with expensive distance metrics
         self.nearest_names = []
         self.nearest_cards = []
-        # default values for all fields
-        self.__dict__[field_name] = ''
-        self.__dict__[field_rarity] = ''
-        self.__dict__[field_cost] = Manacost('')
-        self.__dict__[field_supertypes] = []
-        self.__dict__[field_types] = []
-        self.__dict__[field_subtypes] = []
-        self.__dict__[field_loyalty] = ''
-        self.__dict__[field_loyalty + '_value'] = None
-        self.__dict__[field_pt] = ''
-        self.__dict__[field_pt + '_p'] = None
-        self.__dict__[field_pt + '_p_value'] = None
-        self.__dict__[field_pt + '_t'] = None
-        self.__dict__[field_pt + '_t_value'] = None
-        self.__dict__[field_text] = Manatext('')
-        self.__dict__[field_text + '_lines'] = []
-        self.__dict__[field_text + '_words'] = []
-        self.__dict__[field_text + '_lines_words'] = []
-        self.__dict__[field_other] = []
+        self._init_defaults()
         self.bside = None
         # format-independent view of processed input
         self.fields = None # will be reset later
@@ -515,6 +486,27 @@ class Card:
         else:
             # valid but not parsed indicates that the card was apparently empty
             self.parsed = False
+
+    def _init_defaults(self):
+        # default values for all fields
+        setattr(self, field_name, '')
+        setattr(self, field_rarity, '')
+        setattr(self, field_cost, Manacost(''))
+        setattr(self, field_supertypes, [])
+        setattr(self, field_types, [])
+        setattr(self, field_subtypes, [])
+        setattr(self, field_loyalty, '')
+        setattr(self, field_loyalty + '_value', None)
+        setattr(self, field_pt, '')
+        setattr(self, field_pt + '_p', None)
+        setattr(self, field_pt + '_p_value', None)
+        setattr(self, field_pt + '_t', None)
+        setattr(self, field_pt + '_t_value', None)
+        setattr(self, field_text, Manatext(''))
+        setattr(self, field_text + '_lines', [])
+        setattr(self, field_text + '_words', [])
+        setattr(self, field_text + '_lines_words', [])
+        setattr(self, field_other, [])
 
     # These setters are invoked via name mangling, so they have to match 
     # the field names specified above to be used. Otherwise we just

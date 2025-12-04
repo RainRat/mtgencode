@@ -122,15 +122,13 @@ def text_pass_4a_dashes(s):
     s = s.replace(reserved_marker, '-' + unary_marker)
     
     # level up is annoying
-    levels = re.findall(r'level &\^*\-&', s)
-    for level in levels:
-        newlevel = level.replace('-', dash_marker)
-        s = s.replace(level, newlevel)
+    def replace_dash(match):
+        return match.group(0).replace('-', dash_marker)
+    s = re.sub(r'level &\^*\-&', replace_dash, s)
 
-    levels = re.findall(r'level &\^*\+', s)
-    for level in levels:
-        newlevel = level.replace('+', dash_marker)
-        s = s.replace(level, newlevel)
+    def replace_plus(match):
+        return match.group(0).replace('+', dash_marker)
+    s = re.sub(r'level &\^*\+', replace_plus, s)
 
     # and we still have the ~x issue
     return s
@@ -203,162 +201,166 @@ def text_pass_4c_abilitywords(s):
     return s
 
 
+# so, big fat old dictionary time!!!!!!!!!
+allcounters = [
+    'time counter',
+    'devotion counter',
+    'charge counter',
+    'ki counter',
+    'matrix counter',
+    'spore counter',
+    'poison counter',
+    'quest counter',
+    'hatchling counter',
+    'storage counter',
+    'growth counter',
+    'paralyzation counter',
+    'energy counter',
+    'study counter',
+    'glyph counter',
+    'depletion counter',
+    'sleight counter',
+    'loyalty counter',
+    'hoofprint counter',
+    'wage counter',
+    'echo counter',
+    'lore counter',
+    'page counter',
+    'divinity counter',
+    'mannequin counter',
+    'ice counter',
+    'fade counter',
+    'pain counter',
+    #'age counter',
+    'gold counter',
+    'muster counter',
+    'infection counter',
+    'plague counter',
+    'fate counter',
+    'slime counter',
+    'shell counter',
+    'credit counter',
+    'despair counter',
+    'globe counter',
+    'currency counter',
+    'blood counter',
+    'soot counter',
+    'carrion counter',
+    'fuse counter',
+    'filibuster counter',
+    'wind counter',
+    'hourglass counter',
+    'trap counter',
+    'corpse counter',
+    'awakening counter',
+    'verse counter',
+    'scream counter',
+    'doom counter',
+    'luck counter',
+    'intervention counter',
+    'eyeball counter',
+    'flood counter',
+    'eon counter',
+    'death counter',
+    'delay counter',
+    'blaze counter',
+    'magnet counter',
+    'feather counter',
+    'shield counter',
+    'wish counter',
+    'petal counter',
+    'music counter',
+    'pressure counter',
+    'manifestation counter',
+    #'net counter',
+    'velocity counter',
+    'vitality counter',
+    'treasure counter',
+    'pin counter',
+    'bounty counter',
+    'rust counter',
+    'mire counter',
+    'tower counter',
+    #'ore counter',
+    'cube counter',
+    'strife counter',
+    'elixir counter',
+    'hunger counter',
+    'level counter',
+    'winch counter',
+    'fungus counter',
+    'training counter',
+    'theft counter',
+    'arrowhead counter',
+    'sleep counter',
+    'healing counter',
+    'mining counter',
+    'dream counter',
+    'aim counter',
+    'arrow counter',
+    'javelin counter',
+    'gem counter',
+    'bribery counter',
+    'mine counter',
+    'omen counter',
+    'phylactery counter',
+    'tide counter',
+    'polyp counter',
+    'petrification counter',
+    'shred counter',
+    'pupa counter',
+    'crystal counter',
+    'point counter',
+    'stun counter',
+    'oil counter',
+    'foreshadow counter',
+    'reprieve counter',
+    'hit counter',
+    'fetch counter',
+    'husk counter',
+    'stash counter',
+    'brick counter',
+    'coin counter',
+    'isolation counter',
+    'soul counter',
+    'hour counter',
+    'descent counter',
+    'task counter',
+]
+# oh god some of the counter names are suffixes of others...
+shortcounters = [
+    'age counter',
+    'net counter',
+    'ore counter',
+]
+
+all_counters_combined = sorted(allcounters + shortcounters, key=len, reverse=True)
+# Use \b to ensure we match whole words (or at least start of words), effectively handling the 'ore counter' vs 'more counter' case naturally
+counters_regex = re.compile(r'\b(' + '|'.join(map(re.escape, all_counters_combined)) + r')')
+
 # Call this before replacing newlines.
 # This one ends up being really bad because of the confusion
 # with 'counter target spell or ability'.
 def text_pass_5_counters(s):
-    # so, big fat old dictionary time!!!!!!!!!
-    allcounters = [
-        'time counter',
-        'devotion counter',
-        'charge counter',
-        'ki counter',
-        'matrix counter',
-        'spore counter',
-        'poison counter',
-        'quest counter',
-        'hatchling counter',
-        'storage counter',
-        'growth counter',
-        'paralyzation counter',
-        'energy counter',
-        'study counter',
-        'glyph counter',
-        'depletion counter',
-        'sleight counter',
-        'loyalty counter',
-        'hoofprint counter',
-        'wage counter',
-        'echo counter',
-        'lore counter',
-        'page counter',
-        'divinity counter',
-        'mannequin counter',
-        'ice counter',
-        'fade counter',
-        'pain counter',
-        #'age counter',
-        'gold counter',
-        'muster counter',
-        'infection counter',
-        'plague counter',
-        'fate counter',
-        'slime counter',
-        'shell counter',
-        'credit counter',
-        'despair counter',
-        'globe counter',
-        'currency counter',
-        'blood counter',
-        'soot counter',
-        'carrion counter',
-        'fuse counter',
-        'filibuster counter',
-        'wind counter',
-        'hourglass counter',
-        'trap counter',
-        'corpse counter',
-        'awakening counter',
-        'verse counter',
-        'scream counter',
-        'doom counter',
-        'luck counter',
-        'intervention counter',
-        'eyeball counter',
-        'flood counter',
-        'eon counter',
-        'death counter',
-        'delay counter',
-        'blaze counter',
-        'magnet counter',
-        'feather counter',
-        'shield counter',
-        'wish counter',
-        'petal counter',
-        'music counter',
-        'pressure counter',
-        'manifestation counter',
-        #'net counter',
-        'velocity counter',
-        'vitality counter',
-        'treasure counter',
-        'pin counter',
-        'bounty counter',
-        'rust counter',
-        'mire counter',
-        'tower counter',
-        #'ore counter',
-        'cube counter',
-        'strife counter',
-        'elixir counter',
-        'hunger counter',
-        'level counter',
-        'winch counter',
-        'fungus counter',
-        'training counter',
-        'theft counter',
-        'arrowhead counter',
-        'sleep counter',
-        'healing counter',
-        'mining counter',
-        'dream counter',
-        'aim counter',
-        'arrow counter',
-        'javelin counter',
-        'gem counter',
-        'bribery counter',
-        'mine counter',
-        'omen counter',
-        'phylactery counter',
-        'tide counter',
-        'polyp counter',
-        'petrification counter',
-        'shred counter',
-        'pupa counter',
-        'crystal counter',
-        'point counter',
-        'stun counter',
-        'oil counter',
-        'foreshadow counter',
-        'reprieve counter',
-        'hit counter',
-        'fetch counter',
-        'husk counter',
-        'stash counter',
-        'brick counter',
-        'coin counter',
-        'isolation counter',
-        'soul counter',
-        'hour counter',
-        'descent counter',
-        'task counter',
-    ]
     usedcounters = []
-    for countername in allcounters:
-        if countername in s:
-            usedcounters += [countername]
-            s = s.replace(countername, counter_marker + ' counter')
     
-    # oh god some of the counter names are suffixes of others...
-    shortcounters = [
-        'age counter',
-        'net counter',
-        'ore counter',
-    ]
-    for countername in shortcounters:
-        # SUPER HACKY fix for doubling season
-        if countername in s and 'more counter' not in s:
-            usedcounters += [countername]
-            s = s.replace(countername, counter_marker + ' counter')
+    def replace_counter(match):
+        usedcounters.append(match.group(1))
+        return counter_marker + ' counter'
+
+    s = counters_regex.sub(replace_counter, s)
 
     # miraculously this doesn't seem to happen
     # if len(usedcounters) > 1:
     #     print (usedcounters)
 
+    # deduplicate usedcounters while preserving order of first appearance
+    unique_used = list(dict.fromkeys(usedcounters))
+
     # we haven't done newline replacement yet, so use actual newlines
-    if len(usedcounters) == 1:
+    if len(unique_used) == 1:
         # and yeah, this line of code can blow up in all kinds of different ways
-        s = 'countertype ' + counter_marker + ' ' + usedcounters[0].split()[0] + '\n' + s
+        s = 'countertype ' + counter_marker + ' ' + unique_used[0].split()[0] + '\n' + s
 
     return s
 
@@ -420,18 +422,21 @@ def text_pass_7_choice(s):
     # to '[n = ability = ability]\n'
     
     def choice_formatting_helper(s_helper, prefix, count, suffix = ''):
-        single_choices = re.findall(
-            r'(' + prefix + r'\n?(\u2022.*(\n|$))+)', s_helper)
-        for choice in single_choices:
-            newchoice = choice[0]
-            newchoice = newchoice.replace(prefix, unary_marker + (unary_counter * count) + suffix)
-            newchoice = newchoice.replace('\n', ' ')
-            if newchoice[-1:] == ' ':
-                newchoice = choice_open_delimiter + newchoice[:-1] + choice_close_delimiter + '\n'
+        def _format_choice_match(match):
+            # match.group(1) is the prefix
+            # match.group(2) is the rest of the choice (bullets)
+            content = unary_marker + (unary_counter * count) + suffix + match.group(2).replace('\n', ' ')
+            if content.endswith(' '):
+                return choice_open_delimiter + content[:-1] + choice_close_delimiter + '\n'
             else:
-                newchoice = choice_open_delimiter + newchoice + choice_close_delimiter
-            s_helper = s_helper.replace(choice[0], newchoice)
-        return s_helper
+                return choice_open_delimiter + content + choice_close_delimiter
+
+        # Use non-capturing groups for the bullets structure to avoid cluttering group indices,
+        # but we need to capture the prefix to separate it from the rest.
+        # Original regex: r'(' + prefix + r'\n?(\u2022.*(\n|$))+)'
+        # New regex: r'(' + prefix + r')(\n?(?:\u2022.*(?:\n|$))+)'
+        pattern = r'(' + prefix + r')(\n?(?:\u2022.*(?:\n|$))+)'
+        return re.sub(pattern, _format_choice_match, s_helper)
 
     s = choice_formatting_helper(s, r'choose one \u2014', 1)
     s = choice_formatting_helper(
