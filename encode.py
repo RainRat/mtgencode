@@ -24,29 +24,24 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     final_sep = True
 
     # set the properties of the encoding
+    ENCODING_CONFIG = {
+        'std': {},
+        'named': {'fmt_ordered': cardlib.fmt_ordered_named},
+        'noname': {'fmt_ordered': cardlib.fmt_ordered_noname},
+        'rfields': {'randomize_fields': True, 'final_sep': False},
+        'old': {'fmt_ordered': cardlib.fmt_ordered_old},
+        'norarity': {'fmt_ordered': cardlib.fmt_ordered_norarity},
+        'vec': {},
+        'custom': {},
+    }
 
-    if encoding in ['std']:
-        pass
-    elif encoding in ['named']:
-        fmt_ordered = cardlib.fmt_ordered_named
-    elif encoding in ['noname']:
-        fmt_ordered = cardlib.fmt_ordered_noname
-    elif encoding in ['rfields']:
-        randomize_fields = True
-        final_sep = False
-    elif encoding in ['old']:
-        fmt_ordered = cardlib.fmt_ordered_old
-    elif encoding in ['norarity']:
-        fmt_ordered = cardlib.fmt_ordered_norarity
-    elif encoding in ['vec']:
-        pass
-    elif encoding in ['custom']:
-        ## put custom format decisions here ##########################
-        
-        ## end of custom format ######################################
-        pass
-    else:
+    config = ENCODING_CONFIG.get(encoding)
+    if config is None:
         raise ValueError('encode.py: unknown encoding: ' + encoding)
+
+    fmt_ordered = config.get('fmt_ordered', fmt_ordered)
+    randomize_fields = config.get('randomize_fields', randomize_fields)
+    final_sep = config.get('final_sep', final_sep)
 
     if verbose:
         print('Preparing to encode:')

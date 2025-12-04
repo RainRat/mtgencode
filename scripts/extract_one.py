@@ -31,7 +31,7 @@ def extract_card(input_file, target_set_code, target_card_name, output_file):
             # I'll stick to 'in' but maybe lowercase comparison would be better?
             # The original code was: if TARGET_CARD_NAME in (card.get('name')):
             # Let's keep the original logic for now.
-            if target_card_name in card.get('name', ''):
+            if target_card_name.lower() in card.get('name', '').lower():
                 found_card = card
                 break
                 # Note: If you want a specific variant (foil/alt art), 
@@ -49,7 +49,7 @@ def extract_card(input_file, target_set_code, target_card_name, output_file):
     except FileNotFoundError:
         print(f"Error: Could not find {input_file} in this directory.")
     except MemoryError:
-        print("Error: The file is too large for your RAM. See the 'Low Memory' tip below.")
+        print("Error: The file is too large for your RAM.")
     except json.JSONDecodeError:
         print(f"Error: {input_file} is not a valid JSON file.")
 
