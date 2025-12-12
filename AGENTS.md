@@ -1,4 +1,4 @@
-Run the test suite before completing work. When features change, update or add tests accordingly.
+Always run `pytest` from the repository root before submitting changes, unless it is a documentation-only change. Try to fix any test failures, even if you don't think you caused them. When features change, update or add tests accordingly.
 
 This project was originally written for Python 2. You may update code to use Python 3.10 idiom as you encounter it.
 
