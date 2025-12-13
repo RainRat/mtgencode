@@ -169,10 +169,11 @@ def fields_check_valid(fields):
             iscreature = True
         if 'artifact' in value:
             isartifact = True
-        if field_subtypes in fields:
-            for idx, value in fields[field_subtypes]:
-                if 'vehicle' in value:
-                    iscreature = True
+
+    if field_subtypes in fields:
+        for idx, value in fields[field_subtypes]:
+            if 'vehicle' in value:
+                iscreature = True
 
     text = ''
     if field_text in fields:
