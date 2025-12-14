@@ -497,17 +497,11 @@ def mana_untranslate(manastr, for_forum = False, for_html = False):
 # finally, replacing all instances in a string
 # notice the calls to .upper(), this way we recognize lowercase symbols as well just in case
 def to_mana(s):
-    jmanastrs = re.findall(mana_json_regex, s)
-    for jmanastr in sorted(jmanastrs, key=len, reverse=True):
-        s = s.replace(jmanastr, mana_translate(jmanastr.upper()))
-    return s
+    return re.sub(mana_json_regex, lambda m: mana_translate(m.group(0).upper()), s)
 
 
 def from_mana(s, for_forum=False):
-    manastrs = re.findall(mana_regex, s)
-    for manastr in sorted(manastrs, key=len, reverse=True):
-        s = s.replace(manastr, mana_untranslate(manastr.upper(), for_forum = for_forum))
-    return s
+    return re.sub(mana_regex, lambda m: mana_untranslate(m.group(0).upper(), for_forum=for_forum), s)
     
 # Translation could also be accomplished using the datamine.Manacost object's
 # display methods, but these direct string transformations are retained for
@@ -544,24 +538,18 @@ json_symbol_regex = (re.escape(mana_json_open_delimiter) + '['
 symbol_regex = '[' + tap_marker + untap_marker + ']'
 
 def to_symbols(s):
-    jsymstrs = re.findall(json_symbol_regex, s)
-    for jsymstr in sorted(jsymstrs, key=len, reverse=True):
-        s = s.replace(jsymstr, json_symbol_trans[jsymstr])
-    return s
+    return re.sub(json_symbol_regex, lambda m: json_symbol_trans[m.group(0)], s)
 
 
 def from_symbols(s, for_forum=False, for_html=False):
-    symstrs = re.findall(symbol_regex, s)
-    #for symstr in sorted(symstrs, key=len, reverse = True):
-    # We have to do the right thing here, because the thing we replace exists in the thing
-    # we replace it with...
-    for symstr in set(symstrs):
+    def replace(match):
+        sym = match.group(0)
         if for_html:
-            s = s.replace(symstr, symbol_html_trans[symstr])
+            return symbol_html_trans[sym]
         elif for_forum:
-            s = s.replace(symstr, symbol_forum_trans[symstr])
+            return symbol_forum_trans[sym]
         else:
-            s = s.replace(symstr, symbol_trans[symstr])
-    return s
+            return symbol_trans[sym]
+    return re.sub(symbol_regex, replace, s)
 
 unletters_regex = r"[^abcdefghijklmnopqrstuvwxyz']"
