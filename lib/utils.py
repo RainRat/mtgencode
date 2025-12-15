@@ -415,24 +415,32 @@ mana_decimal_regex = (re.escape(mana_json_open_delimiter) + number_decimal_regex
 mana_unary_regex = (re.escape(mana_json_open_delimiter) + number_unary_regex
                     + re.escape(mana_json_close_delimiter))
 
+# regex for mana_translate
+mana_translate_regex = re.compile('|'.join(
+    [mana_unary_regex, mana_decimal_regex] +
+    [re.escape(s) for s in sorted(mana_symall_jdecode, key=len, reverse=True)]
+))
+
 # convert a json mana string to the proper encoding
 def mana_translate(jmanastr):
-    manastr = jmanastr
-    for n in sorted(re.findall(mana_unary_regex, manastr),
-                    key=len, reverse=True):
-        ns = re.findall(number_unary_regex, n)
-        i = (len(ns[0]) - len(unary_marker)) // len(unary_counter)
-        manastr = manastr.replace(
-            n, mana_unary_marker + mana_unary_counter * i)
-    for n in sorted(re.findall(mana_decimal_regex, manastr),
-                    key=len, reverse=True):
-        ns = re.findall(number_decimal_regex, n)
-        i = int(ns[0])
-        manastr = manastr.replace(
-            n, mana_unary_marker + mana_unary_counter * i)
-    for jsym in sorted(mana_symall_jdecode, key=len, reverse=True):
-        if jsym in manastr:
-            manastr = manastr.replace(jsym, mana_encode_direct(jsym))
+    def replace_token(match):
+        token = match.group(0)
+        if token in mana_symall_jdecode:
+            return mana_encode_direct(token)
+
+        inner = token[len(mana_json_open_delimiter):-len(mana_json_close_delimiter)]
+
+        if inner.isdigit():
+             i = int(inner)
+             return mana_unary_marker + mana_unary_counter * i
+
+        if inner.startswith(unary_marker):
+             i = (len(inner) - len(unary_marker)) // len(unary_counter)
+             return mana_unary_marker + mana_unary_counter * i
+
+        return token
+
+    manastr = re.sub(mana_translate_regex, replace_token, jmanastr)
     return mana_open_delimiter + manastr + mana_close_delimiter
 
 # convert an encoded mana string back to json
