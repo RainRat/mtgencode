@@ -28,6 +28,7 @@ def mtg_open_json(fname, verbose = False):
             for card in set_data['cards']:
                 card[utils.json_field_set_name] = setname
                 card[utils.json_field_info_code] = codename
+                card['setCode'] = set_data['code']
 
                 cardnumber = None
                 if 'number' in card:
