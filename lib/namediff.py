@@ -78,7 +78,8 @@ class Namediff:
                     jnum = ''
                     
                 if name in self.names:
-                    print('  Duplicate name ' + name + ', ignoring.')
+                    if self.verbose:
+                        print('  Duplicate name ' + name + ', ignoring.')
                 else:
                     self.names[name] = jname
                     self.cardstrings[name] = card.encode()
@@ -88,15 +89,17 @@ class Namediff:
                         self.codes[name] = ''
                     namecount += 1
 
-        print('  Read ' + str(namecount) + ' unique cardnames')
-        print('  Building SequenceMatcher objects.')
+        if self.verbose:
+            print('  Read ' + str(namecount) + ' unique cardnames')
+            print('  Building SequenceMatcher objects.')
 
         self.matchers = [difflib.SequenceMatcher(
             b=n, autojunk=False) for n in self.names]
         self.card_matchers = [difflib.SequenceMatcher(
             b=self.cardstrings[n], autojunk=False) for n in self.cardstrings]
 
-        print('... Done.')
+        if self.verbose:
+            print('... Done.')
     
     def nearest(self, name, n=3):
         return f_nearest(name, self.matchers, n)
