@@ -23,6 +23,11 @@ class TestNamediff(unittest.TestCase):
         self.assertEqual(len(splits), 5)
         self.assertEqual(splits[0], [1])
 
+    def test_list_split_empty(self):
+        l = []
+        splits = namediff.list_split(l, 2)
+        self.assertEqual(splits, [])
+
     def test_list_flatten(self):
         l = [[1, 2], [3], [4, 5]]
         flat = namediff.list_flatten(l)

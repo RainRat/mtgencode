@@ -20,6 +20,8 @@ cores = multiprocessing.cpu_count()
 # has slightly interesting behavior, in that if n is large, it can
 # run out of elements early and return less than n lists
 def list_split(l, n):
+    if not l:
+        return []
     if n <= 0:
         return l
     split_size = len(l) // n
