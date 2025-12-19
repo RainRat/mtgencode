@@ -52,7 +52,7 @@ def name_unpass_1_dashes(s):
 
 
 def text_pass_1_strip_rt(s):
-    return re.sub(r'\(.*\)', '', s)
+    return re.sub(r'\(.*?\)', '', s)
 
 
 def text_pass_2_cardname(s, name):
