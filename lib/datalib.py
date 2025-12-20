@@ -43,7 +43,7 @@ def inc(d, k, obj):
 # thanks gleemax
 def plimit(s, mlen = 1000):
     if len(s) > mlen:
-        return s[:1000] + '[...]'
+        return s[:mlen] + '[...]'
     else:
         return s
 
