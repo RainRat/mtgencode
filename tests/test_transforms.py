@@ -142,5 +142,13 @@ class TestTransforms(unittest.TestCase):
         self.assertEqual(lines[2], "deal 2 damage.")
         self.assertEqual(lines[3], "kicker {r}")
 
+    def test_text_pass_1_strip_rt_bug(self):
+        # Current logic is re.sub(r'\(.*\)', '', s), which is greedy
+        text = "target creature (this effect lasts until end of turn) gets +1/+1 (counters)."
+        # Expected behavior for a non-buggy implementation: "target creature  gets +1/+1 ."
+        # Current behavior: "target creature ."
+        expected = "target creature  gets +1/+1 ."
+        self.assertEqual(transforms.text_pass_1_strip_rt(text), expected)
+
 if __name__ == '__main__':
     unittest.main()
