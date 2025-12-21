@@ -92,32 +92,26 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
     parser.add_argument('infile', 
-                        help='encoded card file or json corpus to encode')
+                        help='Input JSON file containing card data (e.g., AllPrintings.json) or an already encoded file.')
     parser.add_argument('outfile', nargs='?', default=None,
-                        help='output file, defaults to stdout')
+                        help='Path to save the output. If not provided, output prints to the console (stdout).')
     parser.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        #help='{' + ','.join(formats) + '}',
-                        help='encoding format to use',
+                        help="Format for the output data. Default is 'std' (standard).",
     )
     parser.add_argument('-r', '--randomize', action='store_true',
-                        help='randomize the order of symbols in mana costs')
+                        help='Shuffle mana symbols (e.g., {W}{U} vs {U}{W}) for data augmentation.')
     parser.add_argument('--nolinetrans', action='store_true',
-                        help="don't reorder lines of card text")
+                        help='Disable automatic reordering of card text lines (keep original order).')
     parser.add_argument('--nolabel', action='store_true',
-                        help="don't label fields")
+                        help="Remove field labels (e.g., '|cost|') from the output.")
     parser.add_argument('-s', '--stable', action='store_true',
-                        help="don't randomize the order of the cards")
+                        help='Preserve the original order of cards from the input file (do not shuffle).')
     parser.add_argument('-v', '--verbose', action='store_true',
-                        help='verbose output')
+                        help='Enable verbose output.')
     parser.add_argument('-q', '--quiet', action='store_true',
-                        help='suppress progress bar')
+                        help='Suppress the progress bar.')
     parser.add_argument('--report-unparsed',
-                        help='''file to save unparsed cards to.
-                        This option is used to report cards that could not be parsed.
-                        For example, you can use it like this:
-                        --report-unparsed unparsed_cards.json
-                        The output file will contain the JSON representation of the unparsed cards.
-                        ''')
+                        help='File path to save raw JSON of cards that failed to parse (useful for debugging).')
 
     args = parser.parse_args()
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
