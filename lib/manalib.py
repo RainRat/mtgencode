@@ -5,20 +5,24 @@ import random
 
 import utils
 
+COLOR_STRIP_CHARS = {'2', 'P', 'S', 'X', 'C'}
+
 class Manacost:
     '''mana cost representation with data'''
     
     # hardcoded to be dependent on the symbol structure... ah well
-    def get_colors(self):
-        colors = ''
-        for sym in self.symbols:
-            if self.symbols[sym] > 0:
-                symcolors = re.sub(r'2|P|S|X|C', '', sym)
-                for symcolor in symcolors:
-                    if symcolor not in colors:
-                        colors += symcolor
+    def _compute_colors(self):
+        colors = set()
+        for sym, count in self.symbols.items():
+            if count > 0:
+                for char in sym:
+                    if char not in COLOR_STRIP_CHARS:
+                        colors.add(char)
         # sort so the order is always consistent
         return ''.join(sorted(colors))
+
+    def get_colors(self):
+        return self.colors
 
     def check_colors(self, symbolstring):
         for sym in symbolstring:
@@ -100,7 +104,7 @@ class Manacost:
                         idx += 1
                         self.valid = False
 
-        self.colors = self.get_colors()
+        self.colors = self._compute_colors()
 
     def __str__(self):
         return self.format()
