@@ -275,27 +275,26 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('infile', #nargs='?'. default=None,
-                        help='encoded card file or json corpus to encode')
+                        help='Input file containing encoded cards (or a JSON corpus) to decode.')
     parser.add_argument('outfile', nargs='?', default=None,
-                        help='output file, defaults to stdout')
+                        help='Path to save the decoded output. If not provided, output prints to the console.')
     parser.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        #help='{' + ','.join(formats) + '}',
-                        help='encoding format to use',
+                        help="Format of the input data. Default is 'std' (standard).",
     )
     parser.add_argument('-g', '--gatherer', action='store_true',
-                        help='emulate Gatherer visual spoiler')
+                        help='Format output to look like the Gatherer visual spoiler (includes capitalization and formatting).')
     parser.add_argument('-f', '--forum', action='store_true',
-                        help='use pretty mana encoding for mtgsalvation forum')
+                        help='Use pretty formatting for mana symbols (compatible with MTG Salvation forums).')
     parser.add_argument('-c', '--creativity', action='store_true',
-                        help='use CBOW fuzzy matching to check creativity of cards')
+                        help="Enable 'creativity' mode: calculate similarity to existing cards using CBOW (slow).")
     parser.add_argument('-d', '--dump', action='store_true',
-                        help='dump out lots of information about invalid cards')
+                        help='Debug mode: print detailed information about cards that failed to validate.')
     parser.add_argument('-v', '--verbose', action='store_true',
-                        help='verbose output')
+                        help='Enable verbose output.')
     parser.add_argument('--mse', action='store_true',
-                        help='use Magic Set Editor 2 encoding; will output as .mse-set file')
-    parser.add_argument('--html', action='store_true', help='create a .html file with pretty forum formatting')
-    parser.add_argument('--text', action='store_true', help='create a text file with pretty forum formatting')
+                        help='Generate a Magic Set Editor set file (.mse-set) along with the text output.')
+    parser.add_argument('--html', action='store_true', help='Generate a nicely formatted HTML file instead of plain text.')
+    parser.add_argument('--text', action='store_true', help='Force plain text output (enabled by default unless --html or --mse is used).')
 
     args = parser.parse_args()
 
