@@ -81,14 +81,15 @@ Functionality is provided by two main driver scripts: encode.py and decode.py. L
 
 ```
 usage: encode.py [-h] [-e {std,named,noname,rfields,old,norarity,vec,custom}]
-                 [-r] [--nolinetrans] [--nolabel] [-s] [-v]
+                 [-r] [--nolinetrans] [--nolabel] [-s] [-v] [-q]
+                 [--report-unparsed REPORT_UNPARSED]
                  infile [outfile]
 
 positional arguments:
   infile                encoded card file or json corpus to encode
   outfile               output file, defaults to stdout
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -e {std,named,noname,rfields,old,norarity,vec,custom}, --encoding {std,named,noname,rfields,old,norarity,vec,custom}
                         encoding format to use
@@ -97,6 +98,13 @@ optional arguments:
   --nolabel             don't label fields
   -s, --stable          don't randomize the order of the cards
   -v, --verbose         verbose output
+  -q, --quiet           suppress progress bar
+  --report-unparsed REPORT_UNPARSED
+                        file to save unparsed cards to. This option is used to
+                        report cards that could not be parsed. For example,
+                        you can use it like this: --report-unparsed
+                        unparsed_cards.json The output file will contain the
+                        JSON representation of the unparsed cards.
 ```
 
 The supported encodings are:
@@ -116,14 +124,14 @@ custom     | Blank format slot, intended to help users add their own formats to 
 
 ```
 usage: decode.py [-h] [-e {std,named,noname,rfields,old,norarity,vec,custom}]
-                 [-g] [-f] [-c] [-d] [-v] [-mse] [-html]
+                 [-g] [-f] [-c] [-d] [-v] [--mse] [--html] [--text]
                  infile [outfile]
 
 positional arguments:
   infile                encoded card file or json corpus to encode
   outfile               output file, defaults to stdout
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -e {std,named,noname,rfields,old,norarity,vec,custom}, --encoding {std,named,noname,rfields,old,norarity,vec,custom}
                         encoding format to use
@@ -132,16 +140,17 @@ optional arguments:
   -c, --creativity      use CBOW fuzzy matching to check creativity of cards
   -d, --dump            dump out lots of information about invalid cards
   -v, --verbose         verbose output
-  -mse, --mse           use Magic Set Editor 2 encoding; will output as .mse-
+  --mse                 use Magic Set Editor 2 encoding; will output as .mse-
                         set file
-  -html, --html         create a .html file with pretty forum formatting
+  --html                create a .html file with pretty forum formatting
+  --text                create a text file with pretty forum formatting
 ```
 
 The default output is a text spoiler which modifies the output of the neural net as little as possible while making it human readable. Specifying the -g option will produce a prettier, Gatherer-inspired text spoiler with heavier-weight transformations applied to the text, such as capitalization. The -f option encodes mana symbols in the format used by the mtgsalvation forum; this is useful if you want to cut and paste your spoiler into a post to share it.
 
-Passing the -mse option will cause decode.py to produce both the hilarious internal MSE text format as well as an actual mse set file, which is really just a renamed zip archive. The -f and -g flags will be respected in the text that is dumped to each card's notes field.
+Passing the --mse option will cause decode.py to produce both the hilarious internal MSE text format as well as an actual mse set file, which is really just a renamed zip archive. The -f and -g flags will be respected in the text that is dumped to each card's notes field.
 
-Finally, the -c and -d options will print out additional data about the quality of the cards. Running with -c is extremely slow due to the massive amount of computation involved, though at least we can do it in parallel over all of your processor cores; -d is probably a good idea to use in general unless you're trying to produce pretty output to show off. Using html mode is especially useful with -c as we can link to visual spoilers from magiccards.info.
+Finally, the -c and -d options will print out additional data about the quality of the cards. Running with -c is extremely slow due to the massive amount of computation involved, though at least we can do it in parallel over all of your processor cores; -d is probably a good idea to use in general unless you're trying to produce pretty output to show off. Using --html mode is especially useful with -c as we can link to visual spoilers from magiccards.info.
 
 ### Examples
 
@@ -156,7 +165,7 @@ Of course, this requires that you've downloaded the mtgjson corpus to data/AllPr
 If I wanted to convert that standard output to a Magic Set Editor 2 set, I'd run:
 
 ```
-./decode.py -v data/output.txt data/allprintings -f -g -d
+./decode.py -v data/output.txt data/allprintings --mse -f -g -d
 ```
 
 This will produce a useless text file called data/allprintings, and a set file called data/allprintings.mse-set that you can open with MSE2. The -f and -g options will cause the text spoiler included in the notes field of each card in the set to be a pretty Gatherer-inspired affair that you could cut and paste onto the mtgsalvation forum. The -d option will dump additional information if any of the cards are invalidly formatted, which probably won't do anything because all existing magic cards are encoded correctly. Specifying the -c option here would be a bad idea; it would probably take several days to run.
@@ -342,7 +351,7 @@ Go back to mtgencode, and run something like:
 
 This should create a file called cards.pretty.txt with a text spoiler in it that's actually designed for human consumption. Open it in your favorite text editor and enjoy!
 
-The -d option ensures you'll still be able to see anything that went wrong with the cards. You can change the formatting with -f and -g, and produce a set file for MSE2 with -mse. The -c option produces some interesting comparisons to existing cards, but it's slow, so be prepared to wait a long time if you use it on a large dump.
+The -d option ensures you'll still be able to see anything that went wrong with the cards. You can change the formatting with -f and -g, and produce a set file for MSE2 with --mse. The -c option produces some interesting comparisons to existing cards, but it's slow, so be prepared to wait a long time if you use it on a large dump.
 
 ## Gory details of the format
 
