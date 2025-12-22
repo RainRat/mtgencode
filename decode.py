@@ -190,7 +190,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             elif len(card_colors) == 1:
                 colors[card_colors[0]].append(card)
             else:
-                if "land" in card.get_types():
+                if "land" in card.types:
                     colors['lands'].append(card)
                 else:
                     colors['colorless'].append(card)
@@ -203,7 +203,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         sorted_cards = [[],[],[],[],[],[],[]]
         sorted_set = []
         for card in card_set:
-            types = card.get_types()
+            types = card.types
             for i in range(len(sorting)):
                 if sorting[i] in types:
                     sorted_cards[i] += [card]

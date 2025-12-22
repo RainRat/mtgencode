@@ -784,7 +784,7 @@ class Card:
                 outstr += ' (' + utils.from_unary(self.__dict__[field_pt]) + ')'
 
             if self.__dict__[field_loyalty]:
-                if 'battle' in self.get_types():
+                if 'battle' in self.types:
                     outstr += ' [[' + utils.from_unary(self.__dict__[field_loyalty]) + ']]'
                 else:
                     outstr += ' ((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
@@ -797,7 +797,7 @@ class Card:
                 outstr += linebreak + '(' + utils.from_unary(self.__dict__[field_pt]) + ')'
 
             if self.__dict__[field_loyalty]:
-                if 'battle' in self.get_types():
+                if 'battle' in self.types:
                     outstr += linebreak + '[[' + utils.from_unary(self.__dict__[field_loyalty]) + ']]'
                 else:
                     outstr += linebreak + '((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
@@ -1040,7 +1040,7 @@ class Card:
             outstr += ' '
         
         if self.__dict__[field_loyalty]:
-            if 'battle' in self.get_types():
+            if 'battle' in self.types:
                 outstr += '[[' + self.__dict__[field_loyalty] + ']] '
             else:
                 outstr += '((' + self.__dict__[field_loyalty] + ')) '
@@ -1054,9 +1054,6 @@ class Card:
             
     def get_colors(self):
         return self.__dict__[field_cost].get_colors()
-
-    def get_types(self):
-        return self.__dict__[field_types]
 
     def get_cmc(self):
         return self.__dict__[field_cost].cmc
