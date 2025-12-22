@@ -1,408 +1,103 @@
 # mtgencode
 
-Utilities to assist in the process of generating Magic the Gathering cards with neural nets. Inspired by this thread on the mtgsalvation forums:
+Utilities to process Magic: The Gathering card data for neural network training and decoding.
 
-http://www.mtgsalvation.com/forums/creativity/custom-card-creation/612057-generating-magic-cards-using-deep-recurrent-neural
+This project provides tools to:
+1.  **Encode** card data (from [MTGJSON](https://mtgjson.com)) into text formats suitable for training neural networks (RNNs, Transformers, etc.).
+2.  **Decode** generated text back into human-readable formats, including visual spoilers and [Magic Set Editor](http://magicseteditor.boards.net) files.
 
-The purpose of this code is mostly to wrangle text between various human and machine readable formats. The original input comes from [mtgjson](http://mtgjson.com); this is filtered and reduced to one of several input formats intended for neural network training, such as the standard encoded format used in [data/output.txt](./data/output.txt). Any json or encoded data, including output from appropriately trained neural nets, can then be interpreted as cards and decoded to a human readable format, such as a text spoiler, [Magic Set Editor 2](http://magicseteditor.boards.net) set file, or a pretty, portable html file that can be viewed in any browser.
+## Installation
 
-## Requirements
+### Option 1: Docker (Recommended)
 
-For the most part it should work out of the box, though there are a few optional bonus features that will make it much better. See [DEPENDENCIES.md](./DEPENDENCIES.md#dependencies).
+For a consistent environment with all dependencies pre-installed:
 
-This code does not have anything to do with neural nets; if you want to generate cards with them, see the [tutorial](./README.md#tutorial).
-
-## Docker Environment
-
-For a consistent and isolated development environment, you can use the provided Docker setup. This will ensure all dependencies are correctly installed and configured.
-
-To get started, build the Docker image and start an interactive session by running the following command from the root of the project:
-
+**Linux/macOS:**
 ```bash
 ./docker-interactive.sh
 ```
 
-This will drop you into a bash shell within the Docker container, with the project directory mounted and all necessary dependencies available.
+**Windows:**
+```bash
+./docker-interactive.bat
+```
 
-### Getting Started in Docker
+### Option 2: Local Installation
 
-Once inside the Docker container, you can start using the encoding and decoding scripts immediately. Here are a few examples to get you started:
+**Prerequisites:**
+*   Python 3.9+
+*   `pip`
 
-1.  **Encode the sample data:**
+**Steps:**
 
+1.  Clone the repository:
     ```bash
-    ./encode.py -v testdata/Standard.json > encoded_cards.txt
+    git clone https://github.com/billzorn/mtgencode.git
+    cd mtgencode
     ```
 
-    *Output:*
-    ```
-    processed 2621 cards
-    invalid cards: 0
-    unique cards: 2521
-    ```
-
-2.  **Decode the encoded data back to a human-readable format:**
-
+2.  Install Python dependencies:
     ```bash
-    ./decode.py -v encoded_cards.txt > decoded_cards.txt
+    pip install -r requirements.txt
     ```
 
-    *Output:*
-    ```
-    2521 cards decoded
-    0 bad cards
-    ```
-
-3.  **View the decoded cards:**
-
+3.  Download required NLTK data:
     ```bash
-    head decoded_cards.txt
-    ```
-
-    *Output:*
-    ```
-    ================================
-    Chandra, Torch of Defiance
-    {2}{R}{R}
-    Legendary Planeswalker ~ Chandra
-    Loyalty: 4
-    +1: Exile the top card of your library. You may cast that card. If you don't, Chandra, Torch of Defiance deals 2 damage to each opponent.
-    +1: Add {R}{R} to your mana pool.
-    -3: Chandra, Torch of Defiance deals 4 damage to target creature.
-    -7: You get an emblem with "Whenever you cast a spell, this emblem deals 5 damage to target creature or player."
-    ================================
+    python3 -m nltk.downloader punkt punkt_tab
     ```
 
 ## Usage
 
-Functionality is provided by two main driver scripts: encode.py and decode.py. Logically, encode.py handles encoding to formats intended to feed into a neural network, while decode.py handles decoding to formats intended to be read by a human.
+The project consists of two main scripts: `encode.py` and `decode.py`.
 
-### encode.py
+### 1. Encode Data
+Converts JSON card data into a text format for training.
 
-```
-usage: encode.py [-h] [-e {std,named,noname,rfields,old,norarity,vec,custom}]
-                 [-r] [--nolinetrans] [--nolabel] [-s] [-v] [-q]
-                 [--report-unparsed REPORT_UNPARSED]
-                 infile [outfile]
+**Prerequisite:** Download `AllPrintings.json` from [MTGJSON](https://mtgjson.com/downloads/all-files/).
 
-positional arguments:
-  infile                encoded card file or json corpus to encode
-  outfile               output file, defaults to stdout
-
-options:
-  -h, --help            show this help message and exit
-  -e {std,named,noname,rfields,old,norarity,vec,custom}, --encoding {std,named,noname,rfields,old,norarity,vec,custom}
-                        encoding format to use
-  -r, --randomize       randomize the order of symbols in mana costs
-  --nolinetrans         don't reorder lines of card text
-  --nolabel             don't label fields
-  -s, --stable          don't randomize the order of the cards
-  -v, --verbose         verbose output
-  -q, --quiet           suppress progress bar
-  --report-unparsed REPORT_UNPARSED
-                        file to save unparsed cards to. This option is used to
-                        report cards that could not be parsed. For example,
-                        you can use it like this: --report-unparsed
-                        unparsed_cards.json The output file will contain the
-                        JSON representation of the unparsed cards.
+```bash
+# Basic encoding
+python3 encode.py -v data/AllPrintings.json encoded_output.txt
 ```
 
-The supported encodings are:
+**Options:**
+*   `-e {std,named,vec,...}`: Select encoding format (default: `std`).
+*   `-r`: Randomize mana symbols for data augmentation.
+*   `--nolinetrans`: Keep original text line order.
 
-Argument   | Description
------------|------------
-std        | Standard format: `|type|supertype|subtype|loyalty|pt|text|cost|rarity|name|`.
-named      | Name first: `|name|type|supertype|subtype|loyalty|pt|text|cost|rarity|`.
-noname     | No name field at all: `|type|supertype|subtype|loyalty|pt|text|cost|rarity|`.
-rfields    | Randomize the order of the fields, using only the label to distinguish which field is which.
-old        | Legacy format: `|name|supertype|type|loyalty|subtype|rarity|pt|cost|text|`. No field labels.
-norarity   | Older legacy format: `|name|supertype|type|loyalty|subtype|pt|cost|text|`. No field labels.
-vec        | Produce a content vector for each card; used with [word2vec](https://code.google.com/p/word2vec/).
-custom     | Blank format slot, intended to help users add their own formats to the python source.
+### 2. Decode Data
+Converts encoded text (e.g., neural network output) back into readable cards.
 
-### decode.py
-
-```
-usage: decode.py [-h] [-e {std,named,noname,rfields,old,norarity,vec,custom}]
-                 [-g] [-f] [-c] [-d] [-v] [--mse] [--html] [--text]
-                 infile [outfile]
-
-positional arguments:
-  infile                encoded card file or json corpus to encode
-  outfile               output file, defaults to stdout
-
-options:
-  -h, --help            show this help message and exit
-  -e {std,named,noname,rfields,old,norarity,vec,custom}, --encoding {std,named,noname,rfields,old,norarity,vec,custom}
-                        encoding format to use
-  -g, --gatherer        emulate Gatherer visual spoiler
-  -f, --forum           use pretty mana encoding for mtgsalvation forum
-  -c, --creativity      use CBOW fuzzy matching to check creativity of cards
-  -d, --dump            dump out lots of information about invalid cards
-  -v, --verbose         verbose output
-  --mse                 use Magic Set Editor 2 encoding; will output as .mse-
-                        set file
-  --html                create a .html file with pretty forum formatting
-  --text                create a text file with pretty forum formatting
+```bash
+# Basic decoding to text
+python3 decode.py -v encoded_output.txt decoded_output.txt
 ```
 
-The default output is a text spoiler which modifies the output of the neural net as little as possible while making it human readable. Specifying the -g option will produce a prettier, Gatherer-inspired text spoiler with heavier-weight transformations applied to the text, such as capitalization. The -f option encodes mana symbols in the format used by the mtgsalvation forum; this is useful if you want to cut and paste your spoiler into a post to share it.
+**Options:**
+*   `--mse`: Output a Magic Set Editor set file (`.mse-set`).
+*   `--html`: Output a styled HTML file.
+*   `-g`: Enable "Gatherer" mode for prettier text formatting.
 
-Passing the --mse option will cause decode.py to produce both the hilarious internal MSE text format as well as an actual mse set file, which is really just a renamed zip archive. The -f and -g flags will be respected in the text that is dumped to each card's notes field.
+### 3. Training a Neural Network
 
-Finally, the -c and -d options will print out additional data about the quality of the cards. Running with -c is extremely slow due to the massive amount of computation involved, though at least we can do it in parallel over all of your processor cores; -d is probably a good idea to use in general unless you're trying to produce pretty output to show off. Using --html mode is especially useful with -c as we can link to visual spoilers from magiccards.info.
+This tool prepares data for training but does not include the training code itself.
+Originally designed for [mtg-rnn](https://github.com/billzorn/mtg-rnn) (Lua/Torch), the `encoded_output.txt` can be used with any modern text generation model (e.g., GPT-2, LSTM).
 
-### Examples
+**Workflow:**
+1.  Use `encode.py` to create `input.txt` from MTGJSON.
+2.  Train your model on `input.txt`.
+3.  Generate text from your model.
+4.  Use `decode.py` to convert the generated text into readable cards.
 
-To generate the standard encoding in data/output.txt, I run:
+## Development
 
-```
-./encode.py -v data/AllPrintings.json data/output.txt
-```
+To run the test suite:
 
-Of course, this requires that you've downloaded the mtgjson corpus to data/AllPrintings.json, and are running from the root of the repo.
-
-If I wanted to convert that standard output to a Magic Set Editor 2 set, I'd run:
-
-```
-./decode.py -v data/output.txt data/allprintings --mse -f -g -d
-```
-
-This will produce a useless text file called data/allprintings, and a set file called data/allprintings.mse-set that you can open with MSE2. The -f and -g options will cause the text spoiler included in the notes field of each card in the set to be a pretty Gatherer-inspired affair that you could cut and paste onto the mtgsalvation forum. The -d option will dump additional information if any of the cards are invalidly formatted, which probably won't do anything because all existing magic cards are encoded correctly. Specifying the -c option here would be a bad idea; it would probably take several days to run.
-
-### Scripts
-
-A bunch of additional data processing functionality is provided by the files in scripts/. Right now there isn't a whole lot, but more tools might be added in the future, to do things such as convert card dumps into .arff files that could be analyzed in [Weka](http://www.cs.waikato.ac.nz/ml/weka/).
-
-Currently, scripts/summarize.py will build a bunch of big data mining indices and use them to print out interesting statistics about a dump of cards. If you want to use mtgencode to do your own data analysis, taking a look at it would be a good place to start.
-
-
-
-## Tutorial
-
-This tutorial will cover how to generate cards from scratch using neural nets.
-
-### Set up a Linux environment
-
-If you're already running on Linux, hooray! If not, you have a few options. The easiest is probably to use a virtual machine; the disadvantage of this approach is that it will prevent you from using a graphics card to train the neural net, which speeds things up immensely. For reference, my GTX Titan is about 10x faster than my overclocked 8-core i7-5960X.
-
-The other option is to dual boot your machine (which is what I do) or otherwise acquire a machine that you can run Linux on natively. How exactly you do this is beyond the scope of this tutorial.
-
-If you do decide to go the virtual machine route:
-
-1. Download some sort of virtual machine software. I recommend [VirtualBox](https://help.ubuntu.com/community/VirtualBox).
-2. Download a Linux operating system. I recommend [Ubuntu](http://www.ubuntu.com/download/desktop).
-3. [Create a virtual machine, and install the operating system on it](https://help.ubuntu.com/community/VirtualBox/FirstVM).
-
-IMPORTANT NOTE: Training neural nets is extremely CPU intensive, and rather memory intensive as well. If you don't want training to take multiple weeks, it's a very good idea to give your virtual machine as many processor cores and as much memory as you can spare, and to monitor system performance with the 'top' command to make sure you aren't [swapping](https://help.ubuntu.com/community/SwapFaq), as that will degrade performance immensely.
-
-You should be able to boot up the virtual machine and use whatever operating system you installed. If you're new to Linux, you might want to familiarize yourself with it a little. For my own sanity, I'm going to assume at least basic familiarity. Most of what we'll be doing will be in terminals; if the instructions say to do something and then provide some code in a block quote, it probably means to type that into a terminal, on line at a time.
-
-### Set up the neural net code
-
-We're ultimately going to use the code from the [mtg-rnn repo](https://github.com/billzorn/mtg-rnn); if anything is unclear you can refer to the documentation there as well.
-
-First, we need to install some dependencies. The primary one is Torch, the scientific computing framework the neural net code is written. Directions are [here](http://torch.ch/docs/getting-started.html).
-
-You'll need git installed, if it isn't:
-
-```
-sudo apt-get install git
+```bash
+python3 -m pytest
 ```
 
-Next, open a terminal and install some additional lua packages:
+## Documentation
 
-```
-luarocks install nngraph
-luarocks install optim
-```
-If you're having trouble connecting to GitHub during this, it could be from the git:// address that luarocks uses to clone repositories. If so, try this:
-
-```
-git config --global url."https://".insteadOf git://
-```
-
-Now we'll clone the git repo with the neural net code. Go to your home directory (or wherever you want to put the repo, it can be anywhere really) and clone it:
-
-```
-cd ~
-git clone https://github.com/billzorn/mtg-rnn.git
-```
-
-This should create the folder mtg-rnn, with a bunch of files in it. To check if it works, try:
-
-```
-cd ~/mtg-rnn
-th train.lua --help
-```
-
-A large usage message should be printed. If you get an error, then check to make sure Torch is working. As always, Google is your best friend when anything goes wrong.
-
-### Set up mtgencode
-
-Go back to your home directory (or wherever) and clone mtgencode as well:
-
-```
-cd ~
-git clone https://github.com/billzorn/mtgencode.git
-```
-
-This should create the folder mtgencode, also with a bunch of files in it.
-
-You'll need Python to run it; to get full functionality, consult [DEPENDENCIES.md](./DEPENDENCIES.md#dependencies). But, it should work with just Python. To install Python:
-
-```
-sudo apt-get install python
-```
-
-To check if it works:
-
-```
-cd ~/mtgencode
-./encode.py --help
-```
-
-Again, you should see a usage message; if you don't, make sure Python is working. mtgencode uses Python 3., so if you think your default python is Python 2.7, you can try:
-
-```
-python3 encode.py --help
-```
-
-instead of running the script directly.
-
-### Generating an encoded corpus for training
-
-If you just want to train with the default corpus, you can skip this step, as it already exists in mtg-rnn. Just replace all instances of 'custom_encoding' with 'mtgencode-std'.
-
-To generate an encoded corpus, you'll first need to download AllPrintings.json from [mtgjson.com](http://mtgjson.com/) to data/AllPrintings.json. Then to encode it:
-
-```
-./encode.py -v data/AllPrintings.json data/custom_encoding.txt
-```
-
-This will create a the file data/custom_encoding.txt with your encoding in it. You can add some options to create a different encoding; consult the usage of [encode.py](./README.md#encodepy).
-
-Now copy this encoded corpus over to mtg-rnn:
-
-```
-cd ~/mtg-rnn
-mkdir data/custom_encoding
-cp ~/mtgencode/data/custom_encoding.txt data/custom_encoding/input.txt
-```
-
-The input file does have to be named input.txt, though you can name the folder that holds it, under mtg-rnn/data/, whatever you want.
-
-### Training a neural net
-
-There are lots of parameters to control training. With a good GPU, I can train a 3-layer, size 512 network in a few hours; on a CPU this will probably take at least a day. 
-
-Most networks we use are about that size. I'd recommend avoiding anything much larger, as they don't seem to produce appreciably better results and take longer to train. The only other parameter you really have to change from the defaults is seq_length, which we usually set somewhere from 120-200. If this causes memory issues you can reduce batch_size slightly to compensate.
-
-A sample training command might like this:
-
-```
-th train.lua -gpuid -1 -rnn_size 256 -num_layers 3 -seq_length 200 -data_dir data/custom_encoding -checkpoint_dir cv/custom_format-256/ -eval_val_every 1000 -seed 7767
-```
-
-This tells the neural network to train using the corpus in data/custom_encoding/, and to output periodic checkpoints to the directory cv/custom_format-256/. The option "-gpuid -1" means to use the CPU, not a GPU (which won't be possible in VirtualBox anyway). The final options, -eval_val_every and -seed, aren't necessary, but I like to specify them. The seed will be set to a fixed 123 if you don't specify one yourself. If you're generating too many checkpoints and filling up your disk, you can increase the number of iterations between saving them by increasing the argument to -eval_val_every.
-
-If all goes well, you should see the neural net code do some stuff and then start training, reporting training loss and batch times as it goes:
-
-```
-1/112100 (epoch 0.000), train_loss = 4.21492900, grad/param norm = 3.1264e+00, time/batch = 4.73s
-2/112100 (epoch 0.001), train_loss = 4.29372822, grad/param norm = 8.6741e+00, time/batch = 3.62s
-3/112100 (epoch 0.001), train_loss = 4.02817964, grad/param norm = 8.0445e+00, time/batch = 3.57s
-...
-```
-
-This process can take a while, so go to sleep or something and come back in the morning. The train_loss should eventually start to decrease and settle around 0.5 or so; if it doesn't, then something is wrong and the neural net will probably produce gibberish.
-
-Every N iterations, where N is the argument to -eval_val_every, the neural net will generate a checkpoint in cv/custom_format-256/. They look like this:
-
-```
-lm_lstm_epoch2.23_0.5367.t7
-```
-
-The numbers are important; the first is the epoch, which tells you how many passes the neural network had made over the training data when it saved the checkpoint, and the second is the validation loss of the checkpoint. Validation loss is effectively a measurement of how accurate the checkpoint is at producing text that resembles the encoded format, the lower the better. The two numbers are separated by an underscore, so for the example above, the checkpoint is from epoch 2.23, and it had a validation loss of 0.5367, which isn't great but probably isn't gibberish either.
-
-### Sampling checkpoints to generate cards
-
-Once you're done training, or you've got enough checkpoints and you're just impatient, you can sample to generate actual cards. If the network is still training, you'll probably want to pause it by typing Control-Z in the terminal; you can resume it later with the command 'fg'. Training will use all available CPU resources all by itself, so trying to sample at the same time is a recipe for slow.
-
-Once you're ready, go to the mtg-rnn repo. A typical sampling command might look like this:
-
-```
-th sample.lua cv/custom_format-256/lm_lstm_epochXX.XX_X.XXXX.t7 -gpuid -1 -temperature 0.9 -length 2000 | tee cards.txt
-```
-
-Replace the Xs in the checkpoint name with the numbers in the name of an actual checkpoint; tab completion is your friend. This command will sample 2000 characters, which is probably something like 20 cards, and both print them to the terminal and write them to a file called cards.txt. The interesting options here are the temperature and the length. Temperature controls how cautious the network is; lower values produce more probable output, while higher values make it wilder and more creative. Somewhere in the range of 0.7-1.0 usually works best. Length is just how many characters to generate. You can also specify a seed with -seed, exactly as for training, which is a particularly good idea if you just generated a few million characters and would like to see something new. The default seed is fixed at 123, again exactly as for training.
-
-You can read the output yourself, but it might be painful, especially if you're using randomly ordered fields.
-
-### Postprocessing neural net output with mtgencode
-
-Once you've generated some cards, you can turn them into pretty text spoilers or a set file for MSE2.
-
-Go back to mtgencode, and run something like:
-
-```
-./decode.py -v ~/mtg-rnn/cards.txt cards.pretty.txt -d
-```
-
-This should create a file called cards.pretty.txt with a text spoiler in it that's actually designed for human consumption. Open it in your favorite text editor and enjoy!
-
-The -d option ensures you'll still be able to see anything that went wrong with the cards. You can change the formatting with -f and -g, and produce a set file for MSE2 with --mse. The -c option produces some interesting comparisons to existing cards, but it's slow, so be prepared to wait a long time if you use it on a large dump.
-
-## Gory details of the format
-
-Individual cards are separated by two newlines. Multifaced cards (split, flip, etc.) are encoded together, with the castable one first if applicable, and separated by only one newline.
-
-All decimal numbers are in represented in unary, with numbers over 20 special-cased into english. Fun fact: the only numbers over 20 on cards are 25, 30, 40, 50, 100, and 200. The unary representation uses one character to mark the start of the number, and another to count. So 0 is &, 1 is &^, 2 is &^^, 11 is &^^^^^^^^^^^, and so on.
-
-Mana costs are specially encoded between braces {}. I use the unary counter to encode the colorless part, and then special two-character symbols for everything else. So, {3}{W}{W} becomes {^^^WWWW}, {U/B}{U/B} becomes {UBUB}, and {X}{X}{X} becomes {XXXXXX}. The details are controlled in lib/utils.py, and handled with the Manacost and Manatext objects in lib/manalib.py.
-
-The name of the card becomes @ in the text. I try to handle all the stupid special cases correctly. For example, Crovax the Cursed is referred to in his text box as simply 'Crovax'. Yuch.
-
-The names of counters are similarly replaced with %, and then a special line of text is added to tell what kind of counter % refers to. Fun fact: there's more than a hundred different kinds used in real cards.
-
-Several ambiguous words are resolved. Most directly, the word 'counter' as in 'counter target spell' is replaced with 'uncast'. This should prevent confusion with +&^/+&^ counters and % counters.
-
-I also reformat cards that choose between multiple things by removing the choice clause itself and instead having a delimited list of options prefixed by a number. If you could choose different numbers of things (one or both, one or more - turns out the latter is valid in all existing cases) then the number is 0, otherwise it's however many things you'd get to choose. So, 'choose one -\= effect x\= effect y' (the \ is a newline) becomes [&^ = effect x = effect y].
-
-Finally, some postprocessing is done to put the lines of a card's ability text into a standardized, canonical form. Lines with multiple keywords are split, and then we put all of the simple keywords first, followed by things like static or activated abilities. A few things always go first (such as equip and enchant) and a few other things always go last (such as kicker and countertype). There are various reasons for doing this transformation, and some proper science could probably come up with a better specific procedure. One of the primary motivations for putting abilities onto individual lines is that it should simplify the process of adding back in reminder text. It should be noted somewhere that the definition of a simple keyword ability vs. some other line of text is that a simple keyword won't contain a period, and we can split a line with multiple of them by looking for commas and semicolons.
-
-======
-
-Here's an attempt at a list of all the things I do:
-
-* Aggregate split / flip / rotating / etc. cards by their card number (22a with 22b) and put them together
-
-* Make all text lowercase, so the symbols for mana and X are distinct
-
-* Remove all reminder text
-
-* Put @ in for the name of the card
-
-* Encode the mana costs, and the tap and untap symbols
-
-* Convert decimal numbers to unary
-
-* Simplify the syntax of dashes, so that - is only used as a minus sign, and ~ is used elsewhere
-
-* Make sure that where X is the variable X, it's uppercase
-
-* Change the names of all counters to % and add a line to identify what kind of counter % refers to
-
-* Move the equip cost of equipment to the beginning of the text so that it's closer to the type
-
-* Rename 'counter' in the context of 'counter target spell' to 'uncast'
-
-* Put choices into [&^ = effect x = effect y] format
-
-* Replace actual newline characters with \ so that we can use those to separate cards
-
-* Clean all the unicode junk like accents and unicode minus signs out of the text so there are fewer characters
-
-* Split composite text lines (i.e. "flying, first strike" -> "flying\first strike") and put the lines into canonical order
-
-* Remove ability words from rules text
+*   [AGENTS.md](AGENTS.md): Instructions for AI agents working on this codebase.
+*   [DEPENDENCIES.md](DEPENDENCIES.md): Detailed dependency information (Legacy).
