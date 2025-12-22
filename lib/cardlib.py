@@ -186,10 +186,10 @@ def fields_check_valid(fields):
     elif isartifact and 'station' in text:
         return True
     # Planeswalkers don't have p/t
-    elif 'planeswalker' in fields[field_types][0][1]:
+    elif any('planeswalker' in val for _, val in fields[field_types]):
         return True
     # Battles don't have p/t
-    elif 'battle' in fields[field_types][0][1]:
+    elif any('battle' in val for _, val in fields[field_types]):
         return field_loyalty in fields
     else:
         return not field_pt in fields

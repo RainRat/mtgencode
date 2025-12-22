@@ -1,5 +1,9 @@
 from lib.cardlib import fields_check_valid, field_name, field_types, field_subtypes, field_pt, field_text, field_loyalty
 
+class MockText:
+    def __init__(self, text):
+        self.text = text
+
 def test_fields_check_valid_creature():
     fields = {
         field_name: [(-1, "ornithopter")],
@@ -60,3 +64,77 @@ def test_fields_check_valid_multiple_type_entries():
     }
     # Artifact + Vehicle -> iscreature=True. Needs PT. Has PT. Valid.
     assert fields_check_valid(fields)
+
+def test_fields_check_valid_station_artifact():
+    # Station artifact logic: isartifact + 'station' in text -> valid even without PT
+    fields = {
+        field_name: [(-1, "summoning station")],
+        field_types: [(-1, ["artifact"])],
+        field_text: [(-1, MockText("tap: create a 2/2 colorless pincher creature token. station"))],
+    }
+    assert fields_check_valid(fields)
+
+def test_fields_check_valid_station_artifact_no_keyword():
+    fields = {
+        field_name: [(-1, "sol ring")],
+        field_types: [(-1, ["artifact"])],
+        field_text: [(-1, MockText("add {c}{c}."))],
+    }
+    assert fields_check_valid(fields)
+
+def test_fields_check_valid_planeswalker():
+    fields = {
+        field_name: [(-1, "jace")],
+        field_types: [(-1, ["planeswalker", "jace"])],
+        field_loyalty: [(-1, "4")]
+    }
+    assert fields_check_valid(fields)
+
+def test_fields_check_valid_battle():
+    fields = {
+        field_name: [(-1, "invasion of zendikar")],
+        field_types: [(-1, ["battle", "siege"])],
+        field_loyalty: [(-1, "3")]
+    }
+    assert fields_check_valid(fields)
+
+def test_fields_check_valid_battle_missing_loyalty():
+    fields = {
+        field_name: [(-1, "bad battle")],
+        field_types: [(-1, ["battle"])],
+    }
+    assert not fields_check_valid(fields)
+
+def test_fields_check_valid_missing_name():
+    fields = {
+        field_types: [(-1, ["creature"])],
+        field_pt: [(-1, "1/1")]
+    }
+    assert not fields_check_valid(fields)
+
+def test_fields_check_valid_missing_types():
+    fields = {
+        field_name: [(-1, "mystery card")],
+        field_pt: [(-1, "1/1")]
+    }
+    assert not fields_check_valid(fields)
+
+def test_fields_check_valid_planeswalker_brittle_check():
+    # Investigating the potential bug where types are split across entries
+    # and "planeswalker" is not in the first one.
+    fields = {
+        field_name: [(-1, "weird walker")],
+        field_types: [(-1, ["legendary"]), (-1, ["planeswalker"])],
+        field_loyalty: [(-1, "5")]
+    }
+    assert fields_check_valid(fields)
+
+def test_fields_check_valid_battle_brittle_check_no_loyalty():
+    # If a battle is defined in second type entry and missing loyalty
+    fields = {
+        field_name: [(-1, "weird battle")],
+        field_types: [(-1, ["siege"]), (-1, ["battle"])],
+        # No loyalty
+    }
+    # Should be invalid because battles need loyalty
+    assert not fields_check_valid(fields)
