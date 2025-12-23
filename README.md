@@ -100,4 +100,4 @@ python3 -m pytest
 ## Documentation
 
 *   [AGENTS.md](AGENTS.md): Instructions for AI agents working on this codebase.
-*   [DEPENDENCIES.md](DEPENDENCIES.md): Detailed dependency information (Legacy).
+*   [DEPENDENCIES.md](DEPENDENCIES.md): External tools setup (MTGJSON, Magic Set Editor, word2vec).

@@ -1,110 +1,73 @@
-Dependencies
-======
+# External Tools & Data
 
-## mtgjson
+This guide covers external data and tools that extend the functionality of `mtgencode`.
 
-First, you'll need the json corpus of Magic the Gathering cards, which can be found at:
+## 1. Magic: The Gathering Data (Required)
 
-http://mtgjson.com/
+To encode card data, you need the JSON corpus from [MTGJSON](https://mtgjson.com).
 
-You probably want the file AllPrintings.json, which you should also be able to download here:
+1.  Go to [MTGJSON Downloads](https://mtgjson.com/downloads/all-files/).
+2.  Download the **AllPrintings.json** file.
+3.  Place it in the `data/` directory of this repository (create the directory if it doesn't exist):
+    ```bash
+    mkdir -p data
+    # Move your downloaded file here
+    mv ~/Downloads/AllPrintings.json data/
+    ```
 
-https://mtgjson.com/downloads/all-files/#allprintings
+## 2. Magic Set Editor (Optional)
 
-## Python packages
+[Magic Set Editor (MSE)](https://magicseteditor.boards.net/) is a tool for designing and visualizing custom cards. The `decode.py` script can generate `.mse-set` files (using the `--mse` flag) that you can open in MSE.
 
-mtgencode uses a few additional Python packages which you should be able to install with Pip, Python's package manager.
+### Installation
 
-On Ubuntu, you should be able to install the necessary packages with:
+*   **Windows:** Download the installer from the [official website](https://magicseteditor.boards.net/page/downloads) and run it.
+*   **Linux/macOS:** MSE is a Windows application, but it runs well on Linux and macOS using [Wine](https://www.winehq.org/).
+    1.  Install Wine (e.g., `sudo apt install wine` on Ubuntu/Debian).
+    2.  Download the MSE Windows installer.
+    3.  Run the installer with Wine: `wine mse-installer.exe`.
 
+### Fonts
+If cards in MSE do not look correct (e.g., missing text or incorrect symbols), you may need to install the specific Magic fonts:
+*   **Beleren** (Bold, Small Caps)
+*   **Relay** (Medium)
+*   **MPlantin**
+
+Search for "Magic The Gathering fonts" online to find these font files, then install them to your system (or `~/.wine/drive_c/windows/Fonts/` for Wine).
+
+### Usage
+To generate an MSE set file:
+```bash
+python3 decode.py encoded_output.txt my_set --mse
 ```
-sudo apt-get install pip3
-pip install -r requirements.txt
-```
+This creates a file named `my_set.mse-set`. Double-click it or open it from within MSE.
 
-nltk requires some additional data files to work, so you'll also have to do:
+## 3. Creativity Analysis (Advanced)
 
-```
-python3 -m nltk.downloader punkt punkt_tab
-```
+The `--creativity` flag in `decode.py` calculates how unique your generated cards are by comparing them to existing real cards using vector embeddings. This feature requires a pre-computed vector model (`data/cbow.bin`).
 
-You don't have to put the files in ~/nltk_data, that's just one of the places it will look automatically. If you try to run decode.py with nltk but without the additional files, the error message is pretty helpful.
+**Note:** This is an advanced feature that requires compiling the legacy C `word2vec` tool.
 
-mtgencode can also use numpy to speed up some of the long calculations required to generate the creativity statistics comparing similarity of generated and existing cards. You can install numpy with:
+### Setup Steps
 
-```
-pip install numpy
-```
+1.  **Install word2vec:**
+    You need the original C implementation of `word2vec`. Since the original Google Code repository is archived, you may need to find a mirror on GitHub (e.g., search for "word2vec C").
+    Compile the `word2vec` binary and ensure it is executable.
 
-This will launch an absolutely massive compilation process for all of the numpy C sources. Go get a cup of coffee, and if it fails consult google. You'll probably need to at least have GCC installed, I'm not sure what else.
+2.  **Generate Vectors:**
+    You must generate the binary model from the specific encoding format you are using.
 
-Some additional packages will be needed for multithreading, but that doesn't work yet, so no worries.
+    ```bash
+    # 1. Create vector-compatible text from your data
+    python3 encode.py -v data/AllPrintings.json data/cbow.txt -s -e vec
 
-## word2vec
-**Notice: This section currently does not work.**
+    # 2. Compile cbow.bin using word2vec
+    # (Example command; adjust flags as needed for your word2vec version)
+    ./word2vec -train data/cbow.txt -output data/cbow.bin -cbow 1 -size 200 -window 8 -negative 25 -hs 0 -sample 1e-4 -threads 20 -binary 1 -iter 15
+    ```
 
-The creativity analysis is done using vector models produced by this tool:
-
-https://code.google.com/archive/p/word2vec/
-
-You can install it pretty easily with subversion:
-
-``` 
-sudo apt-get install subversion
-mkdir ~/word2vec
-cd ~/word2vec
-svn checkout http://word2vec.googlecode.com/svn/trunk/
-cd trunk
-make
-```
-
-That should create some files, among them a binary called word2vec. Add this to your path somehow, and you'll be able to invoke cbow.sh from within the data/ subdirectory to recompile the vector model (cbow.bin) from whatever text representation was last produced (cbow.txt).
-
-## Rebuilding the data files
-
-The standard procedure to produce the derived data files from AllPrintings.json is the following:
-
-```
-./encode.py -v data/AllPrintings.json data/output.txt
-./encode.py -v data/output.txt data/cbow.txt -s -e vec
-cd data
-./cbow.sh
-```
-
-This of course assumes that you have AllPrintings.json in data/, and that you start from the root of the repo, in the same directory as encode.py.
-
-## Magic Set Editor 2
-
-MSE2 is a tool for creating and viewing custom magic cards:
-
-https://magicseteditor.boards.net/page/downloads
-
-Set files, with the extension .mse-set, can be produced by decode.py using the -mse option and then viewed in MSE2.
-
-Unfortunately, getting MSE2 to run on Linux can be tricky. Both Wine 1.6 and 1.7 have been reported to work on Ubuntu; instructions for 1.7 can be found here:
-
-https://www.winehq.org/download/ubuntu
-
-To install MSE with Wine, download the standard Windows installer and open it with Wine. Everything should just work. You will need some additional card styles:
-
-http://sourceforge.net/projects/msetemps/files/Magic%20-%20Recently%20Printed%20Styles.mse-installer/download
-
-And possibly this:
-
-http://sourceforge.net/projects/msetemps/files/Magic%20-%20M15%20Extra.mse-installer/download
-
-Once MSE2 is installed with Wine, you should be able to just click on the template installers and MSE2 will know what to do with them.
-
-Some additional system fonts are required, specifically Beleren Bold, Beleren Small Caps Bold, and Relay Medium. Those can be found here:
-
-https://www.dropbox.com/sh/fbivmytc3pfoxa0/AADJ__DYG-qttvTLKOMdQ6Vla?dl=0
-
-Open them in Font Viewer and click install; you might then have to clear the caches so MSE2 can see them:
-
-```
-sudo fc-cache -fv
-```
-
-If you're running a Linux distro other than Ubuntu, then a similar procedure will probably work. If you're on Windows, then it should work fine as is without messing around with Wine. You'll still need the additional styles.
-
-I tried to build MSE2 from source on 64-bit Ubuntu. After hacking up some of the files, I did get a working binary, but I was unable to set up the data files it needs in such a way that I could actually open a set. If you manage to get this to work, please explain how, and I will be very grateful.
+3.  **Run with Creativity:**
+    Once `data/cbow.bin` exists, you can run decoding with creativity analysis:
+    ```bash
+    python3 decode.py encoded_output.txt decoded.txt --creativity
+    ```
