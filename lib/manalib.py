@@ -21,9 +21,6 @@ class Manacost:
         # sort so the order is always consistent
         return ''.join(sorted(colors))
 
-    def get_colors(self):
-        return self.colors
-
     def check_colors(self, symbolstring):
         for sym in symbolstring:
             if not sym in self.colors:

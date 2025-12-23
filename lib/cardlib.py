@@ -1053,7 +1053,7 @@ class Card:
         return outstr
             
     def get_colors(self):
-        return self.__dict__[field_cost].get_colors()
+        return self.__dict__[field_cost].colors
 
     def get_cmc(self):
         return self.__dict__[field_cost].cmc
