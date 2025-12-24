@@ -44,16 +44,16 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     final_sep = config.get('final_sep', final_sep)
 
     if verbose:
-        print('Preparing to encode:')
-        print('  Using encoding ' + repr(encoding))
+        print('Preparing to encode:', file=sys.stderr)
+        print('  Using encoding ' + repr(encoding), file=sys.stderr)
         if stable:
-            print('  NOT randomizing order of cards.')
+            print('  NOT randomizing order of cards.', file=sys.stderr)
         if randomize_mana:
-            print('  Randomizing order of symbols in manacosts.')
+            print('  Randomizing order of symbols in manacosts.', file=sys.stderr)
         if not fmt_labeled:
-            print('  NOT labeling fields for this run (may be harder to decode).')
+            print('  NOT labeling fields for this run (may be harder to decode).', file=sys.stderr)
         if not line_transformations:
-            print('  NOT using line reordering transformations')
+            print('  NOT using line reordering transformations', file=sys.stderr)
 
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations, report_file=report_file)
 
@@ -79,7 +79,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     if oname:
         if verbose:
-            print('Writing output to: ' + oname)
+            print('Writing output to: ' + oname, file=sys.stderr)
         with open(oname, 'w', encoding='utf8') as ofile:
             writecards(ofile)
     else:

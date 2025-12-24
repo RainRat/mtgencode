@@ -22,7 +22,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     # there is a sane thing to do here (namely, produce both at the same time)
     # but we don't support it yet.
     if for_mse and html:
-        print('ERROR - decode.py - incompatible formats "mse" and "html"')
+        print('ERROR - decode.py - incompatible formats "mse" and "html"', file=sys.stderr)
         return
 
     fmt_ordered = cardlib.fmt_ordered_default
@@ -55,16 +55,16 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         namediff = Namediff()
         cbow = CBOW()
         if verbose:
-            print('Computing nearest names...')
+            print('Computing nearest names...', file=sys.stderr)
         nearest_names = namediff.nearest_par([c.name for c in cards], n=3)
         if verbose:
-            print('Computing nearest cards...')
+            print('Computing nearest cards...', file=sys.stderr)
         nearest_cards = cbow.nearest_par(cards)
         for i in range(0, len(cards)):
             cards[i].nearest_names = nearest_names[i]
             cards[i].nearest_cards = nearest_cards[i]
         if verbose:
-            print('...Done.')
+            print('...Done.', file=sys.stderr)
 
     def hoverimg(cardname, dist, nd, for_html=False):
         truename = nd.names[cardname]
@@ -236,7 +236,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     if oname:
         if text:
             if verbose:
-                print('Writing text output to: ' + oname)
+                print('Writing text output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
                 writecards(ofile)
         if html:
@@ -244,14 +244,14 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             if not fname.endswith('.html'):
                 fname += '.html'
             if verbose:
-                print('Writing html output to: ' + fname)
+                print('Writing html output to: ' + fname, file=sys.stderr)
             with open(fname, 'w', encoding='utf8') as ofile:
                 writecards(ofile, for_html=True)
         if for_mse:
             # Copy whatever output file is produced, name the copy 'set' (yes,
             # no extension).
             if os.path.isfile('set'):
-                print('ERROR: tried to overwrite existing file "set" - aborting.')
+                print('ERROR: tried to overwrite existing file "set" - aborting.', file=sys.stderr)
                 return
             shutil.copyfile(oname, 'set')
             # Use the freaky mse extension instead of zip.
@@ -262,7 +262,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 finally:
                     if verbose:
                         print('Made an MSE set file called ' +
-                              oname + '.mse-set.')
+                              oname + '.mse-set.', file=sys.stderr)
                     # The set file is useless outside the .mse-set, delete it.
                     os.remove('set')
     else:

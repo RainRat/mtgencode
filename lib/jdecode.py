@@ -1,4 +1,5 @@
 import json
+import sys
 
 import utils
 import cardlib
@@ -62,6 +63,9 @@ def mtg_open_json(fname, verbose = False):
             else:
                 allcards[cardname] = [card]
 
+    if verbose:
+        print('Opened ' + str(len(allcards)) + ' uniquely named cards.', file=sys.stderr)
+
     for uid in bsides:
         aside_uid = uid[:-1] + 'a'
         if aside_uid in asides:
@@ -75,8 +79,6 @@ def mtg_open_json(fname, verbose = False):
             #print aside_uid
             #print bsides[uid]
 
-    if verbose:
-        print('Opened ' + str(len(allcards)) + ' uniquely named cards.')
     return allcards, bad_sets
 
 # filters to ignore some undesirable cards, only used when opening json
@@ -115,8 +117,8 @@ def _check_parsing_quality(cards, report_fobj):
             break
     # random heuristic
     if bad_count > 10:
-        print ('WARNING: Saw a bunch of unparsed cards:')
-        print ('         Is this a legacy format? You may need to specify the field order.')
+        print ('WARNING: Saw a bunch of unparsed cards:', file=sys.stderr)
+        print ('         Is this a legacy format? You may need to specify the field order.', file=sys.stderr)
     if report_fobj:
         report_fobj.close()
     return cards
@@ -139,7 +141,7 @@ def mtg_open_file(fname, verbose = False,
 
     if not fname.endswith('.json'):
         if verbose:
-            print('Opening encoded card file: ' + fname)
+            print('Opening encoded card file: ' + fname, file=sys.stderr)
         with open(fname, 'rt', encoding='utf8') as f:
             text = f.read()
         for card_src in text.split(utils.cardsep):
@@ -152,17 +154,17 @@ def mtg_open_file(fname, verbose = False,
                 elif card.parsed:
                     invalid += 1
                     if verbose:
-                        print ('Invalid card: ' + card_src)
+                        print ('Invalid card: ' + card_src, file=sys.stderr)
                     else:
                         unparsed += 1
 
         if verbose:
              print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
-                    + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'))
+                    + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
         return _check_parsing_quality(cards, report_fobj)
 
     if verbose:
-        print('This looks like a json file: ' + fname)
+        print('This looks like a json file: ' + fname, file=sys.stderr)
     json_srcs, bad_sets = mtg_open_json(fname, verbose)
     # sorted for stability
     for json_cardname in sorted(json_srcs):
@@ -189,9 +191,9 @@ def mtg_open_file(fname, verbose = False,
             elif card.parsed:
                 invalid += 1
                 if verbose:
-                    print ('Invalid card: ' + json_cardname)
+                    print ('Invalid card: ' + json_cardname, file=sys.stderr)
             else:
-                print(card.name)
+                print(card.name, file=sys.stderr)
                 unparsed += 1
                 if report_fobj:
                     unparsed_card_repr = {
@@ -202,6 +204,6 @@ def mtg_open_file(fname, verbose = False,
 
     if verbose:
         print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
-               + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'))
+               + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
 
     return _check_parsing_quality(cards, report_fobj)
