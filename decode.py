@@ -184,7 +184,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         }
 
         for card in card_set:
-            card_colors = card.get_colors()
+            card_colors = card.cost.colors
             if len(card_colors) > 1:
                 colors['multi'].append(card)
             elif len(card_colors) == 1:
@@ -222,10 +222,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         sorted_set = []
         for card in card_set:
             # make sure there is an empty set for each CMC
-            while len(sorted_cards)-1 < card.get_cmc():
+            while len(sorted_cards)-1 < card.cost.cmc:
                 sorted_cards += [[]]
             # add card to correct set of CMC values
-            sorted_cards[card.get_cmc()] += [card]
+            sorted_cards[card.cost.cmc] += [card]
         # combine each set of CMC valued cards together
         for value in sorted_cards:
             for card in value:
