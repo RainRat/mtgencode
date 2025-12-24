@@ -96,7 +96,7 @@ if __name__ == '__main__':
     parser.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console (stdout).')
     parser.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        help="Format for the output data. Default is 'std' (standard).",
+                        help="Format for the output data. 'std' (default) puts the name last. 'named' puts the name first. 'vec' produces a vectorized format for training.",
     )
     parser.add_argument('-r', '--randomize', action='store_true',
                         help='Shuffle mana symbols (e.g., {W}{U} vs {U}{W}) for data augmentation.')
