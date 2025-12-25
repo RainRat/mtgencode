@@ -28,12 +28,12 @@ To encode card data, you need the JSON corpus from [MTGJSON](https://mtgjson.com
     3.  Run the installer with Wine: `wine mse-installer.exe`.
 
 ### Fonts
-If cards in MSE do not look correct (e.g., missing text or incorrect symbols), you may need to install the specific Magic fonts:
-*   **Beleren** (Bold, Small Caps)
-*   **Relay** (Medium)
-*   **MPlantin**
-
-Search for "Magic The Gathering fonts" online to find these font files, then install them to your system (or `~/.wine/drive_c/windows/Fonts/` for Wine).
+If cards in MSE do not look correct (e.g., missing text or incorrect symbols), you may need to install specific Magic fonts.
+*   **Fonts:** Beleren (Bold, Small Caps), Relay (Medium), MPlantin.
+*   **Where to find them:** A web search for "Magic The Gathering fonts" should help you find them.
+*   **How to install:**
+    *   **Windows:** Right-click the font file and select "Install".
+    *   **Wine:** Copy the font files to `~/.wine/drive_c/windows/Fonts/`.
 
 ### Usage
 To generate an MSE set file:

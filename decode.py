@@ -272,7 +272,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Decodes AI-generated text back into readable Magic cards or images.")
 
     parser.add_argument('infile', #nargs='?'. default=None,
                         help='Input file containing encoded cards (or a JSON corpus) to decode.')
