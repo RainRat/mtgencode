@@ -89,7 +89,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Encodes Magic: The Gathering card data into text formats for AI training.")
     
     parser.add_argument('infile', 
                         help='Input JSON file containing card data (e.g., AllPrintings.json) or an already encoded file.')

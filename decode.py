@@ -282,7 +282,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description="Decode encoded card data into various formats.")
+    parser = argparse.ArgumentParser(description="Decodes AI-generated text back into readable Magic cards or images.")
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
