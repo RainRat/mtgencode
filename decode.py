@@ -3,6 +3,13 @@ import sys
 import os
 import zipfile
 import shutil
+# tqdm is imported inside main/helpers or at top level if we want it global
+try:
+    from tqdm import tqdm
+except ImportError:
+    # Fallback if tqdm is not installed (though it is in requirements)
+    def tqdm(iterable, **kwargs):
+        return iterable
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib')
 sys.path.append(libdir)
@@ -14,7 +21,7 @@ from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = False, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, html = False, text = False):
+         creativity = False, vdump = False, html = False, text = False, quiet=False):
 
     if not (html or text or for_mse):
         text = True
@@ -115,7 +122,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             writer.write(utils.html_append)
             return
 
-        for card in cards:
+        for card in tqdm(cards, disable=quiet, desc="Decoding"):
             writecard(writer, card)
 
         if for_mse:
@@ -183,7 +190,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             'multi': [], 'colorless': [], 'lands': []
         }
 
-        for card in card_set:
+        # Wrap in tqdm if not quiet
+        iterator = tqdm(card_set, disable=quiet, desc="Sorting")
+        for card in iterator:
             card_colors = card.cost.colors
             if len(card_colors) > 1:
                 colors['multi'].append(card)
@@ -266,40 +275,55 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                     # The set file is useless outside the .mse-set, delete it.
                     os.remove('set')
     else:
-        writecards(sys.stdout)
+        # Correctly propagate for_html=html
+        writecards(sys.stdout, for_html=html)
         sys.stdout.flush()
 
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Decode encoded card data into various formats.")
 
-    parser.add_argument('infile', #nargs='?'. default=None,
+    # Group: Input / Output
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('infile',
                         help='Input file containing encoded cards (or a JSON corpus) to decode.')
-    parser.add_argument('outfile', nargs='?', default=None,
+    io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the decoded output. If not provided, output prints to the console.')
-    parser.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        help="Format of the input data. Default is 'std' (standard).",
-    )
-    parser.add_argument('-g', '--gatherer', action='store_true',
+
+    # Group: Output Format
+    fmt_group = parser.add_argument_group('Output Format')
+    fmt_group.add_argument('--text', action='store_true',
+                           help='Force plain text output (enabled by default unless --html or --mse is used).')
+    fmt_group.add_argument('--html', action='store_true',
+                           help='Generate a nicely formatted HTML file instead of plain text.')
+    fmt_group.add_argument('--mse', action='store_true',
+                           help='Generate a Magic Set Editor set file (.mse-set) along with the text output.')
+
+    # Group: Content Formatting
+    content_group = parser.add_argument_group('Content Formatting')
+    content_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
+                        help="Format of the input data. Default is 'std' (standard).")
+    content_group.add_argument('-g', '--gatherer', action='store_true',
                         help='Format output to look like the Gatherer visual spoiler (includes capitalization and formatting).')
-    parser.add_argument('-f', '--forum', action='store_true',
+    content_group.add_argument('-f', '--forum', action='store_true',
                         help='Use pretty formatting for mana symbols (compatible with MTG Salvation forums).')
-    parser.add_argument('-c', '--creativity', action='store_true',
+
+    # Group: Processing & Debugging
+    proc_group = parser.add_argument_group('Processing & Debugging')
+    proc_group.add_argument('-c', '--creativity', action='store_true',
                         help="Enable 'creativity' mode: calculate similarity to existing cards using CBOW (slow).")
-    parser.add_argument('-d', '--dump', action='store_true',
+    proc_group.add_argument('-d', '--dump', action='store_true',
                         help='Debug mode: print detailed information about cards that failed to validate.')
-    parser.add_argument('-v', '--verbose', action='store_true',
+    proc_group.add_argument('-v', '--verbose', action='store_true',
                         help='Enable verbose output.')
-    parser.add_argument('--mse', action='store_true',
-                        help='Generate a Magic Set Editor set file (.mse-set) along with the text output.')
-    parser.add_argument('--html', action='store_true', help='Generate a nicely formatted HTML file instead of plain text.')
-    parser.add_argument('--text', action='store_true', help='Force plain text output (enabled by default unless --html or --mse is used).')
+    proc_group.add_argument('-q', '--quiet', action='store_true',
+                        help='Suppress the progress bar.')
 
     args = parser.parse_args()
 
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
-         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text)
+         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, quiet=args.quiet)
 
     exit(0)
