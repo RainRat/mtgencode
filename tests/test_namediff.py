@@ -28,6 +28,40 @@ class TestNamediff(unittest.TestCase):
         splits = namediff.list_split(l, 2)
         self.assertEqual(splits, [])
 
+    def test_list_split_zero_or_negative(self):
+        """Test list_split with zero or negative number of chunks."""
+        l = [1, 2, 3]
+
+        # Test n=0
+        splits = namediff.list_split(l, 0)
+        self.assertEqual(len(splits), 1)
+        self.assertEqual(splits[0], l)
+
+        # Test n=-1
+        splits = namediff.list_split(l, -1)
+        self.assertEqual(len(splits), 1)
+        self.assertEqual(splits[0], l)
+
+    def test_f_nearest_per_thread(self):
+        """Test the worker function for parallel processing."""
+        worknames = ["apple", "banana"]
+        candidates = ["apple", "apricot", "banana", "bandana"]
+        # workitem tuple structure: (worknames, names, n)
+        workitem = (worknames, candidates, 1)
+
+        results = namediff.f_nearest_per_thread(workitem)
+
+        self.assertEqual(len(results), 2)
+        # Check result for "apple"
+        self.assertEqual(len(results[0]), 1)
+        self.assertEqual(results[0][0][1], "apple")
+        self.assertEqual(results[0][0][0], 1.0)
+
+        # Check result for "banana"
+        self.assertEqual(len(results[1]), 1)
+        self.assertEqual(results[1][0][1], "banana")
+        self.assertEqual(results[1][0][0], 1.0)
+
     def test_list_flatten(self):
         l = [[1, 2], [3], [4, 5]]
         flat = namediff.list_flatten(l)
