@@ -23,7 +23,7 @@ def list_split(l, n):
     if not l:
         return []
     if n <= 0:
-        return l
+        return [l]
     split_size = len(l) // n
     if len(l) % n > 0:
         split_size += 1
