@@ -22,10 +22,7 @@ class Manacost:
         return ''.join(sorted(colors))
 
     def check_colors(self, symbolstring):
-        for sym in symbolstring:
-            if not sym in self.colors:
-                return False
-        return True
+        return all(sym in self.colors for sym in symbolstring)
 
     def __init__(self, src, fmt = ''):
         # source fields, exactly one will be set

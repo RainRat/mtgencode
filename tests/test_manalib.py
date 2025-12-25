@@ -25,3 +25,30 @@ def test_manatext_initialization():
     assert manatext.costs[1].cmc == 1
     assert manatext.costs[1].colors == "W"
     assert manatext.valid
+
+def test_check_colors():
+    m = Manacost("{WWUUBBRRGG}") # WUBRG
+    assert m.colors == "BGRUW"
+
+    # Check subset
+    assert m.check_colors("W")
+    assert m.check_colors("U")
+    assert m.check_colors("WU")
+    assert m.check_colors("BGRUW")
+
+    # Check not subset
+    m2 = Manacost("{WW}") # W
+    assert m2.colors == "W"
+    assert m2.check_colors("W")
+    assert not m2.check_colors("U")
+    assert not m2.check_colors("WU")
+
+    m3 = Manacost("{UU}") # U
+    assert m3.colors == "U"
+    assert not m3.check_colors("W")
+
+    # Empty
+    m_empty = Manacost("{}")
+    assert m_empty.colors == ""
+    assert not m_empty.check_colors("W")
+    assert m_empty.check_colors("") # Empty string is subset of empty string
