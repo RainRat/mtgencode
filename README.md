@@ -97,6 +97,13 @@ Options for formatting the output:
 *   `--html`: Creates a webpage (`.html`) with card images.
 *   `--mse`: Creates a set file (`.mse-set`) for Magic Set Editor.
 
+### `sortcards.py` (Organizing Output)
+Organizes encoded cards into categories (like Color, Card Type, etc.) and wraps them in `[spoiler]` tags. This is useful for posting generated cards on forums.
+
+```bash
+python3 sortcards.py encoded_output.txt sorted_output.txt
+```
+
 ### Training a Neural Network
 *Note: This tool prepares the data. It does not train the model itself.*
 
