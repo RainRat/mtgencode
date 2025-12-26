@@ -74,6 +74,11 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             print('...Done.', file=sys.stderr)
 
     def hoverimg(cardname, dist, nd, for_html=False):
+        # Gracefully handle cases where the card returned by CBOW is not in the Namediff set
+        # This happens in testing when CBOW uses full data but Namediff uses a subset
+        if cardname not in nd.names:
+             return ''
+
         truename = nd.names[cardname]
         code = nd.codes[cardname]
         namestr = ''
