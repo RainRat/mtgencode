@@ -91,26 +91,37 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description="Encodes Magic: The Gathering card data into text formats for AI training.")
     
-    parser.add_argument('infile', 
+    # Group: Input / Output
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('infile',
                         help='Input JSON file containing card data (e.g., AllPrintings.json) or an already encoded file.')
-    parser.add_argument('outfile', nargs='?', default=None,
+    io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console (stdout).')
-    parser.add_argument('-e', '--encoding', default='std', choices=utils.formats,
+
+    # Group: Encoding Options
+    enc_group = parser.add_argument_group('Encoding Options')
+    enc_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
                         help="Format for the output data. 'std' (default) puts the name last. 'named' puts the name first. 'vec' produces a vectorized format for training.",
     )
-    parser.add_argument('-r', '--randomize', action='store_true',
-                        help='Shuffle mana symbols (e.g., {W}{U} vs {U}{W}) for data augmentation.')
-    parser.add_argument('--nolinetrans', action='store_true',
-                        help='Disable automatic reordering of card text lines (keep original order).')
-    parser.add_argument('--nolabel', action='store_true',
+    enc_group.add_argument('--nolabel', action='store_true',
                         help="Remove field labels (e.g., '|cost|') from the output.")
-    parser.add_argument('-s', '--stable', action='store_true',
+    enc_group.add_argument('--nolinetrans', action='store_true',
+                        help='Disable automatic reordering of card text lines (keep original order).')
+
+    # Group: Data Processing
+    proc_group = parser.add_argument_group('Data Processing')
+    proc_group.add_argument('-r', '--randomize', action='store_true',
+                        help='Shuffle mana symbols (e.g., {W}{U} vs {U}{W}) for data augmentation.')
+    proc_group.add_argument('-s', '--stable', action='store_true',
                         help='Preserve the original order of cards from the input file (do not shuffle).')
-    parser.add_argument('-v', '--verbose', action='store_true',
+
+    # Group: Logging & Debugging
+    debug_group = parser.add_argument_group('Logging & Debugging')
+    debug_group.add_argument('-v', '--verbose', action='store_true',
                         help='Enable verbose output.')
-    parser.add_argument('-q', '--quiet', action='store_true',
+    debug_group.add_argument('-q', '--quiet', action='store_true',
                         help='Suppress the progress bar.')
-    parser.add_argument('--report-unparsed',
+    debug_group.add_argument('--report-unparsed',
                         help='File path to save raw JSON of cards that failed to parse (useful for debugging).')
 
     args = parser.parse_args()
