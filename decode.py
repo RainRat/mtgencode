@@ -21,7 +21,8 @@ from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = False, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, html = False, text = False, quiet=False):
+         creativity = False, vdump = False, html = False, text = False, quiet=False,
+         report_file=None):
 
     if not (html or text or for_mse):
         text = True
@@ -56,7 +57,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     else:
         raise ValueError('decode.py: unknown encoding: ' + encoding)
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered)
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file)
 
     if creativity:
         namediff = Namediff()
@@ -319,11 +320,14 @@ if __name__ == '__main__':
                         help='Enable verbose output.')
     proc_group.add_argument('-q', '--quiet', action='store_true',
                         help='Suppress the progress bar.')
+    proc_group.add_argument('--report-failed',
+                        help='File path to save the text of cards that failed to parse/validate (useful for debugging).')
 
     args = parser.parse_args()
 
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
-         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, quiet=args.quiet)
+         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, quiet=args.quiet,
+         report_file = args.report_failed)
 
     exit(0)

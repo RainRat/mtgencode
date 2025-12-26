@@ -155,6 +155,8 @@ def mtg_open_file(fname, verbose = False,
                     invalid += 1
                     if verbose:
                         print ('Invalid card: ' + card_src, file=sys.stderr)
+                    if report_fobj:
+                         report_fobj.write(card_src + utils.cardsep)
                     else:
                         unparsed += 1
 
