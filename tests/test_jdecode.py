@@ -135,5 +135,25 @@ class TestJDecodeMerging(unittest.TestCase):
         self.assertIn("regular", allcards)
         self.assertNotIn(utils.json_field_bside, allcards["regular"][0])
 
+    def test_single_card_input(self):
+        # Test that a single card JSON object (not wrapped in data/set structure)
+        # is correctly detected and wrapped into a list.
+        test_data = {
+            "name": "Single Card",
+            "types": ["Creature"],
+            "text": "Destroy target world.",
+            "manaCost": "{B}{B}{B}{B}",
+            "rarity": "Rare",
+            "setCode": "TEST"
+        }
+
+        fname = self.create_json_file(test_data)
+        allcards, bad_sets = jdecode.mtg_open_json(fname)
+
+        self.assertIn("single card", allcards)
+        card = allcards["single card"][0]
+        self.assertEqual(card["name"], "Single Card")
+        self.assertEqual(card["setCode"], "TEST")
+
 if __name__ == '__main__':
     unittest.main()
