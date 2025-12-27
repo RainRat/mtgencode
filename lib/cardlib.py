@@ -9,25 +9,7 @@ from manalib import Manacost, Manatext
 import textwrap
 import nltk.data
 
-# Some text prettification stuff that people may not have installed
-try:
-    from titlecase import titlecase
-except ImportError:
-    def titlecase(s):
-        s = s.title()
-        smallwords = {
-            'A', 'An', 'And', 'As', 'At', 'But', 'By', 'For', 'From', 'If', 'In', 'Nor', 'Of', 'On', 'Or', 'So', 'The', 'To', 'Yet'
-        }
-        words = s.split(' ')
-        for i, word in enumerate(words):
-            if "'S" in word:
-                word = word.replace("'S", "'s")
-                words[i] = word
-
-            if word in smallwords:
-                if 0 < i < len(words) - 1:
-                    words[i] = word.lower()
-        return ' '.join(words)
+from titlecase import titlecase
 
 sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 # This could me made smarter - MSE will capitalize for us after :,
