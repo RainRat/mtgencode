@@ -5,13 +5,31 @@ import utils
 import cardlib
 
 def mtg_open_json(fname, verbose = False):
+    """
+    Reads a JSON file containing card data.
+
+    Supported formats:
+    1. MTGJSON v4/v5 format (dictionary with a 'data' key).
+    2. A list of card objects.
+    3. A single card object (detected if it's a dict without a 'data' key).
+
+    Returns:
+        tuple: (allcards, bad_sets)
+            allcards: Dictionary mapping card names (lowercase) to lists of card objects.
+            bad_sets: Set of set codes flagged as 'funny', 'memorabilia', or 'alchemy'.
+    """
 
     with open(fname, 'r', encoding='utf8') as f:
         jobj = json.load(f)
 
     is_mtgjson_format = isinstance(jobj, dict)
     if is_mtgjson_format:
-        jobj = jobj['data']
+        if 'data' in jobj:
+            jobj = jobj['data']
+        else:
+            # Assume it is a single card object
+            is_mtgjson_format = False
+            jobj = [jobj]
 
     bad_sets = set()
     allcards = {}
