@@ -139,11 +139,16 @@ def mtg_open_file(fname, verbose = False,
     if report_file:
         report_fobj = open(report_file, 'w', encoding='utf-8')
 
-    if not fname.endswith('.json'):
+    if fname == '-' or not fname.endswith('.json'):
         if verbose:
-            print('Opening encoded card file: ' + fname, file=sys.stderr)
-        with open(fname, 'rt', encoding='utf8') as f:
-            text = f.read()
+            print('Opening encoded card file: ' + ('<stdin>' if fname == '-' else fname), file=sys.stderr)
+
+        if fname == '-':
+            text = sys.stdin.read()
+        else:
+            with open(fname, 'rt', encoding='utf8') as f:
+                text = f.read()
+
         for card_src in text.split(utils.cardsep):
             if card_src:
                 card = cardlib.Card(card_src, fmt_ordered=fmt_ordered)
