@@ -292,8 +292,8 @@ if __name__ == '__main__':
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infile',
-                        help='Input file containing encoded cards (or a JSON corpus) to decode.')
+    io_group.add_argument('infile', nargs='?', default='-',
+                        help='Input file containing encoded cards (or a JSON corpus) to decode. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the decoded output. If not provided, output prints to the console.')
 
