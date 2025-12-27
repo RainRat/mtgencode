@@ -111,10 +111,6 @@ def text_pass_2_cardname(s, name):
     return s
 
 
-def text_pass_3_unary(s):
-    return utils.to_unary(s)
-
-
 # Run only after doing unary conversion.
 def text_pass_4a_dashes(s):
     s = s.replace('-' + unary_marker, reserved_marker)
@@ -500,10 +496,6 @@ def text_pass_9_newlines(s):
     return s.replace('\n', utils.newline)
 
 
-def text_pass_10_symbols(s):
-    return utils.to_symbols(s)
-
-
 # reorder the lines of text into a canonical form:
 # first enchant and equip
 # then other keywords, one per line (things with no period on the end)
@@ -719,14 +711,6 @@ def text_unpass_2_counters(s):
 
 def text_unpass_3_uncast(s):
     return s.replace(counter_rename, 'counter')
-
-
-def text_unpass_4_unary(s):
-    return utils.from_unary(s)
-
-
-def text_unpass_5_symbols(s, for_forum, for_html):
-    return utils.from_symbols(s, for_forum = for_forum, for_html = for_html)
 
 
 def text_unpass_6_cardname(s, name):

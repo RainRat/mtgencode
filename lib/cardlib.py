@@ -300,7 +300,7 @@ def fields_from_json(src_json, linetrans = True):
         #    text_val = re.sub(r'station\s*\d+\+*', 'station', text_val)
         text_val = transforms.text_pass_1_strip_rt(text_val)
         text_val = transforms.text_pass_2_cardname(text_val, name_orig)
-        text_val = transforms.text_pass_3_unary(text_val)
+        text_val = utils.to_unary(text_val)
         text_val = transforms.text_pass_4a_dashes(text_val)
         text_val = transforms.text_pass_4b_x(text_val)
         text_val = transforms.text_pass_4c_abilitywords(text_val)
@@ -309,7 +309,7 @@ def fields_from_json(src_json, linetrans = True):
         text_val = transforms.text_pass_7_choice(text_val)
         text_val = transforms.text_pass_8_equip(text_val)
         text_val = transforms.text_pass_9_newlines(text_val)
-        text_val = transforms.text_pass_10_symbols(text_val)
+        text_val = utils.to_symbols(text_val)
         if linetrans:
             text_val = transforms.text_pass_11_linetrans(text_val)
         text_val = utils.to_ascii(text_val)
@@ -708,8 +708,8 @@ class Card:
             mtext = transforms.text_unpass_1_choice(mtext, delimit=True)
 
         mtext = transforms.text_unpass_3_uncast(mtext)
-        mtext = transforms.text_unpass_4_unary(mtext)
-        mtext = transforms.text_unpass_5_symbols(mtext, for_forum, for_html)
+        mtext = utils.from_unary(mtext)
+        mtext = utils.from_symbols(mtext, for_forum, for_html)
         mtext = sentencecase(mtext)
         mtext = transforms.text_unpass_7_newlines(mtext)
         newtext = Manatext('')
@@ -867,8 +867,8 @@ class Card:
             mtext = transforms.text_unpass_1_choice(mtext, delimit = False)
             mtext = transforms.text_unpass_2_counters(mtext)
             mtext = transforms.text_unpass_3_uncast(mtext)
-            mtext = transforms.text_unpass_4_unary(mtext)
-            mtext = transforms.text_unpass_5_symbols(mtext, False, False)
+            mtext = utils.from_unary(mtext)
+            mtext = utils.from_symbols(mtext, False, False)
             mtext = sentencecase(mtext)
             # I don't really want these MSE specific passes in transforms,
             # but they could be pulled out separately somewhere else in here.
@@ -934,8 +934,8 @@ class Card:
                 mtext2 = transforms.text_unpass_1_choice(mtext2, delimit = False)
                 mtext2 = transforms.text_unpass_2_counters(mtext2)
                 mtext2 = transforms.text_unpass_3_uncast(mtext2)
-                mtext2 = transforms.text_unpass_4_unary(mtext2)
-                mtext2 = transforms.text_unpass_5_symbols(mtext2, False, False)
+                mtext2 = utils.from_unary(mtext2)
+                mtext2 = utils.from_symbols(mtext2, False, False)
                 mtext2 = sentencecase(mtext2)
                 mtext2 = mtext2.replace(utils.this_marker, '<atom-cardname><nospellcheck>'
                                       + utils.this_marker + '</nospellcheck></atom-cardname>')
