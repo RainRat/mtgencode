@@ -17,48 +17,66 @@ To encode card data, you need the JSON corpus from [MTGJSON](https://mtgjson.com
 
 ## 2. Magic Set Editor (Optional)
 
-[Magic Set Editor (MSE)](https://magicseteditor.boards.net/) is a tool for designing and visualizing custom cards. The `decode.py` script can generate `.mse-set` files (using the `--mse` flag) that you can open in MSE.
+[Magic Set Editor (MSE)](https://magicseteditor.boards.net/) is a tool for designing and visualizing custom cards. The `decode.py` script can generate `.mse-set` files (using the `--mse` flag) that you can open in MSE to see your generated cards as if they were real Magic cards.
 
 ### Installation
 
 *   **Windows:** Download the installer from the [official website](https://magicseteditor.boards.net/page/downloads) and run it.
-*   **Linux/macOS:** MSE is a Windows application, but it runs well on Linux and macOS using [Wine](https://www.winehq.org/).
-    1.  Install Wine (e.g., `sudo apt install wine` on Ubuntu/Debian).
-    2.  Download the MSE Windows installer.
-    3.  Run the installer with Wine: `wine mse-installer.exe`.
+*   **Linux/macOS:** MSE is a Windows application, but it runs well on Linux and macOS using [Wine](https://www.winehq.org/), which acts as a compatibility layer.
+    1.  **Install Wine:** Use your system's package manager (e.g., `sudo apt install wine` on Ubuntu, or `brew install --cask wine-stable` on macOS).
+    2.  **Download MSE:** Get the standard Windows installer from the MSE website.
+    3.  **Run Installer:** Open your terminal and run the installer with Wine: `wine mse-installer.exe`.
+    4.  **Run MSE:** After installation, launch MSE using Wine: `wine "C:/Program Files/Magic Set Editor 2/mse.exe"` (path may vary).
 
 ### Fonts
-If cards in MSE do not look correct (e.g., missing text or incorrect symbols), you may need to install specific Magic fonts.
-*   **Fonts:** Beleren (Bold, Small Caps), Relay (Medium), MPlantin.
-*   **Where to find them:** A web search for "Magic The Gathering fonts" should help you find them.
+MSE requires specific fonts to render card text and symbols correctly. Without them, you might see **squares or generic text** instead of mana symbols (like the skull for Black mana) or the correct card title font.
+
+*   **Required Fonts:**
+    *   **Beleren** (Bold, Small Caps) - Used for card titles.
+    *   **Relay** (Medium) - Used for card text.
+    *   **MPlantin** - Used for flavor text and other details.
+
+*   **How to find them:**
+    Due to copyright, we cannot host these fonts. However, a quick web search for "**Magic The Gathering fonts**" or "**MSE fonts pack**" will help you find them.
+
 *   **How to install:**
-    *   **Windows:** Right-click the font file and select "Install".
-    *   **Wine:** Copy the font files to `~/.wine/drive_c/windows/Fonts/`.
+    *   **Windows:** Right-click the font file (`.ttf` or `.otf`) and select "Install".
+    *   **Linux/macOS (Wine):** To make fonts available to MSE running in Wine, copy the font files into the Wine fonts directory:
+        ```bash
+        cp *.ttf ~/.wine/drive_c/windows/Fonts/
+        ```
 
 ### Usage
 To generate an MSE set file:
 ```bash
 python3 decode.py encoded_output.txt my_set --mse
 ```
-This creates a file named `my_set.mse-set`. Double-click it or open it from within MSE.
+This creates a file named `my_set.mse-set`. Double-click it (or open it via Wine) to view your cards.
 
 ## 3. Creativity Analysis (Advanced)
 
-The `--creativity` flag in `decode.py` calculates how unique your generated cards are by comparing them to existing real cards using vector embeddings. This feature requires a pre-computed vector model (`data/cbow.bin`).
+The `--creativity` flag in `decode.py` helps you evaluate your AI model. It calculates how "original" your generated cards are by comparing them to existing real cards.
+
+**What it does:**
+It uses a vector model (Word2Vec) to measure the semantic distance between your generated card and the nearest real Magic card.
+*   **Low distance:** The card is very similar (or identical) to an existing card.
+*   **High distance:** The card is unique or "creative."
 
 **Note:** This is an advanced feature that requires compiling the legacy C `word2vec` tool.
 
 ### Setup Steps
 
 1.  **Install word2vec:**
-    You need the original C implementation of `word2vec`. Since the original Google Code repository is archived, you may need to find a mirror on GitHub (e.g., search for "word2vec C").
-    Compile the `word2vec` binary and ensure it is executable.
+    You need the original C implementation of `word2vec`. The original Google Code repository is archived, but you can find mirrors on GitHub (search for "word2vec C").
+    *   Clone the word2vec repository.
+    *   Run `make` to compile the `word2vec` binary.
+    *   Ensure the `word2vec` binary is in your current directory or path.
 
 2.  **Generate Vectors:**
-    You must generate the binary model from the specific encoding format you are using.
+    You must generate a binary model (`cbow.bin`) derived from the specific encoding format you are using.
 
     ```bash
-    # 1. Create vector-compatible text from your data
+    # 1. Create vector-compatible text from your source data
     python3 encode.py -v data/AllPrintings.json data/cbow.txt -s -e vec
 
     # 2. Compile cbow.bin using word2vec
