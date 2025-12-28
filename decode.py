@@ -33,6 +33,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         print('ERROR - decode.py - incompatible formats "mse" and "html"', file=sys.stderr)
         return
 
+    if for_mse:
+        text = True
+
     fmt_ordered = cardlib.fmt_ordered_default
 
     if encoding in ['std']:
@@ -304,7 +307,7 @@ if __name__ == '__main__':
     fmt_group.add_argument('--html', action='store_true',
                            help='Generate a nicely formatted HTML file instead of plain text.')
     fmt_group.add_argument('--mse', action='store_true',
-                           help='Generate a Magic Set Editor set file (.mse-set) along with the text output.')
+                           help='Generate a Magic Set Editor set file (.mse-set). Requires an output filename to generate the .mse-set file.')
 
     # Group: Content Formatting
     content_group = parser.add_argument_group('Content Formatting')
