@@ -520,9 +520,6 @@ class Card:
                     self.__dict__[field_loyalty + '_value'] = int(value)
                 except (ValueError, TypeError):
                     self.__dict__[field_loyalty + '_value'] = None
-                    if self.verbose:
-                        sys.stderr.write("Invalid loyalty value for card '" + self.name + "': " + str(value) + "\n")
-                    # Technically '*' could still be valid, but it's unlikely...
             else:
                 self.valid = False
                 if self.verbose:

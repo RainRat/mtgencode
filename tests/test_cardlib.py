@@ -46,7 +46,10 @@ def test_verbose_logging(capsys):
     # Test invalid loyalty
     card._set_loyalty([(-1, 'X')])
     captured = capsys.readouterr()
-    assert "Invalid loyalty value for card 'invalid card': X" in captured.err
+    # Note: We removed the check for invalid integer loyalty values because
+    # encoded cards use unary strings (e.g. &^^^) which are not valid integers.
+    # So this should NOT print an error message anymore.
+    assert "Invalid loyalty value for card 'invalid card': X" not in captured.err
 
 def test_planeswalker_negative_loyalty_to_mse():
     planeswalker_json = {
