@@ -79,6 +79,7 @@ Generate a file for Magic Set Editor (requires [MSE](https://magicseteditor.boar
 ```bash
 python3 decode.py encoded_output.txt my_new_set --mse
 ```
+*   **Note:** This creates a file named `my_new_set.mse-set`. You can open this file directly in Magic Set Editor.
 
 ---
 
@@ -111,6 +112,14 @@ python3 sortcards.py encoded_output.txt sorted_output.txt
 2.  **Train:** Use a tool like `mtg-rnn`, `char-rnn`, or a Transformer model on `input.txt`.
 3.  **Generate:** Have your model produce text.
 4.  **Decode:** Use `decode.py` to turn that text into cards.
+
+---
+
+## Troubleshooting
+
+*   **Missing NLTK Data:** If you see an error about `punkt` or `punkt_tab` not found, run `python3 -m nltk.downloader punkt punkt_tab`.
+*   **Missing `AllPrintings.json`:** Ensure the file is named exactly `AllPrintings.json` and is in the `data/` folder.
+*   **MSE Fonts:** If your generated cards show squares instead of symbols, you are missing the required fonts (Beleren, Relay, MPlantin). See [DEPENDENCIES.md](DEPENDENCIES.md).
 
 ---
 
