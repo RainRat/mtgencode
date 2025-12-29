@@ -22,9 +22,9 @@ from namediff import Namediff
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = False, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, quiet=False,
-         report_file=None):
+         report_file=None, json_output=False):
 
-    if not (html or text or for_mse):
+    if not (html or text or for_mse or json_output):
         text = True
 
     # there is a sane thing to do here (namely, produce both at the same time)
@@ -252,7 +252,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
 
     if oname:
-        if text:
+        if text and not json_output:
             if verbose:
                 print('Writing text output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
@@ -283,9 +283,19 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                               oname + '.mse-set.', file=sys.stderr)
                     # The set file is useless outside the .mse-set, delete it.
                     os.remove('set')
+        if json_output:
+            if verbose:
+                print('Writing JSON output to: ' + oname, file=sys.stderr)
+            with open(oname, 'w', encoding='utf8') as ofile:
+                import json
+                json.dump([c.to_dict() for c in cards], ofile, indent=2)
     else:
         # Correctly propagate for_html=html
-        writecards(sys.stdout, for_html=html)
+        if json_output:
+            import json
+            print(json.dumps([c.to_dict() for c in cards], indent=2))
+        else:
+            writecards(sys.stdout, for_html=html)
         sys.stdout.flush()
 
 
@@ -308,6 +318,8 @@ if __name__ == '__main__':
                            help='Generate a nicely formatted HTML file instead of plain text.')
     fmt_group.add_argument('--mse', action='store_true',
                            help='Generate a Magic Set Editor set file (.mse-set). Requires an output filename to generate the .mse-set file.')
+    fmt_group.add_argument('--json', action='store_true',
+                           help='Generate a JSON file containing the decoded cards.')
 
     # Group: Content Formatting
     content_group = parser.add_argument_group('Content Formatting')
@@ -336,6 +348,6 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, quiet=args.quiet,
-         report_file = args.report_failed)
+         report_file = args.report_failed, json_output=args.json)
 
     exit(0)
