@@ -659,6 +659,43 @@ class Card:
 
         return outstr
 
+    def format_text(self, gatherer=False, for_forum=False, for_html=False):
+        """Helper method to format the card text.
+
+        Args:
+            gatherer (bool, optional): Whether to emulate the Gatherer visual spoiler.
+                Defaults to False.
+            for_forum (bool, optional): Whether to use pretty mana encoding for mtgsalvation forum.
+                Defaults to False.
+            for_html (bool, optional): Whether to create a .html file with pretty forum formatting.
+                Defaults to False.
+
+        Returns:
+            str: The formatted card text.
+        """
+        if gatherer:
+            cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
+        else:
+            cardname = titlecase(self.__dict__[field_name])
+
+        mtext = self.__dict__[field_text].text
+        if gatherer:
+            mtext = transforms.text_unpass_1_choice(mtext, delimit=False)
+            mtext = transforms.text_unpass_2_counters(mtext)
+            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
+        else:
+            mtext = transforms.text_unpass_1_choice(mtext, delimit=True)
+
+        mtext = transforms.text_unpass_3_uncast(mtext)
+        mtext = utils.from_unary(mtext)
+        mtext = utils.from_symbols(mtext, for_forum, for_html)
+        mtext = sentencecase(mtext)
+        mtext = transforms.text_unpass_7_newlines(mtext)
+        newtext = Manatext('')
+        newtext.text = mtext
+        newtext.costs = self.__dict__[field_text].costs
+        return newtext.format(for_forum=for_forum, for_html=for_html)
+
     def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False):
         """Formats the card data into a human-readable string.
 
@@ -696,23 +733,7 @@ class Card:
         if rarity in utils.json_rarity_unmap:
             rarity = utils.json_rarity_unmap[rarity]
 
-        mtext = self.__dict__[field_text].text
-        if gatherer:
-            mtext = transforms.text_unpass_1_choice(mtext, delimit=False)
-            mtext = transforms.text_unpass_2_counters(mtext)
-            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
-        else:
-            mtext = transforms.text_unpass_1_choice(mtext, delimit=True)
-
-        mtext = transforms.text_unpass_3_uncast(mtext)
-        mtext = utils.from_unary(mtext)
-        mtext = utils.from_symbols(mtext, for_forum, for_html)
-        mtext = sentencecase(mtext)
-        mtext = transforms.text_unpass_7_newlines(mtext)
-        newtext = Manatext('')
-        newtext.text = mtext
-        newtext.costs = self.__dict__[field_text].costs
-        formatted_mtext = newtext.format(for_forum=for_forum, for_html=for_html)
+        formatted_mtext = self.format_text(gatherer=gatherer, for_forum=for_forum, for_html=for_html)
 
         if for_html:
             outstr += '<b>' + cardname + '</b>'
@@ -1030,4 +1051,68 @@ class Card:
             outstr = '_ASIDE_ ' + outstr + '\n\n_BSIDE_ ' + self.bside.vectorize()
 
         return outstr
+
+    def to_dict(self):
+        """Converts the card data into a dictionary suitable for JSON serialization.
+
+        Returns:
+            dict: The card data as a dictionary.
+        """
+        d = {}
+        d['name'] = titlecase(self.__dict__[field_name])
+
+        # Rarity
+        rarity = self.__dict__[field_rarity]
+        if rarity in utils.json_rarity_unmap:
+            rarity = utils.json_rarity_unmap[rarity]
+        d['rarity'] = rarity
+
+        # Mana Cost
+        cost = self.__dict__[field_cost]
+        if not cost.none:
+             # use standard format for cost: {2}{U}
+             d['manaCost'] = cost.format().replace(utils.mana_open_delimiter, '{').replace(utils.mana_close_delimiter, '}')
+
+        # Types
+        d['supertypes'] = [titlecase(s) for s in self.__dict__[field_supertypes]]
+        d['types'] = [titlecase(s) for s in self.__dict__[field_types]]
+        d['subtypes'] = [titlecase(s) for s in self.__dict__[field_subtypes]]
+
+        # P/T
+        if self.__dict__[field_pt]:
+            pt_str = utils.from_unary(self.__dict__[field_pt])
+            d['pt'] = pt_str
+            if '/' in pt_str:
+                parts = pt_str.split('/')
+                if len(parts) == 2:
+                    d['power'] = parts[0]
+                    d['toughness'] = parts[1]
+
+        # Loyalty
+        if self.__dict__[field_loyalty]:
+             d['loyalty'] = utils.from_unary(self.__dict__[field_loyalty])
+
+        # Text
+        # We want {T}, {U} etc. in the output JSON
+        mtext = self.format_text()
+        # format_text returns {T} as {T} by default (utils.mana_open_delimiter) unless forum/html is set.
+        # But wait, utils.mana_untranslate uses { and } for default.
+        # Let's check format_text defaults: for_forum=False, for_html=False.
+        # Manatext.format delegates to Manacost.format which delegates to utils.mana_untranslate.
+        # utils.mana_untranslate uses { and } by default.
+
+        # However, we want to ensure symbols are {T} not T.
+        # utils.mana_untranslate(..., for_forum=False, for_html=False) returns {T}.
+        # Wait, Manacost.format uses utils.mana_open_delimiter which is {.
+
+        # Let's double check if format_text needs any post-processing.
+        # It calls utils.from_symbols(mtext, for_forum, for_html).
+        # utils.from_symbols(..., False, False) uses symbol_trans which maps T to {T}.
+
+        d['text'] = mtext
+
+        if self.bside:
+            d['bside'] = self.bside.to_dict()
+
+        return d
             
