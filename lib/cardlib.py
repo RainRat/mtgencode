@@ -659,7 +659,7 @@ class Card:
 
         return outstr
 
-    def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False):
+    def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False, ansi_color=False):
         """Formats the card data into a human-readable string.
 
         Args:
@@ -670,6 +670,8 @@ class Card:
             vdump (bool, optional): Whether to dump out lots of information about invalid cards.
                 Defaults to False.
             for_html (bool, optional): Whether to create a .html file with pretty forum formatting.
+                Defaults to False.
+            ansi_color (bool, optional): Whether to use ANSI color codes for terminal output.
                 Defaults to False.
 
         Returns:
@@ -691,7 +693,12 @@ class Card:
         if vdump and not cardname:
             cardname = '_NONAME_'
 
+        if ansi_color:
+            cardname = utils.colorize(cardname, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+
         coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html)
+        if ansi_color and coststr != '_NOCOST_':
+            coststr = utils.colorize(coststr, utils.Ansi.CYAN)
         rarity = self.__dict__[field_rarity]
         if rarity in utils.json_rarity_unmap:
             rarity = utils.json_rarity_unmap[rarity]
@@ -726,7 +733,7 @@ class Card:
 
         if for_html and for_forum:
             outstr += ('<div class="hover_img"><a href="#">[F]</a> <span><p>'
-                       + self.format(gatherer=gatherer, for_forum=True, for_html=False, vdump=vdump).replace('\n', '<br>')
+                       + self.format(gatherer=gatherer, for_forum=True, for_html=False, vdump=vdump, ansi_color=False).replace('\n', '<br>')
                        + '</p></span></div><a href="#top" style="float: right;">back to top</a>')
 
         if rarity and gatherer:
@@ -740,46 +747,60 @@ class Card:
 
         outstr += linebreak
 
+        typeline = ''
         if gatherer:
             basetypes = list(map(str.capitalize, self.__dict__[field_types]))
             if vdump and len(basetypes) < 1:
                 basetypes = ['_NOTYPE_']
-            outstr += ' '.join(list(map(str.capitalize, self.__dict__[field_supertypes])) + basetypes)
+            typeline += ' '.join(list(map(str.capitalize, self.__dict__[field_supertypes])) + basetypes)
         else:
             supertypes = [titlecase(s) for s in self.__dict__[field_supertypes]]
             types = [titlecase(t) for t in self.__dict__[field_types]]
-            outstr += ' '.join(supertypes + types)
+            typeline += ' '.join(supertypes + types)
 
         if self.__dict__[field_subtypes]:
-            outstr += (' ' + utils.dash_marker)
+            typeline += (' ' + utils.dash_marker)
             for subtype in self.__dict__[field_subtypes]:
-                outstr += ' ' + titlecase(subtype)
+                typeline += ' ' + titlecase(subtype)
+
+        if ansi_color:
+            typeline = utils.colorize(typeline, utils.Ansi.GREEN)
+
+        outstr += typeline
 
         if rarity and not gatherer:
             outstr += ' (' + rarity.lower() + ')'
 
         if gatherer:
             if self.__dict__[field_pt]:
-                outstr += ' (' + utils.from_unary(self.__dict__[field_pt]) + ')'
+                pt = utils.from_unary(self.__dict__[field_pt])
+                if ansi_color: pt = utils.colorize(pt, utils.Ansi.RED)
+                outstr += ' (' + pt + ')'
 
             if self.__dict__[field_loyalty]:
+                loyalty = utils.from_unary(self.__dict__[field_loyalty])
+                if ansi_color: loyalty = utils.colorize(loyalty, utils.Ansi.RED)
                 if 'battle' in self.types:
-                    outstr += ' [[' + utils.from_unary(self.__dict__[field_loyalty]) + ']]'
+                    outstr += ' [[' + loyalty + ']]'
                 else:
-                    outstr += ' ((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
+                    outstr += ' ((' + loyalty + '))'
 
         if formatted_mtext:
             outstr += linebreak + formatted_mtext
 
         if not gatherer:
             if self.__dict__[field_pt]:
-                outstr += linebreak + '(' + utils.from_unary(self.__dict__[field_pt]) + ')'
+                pt = utils.from_unary(self.__dict__[field_pt])
+                if ansi_color: pt = utils.colorize(pt, utils.Ansi.RED)
+                outstr += linebreak + '(' + pt + ')'
 
             if self.__dict__[field_loyalty]:
+                loyalty = utils.from_unary(self.__dict__[field_loyalty])
+                if ansi_color: loyalty = utils.colorize(loyalty, utils.Ansi.RED)
                 if 'battle' in self.types:
-                    outstr += linebreak + '[[' + utils.from_unary(self.__dict__[field_loyalty]) + ']]'
+                    outstr += linebreak + '[[' + loyalty + ']]'
                 else:
-                    outstr += linebreak + '((' + utils.from_unary(self.__dict__[field_loyalty]) + '))'
+                    outstr += linebreak + '((' + loyalty + '))'
 
         if vdump and self.__dict__[field_other]:
             outstr += linebreak
@@ -806,7 +827,7 @@ class Card:
             outstr += linebreak
             if not for_html:
                 outstr += utils.dash_marker * 8 + linebreak
-            outstr += self.bside.format(gatherer=gatherer, for_forum=for_forum and not for_html, for_html=for_html, vdump=vdump)
+            outstr += self.bside.format(gatherer=gatherer, for_forum=for_forum and not for_html, for_html=for_html, vdump=vdump, ansi_color=ansi_color)
 
         if for_html:
             outstr += "</div>"

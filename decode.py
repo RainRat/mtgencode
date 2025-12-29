@@ -22,7 +22,7 @@ from namediff import Namediff
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = False, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, quiet=False,
-         report_file=None):
+         report_file=None, color_arg=None):
 
     if not (html or text or for_mse):
         text = True
@@ -153,8 +153,20 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 fstring = fstring.replace('<', '(').replace('>', ')')
                 writer.write(('\n' + fstring[:-1]).replace('\n', '\n\t\t'))
             else:
+                # Determine if we should use color
+                # Use color if:
+                # 1. User explicitly requested it (color_arg == True)
+                # 2. User didn't specify (color_arg == None) AND writer is stdout AND stdout is a TTY
+                # 3. User didn't disable it (color_arg != False)
+                use_color = False
+                if not for_html and not for_mse:
+                    if color_arg is True:
+                        use_color = True
+                    elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
+                        use_color = True
+
                 fstring = card.format(gatherer = gatherer, for_forum = for_forum,
-                                      vdump = vdump, for_html = for_html)
+                                      vdump = vdump, for_html = for_html, ansi_color = use_color)
                 if for_html and creativity:
                     fstring = fstring[:-6] # chop off the closing </div> to stick stuff in
 
@@ -318,6 +330,14 @@ if __name__ == '__main__':
     content_group.add_argument('-f', '--forum', action='store_true',
                         help='Use pretty formatting for mana symbols (compatible with MTG Salvation forums).')
 
+    # Color options
+    # We use a mutual exclusive group to allow --color and --no-color
+    color_group = content_group.add_mutually_exclusive_group()
+    color_group.add_argument('--color', action='store_true', default=None,
+                        help='Force enable ANSI color output (useful for piping to less -R).')
+    color_group.add_argument('--no-color', action='store_false', dest='color',
+                        help='Disable ANSI color output.')
+
     # Group: Processing & Debugging
     proc_group = parser.add_argument_group('Processing & Debugging')
     proc_group.add_argument('-c', '--creativity', action='store_true',
@@ -336,6 +356,6 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, quiet=args.quiet,
-         report_file = args.report_failed)
+         report_file = args.report_failed, color_arg=args.color)
 
     exit(0)
