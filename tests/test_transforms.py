@@ -143,12 +143,77 @@ class TestTransforms(unittest.TestCase):
         self.assertEqual(lines[3], "kicker {r}")
 
     def test_text_pass_1_strip_rt_bug(self):
-        # Current logic is re.sub(r'\(.*\)', '', s), which is greedy
+        # The previous bug was greedy regex re.sub(r'\(.*\)', '', s) which stripped everything between first ( and last )
+        # Current logic is non-greedy re.sub(r'\(.*?\)', '', s)
         text = "target creature (this effect lasts until end of turn) gets +1/+1 (counters)."
-        # Expected behavior for a non-buggy implementation: "target creature  gets +1/+1 ."
-        # Current behavior: "target creature ."
+        # Expected behavior: intermediate text is preserved
         expected = "target creature  gets +1/+1 ."
         self.assertEqual(transforms.text_pass_1_strip_rt(text), expected)
+
+    def test_text_pass_4b_x(self):
+        # Tests standardizing 'X'
+        # x_marker is 'X', dash_marker is '~'
+
+        # ~x -> -X
+        self.assertEqual(transforms.text_pass_4b_x(utils.dash_marker + "x"), "-" + utils.x_marker)
+        # +x -> +X
+        self.assertEqual(transforms.text_pass_4b_x("+x"), "+" + utils.x_marker)
+        # " x " -> " X "
+        self.assertEqual(transforms.text_pass_4b_x(" x "), " " + utils.x_marker + " ")
+        # x: -> X:
+        self.assertEqual(transforms.text_pass_4b_x("x:"), utils.x_marker + ":")
+        # x~ -> X~
+        self.assertEqual(transforms.text_pass_4b_x("x" + utils.dash_marker), utils.x_marker + utils.dash_marker)
+        # x\u2014 -> X\u2014
+        self.assertEqual(transforms.text_pass_4b_x("x\u2014"), utils.x_marker + "\u2014")
+        # x. -> X.
+        self.assertEqual(transforms.text_pass_4b_x("x."), utils.x_marker + ".")
+        # x, -> X,
+        self.assertEqual(transforms.text_pass_4b_x("x,"), utils.x_marker + ",")
+        # x is -> X is
+        self.assertEqual(transforms.text_pass_4b_x("x is"), utils.x_marker + " is")
+        # x can't -> X can't
+        self.assertEqual(transforms.text_pass_4b_x("x can't"), utils.x_marker + " can't")
+        # x/x -> X/X
+        self.assertEqual(transforms.text_pass_4b_x("x/x"), utils.x_marker + "/" + utils.x_marker)
+        # x target -> X target
+        self.assertEqual(transforms.text_pass_4b_x("x target"), utils.x_marker + " target")
+        # six target -> six target (regression test)
+        self.assertEqual(transforms.text_pass_4b_x("six target"), "six target")
+        # avaraX -> avarax (regression test)
+        self.assertEqual(transforms.text_pass_4b_x("avara" + utils.x_marker), "avarax")
+
+    def test_text_unpass_1_choice(self):
+        # Input: "[&^=Option A=Option B]" (encoded choice)
+        # Expected: "choose one ~\n= Option A\n= Option B"
+        # markers: ~ is dash_marker, = is bullet_marker
+
+        # Construct encoded string manually to avoid dependency on pass logic
+        # Count 1: &^
+        encoded = (utils.choice_open_delimiter +
+                   utils.unary_marker + utils.unary_counter +
+                   utils.bullet_marker + "Option A" +
+                   utils.bullet_marker + "Option B" +
+                   utils.choice_close_delimiter)
+
+        expected = ("choose one " + utils.dash_marker +
+                    utils.newline + utils.bullet_marker + " Option A" +
+                    utils.newline + utils.bullet_marker + " Option B")
+
+        self.assertEqual(transforms.text_unpass_1_choice(encoded), expected)
+
+        # Test "choose two" (Count 2: &^^)
+        encoded_2 = (utils.choice_open_delimiter +
+                   utils.unary_marker + utils.unary_counter + utils.unary_counter +
+                   utils.bullet_marker + "Opt1" +
+                   utils.bullet_marker + "Opt2" +
+                   utils.choice_close_delimiter)
+
+        expected_2 = ("choose two " + utils.dash_marker +
+                    utils.newline + utils.bullet_marker + " Opt1" +
+                    utils.newline + utils.bullet_marker + " Opt2")
+
+        self.assertEqual(transforms.text_unpass_1_choice(encoded_2), expected_2)
 
 if __name__ == '__main__':
     unittest.main()
