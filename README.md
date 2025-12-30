@@ -101,6 +101,8 @@ Options for formatting the output:
 ### `sortcards.py` (Organizing Output)
 Organizes encoded cards into categories (like Color, Card Type, etc.) and wraps them in `[spoiler]` tags. This is useful for posting generated cards on forums.
 
+**Note:** This script relies on a specific field order. You must generate your encoded file using `python3 encode.py ... --encoding old` for sorting to work correctly.
+
 ```bash
 python3 sortcards.py encoded_output.txt sorted_output.txt
 ```
