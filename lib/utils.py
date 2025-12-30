@@ -112,8 +112,10 @@ unicode_trans = {
 }
 
 # this one is one-way only
+_ascii_trans_table = str.maketrans(unicode_trans)
+
 def to_ascii(s):
-    return s.translate(str.maketrans(unicode_trans))
+    return s.translate(_ascii_trans_table)
 
 # unary numbers
 unary_marker = config.unary_marker
