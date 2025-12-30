@@ -561,3 +561,18 @@ def from_symbols(s, for_forum=False, for_html=False):
     return re.sub(symbol_regex, replace, s)
 
 unletters_regex = r"[^abcdefghijklmnopqrstuvwxyz']"
+
+class Ansi:
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    MAGENTA = '\033[95m'
+    CYAN = '\033[96m'
+
+def colorize(text, color_code):
+    if not text:
+        return text
+    return f"{color_code}{text}{Ansi.RESET}"
