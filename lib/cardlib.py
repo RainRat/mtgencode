@@ -833,6 +833,72 @@ class Card:
             outstr += "</div>"
 
         return outstr
+
+    def to_dict(self):
+        """Returns a dictionary representation of the card, compatible with MTGJSON."""
+        d = {}
+
+        # Name
+        cardname = titlecase(self.name)
+        d['name'] = cardname
+
+        # Mana Cost
+        if not self.cost.none:
+            d['manaCost'] = self.cost.format()
+
+        # Rarity
+        if self.rarity:
+            rarity = self.rarity
+            if rarity in utils.json_rarity_unmap:
+                rarity = utils.json_rarity_unmap[rarity]
+            d['rarity'] = rarity
+
+        # Types
+        d['supertypes'] = [titlecase(s) for s in self.supertypes]
+        d['types'] = [titlecase(t) for t in self.types]
+        if self.subtypes:
+            d['subtypes'] = [titlecase(s) for s in self.subtypes]
+
+        # Power / Toughness
+        if self.pt:
+            pt_str = utils.from_unary(self.pt)
+            if '/' in pt_str:
+                p, t = pt_str.split('/', 1)
+                d['power'] = p
+                d['toughness'] = t
+            else:
+                 d['pt'] = pt_str
+
+        # Loyalty / Defense
+        if self.loyalty:
+            loyalty_val = utils.from_unary(self.loyalty)
+            if any('battle' in t.lower() for t in self.types):
+                d['defense'] = loyalty_val
+            else:
+                d['loyalty'] = loyalty_val
+
+        # Text
+        if self.text.text:
+            mtext = self.text.text
+            # Unpass pipeline similar to format()
+            mtext = transforms.text_unpass_1_choice(mtext, delimit=True)
+            mtext = transforms.text_unpass_3_uncast(mtext)
+            mtext = utils.from_unary(mtext)
+            mtext = utils.from_symbols(mtext, False, False)
+            mtext = sentencecase(mtext)
+            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
+            mtext = transforms.text_unpass_7_newlines(mtext)
+
+            newtext = Manatext('')
+            newtext.text = mtext
+            newtext.costs = self.text.costs
+            d['text'] = newtext.format()
+
+        # B-Side (Recursive)
+        if self.bside:
+            d['bside'] = self.bside.to_dict()
+
+        return d
     
     def to_mse(self, print_raw = False, vdump = False):
         """Formats the card data into a string suitable for Magic Set Editor.

@@ -21,17 +21,17 @@ from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = False, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, html = False, text = False, quiet=False,
+         creativity = False, vdump = False, html = False, text = False, json_out = False, quiet=False,
          report_file=None, color_arg=None):
 
-    if not (html or text or for_mse):
+    if not (html or text or for_mse or json_out):
         text = True
 
     # there is a sane thing to do here (namely, produce both at the same time)
     # but we don't support it yet.
-    if for_mse and html:
-        print('ERROR - decode.py - incompatible formats "mse" and "html"', file=sys.stderr)
-        return
+    if sum([bool(html), bool(for_mse), bool(json_out)]) > 1:
+        print('ERROR - decode.py - incompatible output formats (choose one of --html, --mse, --json)', file=sys.stderr)
+        sys.exit(1)
 
     if for_mse:
         text = True
@@ -277,6 +277,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 print('Writing html output to: ' + fname, file=sys.stderr)
             with open(fname, 'w', encoding='utf8') as ofile:
                 writecards(ofile, for_html=True)
+        if json_out:
+            import json
+            if verbose:
+                print('Writing json output to: ' + oname, file=sys.stderr)
+            with open(oname, 'w', encoding='utf8') as ofile:
+                json_cards = [card.to_dict() for card in cards]
+                json.dump(json_cards, ofile, indent=2)
         if for_mse:
             # Copy whatever output file is produced, name the copy 'set' (yes,
             # no extension).
@@ -296,8 +303,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                     # The set file is useless outside the .mse-set, delete it.
                     os.remove('set')
     else:
-        # Correctly propagate for_html=html
-        writecards(sys.stdout, for_html=html)
+        if json_out:
+            import json
+            json_cards = [card.to_dict() for card in cards]
+            json.dump(json_cards, sys.stdout, indent=2)
+        else:
+            # Correctly propagate for_html=html
+            writecards(sys.stdout, for_html=html)
         sys.stdout.flush()
 
 
@@ -318,6 +330,8 @@ if __name__ == '__main__':
                            help='Force plain text output (enabled by default unless --html or --mse is used).')
     fmt_group.add_argument('--html', action='store_true',
                            help='Generate a nicely formatted HTML file instead of plain text.')
+    fmt_group.add_argument('--json', action='store_true',
+                           help='Generate a structured JSON file.')
     fmt_group.add_argument('--mse', action='store_true',
                            help='Generate a Magic Set Editor set file (.mse-set). Requires an output filename to generate the .mse-set file.')
 
@@ -355,7 +369,7 @@ if __name__ == '__main__':
 
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
-         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, quiet=args.quiet,
+         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, json_out = args.json, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color)
 
     exit(0)
