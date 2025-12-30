@@ -113,9 +113,7 @@ unicode_trans = {
 
 # this one is one-way only
 def to_ascii(s):
-    for uchar in unicode_trans:
-        s = s.replace(uchar, unicode_trans[uchar])
-    return s
+    return s.translate(str.maketrans(unicode_trans))
 
 # unary numbers
 unary_marker = config.unary_marker
