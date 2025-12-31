@@ -508,8 +508,8 @@ def to_mana(s):
     return re.sub(mana_json_regex, lambda m: mana_translate(m.group(0).upper()), s)
 
 
-def from_mana(s, for_forum=False):
-    return re.sub(mana_regex, lambda m: mana_untranslate(m.group(0).upper(), for_forum=for_forum), s)
+def from_mana(s, for_forum=False, for_html=False):
+    return re.sub(mana_regex, lambda m: mana_untranslate(m.group(0).upper(), for_forum=for_forum, for_html=for_html), s)
     
 # Translation could also be accomplished using the datamine.Manacost object's
 # display methods, but these direct string transformations are retained for
