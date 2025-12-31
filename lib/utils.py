@@ -465,11 +465,11 @@ def mana_untranslate(manastr, for_forum = False, for_html = False):
                 if sym in mana_symall_decode:
                     idx += symlen
                     if for_html:
-                        jmanastr = jmanastr + mana_decode_direct(sym)
-                        jmanastr = jmanastr.replace(mana_open_delimiter, mana_html_open_delimiter)
-                        jmanastr = jmanastr.replace(mana_close_delimiter, mana_html_close_delimiter)
-                        jmanastr = jmanastr.replace(mana_open_delimiter, mana_html_open_delimiter)
-                        jmanastr = jmanastr.replace(mana_json_hybrid_delimiter, mana_html_hybrid_delimiter)
+                        decoded = mana_decode_direct(sym)
+                        decoded = decoded.replace(mana_open_delimiter, mana_html_open_delimiter)
+                        decoded = decoded.replace(mana_close_delimiter, mana_html_close_delimiter)
+                        decoded = decoded.replace(mana_json_hybrid_delimiter, mana_html_hybrid_delimiter)
+                        jmanastr = jmanastr + decoded
                     elif for_forum:
                         jmanastr = jmanastr + mana_decode_direct_forum(sym)
                     else:
