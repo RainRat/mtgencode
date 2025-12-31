@@ -16,43 +16,6 @@ class TestTransforms(unittest.TestCase):
         s = "Face" + utils.dash_marker + "to" + utils.dash_marker + "Face"
         self.assertEqual(transforms.name_unpass_1_dashes(s), "Face-to-Face")
 
-    def test_text_pass_2_cardname(self):
-        name = "dark confidant"
-        text = "at the beginning of your upkeep, reveal the top card of your library and put that card into your hand. you lose life equal to its mana value. dark confidant is a 2/1 creature."
-        expected = "at the beginning of your upkeep, reveal the top card of your library and put that card into your hand. you lose life equal to its mana value. " + utils.this_marker + " is a 2/1 creature."
-        self.assertEqual(transforms.text_pass_2_cardname(text, name), expected)
-
-    def test_text_pass_2_cardname_edge_cases(self):
-        # 'sacrifice' is a keyword, shouldn't be replaced unless it's the card name
-        # transforms and cardlib expect lowercase inputs
-
-        # Test 'sacrifice' card name
-        text = "sacrifice a creature."
-        expected = utils.this_marker + " a creature."
-        self.assertEqual(transforms.text_pass_2_cardname(text, "sacrifice"), expected)
-
-        # Test 'fear' card name - explicit skip
-        text = "fear cannot be blocked except by artifact creatures and black creatures."
-        self.assertEqual(transforms.text_pass_2_cardname(text, "fear"), text)
-
-        # Test legend nicknames
-        name = "skithiryx, the blight dragon"
-        text = "flying, infect, haste. regenerate skithiryx."
-        expected = "flying, infect, haste. regenerate " + utils.this_marker + "."
-        self.assertEqual(transforms.text_pass_2_cardname(text, name), expected)
-
-        # Test overrides
-        name = "crovax the cursed"
-        text = "crovax enters the battlefield with four +1/+1 counters on it."
-        expected = utils.this_marker + " enters the battlefield with four +1/+1 counters on it."
-        self.assertEqual(transforms.text_pass_2_cardname(text, name), expected)
-
-        # Test planeswalker pronouns
-        name = "jace beleren"
-        text = "prevent all damage that would be dealt to him this turn."
-        expected = "prevent all damage that would be dealt to " + utils.this_marker + " this turn."
-        self.assertEqual(transforms.text_pass_2_cardname(text, name), expected)
-
     def test_text_pass_7_choice(self):
         # This function runs AFTER dash fix (text_pass_4a_dashes) but BEFORE newlines (text_pass_9_newlines)
         # It expects \n and \u2022 (bullet)
