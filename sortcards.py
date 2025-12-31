@@ -1,11 +1,19 @@
-import re
-import codecs
+#!/usr/bin/env python3
 import sys
+import argparse
 from collections import OrderedDict
 
-# returns back a dictionary mapping the names of classes of cards
-# to lists of cards in those classes
-def sortcards(cards):
+# Try to import tqdm for progress bars
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(iterable, **kwargs):
+        return iterable
+
+def sortcards(cards, verbose=False):
+    """
+    Sorts a list of encoded card strings into various categories.
+    """
     classes = OrderedDict([
         ('Special classes:', None),
         ('multicards', []),
@@ -47,10 +55,13 @@ def sortcards(cards):
         ('more colors?', []),
     ])
 
-    for card in cards:
+    iterator = cards
+    if verbose:
+        iterator = tqdm(cards, desc="Sorting cards", unit="card")
+
+    for card in iterator:
         # special classes
         if '|\n|' in card:
-            # better formatting pls???
             classes['multicards'] += [card.replace('|\n|', '|\n~~~~~~~~~~~~~~~~\n|')]
             continue
         
@@ -142,61 +153,94 @@ def sortcards(cards):
     return classes
 
 
-def main(fname, oname = None, verbose = True):
-    if verbose:
-        print('Opening encoded card file: ' + fname)
+def main():
+    parser = argparse.ArgumentParser(
+        description="Sorts encoded Magic cards into categories (e.g., by color, type) and formats them for forum posts.",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
 
-    f = open(fname, 'r', encoding='utf-8')
-    text = f.read()
-    f.close()
+    # Group: Input / Output
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('infile',
+                        help='Path to the encoded card file to sort.')
+    io_group.add_argument('outfile', nargs='?', default=None,
+                        help='Path to save the output. If not provided, output prints to the console (stdout).')
 
-    # we get rid of the first and last because they are probably partial
-    cards = text.split('\n\n')[1:-1]
-    classes = sortcards(cards)
-
-    if not oname == None:
-        if verbose:
-            print('Writing output to: ' + oname)
-        ofile = open(oname, 'w', encoding='utf-8')
-
-    for cardclass in classes:
-        if classes[cardclass] == None:
-            print(cardclass)
-        else:
-            print('  ' + cardclass + ': ' + str(len(classes[cardclass])))
-
-    if oname == None:
-        outputter = sys.stdout
-    else:
-        outputter = ofile
-
-    for cardclass in classes:
-        if classes[cardclass] == None:
-            outputter.write(cardclass + '\n')
-        else:
-            classlen = len(classes[cardclass])
-            if classlen > 0:
-                outputter.write('[spoiler=' + cardclass + ': ' + str(classlen) + ' cards]\n')
-                for card in classes[cardclass]:
-                    outputter.write(card + '\n\n')
-                outputter.write('[/spoiler]\n')
-
-    if not oname == None:
-        ofile.close()
-
-    
-if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('infile',
-                        help='encoded card file to sort')
-    parser.add_argument('outfile', nargs='?', default=None,
-                        help='output file, defaults to stdout')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                        help='verbose output')
+    # Group: Logging & Debugging
+    debug_group = parser.add_argument_group('Logging & Debugging')
+    debug_group.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable verbose output and progress bars.')
+    debug_group.add_argument('-q', '--quiet', action='store_true',
+                        help='Suppress all non-error output.')
 
     args = parser.parse_args()
-    main(args.infile, args.outfile, args.verbose)
-    exit(0)
 
+    # Determine verbose flag (verbose=True unless quiet=True)
+    verbose = args.verbose and not args.quiet
+
+    if verbose:
+        print(f'Opening encoded card file: {args.infile}', file=sys.stderr)
+
+    try:
+        with open(args.infile, 'r', encoding='utf-8') as f:
+            text = f.read()
+    except Exception as e:
+        print(f"Error reading file {args.infile}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if not text:
+        print("Error: Input file is empty.", file=sys.stderr)
+        sys.exit(1)
+
+    # Split by double newline to get individual cards
+    cards = text.split('\n\n')
+    if len(cards) > 2:
+        # Standard format usually has partial/empty entries at start/end
+        cards = cards[1:-1]
+    else:
+        # Fallback if the file structure is different than expected
+        cards = [c for c in cards if c.strip()]
+
+    classes = sortcards(cards, verbose=verbose)
+
+    outputter = sys.stdout
+    ofile = None
+
+    if args.outfile:
+        if verbose:
+            print(f'Writing output to: {args.outfile}', file=sys.stderr)
+        try:
+            ofile = open(args.outfile, 'w', encoding='utf-8')
+            outputter = ofile
+        except Exception as e:
+            print(f"Error opening output file {args.outfile}: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    try:
+        # Print summary (to stderr to separate from data)
+        for cardclass, card_list in classes.items():
+            if card_list is None:
+                if verbose:
+                    print(cardclass, file=sys.stderr)
+            else:
+                if verbose:
+                    print(f'  {cardclass}: {len(card_list)}', file=sys.stderr)
+
+        # Write content
+        for cardclass, card_list in classes.items():
+            if card_list is None:
+                outputter.write(f'{cardclass}\n')
+            else:
+                classlen = len(card_list)
+                if classlen > 0:
+                    outputter.write(f'[spoiler={cardclass}: {classlen} cards]\n')
+                    for card in card_list:
+                        outputter.write(f'{card}\n\n')
+                    outputter.write('[/spoiler]\n')
+
+    finally:
+        if ofile:
+            ofile.close()
+
+if __name__ == '__main__':
+    main()
