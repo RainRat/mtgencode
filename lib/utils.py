@@ -320,14 +320,9 @@ def mana_sym_to_encoding(sym):
 def mana_sym_to_json(sym):
     if not sym in mana_symall:
         raise ValueError('invalid mana symbol for mana_sym_to_json(): ' + repr(sym))
-    if len(sym) < 2:
-        return mana_json_open_delimiter + sym + mana_json_close_delimiter
-    elif len(sym) > 2:
-        return (mana_json_open_delimiter + sym[0] + mana_json_hybrid_delimiter
-                + sym[1] + mana_json_hybrid_delimiter + sym[2] + mana_json_close_delimiter)
-    else:
-        return (mana_json_open_delimiter + sym[0] + mana_json_hybrid_delimiter
-                + sym[1] + mana_json_close_delimiter)
+    return (mana_json_open_delimiter +
+            mana_json_hybrid_delimiter.join(sym) +
+            mana_json_close_delimiter)
 
 # produce pretty formatting that renders on mtgsalvation forum
 # converts individual symbols; surrounding [mana][/mana] tags are added elsewhere
