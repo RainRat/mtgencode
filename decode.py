@@ -339,8 +339,13 @@ if __name__ == '__main__':
     content_group = parser.add_argument_group('Content Formatting')
     content_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
                         help="Format of the input data. Default is 'std' (standard).")
-    content_group.add_argument('-g', '--gatherer', action='store_true',
-                        help='Format output to look like the Gatherer visual spoiler (includes capitalization and formatting).')
+
+    # Updated: Enable Gatherer formatting by default
+    content_group.add_argument('-g', '--gatherer', action='store_true', default=True,
+                        help='Format output to look like the Gatherer visual spoiler (Default).')
+    content_group.add_argument('--raw', dest='gatherer', action='store_false',
+                        help='Output raw text without Gatherer formatting.')
+
     content_group.add_argument('-f', '--forum', action='store_true',
                         help='Use pretty formatting for mana symbols (compatible with MTG Salvation forums).')
 
