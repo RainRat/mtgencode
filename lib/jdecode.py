@@ -1,5 +1,6 @@
 import json
 import sys
+import os
 
 import utils
 import cardlib
@@ -141,6 +142,63 @@ def _check_parsing_quality(cards, report_fobj):
         report_fobj.close()
     return cards
 
+def _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
+                       exclude_sets, exclude_types, exclude_layouts,
+                       report_fobj):
+    cards = []
+    valid = 0
+    skipped = 0
+    invalid = 0
+    unparsed = 0
+
+    # sorted for stability
+    for json_cardname in sorted(json_srcs):
+        if len(json_srcs[json_cardname]) > 0:
+            jcards = json_srcs[json_cardname]
+
+            idx, card = _find_best_candidate(jcards, exclude_sets, linetrans)
+
+            skip = False
+            # Check exclusions
+            # Note: _find_best_candidate returns a cardlib.Card object, but we also check jcards[idx] for raw fields
+            # Checking set name and layout from raw json
+            if (exclude_sets(jcards[idx].get(utils.json_field_set_name))
+                or exclude_layouts(jcards[idx].get('layout'))
+                or jcards[idx].get('setCode') in bad_sets):
+                skip = True
+
+            # Checking types from card object
+            for cardtype in card.types:
+                if exclude_types(cardtype):
+                    skip = True
+
+            if skip:
+                skipped += 1
+                continue
+
+            if card.valid:
+                valid += 1
+                cards += [card]
+            elif card.parsed:
+                invalid += 1
+                if verbose:
+                    print ('Invalid card: ' + json_cardname, file=sys.stderr)
+            else:
+                print(card.name, file=sys.stderr)
+                unparsed += 1
+                if report_fobj:
+                    unparsed_card_repr = {
+                        "name": card.name,
+                        "fields": jcards[idx]
+                    }
+                    report_fobj.write(json.dumps(unparsed_card_repr, indent=2))
+
+    if verbose:
+        print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
+               + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
+
+    return cards
+
 def mtg_open_file(fname, verbose = False,
                   linetrans = True, fmt_ordered = cardlib.fmt_ordered_default,
                   exclude_sets = default_exclude_sets,
@@ -157,6 +215,39 @@ def mtg_open_file(fname, verbose = False,
     if report_file:
         report_fobj = open(report_file, 'w', encoding='utf-8')
 
+    # Directory Handling
+    if fname != '-' and os.path.isdir(fname):
+        if verbose:
+            print(f"Scanning directory {fname} for JSON files...", file=sys.stderr)
+
+        aggregated_srcs = {}
+        aggregated_bad_sets = set()
+
+        # We only look for .json files
+        files = sorted([f for f in os.listdir(fname) if f.endswith('.json')])
+
+        for f in files:
+            full_path = os.path.join(fname, f)
+            if verbose:
+                print(f"Loading {f}...", file=sys.stderr)
+            # Use verbose=False to avoid spamming "Opened X uniquely named cards" for every file
+            srcs, bad = mtg_open_json(full_path, verbose=False)
+            aggregated_bad_sets.update(bad)
+
+            for key, val in srcs.items():
+                if key in aggregated_srcs:
+                    aggregated_srcs[key].extend(val)
+                else:
+                    aggregated_srcs[key] = val
+
+        if verbose:
+             print('Opened ' + str(len(aggregated_srcs)) + ' uniquely named cards from directory.', file=sys.stderr)
+
+        cards = _process_json_srcs(aggregated_srcs, aggregated_bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj)
+        return _check_parsing_quality(cards, report_fobj)
+
+    # Encoded Text File Handling
     if fname == '-' or not fname.endswith('.json'):
         if verbose:
             print('Opening encoded card file: ' + ('<stdin>' if fname == '-' else fname), file=sys.stderr)
@@ -188,47 +279,12 @@ def mtg_open_file(fname, verbose = False,
                     + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
         return _check_parsing_quality(cards, report_fobj)
 
+    # Single JSON File Handling
     if verbose:
         print('This looks like a json file: ' + fname, file=sys.stderr)
     json_srcs, bad_sets = mtg_open_json(fname, verbose)
-    # sorted for stability
-    for json_cardname in sorted(json_srcs):
-        if len(json_srcs[json_cardname]) > 0:
-            jcards = json_srcs[json_cardname]
 
-            idx, card = _find_best_candidate(jcards, exclude_sets, linetrans)
-
-            skip = False
-            if (exclude_sets(jcards[idx].get(utils.json_field_set_name))
-                or exclude_layouts(jcards[idx].get('layout'))
-                or jcards[idx].get('setCode') in bad_sets):
-                skip = True
-            for cardtype in card.types:
-                if exclude_types(cardtype):
-                    skip = True
-            if skip:
-                skipped += 1
-                continue
-
-            if card.valid:
-                valid += 1
-                cards += [card]
-            elif card.parsed:
-                invalid += 1
-                if verbose:
-                    print ('Invalid card: ' + json_cardname, file=sys.stderr)
-            else:
-                print(card.name, file=sys.stderr)
-                unparsed += 1
-                if report_fobj:
-                    unparsed_card_repr = {
-                        "name": card.name,
-                        "fields": jcards[idx]
-                    }
-                    report_fobj.write(json.dumps(unparsed_card_repr, indent=2))
-
-    if verbose:
-        print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
-               + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
+    cards = _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
+                               exclude_sets, exclude_types, exclude_layouts, report_fobj)
 
     return _check_parsing_quality(cards, report_fobj)
