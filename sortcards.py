@@ -52,7 +52,7 @@ def sortcards(cards, verbose=False):
         ('three colors', []),
         ('four colors', []),
         ('five colors', []),
-        ('more colors?', []),
+        ('6+ colors', []),
     ])
 
     iterator = cards
@@ -148,7 +148,7 @@ def sortcards(cards, verbose=False):
             elif color_count == 5:
                 classes['five colors'] += [card]
             else:
-                classes['more colors?'] += [card]
+                classes['6+ colors'] += [card]
         
     return classes
 
@@ -157,15 +157,15 @@ def main():
     parser = argparse.ArgumentParser(
         description="""Sorts encoded Magic cards into categories (e.g., by color, type) and formats them for forum posts.
 
-Note: Input files must be generated using 'encode.py --encoding old'.
-Standard or other encodings will cause incorrect sorting.""",
+IMPORTANT: This tool requires a specific input format.
+You must generate your input file using: encode.py --encoding old""",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile',
-                        help='Path to the encoded card file to sort. Must be generated using "--encoding old".')
+                        help='Path to the encoded card file to sort. Requires "old" encoding.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console (stdout).')
 
