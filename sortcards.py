@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 import sys
+import os
 import argparse
 from collections import OrderedDict
+
+# Set up lib path
+libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib')
+sys.path.append(libdir)
+
+import cardlib
+import utils
 
 # Try to import tqdm for progress bars
 try:
@@ -10,10 +18,13 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
-def sortcards(cards, verbose=False):
+def sortcards(cards, verbose=False, fmt_ordered=None):
     """
     Sorts a list of encoded card strings into various categories.
     """
+    if fmt_ordered is None:
+        fmt_ordered = cardlib.fmt_ordered_default
+
     classes = OrderedDict([
         ('Special classes:', None),
         ('multicards', []),
@@ -59,96 +70,113 @@ def sortcards(cards, verbose=False):
     if verbose:
         iterator = tqdm(cards, desc="Sorting cards", unit="card")
 
-    for card in iterator:
-        # special classes
-        if '|\n|' in card:
-            classes['multicards'] += [card.replace('|\n|', '|\n~~~~~~~~~~~~~~~~\n|')]
+    for card_src in iterator:
+        # Parse the card string into a Card object
+        try:
+            # We use fmt_labeled_default because the encoder typically produces labeled output
+            card = cardlib.Card(card_src, fmt_ordered=fmt_ordered)
+        except Exception:
+            # If parsing fails, dump to 'other' and continue
+            classes['other'] += [card_src]
+            continue
+
+        # If card is invalid/unparsed but we want to keep the string, put in 'other'
+        # But Card() usually creates an object even if fields are missing/weird.
+        # We'll use the original string 'card_src' for output to preserve exact text.
+
+        # special classes - using raw string checks for these
+        if '|\n|' in card_src:
+            classes['multicards'] += [card_src.replace('|\n|', '|\n~~~~~~~~~~~~~~~~\n|')]
             continue
         
-        # inclusive classes
-        if 'X' in card:
-            classes['X cards'] += [card]
-        if 'kick' in card:
-            classes['kicker cards'] += [card]
-        if '%' in card or '#' in card:
-            classes['counter cards'] += [card]
-        if 'uncast' in card:
-            classes['uncast cards'] += [card]
-        if '[' in card or ']' in card or '=' in card:
-            classes['choice cards'] += [card]
-        if '|equipment|' in card or 'equip {' in card:
-            classes['equipment'] += [card]
-        if 'level up' in card or 'level &' in card:
-            classes['levelers'] += [card]
-        if '|legendary|' in card:
-            classes['legendary'] += [card]
+        # inclusive classes - checks on raw string or parsed fields
+        # Using raw string is safer for preserving existing behavior for simple substrings
+        if 'X' in card_src:
+            classes['X cards'] += [card_src]
+        if 'kick' in card_src:
+            classes['kicker cards'] += [card_src]
+        if '%' in card_src or '#' in card_src:
+            classes['counter cards'] += [card_src]
+        if 'uncast' in card_src:
+            classes['uncast cards'] += [card_src]
+        if '[' in card_src or ']' in card_src or '=' in card_src:
+            classes['choice cards'] += [card_src]
+
+        # Checking types using parsed card object
+        types = [t.lower() for t in card.types]
+        subtypes = [s.lower() for s in card.subtypes]
+
+        if 'equipment' in subtypes or 'equip {' in card_src:
+            classes['equipment'] += [card_src]
+        if 'level up' in card_src or 'level &' in card_src:
+            classes['levelers'] += [card_src]
+        if 'legendary' in card.supertypes: # supertypes are already lowercased in Card
+            classes['legendary'] += [card_src]
 
         # exclusive classes
-        if '|battle|' in card:
-            classes['battles'] += [card]
-        elif '|planeswalker|' in card:
-            classes['planeswalkers'] += [card]
-        elif '|land|' in card:
-            classes['lands'] += [card]
-        elif '|instant|' in card:
-            classes['instants'] += [card]
-        elif '|sorcery|' in card:
-            classes['sorceries'] += [card]
-        elif '|enchantment|' in card:
-            classes['enchantments'] += [card]
-        elif '|artifact|' in card:
-            classes['noncreature artifacts'] += [card]
-        elif '|creature|' in card or 'artifact creature' in card:
-            classes['creatures'] += [card]
+        # Use card.types which is robust
+        if 'battle' in types:
+            classes['battles'] += [card_src]
+        elif 'planeswalker' in types:
+            classes['planeswalkers'] += [card_src]
+        elif 'land' in types:
+            classes['lands'] += [card_src]
+        elif 'instant' in types:
+            classes['instants'] += [card_src]
+        elif 'sorcery' in types:
+            classes['sorceries'] += [card_src]
+        elif 'enchantment' in types:
+            classes['enchantments'] += [card_src]
+        elif 'artifact' in types:
+            classes['noncreature artifacts'] += [card_src]
+        elif 'creature' in types or 'artifact creature' in card_src: # Fallback for old check
+            classes['creatures'] += [card_src]
         else:
-            classes['other'] += [card]
+            classes['other'] += [card_src]
 
-        # color classes need to find the mana cost
-        fields = card.split('|')
-        if len(fields) != 11:
-            classes['unknown color'] += [card]
+        # color classes
+        colors = card.cost.colors
+
+        # Manacost.colors is a string like "WUBRG"
+        # Determine specific colors
+        is_white = 'W' in colors
+        is_blue = 'U' in colors
+        is_black = 'B' in colors
+        is_red = 'R' in colors
+        is_green = 'G' in colors
+
+        # Populate "By color"
+        if is_white: classes['white'] += [card_src]
+        if is_blue: classes['blue'] += [card_src]
+        if is_black: classes['black'] += [card_src]
+        if is_red: classes['red'] += [card_src]
+        if is_green: classes['green'] += [card_src]
+
+        color_count = len(colors)
+
+        # Colorless logic
+        if color_count == 0:
+            if 'land' in types:
+                classes['colorless land'] += [card_src]
+            else:
+                classes['colorless nonland'] += [card_src]
+
+        # By number of colors
+        if color_count == 0:
+            classes['zero colors'] += [card_src]
+        elif color_count == 1:
+            classes['one color'] += [card_src]
+        elif color_count == 2:
+            classes['two colors'] += [card_src]
+        elif color_count == 3:
+            classes['three colors'] += [card_src]
+        elif color_count == 4:
+            classes['four colors'] += [card_src]
+        elif color_count == 5:
+            classes['five colors'] += [card_src]
         else:
-            cost = fields[8]
-            color_count = 0
-            if 'W' in cost or 'U' in cost or 'B' in cost or 'R' in cost or 'G' in cost:
-                if 'W' in cost:
-                    classes['white'] += [card]
-                    color_count += 1
-                if 'U' in cost:
-                    classes['blue'] += [card]
-                    color_count += 1
-                if 'B' in cost:
-                    classes['black'] += [card]
-                    color_count += 1
-                if 'R' in cost:
-                    classes['red'] += [card]
-                    color_count += 1
-                if 'G' in cost:
-                    classes['green'] += [card]
-                    color_count += 1
-                # should be unreachable
-                if color_count == 0:
-                    classes['unknown color'] += [card]
-            else:
-                if '|land|' in card:
-                    classes['colorless land'] += [card]
-                else:
-                    classes['colorless nonland'] += [card]
-            
-            if color_count == 0:
-                classes['zero colors'] += [card]
-            elif color_count == 1:
-                classes['one color'] += [card]
-            elif color_count == 2:
-                classes['two colors'] += [card]
-            elif color_count == 3:
-                classes['three colors'] += [card]
-            elif color_count == 4:
-                classes['four colors'] += [card]
-            elif color_count == 5:
-                classes['five colors'] += [card]
-            else:
-                classes['more colors?'] += [card]
+            # Should be unreachable for standard magic colors
+            classes['more colors?'] += [card_src]
         
     return classes
 
@@ -157,17 +185,21 @@ def main():
     parser = argparse.ArgumentParser(
         description="""Sorts encoded Magic cards into categories (e.g., by color, type) and formats them for forum posts.
 
-Note: Input files must be generated using 'encode.py --encoding old'.
-Standard or other encodings will cause incorrect sorting.""",
+Supports files generated by encode.py with any encoding (std, old, named, etc.).""",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile',
-                        help='Path to the encoded card file to sort. Must be generated using "--encoding old".')
+                        help='Path to the encoded card file to sort.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console (stdout).')
+
+    # Group: Encoding Options
+    enc_group = parser.add_argument_group('Encoding Options')
+    enc_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
+                        help="Format of the input data. Match this to the flag used in encode.py (default: 'std').")
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -181,8 +213,23 @@ Standard or other encodings will cause incorrect sorting.""",
     # Determine verbose flag (verbose=True unless quiet=True)
     verbose = args.verbose and not args.quiet
 
+    # Determine format ordering based on encoding
+    fmt_ordered = cardlib.fmt_ordered_default
+    if args.encoding == 'std':
+        pass
+    elif args.encoding == 'named':
+        fmt_ordered = cardlib.fmt_ordered_named
+    elif args.encoding == 'noname':
+        fmt_ordered = cardlib.fmt_ordered_noname
+    elif args.encoding == 'old':
+        fmt_ordered = cardlib.fmt_ordered_old
+    elif args.encoding == 'norarity':
+        fmt_ordered = cardlib.fmt_ordered_norarity
+    # For others (vec, rfields), default might not work well, but we'll try default
+
     if verbose:
         print(f'Opening encoded card file: {args.infile}', file=sys.stderr)
+        print(f'Using encoding: {args.encoding}', file=sys.stderr)
 
     try:
         with open(args.infile, 'r', encoding='utf-8') as f:
@@ -197,14 +244,10 @@ Standard or other encodings will cause incorrect sorting.""",
 
     # Split by double newline to get individual cards
     cards = text.split('\n\n')
-    if len(cards) > 2:
-        # Standard format usually has partial/empty entries at start/end
-        cards = cards[1:-1]
-    else:
-        # Fallback if the file structure is different than expected
-        cards = [c for c in cards if c.strip()]
+    # Filter empty strings that might result from splitting
+    cards = [c for c in cards if c.strip()]
 
-    classes = sortcards(cards, verbose=verbose)
+    classes = sortcards(cards, verbose=verbose, fmt_ordered=fmt_ordered)
 
     outputter = sys.stdout
     ofile = None

@@ -15,10 +15,11 @@ class TestSortCards(unittest.TestCase):
             "rarity": "common"
         }
         card = Card(card_data)
-        # sortcards expects old ordered, unlabeled format
+        # sortcards function now defaults to standard encoding, so we must explicitly pass
+        # the fmt_ordered that matches how we encoded it if we are using non-standard
         encoded = card.encode(fmt_ordered=fmt_ordered_old, fmt_labeled={})
 
-        classes = sortcards.sortcards([encoded])
+        classes = sortcards.sortcards([encoded], fmt_ordered=fmt_ordered_old)
 
         self.assertIn(encoded, classes['battles'])
         self.assertNotIn(encoded, classes['other'])
@@ -37,7 +38,7 @@ class TestSortCards(unittest.TestCase):
         card = Card(pw_data)
         encoded = card.encode(fmt_ordered=fmt_ordered_old, fmt_labeled={})
 
-        classes = sortcards.sortcards([encoded])
+        classes = sortcards.sortcards([encoded], fmt_ordered=fmt_ordered_old)
 
         self.assertIn(encoded, classes['planeswalkers'])
         self.assertNotIn(encoded, classes['other'])
