@@ -696,9 +696,7 @@ class Card:
         if ansi_color:
             cardname = utils.colorize(cardname, utils.Ansi.BOLD + utils.Ansi.YELLOW)
 
-        coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html)
-        if ansi_color and coststr != '_NOCOST_':
-            coststr = utils.colorize(coststr, utils.Ansi.CYAN)
+        coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color)
         rarity = self.__dict__[field_rarity]
         if rarity in utils.json_rarity_unmap:
             rarity = utils.json_rarity_unmap[rarity]
@@ -719,7 +717,7 @@ class Card:
         newtext = Manatext('')
         newtext.text = mtext
         newtext.costs = self.__dict__[field_text].costs
-        formatted_mtext = newtext.format(for_forum=for_forum, for_html=for_html)
+        formatted_mtext = newtext.format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color)
 
         if for_html:
             outstr += '<b>' + cardname + '</b>'
