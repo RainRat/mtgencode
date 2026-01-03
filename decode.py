@@ -20,20 +20,27 @@ from cbow import CBOW
 from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
-         gatherer = False, for_forum = False, for_mse = False,
+         gatherer = True, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, json_out = False, quiet=False,
          report_file=None, color_arg=None):
 
+    # Set default format to text if no specific output format is selected
     if not (html or text or for_mse or json_out):
         text = True
 
-    # there is a sane thing to do here (namely, produce both at the same time)
-    # but we don't support it yet.
-    if sum([bool(html), bool(for_mse), bool(json_out)]) > 1:
-        print('ERROR - decode.py - incompatible output formats (choose one of --html, --mse, --json)', file=sys.stderr)
+    # Mutually exclusive output formats are now enforced by argparse in main block,
+    # but we keep this check for programmatic access safety.
+    if sum([bool(html), bool(for_mse), bool(json_out), bool(text)]) > 1:
+        # If user explicitly requested multiple formats programmatically, we warn or error.
+        # However, argparse logic below ensures text defaults to True only if others are False.
+        # But if someone calls main() directly with multiple True, we should respect that or fail.
+        # The original code errored on >1 format.
+        print('ERROR - decode.py - incompatible output formats (choose one of --html, --mse, --json, --text)', file=sys.stderr)
         sys.exit(1)
 
     if for_mse:
+        # MSE generation logically uses text generation internally, but the output flag 'text' implies stdout/file text dump.
+        # The original code set text=True here.
         text = True
 
     fmt_ordered = cardlib.fmt_ordered_default
@@ -324,26 +331,33 @@ if __name__ == '__main__':
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the decoded output. If not provided, output prints to the console.')
 
-    # Group: Output Format
-    fmt_group = parser.add_argument_group('Output Format')
+    # Group: Output Format (Mutually Exclusive)
+    # We use a mutually exclusive group to enforce one output format.
+    # Note: We cannot attach this directly to a titled argument group in argparse easily while keeping the title.
+    # So we define the arguments in the main parser but link them via a mutex group.
+    fmt_group = parser.add_mutually_exclusive_group()
     fmt_group.add_argument('--text', action='store_true',
-                           help='Force plain text output (enabled by default unless --html or --mse is used).')
+                           help='Force plain text output (Default unless --html or --mse is used).')
     fmt_group.add_argument('--html', action='store_true',
                            help='Generate a nicely formatted HTML file instead of plain text.')
     fmt_group.add_argument('--json', action='store_true',
                            help='Generate a structured JSON file.')
     fmt_group.add_argument('--mse', action='store_true',
-                           help='Generate a Magic Set Editor set file (.mse-set). Requires an output filename to generate the .mse-set file.')
+                           help='Generate a Magic Set Editor set file (.mse-set). Requires an output filename.')
 
     # Group: Content Formatting
     content_group = parser.add_argument_group('Content Formatting')
     content_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
                         help="Format of the input data. Default is 'std' (standard).")
 
-    # Updated: Enable Gatherer formatting by default
+    # Gatherer formatting is on by default.
+    parser.set_defaults(gatherer=True)
+
+    # We provide a --raw flag to disable it.
+    # We also keep -g for backward compatibility but make it a no-op that ensures True.
     content_group.add_argument('-g', '--gatherer', action='store_true', default=True,
-                        help='Format output to look like the Gatherer visual spoiler (Default).')
-    content_group.add_argument('--raw', dest='gatherer', action='store_false',
+                        help='Explicitly enable Gatherer formatting (Default).')
+    content_group.add_argument('--raw', '--no-gatherer', dest='gatherer', action='store_false',
                         help='Output raw text without Gatherer formatting.')
 
     content_group.add_argument('-f', '--forum', action='store_true',
@@ -371,6 +385,10 @@ if __name__ == '__main__':
                         help='File path to save the text of cards that failed to parse/validate (useful for debugging).')
 
     args = parser.parse_args()
+
+    # If --mse is used, we must have an output filename.
+    if args.mse and not args.outfile:
+        parser.error("--mse requires an output filename.")
 
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
