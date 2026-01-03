@@ -152,49 +152,49 @@ def text_pass_4b_x(s):
     return s
 
 
+abilitywords = [
+    'battalion',
+    'bloodrush',
+    'channel',
+    'chroma',
+    'cohort',
+    'constellation',
+    'converge',
+    "council's dilemma",
+    'delirium',
+    'domain',
+    'fateful hour',
+    'ferocious',
+    'formidable',
+    'grandeur',
+    'hellbent',
+    'heroic',
+    'imprint',
+    'inspired',
+    'join forces',
+    'kinship',
+    'landfall',
+    'lieutenant',
+    'metalcraft',
+    'morbid',
+    'parley',
+    'radiance',
+    'raid',
+    'rally',
+    'spell mastery',
+    'strive',
+    'sweep',
+    'tempting offer',
+    'threshold',
+    'will of the council',
+]
+# Pre-compile the regex for performance
+# Matches any ability word followed by space, long dash (\u2014), and space.
+abilitywords_regex = re.compile(r'(?:' + '|'.join(map(re.escape, abilitywords)) + r') \u2014 ')
+
 def text_pass_4c_abilitywords(s):
     # Ability words are flavor text. We can discard them
-    abilitywords = [
-	'battalion',
-	'bloodrush',
-	'channel',
-	'chroma',
-	'cohort',
-	'constellation',
-	'converge',
-	"council's dilemma",
-	'delirium',
-	'domain',
-	'fateful hour',
-	'ferocious',
-	'formidable',
-	'grandeur',
-	'hellbent',
-	'heroic',
-	'imprint',
-	'inspired',
-	'join forces',
-	'kinship',
-	'landfall',
-	'lieutenant',
-	'metalcraft',
-	'morbid',
-	'parley',
-	'radiance',
-	'raid',
-	'rally',
-	'spell mastery',
-	'strive',
-	'sweep',
-	'tempting offer',
-	'threshold',
-	'will of the council',
-    ]
-
-    for abilityword in abilitywords:
-        s = s.replace(abilityword + ' ' + u'\u2014' + ' ', '')
-
-    return s
+    return abilitywords_regex.sub('', s)
 
 
 # so, big fat old dictionary time!!!!!!!!!
