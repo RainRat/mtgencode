@@ -21,16 +21,16 @@ from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, html = False, text = False, json_out = False, quiet=False,
+         creativity = False, vdump = False, html = False, text = False, json_out = False, csv_out = False, quiet=False,
          report_file=None, color_arg=None):
 
     # Set default format to text if no specific output format is selected
-    if not (html or text or for_mse or json_out):
+    if not (html or text or for_mse or json_out or csv_out):
         text = True
 
     # Mutually exclusive output formats are now enforced by argparse in main block,
     # but we keep this check for programmatic access safety.
-    if sum([bool(html), bool(for_mse), bool(json_out), bool(text)]) > 1:
+    if sum([bool(html), bool(for_mse), bool(json_out), bool(text), bool(csv_out)]) > 1:
         # If user explicitly requested multiple formats programmatically, we warn or error.
         # However, argparse logic below ensures text defaults to True only if others are False.
         # But if someone calls main() directly with multiple True, we should respect that or fail.
@@ -83,6 +83,42 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             cards[i].nearest_cards = nearest_cards[i]
         if verbose:
             print('...Done.', file=sys.stderr)
+
+    def write_csv_output(writer, cards, verbose=False):
+        import csv
+        fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
+        csv_writer = csv.DictWriter(writer, fieldnames=fieldnames)
+        csv_writer.writeheader()
+
+        iterator = cards
+        # Only use tqdm if we are writing to a file (writer is not stdout) or if we are not in quiet mode
+        # But we don't have access to quiet mode here easily without passing it.
+        # Since this is a helper, let's just iterate. Main loop handles progress usually.
+
+        for card in cards:
+            d = card.to_dict()
+            # Flatten/map fields for CSV
+            row = {
+                'name': d.get('name', ''),
+                'mana_cost': d.get('manaCost', ''),
+                'type': ' '.join(d.get('supertypes', []) + d.get('types', [])),
+                'subtypes': ' '.join(d.get('subtypes', [])),
+                'text': d.get('text', ''),
+                'power': d.get('power', d.get('pt', '') if '/' not in d.get('pt', '') else ''),
+                'toughness': d.get('toughness', ''),
+                'loyalty': d.get('loyalty', d.get('defense', '')),
+                'rarity': d.get('rarity', ''),
+            }
+            if 'pt' in d and 'power' not in d:
+                    # Handle case where pt is "X/Y" string in to_dict but split in CSV logic
+                    if '/' in d['pt']:
+                        p, t = d['pt'].split('/', 1)
+                        row['power'] = p
+                        row['toughness'] = t
+                    else:
+                        row['power'] = d['pt'] # Fallback?
+
+            csv_writer.writerow(row)
 
     def hoverimg(cardname, dist, nd, for_html=False):
         # Gracefully handle cases where the card returned by CBOW is not in the Namediff set
@@ -291,6 +327,12 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             with open(oname, 'w', encoding='utf8') as ofile:
                 json_cards = [card.to_dict() for card in cards]
                 json.dump(json_cards, ofile, indent=2)
+        if csv_out:
+            if verbose:
+                print('Writing csv output to: ' + oname, file=sys.stderr)
+            with open(oname, 'w', encoding='utf8', newline='') as ofile:
+                write_csv_output(ofile, cards, verbose=verbose)
+
         if for_mse:
             # Copy whatever output file is produced, name the copy 'set' (yes,
             # no extension).
@@ -314,6 +356,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             import json
             json_cards = [card.to_dict() for card in cards]
             json.dump(json_cards, sys.stdout, indent=2)
+        elif csv_out:
+            write_csv_output(sys.stdout, cards, verbose=verbose)
+            sys.stdout.flush()
         else:
             # Correctly propagate for_html=html
             writecards(sys.stdout, for_html=html)
@@ -342,6 +387,8 @@ if __name__ == '__main__':
                            help='Generate a nicely formatted HTML file instead of plain text.')
     fmt_group.add_argument('--json', action='store_true',
                            help='Generate a structured JSON file.')
+    fmt_group.add_argument('--csv', action='store_true',
+                           help='Generate a CSV file (Spreadsheet compatible).')
     fmt_group.add_argument('--mse', action='store_true',
                            help='Generate a Magic Set Editor set file (.mse-set). Requires an output filename.')
 
@@ -392,7 +439,7 @@ if __name__ == '__main__':
 
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
-         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, json_out = args.json, quiet=args.quiet,
+         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, json_out = args.json, csv_out = args.csv, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color)
 
     exit(0)
