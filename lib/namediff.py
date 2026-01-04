@@ -106,11 +106,22 @@ class Namediff:
     def nearest(self, name, n=3):
         return f_nearest(name, self.matchers, n)
 
-    def nearest_par(self, names, n=3, threads=cores):
+    def nearest_par(self, names, n=3, threads=cores, quiet=False):
         workpool = multiprocessing.Pool(threads)
         proto_worklist = list_split(names, threads)
         worklist = [(x, self.names, n) for x in proto_worklist]
-        donelist = workpool.map(f_nearest_per_thread, worklist)
+
+        try:
+            from tqdm import tqdm
+            iterator = tqdm(workpool.imap(f_nearest_per_thread, worklist),
+                          total=len(worklist),
+                          disable=quiet,
+                          desc="Matching names",
+                          unit="chunk")
+        except ImportError:
+            iterator = workpool.imap(f_nearest_per_thread, worklist)
+
+        donelist = list(iterator)
         return list_flatten(donelist)
 
     def nearest_card(self, card, n=5):
