@@ -192,12 +192,23 @@ class CBOW:
             return []
         return f_nearest(card, self.vocab, self.vecs, self.cardvecs, n)
 
-    def nearest_par(self, cards, n=5, threads=cores):
+    def nearest_par(self, cards, n=5, threads=cores, quiet=False):
         if self.disabled:
             return [[]] * len(cards)
         workpool = multiprocessing.Pool(threads)
         proto_worklist = namediff.list_split(cards, threads)
         worklist = [(x, self.vocab, self.vecs, self.cardvecs, n)
                     for x in proto_worklist]
-        donelist = workpool.map(f_nearest_per_thread, worklist)
+
+        try:
+            from tqdm import tqdm
+            iterator = tqdm(workpool.imap(f_nearest_per_thread, worklist),
+                          total=len(worklist),
+                          disable=quiet,
+                          desc="Matching cards",
+                          unit="chunk")
+        except ImportError:
+            iterator = workpool.imap(f_nearest_per_thread, worklist)
+
+        donelist = list(iterator)
         return namediff.list_flatten(donelist)

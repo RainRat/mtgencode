@@ -72,17 +72,12 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     if creativity:
         namediff = Namediff()
         cbow = CBOW()
-        if verbose:
-            print('Computing nearest names...', file=sys.stderr)
-        nearest_names = namediff.nearest_par([c.name for c in cards], n=3)
-        if verbose:
-            print('Computing nearest cards...', file=sys.stderr)
-        nearest_cards = cbow.nearest_par(cards)
+        # Progress bars in nearest_par will handle status updates unless quiet
+        nearest_names = namediff.nearest_par([c.name for c in cards], n=3, quiet=quiet)
+        nearest_cards = cbow.nearest_par(cards, quiet=quiet)
         for i in range(0, len(cards)):
             cards[i].nearest_names = nearest_names[i]
             cards[i].nearest_cards = nearest_cards[i]
-        if verbose:
-            print('...Done.', file=sys.stderr)
 
     def hoverimg(cardname, dist, nd, for_html=False):
         # Gracefully handle cases where the card returned by CBOW is not in the Namediff set
