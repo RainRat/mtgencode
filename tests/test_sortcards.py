@@ -15,10 +15,13 @@ class TestSortCards(unittest.TestCase):
             "rarity": "common"
         }
         card = Card(card_data)
-        # sortcards expects old ordered, unlabeled format
-        encoded = card.encode(fmt_ordered=fmt_ordered_old, fmt_labeled={})
+        # sortcards.sortcards now expects Card objects
 
-        classes = sortcards.sortcards([encoded])
+        classes = sortcards.sortcards([card])
+
+        # The output keys contain encoded strings (or raw if present)
+        # Since we created card from dict, it has no raw, so encode() is called.
+        encoded = card.encode()
 
         self.assertIn(encoded, classes['battles'])
         self.assertNotIn(encoded, classes['other'])
@@ -35,9 +38,9 @@ class TestSortCards(unittest.TestCase):
             "rarity": "mythic"
         }
         card = Card(pw_data)
-        encoded = card.encode(fmt_ordered=fmt_ordered_old, fmt_labeled={})
 
-        classes = sortcards.sortcards([encoded])
+        classes = sortcards.sortcards([card])
+        encoded = card.encode()
 
         self.assertIn(encoded, classes['planeswalkers'])
         self.assertNotIn(encoded, classes['other'])
