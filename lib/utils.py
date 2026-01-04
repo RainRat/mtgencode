@@ -138,17 +138,15 @@ def to_unary(s, warn = False):
         else:
             return unary_marker + unary_counter * i
 
-    return re.sub(r'[0123456789]+', replace_number, s)
+    return _number_decimal_re.sub(replace_number, s)
 
 def from_unary(s):
-    pattern = re.escape(unary_marker) + re.escape(unary_counter) + '*'
-
     def replace_unary(match):
         n = match.group(0)
         i = (len(n) - len(unary_marker)) // len(unary_counter)
         return str(i)
 
-    return re.sub(pattern, replace_unary, s)
+    return _number_unary_re.sub(replace_unary, s)
 
 # mana syntax
 mana_open_delimiter = '{'
@@ -405,6 +403,10 @@ mana_json_regex = (re.escape(mana_json_open_delimiter) + '['
 
 number_decimal_regex = r'[0123456789]+'
 number_unary_regex = re.escape(unary_marker) + re.escape(unary_counter) + '*'
+# Pre-compile for performance
+_number_decimal_re = re.compile(number_decimal_regex)
+_number_unary_re = re.compile(number_unary_regex)
+
 mana_decimal_regex = (re.escape(mana_json_open_delimiter) + number_decimal_regex 
                       + re.escape(mana_json_close_delimiter))
 mana_unary_regex = (re.escape(mana_json_open_delimiter) + number_unary_regex
