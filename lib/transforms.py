@@ -190,7 +190,7 @@ abilitywords = [
 ]
 # Pre-compile the regex for performance
 # Matches any ability word followed by space, long dash (\u2014), and space.
-abilitywords_regex = re.compile(r'(?:' + '|'.join(map(re.escape, abilitywords)) + r') \u2014 ')
+abilitywords_regex = re.compile(r'\b(?:' + '|'.join(map(re.escape, abilitywords)) + r') \u2014 ')
 
 def text_pass_4c_abilitywords(s):
     # Ability words are flavor text. We can discard them
