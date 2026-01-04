@@ -89,6 +89,7 @@ python3 decode.py encoded_output.txt my_new_set --mse
 Options to customize how the data is formatted:
 *   `--encoding std`: Standard format (Name comes last). Default.
 *   `--encoding named`: Name comes first.
+*   `--encoding old`: Legacy format (Name comes first). **Required** if you plan to use `sortcards.py`.
 *   `--encoding vec`: Vectorized format (numbers representing words) for specific model types.
 *   `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI generalize.
 
