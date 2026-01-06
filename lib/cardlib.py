@@ -479,12 +479,9 @@ class Card:
         setattr(self, field_types, [])
         setattr(self, field_subtypes, [])
         setattr(self, field_loyalty, '')
-        setattr(self, field_loyalty + '_value', None)
         setattr(self, field_pt, '')
         setattr(self, field_pt + '_p', None)
-        setattr(self, field_pt + '_p_value', None)
         setattr(self, field_pt + '_t', None)
-        setattr(self, field_pt + '_t_value', None)
         setattr(self, field_text, Manatext(''))
         setattr(self, field_text + '_lines', [])
         setattr(self, field_text + '_words', [])
@@ -516,10 +513,6 @@ class Card:
             if first:
                 first = False
                 self.__dict__[field_loyalty] = value
-                try:
-                    self.__dict__[field_loyalty + '_value'] = int(value)
-                except (ValueError, TypeError):
-                    self.__dict__[field_loyalty + '_value'] = None
             else:
                 self.valid = False
                 if self.verbose:
@@ -537,15 +530,7 @@ class Card:
                 if match:
                     p, t = match.groups()
                     self.__dict__[field_pt + '_p'] = p
-                    try:
-                        self.__dict__[field_pt + '_p_value'] = int(p)
-                    except (ValueError, TypeError):
-                        self.__dict__[field_pt + '_p_value'] = None
                     self.__dict__[field_pt + '_t'] = t
-                    try:
-                        self.__dict__[field_pt + '_t_value'] = int(t)
-                    except (ValueError, TypeError):
-                        self.__dict__[field_pt + '_t_value'] = None
                 else:
                     self.valid = False
                     if self.verbose:
