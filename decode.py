@@ -369,7 +369,7 @@ if __name__ == '__main__':
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input file containing encoded cards (or a JSON corpus) to decode. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save the decoded output. If not provided, output prints to the console.')
+                        help='Path to save the decoded output. If not provided, output prints to the console. Format is automatically inferred from extension (.html, .json, .csv, .mse-set) if not explicitly specified.')
 
     # Group: Output Format (Mutually Exclusive)
     # We use a mutually exclusive group to enforce one output format.
@@ -427,6 +427,20 @@ if __name__ == '__main__':
                         help='File path to save the text of cards that failed to parse/validate (useful for debugging).')
 
     args = parser.parse_args()
+
+    # If no output format is specified, try to infer it from the outfile extension
+    if not any([args.text, args.html, args.json, args.csv, args.mse]) and args.outfile:
+        ext = os.path.splitext(args.outfile)[1].lower()
+        if ext == '.html':
+            args.html = True
+        elif ext == '.json':
+            args.json = True
+        elif ext == '.csv':
+            args.csv = True
+        elif ext == '.mse-set':
+            args.mse = True
+        elif ext == '.txt':
+            args.text = True
 
     # If --mse is used, we must have an output filename.
     if args.mse and not args.outfile:
