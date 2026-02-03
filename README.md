@@ -89,24 +89,26 @@ python3 decode.py encoded_output.txt my_new_set --mse
 Options to customize how the data is formatted:
 *   `--encoding std`: Standard format (Name comes last). Default.
 *   `--encoding named`: Name comes first.
-*   `--encoding old`: Legacy format (Name comes first). **Required** if you plan to use `sortcards.py`.
+*   `--encoding old`: Legacy format (Name comes first).
 *   `--encoding vec`: Vectorized format (numbers representing words) for specific model types.
 *   `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI generalize.
 
 ### `decode.py` (Viewing Results)
 Options for formatting the output:
-*   `--gatherer`: Formats text like the official Gatherer website.
+*   `--gatherer`: Formats text like the official Gatherer website (Default).
+*   `--raw`: Disables Gatherer formatting and shows raw text.
 *   `--html`: Creates a webpage (`.html`) with card images.
 *   `--mse`: Creates a set file (`.mse-set`) for Magic Set Editor.
+*   `--json`: Creates a structured JSON file.
+*   `--csv`: Creates a CSV file for spreadsheets.
 
 ### `sortcards.py` (Organizing Output)
 Organizes encoded cards into categories (like Color, Card Type, etc.) and wraps them in `[spoiler]` tags. This is useful for posting generated cards on forums.
 
-**Note:** This script relies on a specific field order. You must generate your encoded file using `python3 encode.py ... --encoding old` for sorting to work correctly.
-
 ```bash
 python3 sortcards.py encoded_output.txt sorted_output.txt
 ```
+*   **Note:** If your input file was not encoded using the default `std` format, use the `-e` flag to specify the correct encoding (e.g., `python3 sortcards.py ... -e named`).
 
 ### Training a Neural Network
 *Note: This tool prepares the data. It does not train the model itself.*
