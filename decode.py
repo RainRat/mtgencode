@@ -22,7 +22,7 @@ from namediff import Namediff
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, json_out = False, csv_out = False, quiet=False,
-         report_file=None, color_arg=None):
+         report_file=None, color_arg=None, limit=0):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -81,6 +81,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         raise ValueError('decode.py: unknown encoding: ' + encoding)
 
     cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file)
+
+    if limit > 0:
+        cards = cards[:limit]
 
     if creativity:
         namediff = Namediff()
@@ -430,6 +433,8 @@ if __name__ == '__main__':
     proc_group = parser.add_argument_group('Processing & Debugging')
     proc_group.add_argument('-c', '--creativity', action='store_true',
                         help="Enable 'creativity' mode: calculate similarity to existing cards using CBOW (slow).")
+    proc_group.add_argument('-n', '--limit', type=int, default=0,
+                        help='Limit the number of cards to decode.')
     proc_group.add_argument('-d', '--dump', action='store_true',
                         help='Debug mode: print detailed information about cards that failed to validate.')
     proc_group.add_argument('-v', '--verbose', action='store_true',
@@ -448,6 +453,6 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, json_out = args.json, csv_out = args.csv, quiet=args.quiet,
-         report_file = args.report_failed, color_arg=args.color)
+         report_file = args.report_failed, color_arg=args.color, limit=args.limit)
 
     exit(0)
