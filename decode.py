@@ -22,7 +22,7 @@ from namediff import Namediff
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, json_out = False, csv_out = False, quiet=False,
-         report_file=None, color_arg=None):
+         report_file=None, color_arg=None, limit=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -81,6 +81,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         raise ValueError('decode.py: unknown encoding: ' + encoding)
 
     cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file)
+
+    if limit is not None and limit >= 0:
+        cards = cards[:limit]
 
     if creativity:
         namediff = Namediff()
@@ -383,12 +386,13 @@ if __name__ == '__main__':
                         help='Input file containing encoded cards (or a JSON corpus) to decode. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .csv, .mse-set).')
+    io_group.add_argument('-n', '--limit', type=int, default=None,
+                        help='Limit the number of cards to process (useful for testing).')
 
-    # Group: Output Format (Mutually Exclusive)
-    # We use a mutually exclusive group to enforce one output format.
-    # Note: We cannot attach this directly to a titled argument group in argparse easily while keeping the title.
-    # So we define the arguments in the main parser but link them via a mutex group.
-    fmt_group = parser.add_mutually_exclusive_group()
+    # Group: Output Format
+    # We use a titled group and add a mutually exclusive group to it for better visual organization.
+    fmt_group_titled = parser.add_argument_group('Output Format')
+    fmt_group = fmt_group_titled.add_mutually_exclusive_group()
     fmt_group.add_argument('--text', action='store_true',
                            help='Force plain text output (Default unless detected from extension).')
     fmt_group.add_argument('--html', action='store_true',
@@ -400,8 +404,8 @@ if __name__ == '__main__':
     fmt_group.add_argument('--mse', action='store_true',
                            help='Generate a Magic Set Editor set file (Auto-detected for .mse-set). Requires an output filename.')
 
-    # Group: Content Formatting
-    content_group = parser.add_argument_group('Content Formatting')
+    # Group: Formatting Options
+    content_group = parser.add_argument_group('Formatting Options')
     content_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
                         help="Format of the input data. Default is 'std' (standard).")
 
@@ -448,6 +452,6 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, json_out = args.json, csv_out = args.csv, quiet=args.quiet,
-         report_file = args.report_failed, color_arg=args.color)
+         report_file = args.report_failed, color_arg=args.color, limit=args.limit)
 
     exit(0)
