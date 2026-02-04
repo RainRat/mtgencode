@@ -1,5 +1,6 @@
 import pytest
 from lib.cardlib import Card
+from lib import utils
 
 @pytest.fixture
 def sample_card_json():
@@ -100,6 +101,26 @@ def test_card_format(sample_card_json):
         "(0/2)"
     )
     assert default_output == expected_default_output
+
+    # Test with ansi_color=True
+    colored_output = card.format(ansi_color=True)
+    # Card name: Bold Yellow
+    # Cost: Cyan
+    # Typeline: Green
+    # P/T: Red
+    expected_name = utils.colorize("Ornithopter", utils.Ansi.BOLD + utils.Ansi.YELLOW)
+    expected_cost = utils.colorize("{0}", utils.Ansi.CYAN)
+    expected_type = utils.colorize("Artifact Creature ~ Thopter", utils.Ansi.GREEN)
+    expected_pt = utils.colorize("0/2", utils.Ansi.RED)
+
+    # Construction of default format with colors
+    expected_colored_output = (
+        f"{expected_name} {expected_cost}\n"
+        f"{expected_type} (uncommon)\n"
+        "Flying\n"
+        f"({expected_pt})"
+    )
+    assert colored_output == expected_colored_output
 
 def test_planeswalker_to_mse_formatting():
     planeswalker_json = {

@@ -111,6 +111,10 @@ class TestManacost:
         # Forum
         assert m.format(for_forum=True) == "[mana]WUBRG[/mana]"
 
+        # ANSI Color
+        colored = m.format(ansi_color=True)
+        assert colored == utils.colorize("{W}{U}{B}{R}{G}", utils.Ansi.CYAN)
+
         # None
         assert Manacost("").format() == "_NOCOST_"
 
@@ -170,6 +174,13 @@ class TestManatext:
 
         # Forum
         assert mt.format(for_forum=True) == "Pay [mana]X[/mana]."
+
+        # ANSI Color
+        # {X} -> {XX} -> format() -> {X}
+        # In Manatext, cost.format(ansi_color=True) is called
+        colored = mt.format(ansi_color=True)
+        expected_cost = utils.colorize("{X}", utils.Ansi.CYAN)
+        assert colored == f"Pay {expected_cost}."
 
     def test_encode(self):
         src = "Pay {X}."
