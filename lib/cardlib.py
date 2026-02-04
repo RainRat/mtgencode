@@ -16,7 +16,11 @@ sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 # but we still need to capitalize the first english component of an activation
 # cost that starts with symbols, such as {2U}, *R*emove a +1/+1 counter from @: etc.
 def cap(s):
-    return s[:1].capitalize() + s[1:]
+    # Find the first letter and capitalize it
+    for i, char in enumerate(s):
+        if char.isalpha():
+            return s[:i] + char.upper() + s[i+1:]
+    return s
 # This crazy thing is actually invoked as an unpass, so newlines are still
 # encoded.
 def sentencecase(s):
@@ -25,8 +29,13 @@ def sentencecase(s):
     clines = []
     for line in lines:
         if line:
-            sentences = sent_tokenizer.tokenize(line)
-            clines += [' '.join([cap(sent) for sent in sentences])]
+            # First, split by ": " to handle activated abilities
+            parts = line.split(': ')
+            cparts = []
+            for part in parts:
+                sentences = sent_tokenizer.tokenize(part)
+                cparts += [' '.join([cap(sent) for sent in sentences])]
+            clines += [': '.join(cparts)]
     return utils.newline.join(clines).replace(utils.reserved_marker, utils.x_marker)
 
 # These are used later to determine what the fields of the Card object are called.
