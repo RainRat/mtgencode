@@ -129,14 +129,12 @@ def to_unary(s, warn = False):
         i = int(n)
         if i in unary_exceptions:
             return unary_exceptions[i]
-        elif i > unary_max:
+        if i > unary_max:
             # original code capped it at unary_max (20)
             if warn:
                 print(s)
             i = unary_max
-            return unary_marker + unary_counter * i
-        else:
-            return unary_marker + unary_counter * i
+        return unary_marker + unary_counter * i
 
     return _number_decimal_re.sub(replace_number, s)
 
