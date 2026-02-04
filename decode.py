@@ -24,9 +24,22 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          creativity = False, vdump = False, html = False, text = False, json_out = False, csv_out = False, quiet=False,
          report_file=None, color_arg=None):
 
-    # Set default format to text if no specific output format is selected
+    # Set default format to text if no specific output format is selected.
+    # If an output filename is provided, we try to detect the format from its extension.
     if not (html or text or for_mse or json_out or csv_out):
-        text = True
+        if oname:
+            if oname.endswith('.html'):
+                html = True
+            elif oname.endswith('.json'):
+                json_out = True
+            elif oname.endswith('.csv'):
+                csv_out = True
+            elif oname.endswith('.mse-set'):
+                for_mse = True
+            else:
+                text = True
+        else:
+            text = True
 
     # Mutually exclusive output formats are now enforced by argparse in main block,
     # but we keep this check for programmatic access safety.
@@ -369,7 +382,7 @@ if __name__ == '__main__':
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input file containing encoded cards (or a JSON corpus) to decode. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save the decoded output. If not provided, output prints to the console.')
+                        help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .csv, .mse-set).')
 
     # Group: Output Format (Mutually Exclusive)
     # We use a mutually exclusive group to enforce one output format.
@@ -377,15 +390,15 @@ if __name__ == '__main__':
     # So we define the arguments in the main parser but link them via a mutex group.
     fmt_group = parser.add_mutually_exclusive_group()
     fmt_group.add_argument('--text', action='store_true',
-                           help='Force plain text output (Default unless --html or --mse is used).')
+                           help='Force plain text output (Default unless detected from extension).')
     fmt_group.add_argument('--html', action='store_true',
-                           help='Generate a nicely formatted HTML file instead of plain text.')
+                           help='Generate a nicely formatted HTML file (Auto-detected for .html).')
     fmt_group.add_argument('--json', action='store_true',
-                           help='Generate a structured JSON file.')
+                           help='Generate a structured JSON file (Auto-detected for .json).')
     fmt_group.add_argument('--csv', action='store_true',
-                           help='Generate a CSV file (Spreadsheet compatible).')
+                           help='Generate a CSV file (Auto-detected for .csv).')
     fmt_group.add_argument('--mse', action='store_true',
-                           help='Generate a Magic Set Editor set file (.mse-set). Requires an output filename.')
+                           help='Generate a Magic Set Editor set file (Auto-detected for .mse-set). Requires an output filename.')
 
     # Group: Content Formatting
     content_group = parser.add_argument_group('Content Formatting')
