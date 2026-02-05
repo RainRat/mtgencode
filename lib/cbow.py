@@ -39,11 +39,12 @@ def read_vector_file(fname):
                 c = f.read(1)
                 if len(c) == 0 or c == b' ':
                     break
-                # Ensure we store strings
-                char = c.decode('utf-8', errors='replace')
-                vocab[b * max_w + a] = char
-                if (a < max_w) and char != '\n':
-                    a += 1
+                if a < max_w - 1:
+                    # Ensure we store strings
+                    char = c.decode('utf-8', errors='replace')
+                    vocab[b * max_w + a] = char
+                    if char != '\n':
+                        a += 1
             tmp = list(struct.unpack('f'*size,f.read(4 * size)))
             length = math.sqrt(sum([tmp[i] * tmp[i] for i in range(0,len(tmp))]))
             for i in range(0,len(tmp)):
