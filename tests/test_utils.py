@@ -62,8 +62,8 @@ def test_to_ascii():
     # Test common replacements
     assert utils.to_ascii("\u2014") == config.dash_marker
     assert utils.to_ascii("\u2022") == config.bullet_marker
-    assert utils.to_ascii("\u2019") == '"'
-    assert utils.to_ascii("\u2018") == '"'
+    assert utils.to_ascii("\u2019") == "'"
+    assert utils.to_ascii("\u2018") == "'"
     assert utils.to_ascii("\u2212") == '-'
 
     # Test accented characters

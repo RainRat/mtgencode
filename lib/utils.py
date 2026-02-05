@@ -91,8 +91,8 @@ json_field_info_code = config.json_field_info_code
 unicode_trans = {
     '\u2014': dash_marker,  # unicode long dash
     '\u2022': bullet_marker,  # unicode bullet
-    '\u2019': '"',  # single quote
-    '\u2018': '"',  # single quote
+    '\u2019': "'",  # single quote
+    '\u2018': "'",  # single quote
     '\u2212': '-',  # minus sign
     '\xe6': 'ae',  # ae symbol
     '\xfb': 'u',  # u with caret
