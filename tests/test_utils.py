@@ -30,6 +30,29 @@ def test_from_unary_no_unary():
 def test_to_unary_zero():
     assert to_unary("0") == "&"
 
+def test_to_unary_capped(capsys):
+    # unary_max is 20
+    large_num = "21"
+    expected = "&" + "^" * 20
+
+    # Test without warn
+    assert to_unary(large_num) == expected
+    captured = capsys.readouterr()
+    assert captured.out == ""
+
+    # Test with warn
+    assert to_unary(large_num, warn=True) == expected
+    captured = capsys.readouterr()
+    # to_unary(..., warn=True) prints 's' (the whole input string), not just 'n'
+    assert large_num in captured.out
+
+def test_to_unary_exceptions():
+    # 1000000 -> 1000000 (example exception if it was there, but it's not by default)
+    # Let's check what's in config.unary_exceptions
+    from lib import config
+    for k, v in config.unary_exceptions.items():
+        assert to_unary(str(k)) == v
+
 def test_from_unary_zero():
     assert from_unary("&") == "0"
 
@@ -201,3 +224,27 @@ def test_from_mana():
     # jmanastr = 'W'
     # -> [mana]1W[/mana]
     assert utils.from_mana("{^WW}", for_forum=True) == "[mana]1W[/mana]"
+
+# --- ANSI Coloring ---
+
+def test_ansi_constants():
+    assert utils.Ansi.RESET == '\033[0m'
+    assert utils.Ansi.BOLD == '\033[1m'
+    assert utils.Ansi.RED == '\033[91m'
+    assert utils.Ansi.CYAN == '\033[96m'
+
+def test_colorize_simple():
+    text = "Hello"
+    color = utils.Ansi.RED
+    expected = f"{color}Hello{utils.Ansi.RESET}"
+    assert utils.colorize(text, color) == expected
+
+def test_colorize_empty():
+    assert utils.colorize("", utils.Ansi.RED) == ""
+    assert utils.colorize(None, utils.Ansi.RED) is None
+
+def test_colorize_combined():
+    text = "Bold Red"
+    color = utils.Ansi.BOLD + utils.Ansi.RED
+    expected = f"\033[1m\033[91mBold Red\033[0m"
+    assert utils.colorize(text, color) == expected
