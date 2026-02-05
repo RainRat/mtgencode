@@ -1,6 +1,7 @@
 import json
 import sys
 import os
+import re
 
 import utils
 import cardlib
@@ -204,7 +205,7 @@ def mtg_open_file(fname, verbose = False,
                   exclude_sets = default_exclude_sets,
                   exclude_types = default_exclude_types,
                   exclude_layouts = default_exclude_layouts,
-                  report_file=None):
+                  report_file=None, grep=None):
 
     cards = []
     valid = 0
@@ -245,10 +246,9 @@ def mtg_open_file(fname, verbose = False,
 
         cards = _process_json_srcs(aggregated_srcs, aggregated_bad_sets, verbose, linetrans,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj)
-        return _check_parsing_quality(cards, report_fobj)
 
     # Encoded Text File Handling
-    if fname == '-' or not fname.endswith('.json'):
+    elif fname == '-' or not fname.endswith('.json'):
         if verbose:
             print('Opening encoded card file: ' + ('<stdin>' if fname == '-' else fname), file=sys.stderr)
 
@@ -277,14 +277,30 @@ def mtg_open_file(fname, verbose = False,
         if verbose:
              print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
                     + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
-        return _check_parsing_quality(cards, report_fobj)
 
     # Single JSON File Handling
-    if verbose:
-        print('This looks like a json file: ' + fname, file=sys.stderr)
-    json_srcs, bad_sets = mtg_open_json(fname, verbose)
+    else:
+        if verbose:
+            print('This looks like a json file: ' + fname, file=sys.stderr)
+        json_srcs, bad_sets = mtg_open_json(fname, verbose)
 
-    cards = _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
-                               exclude_sets, exclude_types, exclude_layouts, report_fobj)
+        cards = _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj)
+
+    if grep:
+        greps = [re.compile(p, re.IGNORECASE) for p in grep]
+        def match_card(card):
+            for pattern in greps:
+                found = False
+                if pattern.search(card.name): found = True
+                elif any(pattern.search(t) for t in card.types): found = True
+                elif any(pattern.search(t) for t in card.supertypes): found = True
+                elif any(pattern.search(t) for t in card.subtypes): found = True
+                elif pattern.search(card.text.text): found = True
+
+                if not found:
+                    return False
+            return True
+        cards = [c for c in cards if match_card(c)]
 
     return _check_parsing_quality(cards, report_fobj)
