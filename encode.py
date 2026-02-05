@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, randomize = False, nolabel = False, stable = False,
-         report_file=None, quiet=False):
+         report_file=None, quiet=False, limit=0):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
     fieldsep = utils.fieldsep
@@ -62,6 +62,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     if not stable:
         random.seed(1371367)
         random.shuffle(cards)
+
+    if limit > 0:
+        cards = cards[:limit]
 
     def writecards(writer):
         for card in tqdm(cards, disable=quiet):
@@ -112,6 +115,8 @@ if __name__ == '__main__':
     proc_group = parser.add_argument_group('Data Processing')
     proc_group.add_argument('-r', '--randomize', action='store_true',
                         help='Shuffle mana symbols (e.g., {W}{U} vs {U}{W}) for data augmentation.')
+    proc_group.add_argument('-n', '--limit', type=int, default=0,
+                        help='Limit the number of cards to encode.')
     proc_group.add_argument('-s', '--stable', action='store_true',
                         help='Preserve the original order of cards from the input file (do not shuffle).')
 
@@ -127,5 +132,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
-         stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet)
+         stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet,
+         limit=args.limit)
     exit(0)

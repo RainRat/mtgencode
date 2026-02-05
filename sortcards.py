@@ -206,6 +206,11 @@ Supports any encoding format supported by encode.py/decode.py.""",
     enc_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
                         help="Format of the input data. 'std' (default) puts the name last. 'named' puts the name first. Must match the format of the input file.")
 
+    # Group: Processing Options
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-n', '--limit', type=int, default=0,
+                        help='Limit the number of cards to sort.')
+
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
     debug_group.add_argument('-v', '--verbose', action='store_true',
@@ -274,6 +279,9 @@ Supports any encoding format supported by encode.py/decode.py.""",
         except Exception as e:
             if verbose:
                 print(f"Warning: Failed to parse card: {e}", file=sys.stderr)
+
+    if args.limit > 0:
+        cards = cards[:args.limit]
 
     classes = sortcards(cards, verbose=verbose)
 
