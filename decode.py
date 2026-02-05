@@ -52,9 +52,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         sys.exit(1)
 
     if for_mse:
-        # MSE generation logically uses text generation internally, but the output flag 'text' implies stdout/file text dump.
-        # The original code set text=True here.
-        text = True
+        # MSE generation logically uses text generation internally.
+        pass
 
     fmt_ordered = cardlib.fmt_ordered_default
 
@@ -318,7 +317,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
 
     if oname:
-        if text:
+        if text and not for_mse:
             if verbose:
                 print('Writing text output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
@@ -345,21 +344,27 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 write_csv_output(ofile, cards, verbose=verbose)
 
         if for_mse:
-            # Copy whatever output file is produced, name the copy 'set' (yes,
-            # no extension).
+            mse_oname = oname
+            if not mse_oname.endswith('.mse-set'):
+                mse_oname += '.mse-set'
+
             if os.path.isfile('set'):
                 print('ERROR: tried to overwrite existing file "set" - aborting.', file=sys.stderr)
                 return
-            shutil.copyfile(oname, 'set')
+
+            if verbose:
+                print('Writing MSE output to: ' + mse_oname, file=sys.stderr)
+
+            # Write cards to the temporary 'set' file
+            with open('set', 'w', encoding='utf8') as ofile:
+                writecards(ofile)
+
             # Use the freaky mse extension instead of zip.
-            with zipfile.ZipFile(oname+'.mse-set', mode='w') as zf:
+            with zipfile.ZipFile(mse_oname, mode='w') as zf:
                 try:
                     # Zip up the set file into oname.mse-set.
                     zf.write('set')
                 finally:
-                    if verbose:
-                        print('Made an MSE set file called ' +
-                              oname + '.mse-set.', file=sys.stderr)
                     # The set file is useless outside the .mse-set, delete it.
                     os.remove('set')
     else:
@@ -374,7 +379,6 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             # Correctly propagate for_html=html
             writecards(sys.stdout, for_html=html)
         sys.stdout.flush()
-
 
 if __name__ == '__main__':
     import argparse
