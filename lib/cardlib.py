@@ -21,8 +21,8 @@ def cap(s):
         if char.isalpha():
             return s[:i] + char.upper() + s[i+1:]
     return s
-# This crazy thing is actually invoked as an unpass, so newlines are still
-# encoded.
+# This function is used during decoding to apply sentence-style capitalization
+# while newline markers are still present.
 def sentencecase(s):
     s = s.replace(utils.x_marker, utils.reserved_marker)
     lines = s.split(utils.newline)
@@ -145,7 +145,7 @@ fmt_labeled_default = {
     field_text : field_label_text,
 }
 
-# sanity test if a card's fields look plausible
+# Verify that the card's fields are consistent (e.g., creatures must have power and toughness).
 def fields_check_valid(fields):
     # all cards must have a name and a type
     if not field_name in fields:
@@ -237,7 +237,6 @@ def fields_from_json(src_json, linetrans = True):
     valid = True
     fields = {}
 
-    # we hardcode in what the things are called in the mtgjson format
     if 'name' in src_json:
         name_val = src_json['name'].lower()
         name_orig = name_val
@@ -405,7 +404,7 @@ def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep):
 # Here's the actual Card class that other files should use.
 
 class Card:
-    '''card representation with data'''
+    '''Represents a Magic: The Gathering card. It can be created from JSON data or encoded text.'''
 
     def __init__(self, src, fmt_ordered=None, fmt_labeled=None,
                  fieldsep=utils.fieldsep, linetrans=True,
@@ -460,7 +459,7 @@ class Card:
             self.fields = parsed_fields
         # amusingly enough, both encodings allow infinitely deep nesting of bsides...
 
-        # python name hackery
+        # Automatically assign field values based on their names.
         if self.fields:
             for field in self.fields:
                 # look for a specialized set function
@@ -906,7 +905,6 @@ class Card:
         """
         outstr = ''
 
-        # need a 'card' string first
         outstr += 'card:\n'
 
         cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
