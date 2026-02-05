@@ -49,37 +49,40 @@ If you prefer to run it directly on your machine:
 ## Quick Start Guide
 
 ### 1. Get the Data
-Download the file `AllPrintings.json` from [MTGJSON](https://mtgjson.com/downloads/all-files/). This file contains every Magic card ever made. Place it in the `data/` folder.
+Download `AllPrintings.json` from [MTGJSON](https://mtgjson.com/downloads/all-files/). This file contains data for every Magic card ever made. Create a `data/` folder and move the file there:
 
 ```bash
 mkdir -p data
-# (Move your downloaded AllPrintings.json to data/ folder)
+mv ~/Downloads/AllPrintings.json data/
 ```
 
 ### 2. Encode Cards (JSON -> Text)
-Convert the JSON data into a simple text format for training.
+Convert the JSON data into a simple text format for AI training.
 
 ```bash
 # Basic encoding
 python3 encode.py data/AllPrintings.json encoded_output.txt --verbose
 ```
 *   **Input:** `data/AllPrintings.json`
-*   **Output:** `encoded_output.txt` (A text file with one card per line/entry)
+*   **Output:** `encoded_output.txt` (A text file with one card per entry)
 
 ### 3. Decode Cards (Text -> Readable)
-Convert encoded text (like the output from your AI) back into a readable format.
+Convert encoded text back into a readable format. You can print the results to your terminal or save them to a file.
 
 ```bash
-# Decode to plain text
-python3 decode.py encoded_output.txt decoded_cards.txt
+# View decoded cards in your terminal
+python3 decode.py encoded_output.txt
+
+# Save as a webpage with card images (format is auto-detected)
+python3 decode.py encoded_output.txt my_cards.html
 ```
 
-**Want to see images?**
-Generate a file for Magic Set Editor (requires [MSE](https://magicseteditor.boards.net/) to be installed):
+**Want to see visual spoilers?**
+Generate a file for [Magic Set Editor](https://magicseteditor.boards.net/):
 ```bash
-python3 decode.py encoded_output.txt my_new_set --mse
+python3 decode.py encoded_output.txt my_set.mse-set
 ```
-*   **Note:** This creates a file named `my_new_set.mse-set`. You can open this file directly in Magic Set Editor.
+*   **Note:** Double-click the `.mse-set` file to open it in Magic Set Editor.
 
 ---
 
@@ -102,6 +105,8 @@ Options for formatting the output:
 *   `--json`: Creates a structured JSON file.
 *   `--csv`: Creates a CSV file for spreadsheets.
 
+> **Important:** If you used a specific encoding (like `named`) to create your text file, you must use the same `-e` flag when decoding (e.g., `python3 decode.py ... -e named`).
+
 ### `sortcards.py` (Organizing Output)
 Organizes encoded cards into categories (like Color, Card Type, etc.) and wraps them in `[spoiler]` tags. This is useful for posting generated cards on forums.
 
@@ -122,9 +127,9 @@ python3 sortcards.py encoded_output.txt sorted_output.txt
 
 ## Troubleshooting
 
-*   **Missing NLTK Data:** If you see an error about `punkt` or `punkt_tab` not found, run `python3 -m nltk.downloader punkt punkt_tab`.
-*   **Missing `AllPrintings.json`:** Ensure the file is named exactly `AllPrintings.json` and is in the `data/` folder.
-*   **MSE Fonts:** If your generated cards show squares instead of symbols, you are missing the required fonts (Beleren, Relay, MPlantin). See [DEPENDENCIES.md](DEPENDENCIES.md).
+*   **Missing NLTK Data:** If you see an error about `punkt` or `punkt_tab` not found, run the download command from the Installation section.
+*   **File Not Found:** If you get an error when running `encode.py`, check that `data/AllPrintings.json` exists and the path is correct.
+*   **MSE Symbols Missing:** If your generated cards show squares instead of symbols, you are missing the required Magic fonts (Beleren, Relay, MPlantin). See [DEPENDENCIES.md](DEPENDENCIES.md) for help.
 
 ---
 
