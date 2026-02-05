@@ -1,0 +1,3 @@
+|1Fire Dragon|5Creature|6Dragon|3{4}{R}{R}|7rare|85/5|9Flying
+
+|1Water Elemental|5Creature|6Elemental|3{3}{U}{U}|7uncommon|85/4|9Islandwalk

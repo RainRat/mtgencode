@@ -22,7 +22,7 @@ from namediff import Namediff
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, json_out = False, csv_out = False, quiet=False,
-         report_file=None, color_arg=None, limit=0):
+         report_file=None, color_arg=None, limit=0, grep=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -80,7 +80,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     else:
         raise ValueError('decode.py: unknown encoding: ' + encoding)
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file)
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep)
 
     if limit > 0:
         cards = cards[:limit]
@@ -443,6 +443,8 @@ if __name__ == '__main__':
                         help='Suppress the progress bar.')
     proc_group.add_argument('--report-failed',
                         help='File path to save the text of cards that failed to parse/validate (useful for debugging).')
+    proc_group.add_argument('--grep', action='append',
+                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
 
     args = parser.parse_args()
 
@@ -453,6 +455,6 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, json_out = args.json, csv_out = args.csv, quiet=args.quiet,
-         report_file = args.report_failed, color_arg=args.color, limit=args.limit)
+         report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep)
 
     exit(0)

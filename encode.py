@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, randomize = False, nolabel = False, stable = False,
-         report_file=None, quiet=False, limit=0):
+         report_file=None, quiet=False, limit=0, grep=None):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
     fieldsep = utils.fieldsep
@@ -55,7 +55,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if not line_transformations:
             print('  NOT using line reordering transformations', file=sys.stderr)
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations, report_file=report_file)
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations, report_file=report_file, grep=grep)
 
     # This should give a random but consistent ordering, to make comparing changes
     # between the output of different versions easier.
@@ -119,6 +119,8 @@ if __name__ == '__main__':
                         help='Limit the number of cards to encode.')
     proc_group.add_argument('-s', '--stable', action='store_true',
                         help='Preserve the original order of cards from the input file (do not shuffle).')
+    proc_group.add_argument('--grep', action='append',
+                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -133,5 +135,5 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
          stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet,
-         limit=args.limit)
+         limit=args.limit, grep=args.grep)
     exit(0)

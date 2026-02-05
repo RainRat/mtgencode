@@ -10,6 +10,7 @@ sys.path.append(libdir)
 
 import cardlib
 import utils
+import jdecode
 
 # Try to import tqdm for progress bars
 try:
@@ -210,6 +211,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Limit the number of cards to sort.')
+    proc_group.add_argument('--grep', action='append',
+                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -236,49 +239,12 @@ Supports any encoding format supported by encode.py/decode.py.""",
 
     # We could support custom formats if needed, but this covers the main ones.
 
-    if verbose:
-        print(f'Opening encoded card file: {args.infile}', file=sys.stderr)
-
-    try:
-        with open(args.infile, 'r', encoding='utf-8') as f:
-            text = f.read()
-    except Exception as e:
-        print(f"Error reading file {args.infile}: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    if not text:
-        print("Error: Input file is empty.", file=sys.stderr)
-        sys.exit(1)
-
-    # Parse cards using Card object logic
-    # This replaces the manual splitting and gives us robust field access
-    cards = []
-
-    # Split by double newline to get individual card strings
-    raw_cards = text.split(utils.cardsep)
-
-    if verbose:
-        iterator = tqdm(raw_cards, desc="Parsing cards", unit="card")
-    else:
-        iterator = raw_cards
-
-    for card_src in iterator:
-        if not card_src.strip():
-            continue
-
-        try:
-            card = cardlib.Card(card_src, fmt_ordered=fmt_ordered)
-            if card.valid:
-                cards.append(card)
-            else:
-                # If invalid, maybe warn? But for now we just skip or maybe put in 'other'
-                # Actually, let's keep it if it parsed but was marked invalid (like missing fields)
-                # so we don't lose data.
-                if card.parsed:
-                    cards.append(card)
-        except Exception as e:
-            if verbose:
-                print(f"Warning: Failed to parse card: {e}", file=sys.stderr)
+    # Use the robust jdecode.mtg_open_file for loading and filtering.
+    # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
+    cards = jdecode.mtg_open_file(args.infile, verbose=verbose, fmt_ordered=fmt_ordered, grep=args.grep,
+                                  exclude_sets=lambda x: False,
+                                  exclude_types=lambda x: False,
+                                  exclude_layouts=lambda x: False)
 
     if args.limit > 0:
         cards = cards[:args.limit]
