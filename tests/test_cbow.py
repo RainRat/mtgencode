@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 import cbow
 from cbow import CBOW, read_vector_file, makevector, cosine_similarity
+from cardlib import Card
 
 @pytest.fixture
 def mock_cbow_files():
@@ -43,18 +44,12 @@ def mock_cbow_files():
             f.write(w2)
             f.write(v2)
 
-        # Create output.txt (encoded cards)
-        # Format: card_sep joined string
-        # We need to mock cardlib.Card or just put strings that Card parses?
-        # CBOW init uses cardlib.Card(card_src)
-        # We can just put some simple text that parses as a card or at least doesn't crash
-        # Card constructor takes a string.
-        # But CBOW uses card.vectorize().
-        # Let's write a simple card string.
+        # Create output.txt (encoded cards) using labeled format
+        card1 = "|1card_foo|9foo"
+        card2 = "|1card_bar|9bar"
 
-        card_content = "Name: Foo\n\nfoo bar"
         with open(txt_path, 'w') as f:
-            f.write(card_content)
+            f.write(card1 + "\n\n" + card2)
 
         yield bin_path, txt_path
 
@@ -108,14 +103,36 @@ def test_cosine_similarity():
 def test_cbow_init(mock_cbow_files):
     bin_path, txt_path = mock_cbow_files
 
-    # Should handle malformed file gracefully if it fails (prints warning)
-    # But if we fix the code, it should load correctly.
     model = CBOW(verbose=False, vector_fname=bin_path, card_fname=txt_path)
 
-    if model.disabled:
-        # If it failed to load, verify it's marked disabled (current behavior due to bug)
-        assert model.disabled
-    else:
-        # If it loaded (after fix)
-        assert len(model.vocab) == 2
-        assert len(model.vecs) == 2
+    assert not model.disabled
+    assert len(model.vocab) == 2
+    assert len(model.vecs) == 2
+
+def test_cbow_nearest(mock_cbow_files):
+    bin_path, txt_path = mock_cbow_files
+    model = CBOW(verbose=False, vector_fname=bin_path, card_fname=txt_path)
+
+    # Test nearest with a string
+    # "foo" should be most similar to "card_foo"
+    results = model.nearest("foo", n=1)
+    assert len(results) == 1
+    assert results[0][1] == "card_foo"
+
+    # Test nearest with a Card object
+    card = Card("|1card_foo|9foo")
+    results = model.nearest(card, n=1)
+    assert len(results) == 1
+    assert results[0][1] == "card_foo"
+
+def test_cbow_nearest_par(mock_cbow_files):
+    bin_path, txt_path = mock_cbow_files
+    model = CBOW(verbose=False, vector_fname=bin_path, card_fname=txt_path)
+
+    # Test nearest_par
+    results = model.nearest_par(["foo", "bar"], n=1)
+    assert len(results) == 2
+    assert len(results[0]) == 1
+    assert results[0][0][1] == "card_foo"
+    assert len(results[1]) == 1
+    assert results[1][0][1] == "card_bar"
