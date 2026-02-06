@@ -133,7 +133,31 @@ python3 sortcards.py encoded_output.txt sorted_output.txt
 
 ---
 
+## Advanced Tools & Debugging
+
+We provide extra tools in the `scripts/` folder to help you manage your data.
+
+### Reporting Errors
+If some cards fail to process, you can save them to a file for review:
+*   **When Encoding:** Use `--report-unparsed <filename>` to save cards that the tool could not understand.
+*   **When Decoding:** Use `--report-failed <filename>` to save cards that were formatted incorrectly.
+
+### Extracting One Card
+The main Magic data file (`AllPrintings.json`) is very large. To test a specific card without loading everything, you can extract it to a small file:
+```bash
+python3 scripts/extract_one.py data/AllPrintings.json SET_CODE "Card Name"
+```
+
+### Checking Your Data
+Use `summarize.py` to see statistics about your encoded cards, such as the distribution of card types and colors:
+```bash
+python3 scripts/summarize.py encoded_output.txt
+```
+
+---
+
 ## Documentation & Help
 *   [DEPENDENCIES.md](DEPENDENCIES.md): How to set up external tools like Magic Set Editor.
+*   [CUSTOM.md](CUSTOM.md): How to integrate your own custom cards.
 *   [AGENTS.md](AGENTS.md): Information for AI agents.
 *   To run tests: `python3 -m pytest`
