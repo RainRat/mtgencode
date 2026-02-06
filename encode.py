@@ -97,7 +97,7 @@ if __name__ == '__main__':
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile',
-                        help='Input JSON file containing card data (e.g., AllPrintings.json) or an already encoded file.')
+                        help='Input JSON file containing card data (e.g., AllPrintings.json), a CSV file, or an already encoded file.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console (stdout).')
 

@@ -2,9 +2,65 @@ import json
 import sys
 import os
 import re
+import csv
 
 import utils
 import cardlib
+
+def mtg_open_csv(fname, verbose = False):
+    """
+    Reads a CSV file containing card data.
+    Supports the format exported by decode.py.
+    """
+    with open(fname, 'r', encoding='utf8', newline='') as f:
+        reader = csv.DictReader(f)
+        srcs = {}
+        for row in reader:
+            # Map CSV columns to JSON-style dict keys
+            card_dict = {
+                'name': row.get('name', ''),
+                'manaCost': row.get('mana_cost', row.get('manaCost', '')),
+                'text': row.get('text', ''),
+                'rarity': row.get('rarity', ''),
+            }
+            if row.get('power'):
+                card_dict['power'] = row['power']
+            if row.get('toughness'):
+                card_dict['toughness'] = row['toughness']
+            if row.get('loyalty'):
+                card_dict['loyalty'] = row['loyalty']
+            elif row.get('defense'):
+                card_dict['defense'] = row['defense']
+
+            # Split type into supertypes and types
+            full_type = row.get('type', '')
+            supertypes = []
+            types = []
+            # Standard MTG supertypes
+            known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
+            for t in full_type.split():
+                if t in known_supertypes:
+                    supertypes.append(t)
+                else:
+                    types.append(t)
+            card_dict['supertypes'] = supertypes
+            card_dict['types'] = types
+
+            # Subtypes
+            subtypes = row.get('subtypes', '')
+            if subtypes:
+                card_dict['subtypes'] = subtypes.split()
+
+            cardname = card_dict['name'].lower()
+            if cardname in srcs:
+                srcs[cardname].append(card_dict)
+            else:
+                srcs[cardname] = [card_dict]
+
+    if verbose:
+        print('Opened ' + str(len(srcs)) + ' uniquely named cards from CSV.', file=sys.stderr)
+
+    return srcs, set()
 
 def mtg_open_json(fname, verbose = False):
     """
@@ -219,20 +275,23 @@ def mtg_open_file(fname, verbose = False,
     # Directory Handling
     if fname != '-' and os.path.isdir(fname):
         if verbose:
-            print(f"Scanning directory {fname} for JSON files...", file=sys.stderr)
+            print(f"Scanning directory {fname} for JSON/CSV files...", file=sys.stderr)
 
         aggregated_srcs = {}
         aggregated_bad_sets = set()
 
-        # We only look for .json files
-        files = sorted([f for f in os.listdir(fname) if f.endswith('.json')])
+        # Look for .json and .csv files
+        files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv')])
 
         for f in files:
             full_path = os.path.join(fname, f)
             if verbose:
                 print(f"Loading {f}...", file=sys.stderr)
             # Use verbose=False to avoid spamming "Opened X uniquely named cards" for every file
-            srcs, bad = mtg_open_json(full_path, verbose=False)
+            if f.endswith('.json'):
+                srcs, bad = mtg_open_json(full_path, verbose=False)
+            else:
+                srcs, bad = mtg_open_csv(full_path, verbose=False)
             aggregated_bad_sets.update(bad)
 
             for key, val in srcs.items():
@@ -245,6 +304,15 @@ def mtg_open_file(fname, verbose = False,
              print('Opened ' + str(len(aggregated_srcs)) + ' uniquely named cards from directory.', file=sys.stderr)
 
         cards = _process_json_srcs(aggregated_srcs, aggregated_bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj)
+
+    # Single CSV File Handling
+    elif fname.endswith('.csv'):
+        if verbose:
+            print('This looks like a csv file: ' + fname, file=sys.stderr)
+        csv_srcs, bad_sets = mtg_open_csv(fname, verbose)
+
+        cards = _process_json_srcs(csv_srcs, bad_sets, verbose, linetrans,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj)
 
     # Encoded Text File Handling
