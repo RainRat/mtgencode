@@ -29,8 +29,8 @@ max_w = 50
 
 def read_vector_file(fname):
     with open(fname, 'rb') as f:
-        words = int(f.read(4))
-        size = int(f.read(4))
+        words = int(f.read(4).decode('ascii'))
+        size = int(f.read(4).decode('ascii'))
         vocab = [' '] * (words * max_w)
         M = []
         for b in range(0,words):

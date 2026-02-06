@@ -873,6 +873,7 @@ class Card:
             mtext = self.text.text
             # Unpass pipeline similar to format()
             mtext = transforms.text_unpass_1_choice(mtext, delimit=True)
+            mtext = transforms.text_unpass_2_counters(mtext)
             mtext = transforms.text_unpass_3_uncast(mtext)
             mtext = utils.from_unary(mtext)
             mtext = utils.from_symbols(mtext, False, False)
