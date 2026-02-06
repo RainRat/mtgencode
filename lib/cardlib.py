@@ -152,14 +152,20 @@ def fields_check_valid(fields):
         return False
     if not field_types in fields:
         return False
-    # creatures and vehicles have p/t, other things don't
+
     iscreature = False
     isartifact = False
+    isplaneswalker = False
+    isbattle = False
     for idx, value in fields[field_types]:
         if 'creature' in value:
             iscreature = True
         if 'artifact' in value:
             isartifact = True
+        if 'planeswalker' in value:
+            isplaneswalker = True
+        if 'battle' in value:
+            isbattle = True
 
     if field_subtypes in fields:
         for idx, value in fields[field_subtypes]:
@@ -171,19 +177,27 @@ def fields_check_valid(fields):
         for idx, value in fields[field_text]:
             text += value.text
 
+    # P/T requirements
     if iscreature:
-        return field_pt in fields
-    # Station cards can become creatures
+        if not field_pt in fields:
+            return False
+    # Station cards can become creatures, so they are allowed to NOT have P/T.
+    # We also allow them to HAVE P/T if they want.
     elif isartifact and 'station' in text:
-        return True
-    # Planeswalkers don't have p/t
-    elif any('planeswalker' in val for _, val in fields[field_types]):
-        return True
-    # Battles don't have p/t
-    elif any('battle' in val for _, val in fields[field_types]):
-        return field_loyalty in fields
+        pass
     else:
-        return not field_pt in fields
+        if field_pt in fields:
+            return False
+
+    # Loyalty / Defense requirements
+    if isplaneswalker or isbattle:
+        if not field_loyalty in fields:
+            return False
+    else:
+        if field_loyalty in fields:
+            return False
+
+    return True
 
 
 # These functions take a bunch of source data in some format and turn

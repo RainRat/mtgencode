@@ -138,3 +138,31 @@ def test_fields_check_valid_battle_brittle_check_no_loyalty():
     }
     # Should be invalid because battles need loyalty
     assert not fields_check_valid(fields)
+
+def test_fields_check_valid_planeswalker_missing_loyalty():
+    fields = {
+        field_name: [(-1, "jace")],
+        field_types: [(-1, ["planeswalker"])],
+        # No loyalty
+    }
+    # Should be invalid because planeswalkers need loyalty
+    assert not fields_check_valid(fields)
+
+def test_fields_check_valid_battle_creature_missing_loyalty():
+    fields = {
+        field_name: [(-1, "battle creature")],
+        field_types: [(-1, ["battle", "creature"])],
+        field_pt: [(-1, "1/1")],
+        # No loyalty
+    }
+    # Should be invalid because battles need loyalty even if they are creatures
+    assert not fields_check_valid(fields)
+
+def test_fields_check_valid_instant_with_loyalty():
+    fields = {
+        field_name: [(-1, "instant with loyalty")],
+        field_types: [(-1, ["instant"])],
+        field_loyalty: [(-1, "3")]
+    }
+    # Should be invalid because instants don't have loyalty
+    assert not fields_check_valid(fields)
