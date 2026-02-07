@@ -128,3 +128,14 @@ def test_to_dict_self_reference():
     d = card.to_dict()
     assert "Grizzly Bears" in d['text']
     assert "@" not in d['text']
+
+def test_to_dict_counters():
+    # Card with counters in encoded format
+    card_text = "|1Gideon|5Planeswalker|7rare|9+1: put a % counter on @. \\ countertype % loyalty"
+    card = Card(card_text)
+    d = card.to_dict()
+
+    # It should replace % with 'loyalty' and remove the countertype line
+    assert "loyalty counter" in d['text']
+    assert "%" not in d['text']
+    assert "countertype" not in d['text']
