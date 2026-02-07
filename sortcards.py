@@ -197,8 +197,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infile',
-                        help='Path to the encoded card file to sort.')
+    io_group.add_argument('infile', nargs='?', default='-',
+                        help='Path to the encoded card file to sort. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console (stdout).')
 
@@ -217,14 +217,11 @@ Supports any encoding format supported by encode.py/decode.py.""",
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
     debug_group.add_argument('-v', '--verbose', action='store_true',
-                        help='Enable verbose output and progress bars.')
+                        help='Enable verbose output, including loading diagnostics.')
     debug_group.add_argument('-q', '--quiet', action='store_true',
-                        help='Suppress all non-error output.')
+                        help='Suppress all non-error output (progress bars and summary).')
 
     args = parser.parse_args()
-
-    # Determine verbose flag (verbose=True unless quiet=True)
-    verbose = args.verbose and not args.quiet
 
     # Determine format
     fmt_ordered = cardlib.fmt_ordered_default
@@ -241,7 +238,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
 
     # Use the robust jdecode.mtg_open_file for loading and filtering.
     # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
-    cards = jdecode.mtg_open_file(args.infile, verbose=verbose, fmt_ordered=fmt_ordered, grep=args.grep,
+    # verbose=True enables jdecode diagnostic output (e.g. invalid cards).
+    cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, fmt_ordered=fmt_ordered, grep=args.grep,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False)
@@ -249,13 +247,14 @@ Supports any encoding format supported by encode.py/decode.py.""",
     if args.limit > 0:
         cards = cards[:args.limit]
 
-    classes = sortcards(cards, verbose=verbose)
+    # Progress bar is shown unless --quiet is specified
+    classes = sortcards(cards, verbose=not args.quiet)
 
     outputter = sys.stdout
     ofile = None
 
     if args.outfile:
-        if verbose:
+        if args.verbose:
             print(f'Writing output to: {args.outfile}', file=sys.stderr)
         try:
             ofile = open(args.outfile, 'w', encoding='utf-8')
@@ -266,12 +265,13 @@ Supports any encoding format supported by encode.py/decode.py.""",
 
     try:
         # Print summary (to stderr to separate from data)
+        # Summary is shown unless --quiet is specified
         for cardclass, card_list in classes.items():
             if card_list is None:
-                if verbose:
+                if not args.quiet:
                     print(cardclass, file=sys.stderr)
             else:
-                if verbose:
+                if not args.quiet:
                     print(f'  {cardclass}: {len(card_list)}', file=sys.stderr)
 
         # Write content
