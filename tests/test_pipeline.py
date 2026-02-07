@@ -589,17 +589,39 @@ def test_output_formats(sample_cards):
         assert isinstance(card.to_mse(), str)
 
 def test_html_creativity_output():
+    import struct
     outfile = "tests/test_output.html"
     data_dir = "data"
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
     all_sets_file = os.path.join(data_dir, "AllSets.json")
+    cbow_bin = os.path.join(data_dir, "cbow.bin")
+    output_txt = os.path.join(data_dir, "output.txt")
     temp_infile = "tests/temp_sample_cards.json"
 
     # Write the sample data to a temporary file
     with open(temp_infile, "w") as f:
         json.dump(SAMPLE_CARDS_DATA, f)
 
-    # The creativity feature requires a data file, so we'll create a temporary one from our sample cards
+    # The creativity feature requires several data files, so we'll create temporary ones
     shutil.copy(temp_infile, all_sets_file)
+
+    # Create dummy cbow.bin and output.txt if they don't exist
+    cbow_existed = os.path.exists(cbow_bin)
+    output_existed = os.path.exists(output_txt)
+
+    if not cbow_existed:
+        header = f"{1:<4}{1:<4}".encode('ascii')
+        word = b"test "
+        vec = struct.pack('f'*1, 1.0)
+        with open(cbow_bin, 'wb') as f:
+            f.write(header + word + vec)
+
+    if not output_existed:
+        with open(output_txt, 'w') as f:
+            f.write("|1test|9test")
+
     try:
         subprocess.run(["python", "decode.py", temp_infile, outfile, "--html", "--creativity"], check=True)
         assert os.path.exists(outfile)
@@ -614,3 +636,7 @@ def test_html_creativity_output():
             os.remove(all_sets_file)
         if os.path.exists(temp_infile):
             os.remove(temp_infile)
+        if not cbow_existed and os.path.exists(cbow_bin):
+            os.remove(cbow_bin)
+        if not output_existed and os.path.exists(output_txt):
+            os.remove(output_txt)
