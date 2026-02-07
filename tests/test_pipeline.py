@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import subprocess
+import struct
 from lib.cardlib import Card
 
 SAMPLE_CARDS_DATA = [
@@ -592,7 +593,13 @@ def test_html_creativity_output():
     outfile = "tests/test_output.html"
     data_dir = "data"
     all_sets_file = os.path.join(data_dir, "AllSets.json")
+    cbow_file = os.path.join(data_dir, "cbow.bin")
+    output_file = os.path.join(data_dir, "output.txt")
     temp_infile = "tests/temp_sample_cards.json"
+
+    # ensure data directory exists
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
 
     # Write the sample data to a temporary file
     with open(temp_infile, "w") as f:
@@ -600,6 +607,21 @@ def test_html_creativity_output():
 
     # The creativity feature requires a data file, so we'll create a temporary one from our sample cards
     shutil.copy(temp_infile, all_sets_file)
+
+    # Create dummy cbow.bin and output.txt
+    with open(cbow_file, "wb") as f:
+        # words=1, size=1 (ASCII 4 bytes each)
+        f.write(b"1   ")
+        f.write(b"1   ")
+        # word "test" then space
+        f.write(b"test ")
+        # 1 float (4 bytes)
+        f.write(struct.pack('f', 1.0))
+
+    with open(output_file, "w") as f:
+        # One encoded card
+        f.write("|1test|5creature|")
+
     try:
         subprocess.run(["python", "decode.py", temp_infile, outfile, "--html", "--creativity"], check=True)
         assert os.path.exists(outfile)
@@ -612,5 +634,9 @@ def test_html_creativity_output():
             os.remove(outfile)
         if os.path.exists(all_sets_file):
             os.remove(all_sets_file)
+        if os.path.exists(cbow_file):
+            os.remove(cbow_file)
+        if os.path.exists(output_file):
+            os.remove(output_file)
         if os.path.exists(temp_infile):
             os.remove(temp_infile)
