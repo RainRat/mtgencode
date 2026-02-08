@@ -221,6 +221,13 @@ Supports any encoding format supported by encode.py/decode.py.""",
     debug_group.add_argument('-q', '--quiet', action='store_true',
                         help='Suppress all non-error output (progress bars and summary).')
 
+    # Color options
+    color_group = debug_group.add_mutually_exclusive_group()
+    color_group.add_argument('--color', action='store_true', default=None,
+                        help='Force enable ANSI color output.')
+    color_group.add_argument('--no-color', action='store_false', dest='color',
+                        help='Disable ANSI color output.')
+
     args = parser.parse_args()
 
     # Determine format
@@ -264,15 +271,30 @@ Supports any encoding format supported by encode.py/decode.py.""",
             sys.exit(1)
 
     try:
+        # Determine if we should use color for the summary
+        use_color = False
+        if args.color is True:
+            use_color = True
+        elif args.color is None and sys.stderr.isatty():
+            use_color = True
+
         # Print summary (to stderr to separate from data)
         # Summary is shown unless --quiet is specified
         for cardclass, card_list in classes.items():
             if card_list is None:
                 if not args.quiet:
-                    print(cardclass, file=sys.stderr)
+                    header = cardclass
+                    if use_color:
+                        header = utils.colorize(header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                    print(header, file=sys.stderr)
             else:
                 if not args.quiet:
-                    print(f'  {cardclass}: {len(card_list)}', file=sys.stderr)
+                    name = cardclass
+                    count = str(len(card_list))
+                    if use_color:
+                        if len(card_list) > 0:
+                            count = utils.colorize(count, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                    print(f'  {name}: {count}', file=sys.stderr)
 
         # Write content
         for cardclass, card_list in classes.items():
