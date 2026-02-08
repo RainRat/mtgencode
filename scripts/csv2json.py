@@ -8,14 +8,30 @@ import json
 # 2. Convert your custom.csv to json, i.e. "python csv2json.py custom.csv custom.json"
 # 3. Merge your json with the full official json, i.e. "python combinejson.py AllPrintings.json custom.json AllCustom.json"
 
-parser = argparse.ArgumentParser()
-parser.add_argument('filename1', help='CSV filename (input)')
-parser.add_argument('filename2', help='JSON filename (output)')
+parser = argparse.ArgumentParser(
+    description='Converts a CSV file of custom Magic cards into MTGJSON format.',
+    epilog='''
+CSV Format:
+  The CSV must have at least 7 columns in this order:
+  1. Name (e.g., "Giant Growth")
+  2. Mana Cost (e.g., "{G}")
+  3. Types & Supertypes (e.g., "Legendary Creature")
+  4. Subtypes (e.g., "Elf Warrior")
+  5. Rules Text (e.g., "Target creature gets +3/+3 until end of turn.")
+  6. P/T (e.g., "3/3")
+  7. Rarity (e.g., "C", "U", "R", "M")
+
+  The first row (header) is ignored if the first column is exactly "name".
+''',
+    formatter_class=argparse.RawDescriptionHelpFormatter
+)
+parser.add_argument('csv_file', help='Path to the input CSV file.')
+parser.add_argument('json_output', help='Path to the output JSON file.')
 args = parser.parse_args()
 
 rarity_mapping = {"R": "rare", "U": "uncommon", "C": "common", "M": "mythic"}
 
-with open(args.filename1) as csvfile, open(args.filename2, 'w') as jsonfile:
+with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
     reader = csv.reader(csvfile)
     json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
 
