@@ -387,68 +387,65 @@ if __name__ == '__main__':
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input file containing encoded cards (or a JSON/CSV corpus) to decode. Defaults to stdin (-).')
+                        help='Input file containing encoded cards (or a JSON/CSV corpus). Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .csv, .mse-set).')
+                        help='Path to save output. If not provided, prints to console. Extension (.html, .json, .csv, .mse-set) auto-detects format.')
 
-    # Group: Output Format (Mutually Exclusive)
-    # We use a mutually exclusive group to enforce one output format.
-    # Note: We cannot attach this directly to a titled argument group in argparse easily while keeping the title.
-    # So we define the arguments in the main parser but link them via a mutex group.
-    fmt_group = parser.add_mutually_exclusive_group()
+    # Group: Output Format
+    output_fmt_group = parser.add_argument_group('Output Format')
+    fmt_group = output_fmt_group.add_mutually_exclusive_group()
     fmt_group.add_argument('--text', action='store_true',
-                           help='Force plain text output (Default unless detected from extension).')
+                           help='Force plain text output (Default).')
     fmt_group.add_argument('--html', action='store_true',
-                           help='Generate a nicely formatted HTML file (Auto-detected for .html).')
+                           help='Generate a formatted HTML spoiler file.')
     fmt_group.add_argument('--json', action='store_true',
-                           help='Generate a structured JSON file (Auto-detected for .json).')
+                           help='Generate a structured JSON file.')
     fmt_group.add_argument('--csv', action='store_true',
-                           help='Generate a CSV file (Auto-detected for .csv).')
+                           help='Generate a CSV file.')
     fmt_group.add_argument('--mse', action='store_true',
-                           help='Generate a Magic Set Editor set file (Auto-detected for .mse-set). Requires an output filename.')
+                           help='Generate a Magic Set Editor set file (Requires outfile).')
 
     # Group: Content Formatting
     content_group = parser.add_argument_group('Content Formatting')
     content_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        help="Format of the input data. Default is 'std' (standard).")
+                        help="Encoding format of the input data (Default: 'std').")
 
-    # Gatherer formatting is on by default.
+    # Gatherer formatting options
     parser.set_defaults(gatherer=True)
-
-    # We provide a --raw flag to disable it.
-    # We also keep -g for backward compatibility but make it a no-op that ensures True.
     content_group.add_argument('-g', '--gatherer', action='store_true', default=True,
-                        help='Explicitly enable Gatherer formatting (Default).')
+                        help='Enable Gatherer-style formatting (Default).')
     content_group.add_argument('--raw', '--no-gatherer', dest='gatherer', action='store_false',
-                        help='Output raw text without Gatherer formatting.')
+                        help='Disable Gatherer formatting (output raw text).')
 
     content_group.add_argument('-f', '--forum', action='store_true',
-                        help='Use pretty formatting for mana symbols (compatible with MTG Salvation forums).')
+                        help='Use pretty forum formatting for mana symbols.')
 
     # Color options
-    # We use a mutual exclusive group to allow --color and --no-color
     color_group = content_group.add_mutually_exclusive_group()
     color_group.add_argument('--color', action='store_true', default=None,
-                        help='Force enable ANSI color output (useful for piping to less -R).')
+                        help='Enable colorized output (Auto-detected).')
     color_group.add_argument('--no-color', action='store_false', dest='color',
-                        help='Disable ANSI color output.')
+                        help='Disable colorized output.')
 
-    # Group: Processing & Debugging
-    proc_group = parser.add_argument_group('Processing & Debugging')
+    # Group: Processing & Filtering
+    proc_group = parser.add_argument_group('Processing & Filtering')
     proc_group.add_argument('-c', '--creativity', action='store_true',
-                        help="Enable 'creativity' mode: calculate similarity to existing cards using CBOW (slow).")
+                        help="Enable 'creativity' mode: find similar existing cards using CBOW (slow).")
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Limit the number of cards to decode.')
-    proc_group.add_argument('-d', '--dump', action='store_true',
-                        help='Debug mode: print detailed information about cards that failed to validate.')
-    proc_group.add_argument('-v', '--verbose', action='store_true',
-                        help='Enable verbose output.')
-    proc_group.add_argument('-q', '--quiet', action='store_true',
-                        help='Suppress the progress bar.')
-    proc_group.add_argument('--report-failed',
-                        help='File path to save the text of cards that failed to parse/validate (useful for debugging).')
     proc_group.add_argument('--grep', action='append',
-                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times.')
+
+    # Group: Logging & Debugging
+    debug_group = parser.add_argument_group('Logging & Debugging')
+    debug_group.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable verbose output.')
+    debug_group.add_argument('-q', '--quiet', action='store_true',
+                        help='Suppress all non-essential output (progress bars).')
+    debug_group.add_argument('-d', '--dump', action='store_true',
+                        help='Debug mode: print detailed information about validation failures.')
+    debug_group.add_argument('--report-failed',
+                        help='File path to save text of cards that failed to parse or validate.')
 
     args = parser.parse_args()
 
