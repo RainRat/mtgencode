@@ -280,31 +280,59 @@ def mtg_open_file(fname, verbose = False,
         aggregated_srcs = {}
         aggregated_bad_sets = set()
 
-        # Look for .json and .csv files
-        files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv')])
+        # Look for .json, .csv, and .txt files
+        files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv') or f.endswith('.txt')])
 
+        txt_cards = []
         for f in files:
             full_path = os.path.join(fname, f)
             if verbose:
                 print(f"Loading {f}...", file=sys.stderr)
-            # Use verbose=False to avoid spamming "Opened X uniquely named cards" for every file
-            if f.endswith('.json'):
-                srcs, bad = mtg_open_json(full_path, verbose=False)
-            else:
-                srcs, bad = mtg_open_csv(full_path, verbose=False)
-            aggregated_bad_sets.update(bad)
 
-            for key, val in srcs.items():
-                if key in aggregated_srcs:
-                    aggregated_srcs[key].extend(val)
+            if f.endswith('.json') or f.endswith('.csv'):
+                if f.endswith('.json'):
+                    srcs, bad = mtg_open_json(full_path, verbose=False)
                 else:
-                    aggregated_srcs[key] = val
+                    srcs, bad = mtg_open_csv(full_path, verbose=False)
+                aggregated_bad_sets.update(bad)
+                for key, val in srcs.items():
+                    if key in aggregated_srcs:
+                        aggregated_srcs[key].extend(val)
+                    else:
+                        aggregated_srcs[key] = val
+            elif f.endswith('.txt'):
+                # Encoded text files are processed directly into Card objects
+                with open(full_path, 'rt', encoding='utf8') as f_txt:
+                    text = f_txt.read()
+
+                # Heuristic to avoid loading non-card text files:
+                # Must contain at least one field separator
+                if utils.fieldsep not in text:
+                    continue
+
+                for card_src in text.split(utils.cardsep):
+                    if card_src:
+                        card = cardlib.Card(card_src, fmt_ordered=fmt_ordered, linetrans=linetrans)
+
+                        # Apply exclusions to cards from encoded text
+                        skip = False
+                        for cardtype in card.types:
+                            if exclude_types(cardtype):
+                                skip = True
+
+                        if not skip:
+                            txt_cards.append(card)
 
         if verbose:
-             print('Opened ' + str(len(aggregated_srcs)) + ' uniquely named cards from directory.', file=sys.stderr)
+             if aggregated_srcs:
+                 print('Opened ' + str(len(aggregated_srcs)) + ' uniquely named cards from JSON/CSV files.', file=sys.stderr)
+             if txt_cards:
+                 print('Opened ' + str(len(txt_cards)) + ' cards from encoded text files.', file=sys.stderr)
 
         cards = _process_json_srcs(aggregated_srcs, aggregated_bad_sets, verbose, linetrans,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj)
+        # Combine with cards from encoded text files
+        cards.extend(txt_cards)
 
     # Single CSV File Handling
     elif fname.endswith('.csv'):
