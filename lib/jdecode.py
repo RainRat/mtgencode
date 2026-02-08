@@ -366,9 +366,13 @@ def mtg_open_file(fname, verbose = False,
                     if verbose:
                         print ('Invalid card: ' + card_src, file=sys.stderr)
                     if report_fobj:
-                         report_fobj.write(card_src + utils.cardsep)
-                    else:
-                        unparsed += 1
+                        report_fobj.write(card_src + utils.cardsep)
+                else:
+                    unparsed += 1
+                    if verbose:
+                        print ('Failed to parse card: ' + card_src, file=sys.stderr)
+                    if report_fobj:
+                        report_fobj.write(card_src + utils.cardsep)
 
         if verbose:
              print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
