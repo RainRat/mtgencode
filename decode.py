@@ -21,12 +21,12 @@ from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, html = False, text = False, json_out = False, csv_out = False, quiet=False,
+         creativity = False, vdump = False, html = False, text = False, json_out = False, csv_out = False, md_out = False, quiet=False,
          report_file=None, color_arg=None, limit=0, grep=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
-    if not (html or text or for_mse or json_out or csv_out):
+    if not (html or text or for_mse or json_out or csv_out or md_out):
         if oname:
             if oname.endswith('.html'):
                 html = True
@@ -34,6 +34,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 json_out = True
             elif oname.endswith('.csv'):
                 csv_out = True
+            elif oname.endswith('.md'):
+                md_out = True
             elif oname.endswith('.mse-set'):
                 for_mse = True
             else:
@@ -43,7 +45,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     # Mutually exclusive output formats are now enforced by argparse in main block,
     # but we keep this check for programmatic access safety.
-    if sum([bool(html), bool(for_mse), bool(json_out), bool(text), bool(csv_out)]) > 1:
+    if sum([bool(html), bool(for_mse), bool(json_out), bool(text), bool(csv_out), bool(md_out)]) > 1:
         # If user explicitly requested multiple formats programmatically, we warn or error.
         # However, argparse logic below ensures text defaults to True only if others are False.
         # But if someone calls main() directly with multiple True, we should respect that or fail.
@@ -130,7 +132,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
             csv_writer.writerow(row)
 
-    def hoverimg(cardname, dist, nd, for_html=False):
+    def hoverimg(cardname, dist, nd, for_html=False, for_md=False):
         # Gracefully handle cases where the card returned by CBOW is not in the Namediff set
         # This happens in testing when CBOW uses full data but Namediff uses a subset
         if cardname not in nd.names:
@@ -156,13 +158,24 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                            + ');" alt=""/></span></a>' + ': ' + str(dist) + '\n</div>\n')
             else:
                 namestr = '<div>' + truename + ': ' + str(dist) + '</div>'
+        elif for_md:
+            if code:
+                try:
+                    set_code, number_jpg = code.split('/')
+                    number = number_jpg.replace('.jpg', '')
+                    scryfall_url = f'https://scryfall.com/card/{set_code}/{number}'
+                    namestr = f"* [{truename}]({scryfall_url}): {dist:.3f}\n"
+                except ValueError:
+                    namestr = f"* {truename}: {dist:.3f}\n"
+            else:
+                namestr = f"* {truename}: {dist:.3f}\n"
         elif for_forum:
             namestr = '[card]' + truename + '[/card]' + ': ' + str(dist) + '\n'
         else:
             namestr = truename + ': ' + str(dist) + '\n'
         return namestr
 
-    def writecards(writer, for_html=False):
+    def writecards(writer, for_html=False, for_md=False):
         if for_mse:
             # have to prepend a massive chunk of formatting info
             writer.write(utils.mse_prepend)
@@ -185,13 +198,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             return
 
         for card in tqdm(cards, disable=quiet, desc="Decoding"):
-            writecard(writer, card)
+            writecard(writer, card, for_md=for_md)
 
         if for_mse:
             # more formatting info
             writer.write('version control:\n\ttype: none\napprentice code: ')
 
-    def writecard(writer, card, for_html=False):
+    def writecard(writer, card, for_html=False, for_md=False):
         try:
             if for_mse:
                 writer.write(card.to_mse())
@@ -212,14 +225,14 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 # 2. User didn't specify (color_arg == None) AND writer is stdout AND stdout is a TTY
                 # 3. User didn't disable it (color_arg != False)
                 use_color = False
-                if not for_html and not for_mse:
+                if not for_html and not for_mse and not for_md:
                     if color_arg is True:
                         use_color = True
                     elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
                         use_color = True
 
                 fstring = card.format(gatherer = gatherer, for_forum = for_forum,
-                                      vdump = vdump, for_html = for_html, ansi_color = use_color)
+                                      vdump = vdump, for_html = for_html, ansi_color = use_color, for_md = for_md)
                 if for_html and creativity:
                     fstring = fstring[:-6] # chop off the closing </div> to stick stuff in
 
@@ -234,21 +247,25 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if creativity:
             if for_html:
                 cstring = '~~ closest cards ~~\n<br>\n'
+            elif for_md:
+                cstring = '### ~~ closest cards ~~\n'
             else:
                 cstring = '~~ closest cards ~~\n'
             nearest = card.nearest_cards
             for dist, cardname in nearest:
-                cstring += hoverimg(cardname, dist, namediff, for_html=for_html)
+                cstring += hoverimg(cardname, dist, namediff, for_html=for_html, for_md=for_md)
 
             if for_html:
                 cstring += "<br>\n"
                 cstring += '~~ closest names ~~\n<br>\n'
+            elif for_md:
+                cstring += '### ~~ closest names ~~\n'
             else:
                 cstring += '~~ closest names ~~\n'
 
             nearest = card.nearest_names
             for dist, cardname in nearest:
-                cstring += hoverimg(cardname, dist, namediff, for_html=for_html)
+                cstring += hoverimg(cardname, dist, namediff, for_html=for_html, for_md=for_md)
             if for_mse:
                 cstring = ('\n\n' + cstring[:-1]).replace('\n', '\n\t\t')
             elif for_html:
@@ -322,6 +339,11 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 print('Writing text output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
                 writecards(ofile)
+        if md_out:
+            if verbose:
+                print('Writing markdown output to: ' + oname, file=sys.stderr)
+            with open(oname, 'w', encoding='utf8') as ofile:
+                writecards(ofile, for_md=True)
         if html:
             fname = oname
             if not fname.endswith('.html'):
@@ -376,8 +398,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             write_csv_output(sys.stdout, cards, verbose=verbose)
             sys.stdout.flush()
         else:
-            # Correctly propagate for_html=html
-            writecards(sys.stdout, for_html=html)
+            # Correctly propagate for_html=html, for_md=md_out
+            writecards(sys.stdout, for_html=html, for_md=md_out)
         sys.stdout.flush()
 
 if __name__ == '__main__':
@@ -404,6 +426,8 @@ if __name__ == '__main__':
                            help='Generate a structured JSON file (Auto-detected for .json).')
     fmt_group.add_argument('--csv', action='store_true',
                            help='Generate a CSV file (Auto-detected for .csv).')
+    fmt_group.add_argument('--md', action='store_true',
+                           help='Generate a Markdown file (Auto-detected for .md).')
     fmt_group.add_argument('--mse', action='store_true',
                            help='Generate a Magic Set Editor set file (Auto-detected for .mse-set). Requires an output filename.')
 
@@ -458,7 +482,8 @@ if __name__ == '__main__':
 
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
-         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, json_out = args.json, csv_out = args.csv, quiet=args.quiet,
+         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
+         json_out = args.json, csv_out = args.csv, md_out = args.md, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep)
 
     exit(0)

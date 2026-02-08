@@ -666,7 +666,7 @@ class Card:
 
         return outstr
 
-    def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False, ansi_color=False):
+    def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False, ansi_color=False, for_md=False):
         """Formats the card data into a human-readable string.
 
         Args:
@@ -679,6 +679,8 @@ class Card:
             for_html (bool, optional): Whether to create a .html file with pretty forum formatting.
                 Defaults to False.
             ansi_color (bool, optional): Whether to use ANSI color codes for terminal output.
+                Defaults to False.
+            for_md (bool, optional): Whether to use Markdown formatting.
                 Defaults to False.
 
         Returns:
@@ -730,6 +732,8 @@ class Card:
             outstr += '<b>' + cardname + '</b>'
         elif for_forum:
             outstr += '[b]' + cardname + '[/b]'
+        elif for_md:
+            outstr += '**' + cardname + '**'
         else:
             outstr += cardname
 
@@ -813,12 +817,16 @@ class Card:
                 outstr += '<i>'
             elif for_forum:
                 outstr += '[i]'
+            elif for_md:
+                outstr += '_'
             else:
                 outstr += utils.dash_marker * 2
 
             for i, (idx, value) in enumerate(self.__dict__[field_other]):
                 if for_html and i > 0:
                     outstr += '<br>\n'
+                elif for_md and i > 0:
+                    outstr += '  \n'
                 else:
                     outstr += linebreak
                 outstr += '(' + str(idx) + ') ' + str(value)
@@ -827,12 +835,14 @@ class Card:
                 outstr += '</i>'
             elif for_forum:
                 outstr += '[/i]'
+            elif for_md:
+                outstr += '_'
 
         if self.bside:
             outstr += linebreak
             if not for_html:
                 outstr += utils.dash_marker * 8 + linebreak
-            outstr += self.bside.format(gatherer=gatherer, for_forum=for_forum and not for_html, for_html=for_html, vdump=vdump, ansi_color=ansi_color)
+            outstr += self.bside.format(gatherer=gatherer, for_forum=for_forum and not for_html, for_html=for_html, vdump=vdump, ansi_color=ansi_color, for_md=for_md)
 
         if for_html:
             outstr += "</div>"
