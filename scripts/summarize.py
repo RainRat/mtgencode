@@ -9,33 +9,23 @@ import jdecode
 from datalib import Datamine
 
 def main(fname, verbose = True, outliers = False, dump_all = False, grep = None):
+    """
+    Loads card data from a file or directory and prints a statistical summary.
+
+    Args:
+        fname (str): Path to the input file (encoded text, JSON, or CSV) or directory.
+                     Use '-' for standard input.
+        verbose (bool): If True, prints additional loading diagnostics to stderr.
+        outliers (bool): If True, includes extra information about unusual cards (e.g., longest names).
+        dump_all (bool): If True, prints the raw data for all invalid or unparsed cards.
+        grep (list of str): A list of regex patterns to filter cards before analysis.
+    """
     # Use the robust mtg_open_file for all loading and filtering.
     # We disable default exclusions to match original summarize.py behavior.
     cards = jdecode.mtg_open_file(fname, verbose=verbose, grep=grep,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False)
-    # Datamine expects card_srcs (strings) or Card objects?
-    # Let's check datalib.py again.
-
-    # Actually, Datamine.__init__ does:
-    # for card_src in card_srcs:
-    #     card = Card(card_src)
-    # But it also works if card_src IS a Card object?
-    # Wait, Card(card_object) might fail?
-
-    # If I pass Card objects to Datamine, it might re-parse them if I'm not careful.
-    # Let's check cardlib.py Card constructor again.
-
-    # In Card.__init__(self, src, ...):
-    # if isinstance(src, dict): ...
-    # else: self.raw = src ...
-
-    # If I pass a Card object, it will be treated as "else" and it might fail.
-    # So I should pass the raw strings or dicts.
-
-    # Actually, I can just pass the list of Cards and update Datamine to handle it.
-    # But it's easier to just pass card.raw or card.json.
 
     card_srcs = []
     for card in cards:
@@ -52,18 +42,26 @@ def main(fname, verbose = True, outliers = False, dump_all = False, grep = None)
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Summarizes Magic card data, providing statistics on colors, types, and other attributes.")
+
+    # Group: Input / Output
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('infile', nargs='?', default='-',
+                        help='Path to the card data file (encoded text, JSON, or CSV) or a directory. Defaults to stdin (-).')
+
+    # Group: Processing Options
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-x', '--outliers', action='store_true',
+                        help='Include additional diagnostics and edge cases in the summary.')
+    proc_group.add_argument('-a', '--all', action='store_true',
+                        help='Show all available information and dump the contents of invalid cards.')
+    proc_group.add_argument('--grep', action='append',
+                        help='Filter cards by regex (matches name, type, or rules text). Can be used multiple times (AND logic).')
     
-    parser.add_argument('infile', 
-                        help='encoded card file or json corpus to process')
-    parser.add_argument('-x', '--outliers', action='store_true',
-                        help='show additional diagnostics and edge cases')
-    parser.add_argument('-a', '--all', action='store_true',
-                        help='show all information and dump invalid cards')
-    parser.add_argument('-v', '--verbose', action='store_true', 
-                        help='verbose output')
-    parser.add_argument('--grep', action='append',
-                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+    # Group: Logging & Debugging
+    log_group = parser.add_argument_group('Logging & Debugging')
+    log_group.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable verbose output, including loading diagnostics.')
     
     args = parser.parse_args()
     main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep)
