@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
+import argparse
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
@@ -8,34 +9,13 @@ import utils
 import jdecode
 from datalib import Datamine
 
-def main(fname, verbose = True, outliers = False, dump_all = False, grep = None):
+def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = False):
     # Use the robust mtg_open_file for all loading and filtering.
     # We disable default exclusions to match original summarize.py behavior.
     cards = jdecode.mtg_open_file(fname, verbose=verbose, grep=grep,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False)
-    # Datamine expects card_srcs (strings) or Card objects?
-    # Let's check datalib.py again.
-
-    # Actually, Datamine.__init__ does:
-    # for card_src in card_srcs:
-    #     card = Card(card_src)
-    # But it also works if card_src IS a Card object?
-    # Wait, Card(card_object) might fail?
-
-    # If I pass Card objects to Datamine, it might re-parse them if I'm not careful.
-    # Let's check cardlib.py Card constructor again.
-
-    # In Card.__init__(self, src, ...):
-    # if isinstance(src, dict): ...
-    # else: self.raw = src ...
-
-    # If I pass a Card object, it will be treated as "else" and it might fail.
-    # So I should pass the raw strings or dicts.
-
-    # Actually, I can just pass the list of Cards and update Datamine to handle it.
-    # But it's easier to just pass card.raw or card.json.
 
     card_srcs = []
     for card in cards:
@@ -45,26 +25,48 @@ def main(fname, verbose = True, outliers = False, dump_all = False, grep = None)
             card_srcs.append(card.raw if card.raw else card.encode())
 
     mine = Datamine(card_srcs)
-    mine.summarize()
+    mine.summarize(use_color=use_color)
     if outliers or dump_all:
-        mine.outliers(dump_invalid = dump_all)
+        mine.outliers(dump_invalid = dump_all, use_color=use_color)
 
 
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Summarizes Magic: The Gathering card datasets.")
     
-    parser.add_argument('infile', 
-                        help='encoded card file or json corpus to process')
-    parser.add_argument('-x', '--outliers', action='store_true',
+    # Group: Input / Output
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('infile', nargs='?', default='-',
+                        help='encoded card file or json corpus to process. Defaults to stdin (-).')
+
+    # Group: Processing Options
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-x', '--outliers', action='store_true',
                         help='show additional diagnostics and edge cases')
-    parser.add_argument('-a', '--all', action='store_true',
+    proc_group.add_argument('-a', '--all', action='store_true',
                         help='show all information and dump invalid cards')
-    parser.add_argument('-v', '--verbose', action='store_true', 
-                        help='verbose output')
-    parser.add_argument('--grep', action='append',
+    proc_group.add_argument('--grep', action='append',
                         help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
     
+    # Group: Logging & Debugging
+    debug_group = parser.add_argument_group('Logging & Debugging')
+    debug_group.add_argument('-v', '--verbose', action='store_true',
+                        help='verbose output')
+
+    # Color options
+    color_group = debug_group.add_mutually_exclusive_group()
+    color_group.add_argument('--color', action='store_true', default=None,
+                        help='Force enable ANSI color output.')
+    color_group.add_argument('--no-color', action='store_false', dest='color',
+                        help='Disable ANSI color output.')
+
     args = parser.parse_args()
-    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep)
+
+    # Determine if we should use color
+    use_color = False
+    if args.color is True:
+        use_color = True
+    elif args.color is None and sys.stdout.isatty():
+        use_color = True
+
+    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = use_color)
     exit(0)
