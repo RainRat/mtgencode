@@ -36,6 +36,8 @@ def sentencecase(s):
                 sentences = sent_tokenizer.tokenize(part)
                 cparts += [' '.join([cap(sent) for sent in sentences])]
             clines += [': '.join(cparts)]
+        else:
+            clines += ['']
     return utils.newline.join(clines).replace(utils.reserved_marker, utils.x_marker)
 
 # These are used later to determine what the fields of the Card object are called.
