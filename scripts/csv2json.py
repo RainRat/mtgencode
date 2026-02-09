@@ -44,10 +44,10 @@ with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
         card = {
             "layout": "normal",
             "manaCost": row[1],
-            "name": row[0].replace("\"", ""),
+            "name": row[0],
             "rarity": temprarity,
             "setCode": "CUS",
-            "text": row[4].replace("\\", "\\n").replace("\"", "\\\""),
+            "text": row[4],
         }
         if row[5] != "":
             pt = row[5].split("/")
