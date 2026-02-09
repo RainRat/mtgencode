@@ -588,6 +588,84 @@ class Card:
         for idx, value in values:
             self.__dict__[field_other] += [(idx, value)]
 
+    def get_text(self, text_obj=None, name_obj=None, gatherer=False, for_forum=False, for_html=False, mse=False, ansi_color=False, force_unpass=False):
+        """Centralizes rules text unpassing logic.
+
+        Args:
+            text_obj (Manatext): The rules text object to process. Defaults to self.text.
+            name_obj (str): The card name to use for replacements. Defaults to self.name.
+            gatherer (bool): Whether to use Gatherer-style formatting.
+            for_forum (bool): Whether to use forum-style mana formatting.
+            for_html (bool): Whether to use HTML-style mana formatting.
+            mse (bool): Whether to use Magic Set Editor style formatting.
+            ansi_color (bool): Whether to use ANSI color codes.
+            force_unpass (bool): Whether to force unpassing of counters and self-references
+                                even if gatherer is False. Used by to_dict().
+
+        Returns:
+            str: The unpassed and formatted rules text.
+        """
+        if text_obj is None:
+            text_obj = self.text
+        if name_obj is None:
+            name_obj = self.name
+
+        if not text_obj.text:
+            return ''
+
+        mtext = text_obj.text
+        if gatherer or mse:
+            cardname = titlecase(transforms.name_unpass_1_dashes(name_obj))
+        else:
+            cardname = titlecase(name_obj)
+
+        # 1. Choice unpass
+        delimit_choice = not (gatherer or mse)
+        mtext = transforms.text_unpass_1_choice(mtext, delimit=delimit_choice)
+
+        # 2. Counters unpass
+        if gatherer or mse or force_unpass:
+            mtext = transforms.text_unpass_2_counters(mtext)
+
+        # 3. Uncast unpass
+        mtext = transforms.text_unpass_3_uncast(mtext)
+
+        # 4. Unary unpass
+        mtext = utils.from_unary(mtext)
+
+        # 5. Symbols unpass (called BEFORE cardname to avoid Zombie {T}est bug)
+        mtext = utils.from_symbols(mtext, for_forum, for_html)
+
+        # 6. Sentencecase
+        mtext = sentencecase(mtext)
+
+        # 7. Self-references (this_marker)
+        if mse:
+            mtext = mtext.replace(utils.this_marker, '<atom-cardname><nospellcheck>'
+                                  + utils.this_marker + '</nospellcheck></atom-cardname>')
+            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
+        elif gatherer or force_unpass:
+            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
+
+        # 8. Newlines
+        mtext = transforms.text_unpass_7_newlines(mtext)
+
+        # 9. Unicode (MSE only)
+        if mse:
+            mtext = transforms.text_unpass_8_unicode(mtext)
+
+        # 10. Final formatting via Manatext
+        newtext = Manatext('')
+        newtext.text = mtext
+        newtext.costs = text_obj.costs
+        res = newtext.format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color)
+
+        # 11. MSE symbol tagging
+        if mse:
+            res = res.replace('{', '<sym-auto>').replace('}', '</sym-auto>')
+
+        return res
+
     # Output functions that produce various formats. encode() is specific to
     # the NN representation, use str() or format() for output intended for human
     # readers.
@@ -710,23 +788,8 @@ class Card:
         if rarity in utils.json_rarity_unmap:
             rarity = utils.json_rarity_unmap[rarity]
 
-        mtext = self.__dict__[field_text].text
-        if gatherer:
-            mtext = transforms.text_unpass_1_choice(mtext, delimit=False)
-            mtext = transforms.text_unpass_2_counters(mtext)
-            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
-        else:
-            mtext = transforms.text_unpass_1_choice(mtext, delimit=True)
-
-        mtext = transforms.text_unpass_3_uncast(mtext)
-        mtext = utils.from_unary(mtext)
-        mtext = utils.from_symbols(mtext, for_forum, for_html)
-        mtext = sentencecase(mtext)
-        mtext = transforms.text_unpass_7_newlines(mtext)
-        newtext = Manatext('')
-        newtext.text = mtext
-        newtext.costs = self.__dict__[field_text].costs
-        formatted_mtext = newtext.format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color)
+        formatted_mtext = self.get_text(gatherer=gatherer, for_forum=for_forum,
+                                        for_html=for_html, ansi_color=ansi_color)
 
         if for_html:
             outstr += '<b>' + cardname + '</b>'
@@ -894,21 +957,7 @@ class Card:
 
         # Text
         if self.text.text:
-            mtext = self.text.text
-            # Unpass pipeline similar to format()
-            mtext = transforms.text_unpass_1_choice(mtext, delimit=True)
-            mtext = transforms.text_unpass_2_counters(mtext)
-            mtext = transforms.text_unpass_3_uncast(mtext)
-            mtext = utils.from_unary(mtext)
-            mtext = utils.from_symbols(mtext, False, False)
-            mtext = sentencecase(mtext)
-            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
-            mtext = transforms.text_unpass_7_newlines(mtext)
-
-            newtext = Manatext('')
-            newtext.text = mtext
-            newtext.costs = self.text.costs
-            d['text'] = newtext.format()
+            d['text'] = self.get_text(force_unpass=True)
 
         # B-Side (Recursive)
         if self.bside:
@@ -961,31 +1010,7 @@ class Card:
                 outstr += '\tpower: ' + ptstring[0] + '\n'
                 outstr += '\ttoughness: ' + ptstring[1] + '\n'
 
-        if self.__dict__[field_text].text:
-            mtext = self.__dict__[field_text].text
-            mtext = transforms.text_unpass_1_choice(mtext, delimit = False)
-            mtext = transforms.text_unpass_2_counters(mtext)
-            mtext = transforms.text_unpass_3_uncast(mtext)
-            mtext = utils.from_unary(mtext)
-            mtext = utils.from_symbols(mtext, False, False)
-            mtext = sentencecase(mtext)
-            # I don't really want these MSE specific passes in transforms,
-            # but they could be pulled out separately somewhere else in here.
-            mtext = mtext.replace(utils.this_marker, '<atom-cardname><nospellcheck>'
-                                  + utils.this_marker + '</nospellcheck></atom-cardname>')
-            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
-            mtext = transforms.text_unpass_7_newlines(mtext)
-            mtext = transforms.text_unpass_8_unicode(mtext)
-            newtext = Manatext('')
-            newtext.text = mtext
-            newtext.costs = self.__dict__[field_text].costs
-            newtext = newtext.format()
-
-            # See, the thing is, I think it's simplest and easiest to just leave it like this.
-            # What could possibly go wrong?
-            newtext = newtext.replace('{','<sym-auto>').replace('}','</sym-auto>')
-        else:
-            newtext = ''
+        newtext = self.get_text(mse=True)
 
         # Annoying special case for bsides;
         # This could be improved by having an intermediate function that returned
@@ -1028,25 +1053,9 @@ class Card:
                     outstr += '\tpower 2: ' + ptstring2[0] + '\n'
                     outstr += '\ttoughness 2: ' + ptstring2[1] + '\n'
 
-            if self.bside.__dict__[field_text].text:
-                mtext2 = self.bside.__dict__[field_text].text
-                mtext2 = transforms.text_unpass_1_choice(mtext2, delimit = False)
-                mtext2 = transforms.text_unpass_2_counters(mtext2)
-                mtext2 = transforms.text_unpass_3_uncast(mtext2)
-                mtext2 = utils.from_unary(mtext2)
-                mtext2 = utils.from_symbols(mtext2, False, False)
-                mtext2 = sentencecase(mtext2)
-                mtext2 = mtext2.replace(utils.this_marker, '<atom-cardname><nospellcheck>'
-                                      + utils.this_marker + '</nospellcheck></atom-cardname>')
-                mtext2 = transforms.text_unpass_6_cardname(mtext2, cardname2)
-                mtext2 = transforms.text_unpass_7_newlines(mtext2)
-                mtext2 = transforms.text_unpass_8_unicode(mtext2)
-                newtext2 = Manatext('')
-                newtext2.text = mtext2
-                newtext2.costs = self.bside.__dict__[field_text].costs
-                newtext2 = newtext2.format()
-                newtext2 = newtext2.replace('{','<sym-auto>').replace('}','</sym-auto>')
-                newtext2 = newtext2.replace('\n','\n\t\t')
+            newtext2 = self.bside.get_text(mse=True)
+            if newtext2:
+                newtext2 = newtext2.replace('\n', '\n\t\t')
                 outstr += '\trule text 2:\n\t\t' + newtext2 + '\n'
 
         # Need to do Special Things if it's a planeswalker.
