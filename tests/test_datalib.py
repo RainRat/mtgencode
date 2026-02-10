@@ -169,6 +169,37 @@ def test_datamine_with_invalid_card():
     finally:
         sys.stdout = old_stdout
 
+def test_datamine_to_dict(datamine_instance):
+    result = datamine_instance.to_dict()
+
+    # Check structure
+    assert 'counts' in result
+    assert 'indices' in result
+    assert 'stats' in result
+
+    # Check counts
+    assert result['counts']['valid'] == 3
+    assert result['counts']['invalid'] == 0
+    assert result['counts']['parsed'] == 3
+    assert result['counts']['unparsed'] == 0
+
+    # Check indices
+    assert 'by_name' in result['indices']
+    assert result['indices']['by_name']['card a'] == 1
+    assert 'by_color' in result['indices']
+    assert result['indices']['by_color']['R'] == 1
+    assert result['indices']['by_color']['U'] == 1
+    assert result['indices']['by_color']['A'] == 1
+
+    # Check stats
+    # Text lengths in sample data: "Text A" (6), "Text B" (6), "Text C" (6)
+    # Note: text.encode() might add newlines or markers.
+    # Manatext("Text A").encode() -> "Text A"
+    assert result['stats']['textlen_min'] == 6
+    assert result['stats']['textlen_max'] == 6
+    assert result['stats']['textlines_min'] == 1
+    assert result['stats']['textlines_max'] == 1
+
 def test_datamine_with_parsed_but_invalid_card():
     # Card that parses (has name/types/etc in roughly correct format)
     # but fails validation (e.g. creature without P/T)
