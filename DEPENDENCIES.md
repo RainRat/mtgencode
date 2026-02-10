@@ -62,15 +62,23 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
 *   **Low distance:** The card is very similar (or identical) to an existing card.
 *   **High distance:** The card is unique or "creative."
 
-**Note:** This is an advanced feature that requires compiling the legacy C `word2vec` tool.
+**Note:** This is an advanced feature. It requires you to compile the `word2vec` tool from its source code.
 
 ### Setup Steps
 
 1.  **Install word2vec:**
-    You need the original C implementation of `word2vec`. The original Google Code repository is archived, but you can find mirrors on GitHub (search for "word2vec C").
-    *   Clone the word2vec repository.
-    *   Run `make` to compile the `word2vec` binary.
-    *   Ensure the `word2vec` binary is in your current directory or path.
+    You need the original C implementation of `word2vec`. Since the original repository is archived, we recommend using this reliable mirror:
+    *   **Get the code:**
+        ```bash
+        git clone https://github.com/tmikolov/word2vec.git
+        cd word2vec
+        ```
+    *   **Build the tool:**
+        ```bash
+        make
+        ```
+    *   **Copy the binary:**
+        Move the `word2vec` file into your `mtgencode` root folder so the scripts can find it.
 
 2.  **Generate Vectors:**
     You must generate a binary model (`cbow.bin`) derived from the specific encoding format you are using.
