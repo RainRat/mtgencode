@@ -157,6 +157,9 @@ class Manatext:
             self.raw = src
             manastrs = re.findall(utils.mana_regex, src)
             
+        # Escape existing literal reserved_mana_marker characters to avoid collision
+        self.text = self.text.replace(utils.reserved_mana_marker, '\u001e')
+
         for manastr in manastrs:
             cost = Manacost(manastr, fmt)
             if not cost.valid:
@@ -174,7 +177,8 @@ class Manatext:
         text = self.text
         for cost in self.costs:
             text = text.replace(utils.reserved_mana_marker, str(cost), 1)
-        return text
+        # Unescape literal reserved_mana_marker characters
+        return text.replace('\u001e', utils.reserved_mana_marker)
 
     def format(self, for_forum = False, for_html = False, ansi_color = False):
         text = self.text
@@ -182,13 +186,15 @@ class Manatext:
             text = text.replace(utils.reserved_mana_marker, cost.format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color), 1)
         if for_html:
             text = text.replace('\n', '<br>\n')
-        return text
+        # Unescape literal reserved_mana_marker characters
+        return text.replace('\u001e', utils.reserved_mana_marker)
 
     def encode(self, randomize = False):
         text = self.text
         for cost in self.costs:
             text = text.replace(utils.reserved_mana_marker, cost.encode(randomize = randomize), 1)
-        return text
+        # Unescape literal reserved_mana_marker characters
+        return text.replace('\u001e', utils.reserved_mana_marker)
 
     def vectorize(self):
         text = self.text
@@ -210,4 +216,6 @@ class Manatext:
         text = text.replace('/', '/ /')
         for cost in self.costs:
             text = text.replace(utils.reserved_mana_marker, cost.vectorize(), 1)
+        # Unescape literal reserved_mana_marker characters
+        text = text.replace('\u001e', utils.reserved_mana_marker)
         return ' '.join(text.split())
