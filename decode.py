@@ -121,15 +121,6 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 'loyalty': d.get('loyalty', d.get('defense', '')),
                 'rarity': d.get('rarity', ''),
             }
-            if 'pt' in d and 'power' not in d:
-                    # Handle case where pt is "X/Y" string in to_dict but split in CSV logic
-                    if '/' in d['pt']:
-                        p, t = d['pt'].split('/', 1)
-                        row['power'] = p
-                        row['toughness'] = t
-                    else:
-                        row['power'] = d['pt'] # Fallback?
-
             csv_writer.writerow(row)
 
     def hoverimg(cardname, dist, nd, for_html=False, for_md=False):
