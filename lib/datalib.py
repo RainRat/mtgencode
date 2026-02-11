@@ -406,3 +406,26 @@ class Datamine:
         elif len(self.unparsed_cards) > 0:
             print('Not summarizing.')
         print('====================')
+
+    def to_dict(self):
+        """Returns a dictionary representation of the collected statistics."""
+        result = {
+            'counts': {
+                'valid': len(self.cards),
+                'invalid': len(self.invalid_cards),
+                'parsed': len(self.allcards),
+                'unparsed': len(self.unparsed_cards),
+            },
+            'indices': {}
+        }
+        for name, index in self.indices.items():
+            result['indices'][name] = {str(k): len(v) for k, v in index.items()}
+
+        if self.by_textlen:
+            result['stats'] = {
+                'textlen_min': min(self.by_textlen),
+                'textlen_max': max(self.by_textlen),
+                'textlines_min': min(self.by_textlines),
+                'textlines_max': max(self.by_textlines),
+            }
+        return result
