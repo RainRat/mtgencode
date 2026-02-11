@@ -406,9 +406,9 @@ if __name__ == '__main__':
 
     # Group: Output Format (Mutually Exclusive)
     # We use a mutually exclusive group to enforce one output format.
-    # Note: We cannot attach this directly to a titled argument group in argparse easily while keeping the title.
-    # So we define the arguments in the main parser but link them via a mutex group.
-    fmt_group = parser.add_mutually_exclusive_group()
+    # By adding the mutex group to a titled argument group, we improve the help output's visual hierarchy.
+    fmt_group_title = parser.add_argument_group('Output Format')
+    fmt_group = fmt_group_title.add_mutually_exclusive_group()
     fmt_group.add_argument('--text', action='store_true',
                            help='Force plain text output (Default unless detected from extension).')
     fmt_group.add_argument('--html', action='store_true',
