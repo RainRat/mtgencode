@@ -48,6 +48,13 @@ If you prefer to run it directly on your machine:
 
 ## Quick Start Guide
 
+### 0. Verify Installation (Recommended)
+You can verify that everything is set up correctly by running a quick test using the included sample data. This command encodes a sample card and then decodes it back into readable text:
+
+```bash
+python3 encode.py testdata/uthros.json | python3 decode.py
+```
+
 ### 1. Get the Data
 Download `AllPrintings.json` from [MTGJSON](https://mtgjson.com/downloads/all-files/). This file contains data for every Magic card ever made. Create a `data/` folder and move the file there:
 
@@ -73,7 +80,7 @@ Convert encoded text back into a readable format. You can print the results to y
 # View decoded cards in your terminal
 python3 decode.py encoded_output.txt
 
-# Save as a webpage with card images (format is auto-detected)
+# Save to a file (the format is automatically detected from the file extension)
 python3 decode.py encoded_output.txt my_cards.html
 ```
 
@@ -100,12 +107,33 @@ Options to customize how the data is formatted:
 Options for formatting the output:
 *   `--gatherer`: Formats text like the official Gatherer website (Default).
 *   `--raw`: Disables Gatherer formatting and shows raw text.
-*   `--html`: Creates a webpage (`.html`) with card images.
-*   `--mse`: Creates a set file (`.mse-set`) for Magic Set Editor.
+*   `--html`: Creates a webpage with card images.
+*   `--mse`: Creates a set file for Magic Set Editor.
 *   `--json`: Creates a structured JSON file.
 *   `--csv`: Creates a CSV file for spreadsheets.
+*   `--md`: Creates a Markdown file.
+
+**Automatic Format Detection:**
+If you provide an output filename, the tool automatically selects the format based on its extension:
+*   `.html` -> HTML webpage
+*   `.json` -> JSON data
+*   `.csv`  -> CSV spreadsheet
+*   `.md`   -> Markdown document
+*   `.mse-set` -> Magic Set Editor file
 
 > **Important:** If you used a specific encoding (like `named`) to create your text file, you must use the same `-e` flag when decoding (e.g., `python3 decode.py ... -e named`).
+
+### Power User Tip: Piping
+The tools in this project are designed to work together using "pipes" (`|`). This allows you to process cards in a single step without creating temporary files.
+
+```bash
+# Encode 10 cards and view them immediately
+python3 encode.py data/AllPrintings.json --limit 10 | python3 decode.py
+
+# Encode, sort, and save to a file
+python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - sorted_cards.txt
+```
+*   **Note:** Use a hyphen (`-`) as the filename to tell a script to read from standard input.
 
 ### `sortcards.py` (Organizing Output)
 Organizes encoded cards into categories (like Color, Card Type, etc.) and wraps them in `[spoiler]` tags. This is useful for posting generated cards on forums.
