@@ -19,10 +19,86 @@ import cardlib
 from cbow import CBOW
 from namediff import Namediff
 
+def sort_colors(card_set, quiet=False):
+    """Sorts cards by their color identity."""
+    colors = {
+        'W': [], 'U': [], 'B': [], 'R': [], 'G': [],
+        'multi': [], 'colorless': [], 'lands': []
+    }
+
+    # Wrap in tqdm if not quiet
+    iterator = tqdm(card_set, disable=quiet, desc="Sorting")
+    for card in iterator:
+        card_colors = card.cost.colors
+        if len(card_colors) > 1:
+            colors['multi'].append(card)
+        elif len(card_colors) == 1:
+            colors[card_colors[0]].append(card)
+        else:
+            if "land" in card.types:
+                colors['lands'].append(card)
+            else:
+                colors['colorless'].append(card)
+
+    return [colors['W'], colors['U'], colors['B'], colors['R'], colors['G'],
+            colors['multi'], colors['colorless'], colors['lands']]
+
+def sort_type(card_set):
+    """Sorts cards by their primary card type."""
+    sorting = ["creature", "enchantment", "instant", "sorcery", "artifact", "planeswalker"]
+    sorted_cards = [[],[],[],[],[],[],[]]
+    sorted_set = []
+    for card in card_set:
+        types = card.types
+        for i in range(len(sorting)):
+            if sorting[i] in types:
+                sorted_cards[i] += [card]
+                break
+        else:
+            sorted_cards[6] += [card]
+    for value in sorted_cards:
+        for card in value:
+            sorted_set += [card]
+    return sorted_set
+
+def sort_cmc(card_set):
+    """Sorts cards by their converted mana cost."""
+    sorted_cards = []
+    sorted_set = []
+    for card in card_set:
+        # make sure there is an empty set for each CMC
+        while len(sorted_cards)-1 < card.cost.cmc:
+            sorted_cards += [[]]
+        # add card to correct set of CMC values
+        sorted_cards[card.cost.cmc] += [card]
+    # combine each set of CMC valued cards together
+    for value in sorted_cards:
+        for card in value:
+            sorted_set += [card]
+    return sorted_set
+
+def sort_cards(cards, criterion, quiet=False):
+    """Sorts a list of cards based on the specified criterion."""
+    if not criterion:
+        return cards
+
+    if criterion == 'name':
+        return sorted(cards, key=lambda c: c.name.lower())
+    elif criterion == 'cmc':
+        return sort_cmc(cards)
+    elif criterion == 'color':
+        # Flatten the list of lists returned by sort_colors
+        segments = sort_colors(cards, quiet=quiet)
+        return [card for segment in segments for card in segment]
+    elif criterion == 'type':
+        return sort_type(cards)
+    else:
+        return cards
+
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, json_out = False, csv_out = False, md_out = False, quiet=False,
-         report_file=None, color_arg=None, limit=0, grep=None):
+         report_file=None, color_arg=None, limit=0, grep=None, sort=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -82,6 +158,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         raise ValueError('decode.py: unknown encoding: ' + encoding)
 
     cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep)
+
+    if sort:
+        cards = sort_cards(cards, sort, quiet=quiet)
 
     if limit > 0:
         cards = cards[:limit]
@@ -174,9 +253,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             # have to prepend html info
             writer.write(utils.html_prepend)
             # separate the write function to allow for writing smaller chunks of cards at a time
-            segments = sort_colors(cards)
+            segments = sort_colors(cards, quiet=quiet)
             for i in range(len(segments)):
-                # sort color by CMC
+                # sort color by type
                 segments[i] = sort_type(segments[i])
                 # this allows card boxes to be colored for each color
                 # for coloring of each box separately cardlib.Card.format() must change non-minimally
@@ -265,63 +344,6 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         writer.write('\n')
 
-    # Sorting by colors
-    def sort_colors(card_set):
-        colors = {
-            'W': [], 'U': [], 'B': [], 'R': [], 'G': [],
-            'multi': [], 'colorless': [], 'lands': []
-        }
-
-        # Wrap in tqdm if not quiet
-        iterator = tqdm(card_set, disable=quiet, desc="Sorting")
-        for card in iterator:
-            card_colors = card.cost.colors
-            if len(card_colors) > 1:
-                colors['multi'].append(card)
-            elif len(card_colors) == 1:
-                colors[card_colors[0]].append(card)
-            else:
-                if "land" in card.types:
-                    colors['lands'].append(card)
-                else:
-                    colors['colorless'].append(card)
-
-        return [colors['W'], colors['U'], colors['B'], colors['R'], colors['G'],
-                colors['multi'], colors['colorless'], colors['lands']]
-
-    def sort_type(card_set):
-        sorting = ["creature", "enchantment", "instant", "sorcery", "artifact", "planeswalker"]
-        sorted_cards = [[],[],[],[],[],[],[]]
-        sorted_set = []
-        for card in card_set:
-            types = card.types
-            for i in range(len(sorting)):
-                if sorting[i] in types:
-                    sorted_cards[i] += [card]
-                    break
-            else:
-                sorted_cards[6] += [card]
-        for value in sorted_cards:
-            for card in value:
-                sorted_set += [card]
-        return sorted_set
-
-
-
-    def sort_cmc(card_set):
-        sorted_cards = []
-        sorted_set = []
-        for card in card_set:
-            # make sure there is an empty set for each CMC
-            while len(sorted_cards)-1 < card.cost.cmc:
-                sorted_cards += [[]]
-            # add card to correct set of CMC values
-            sorted_cards[card.cost.cmc] += [card]
-        # combine each set of CMC valued cards together
-        for value in sorted_cards:
-            for card in value:
-                sorted_set += [card]
-        return sorted_set
 
 
     if oname:
@@ -454,6 +476,8 @@ if __name__ == '__main__':
                         help="Enable 'creativity' mode: calculate similarity to existing cards using CBOW (slow).")
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Limit the number of cards to decode.')
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
+                        help='Sort cards by the specified criterion.')
     proc_group.add_argument('-d', '--dump', action='store_true',
                         help='Debug mode: print detailed information about cards that failed to validate.')
     proc_group.add_argument('-v', '--verbose', action='store_true',
@@ -475,6 +499,7 @@ if __name__ == '__main__':
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
          json_out = args.json, csv_out = args.csv, md_out = args.md, quiet=args.quiet,
-         report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep)
+         report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep,
+         sort=args.sort)
 
     exit(0)
