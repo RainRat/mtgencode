@@ -783,7 +783,23 @@ class Card:
             cardname = '_NONAME_'
 
         if ansi_color:
-            cardname = utils.colorize(cardname, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+            color = utils.Ansi.BOLD
+            card_colors = self.cost.colors
+            if len(card_colors) > 1:
+                color += utils.Ansi.YELLOW # Multicolored
+            elif len(card_colors) == 1:
+                c = card_colors[0]
+                if c == 'W': color += utils.Ansi.WHITE
+                elif c == 'U': color += utils.Ansi.CYAN
+                elif c == 'B': color += utils.Ansi.MAGENTA
+                elif c == 'R': color += utils.Ansi.RED
+                elif c == 'G': color += utils.Ansi.GREEN
+            else:
+                if 'land' in self.types:
+                    pass # Keep just bold for lands
+                else:
+                    color += utils.Ansi.CYAN # Artifacts/Colorless
+            cardname = utils.colorize(cardname, color)
 
         coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color)
         rarity = self.__dict__[field_rarity]
@@ -810,8 +826,20 @@ class Card:
                        + self.format(gatherer=gatherer, for_forum=True, for_html=False, vdump=vdump, ansi_color=False).replace('\n', '<br>')
                        + '</p></span></div><a href="#top" style="float: right;">back to top</a>')
 
+        rarity_display = rarity
+        if ansi_color and rarity:
+            r_lower = rarity.lower()
+            if r_lower == 'uncommon':
+                rarity_display = utils.colorize(rarity, utils.Ansi.CYAN)
+            elif r_lower == 'rare':
+                rarity_display = utils.colorize(rarity, utils.Ansi.YELLOW)
+            elif r_lower in ['mythic rare', 'mythic']:
+                rarity_display = utils.colorize(rarity, utils.Ansi.RED)
+            elif r_lower == 'common':
+                rarity_display = utils.colorize(rarity, utils.Ansi.BOLD)
+
         if rarity and gatherer:
-            outstr += ' (' + rarity + ')'
+            outstr += ' (' + rarity_display + ')'
 
         if vdump:
             if not self.parsed:
@@ -843,7 +871,7 @@ class Card:
         outstr += typeline
 
         if rarity and not gatherer:
-            outstr += ' (' + rarity.lower() + ')'
+            outstr += ' (' + rarity_display.lower() + ')'
 
         if gatherer:
             if self.__dict__[field_pt]:
