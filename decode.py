@@ -46,36 +46,18 @@ def sort_colors(card_set, quiet=False):
 def sort_type(card_set):
     """Sorts cards by their primary card type."""
     sorting = ["creature", "enchantment", "instant", "sorcery", "artifact", "planeswalker"]
-    sorted_cards = [[],[],[],[],[],[],[]]
-    sorted_set = []
-    for card in card_set:
-        types = card.types
-        for i in range(len(sorting)):
-            if sorting[i] in types:
-                sorted_cards[i] += [card]
-                break
-        else:
-            sorted_cards[6] += [card]
-    for value in sorted_cards:
-        for card in value:
-            sorted_set += [card]
-    return sorted_set
+
+    def type_priority(card):
+        for i, card_type in enumerate(sorting):
+            if card_type in card.types:
+                return i
+        return len(sorting)
+
+    return sorted(card_set, key=type_priority)
 
 def sort_cmc(card_set):
     """Sorts cards by their converted mana cost."""
-    sorted_cards = []
-    sorted_set = []
-    for card in card_set:
-        # make sure there is an empty set for each CMC
-        while len(sorted_cards)-1 < card.cost.cmc:
-            sorted_cards += [[]]
-        # add card to correct set of CMC values
-        sorted_cards[card.cost.cmc] += [card]
-    # combine each set of CMC valued cards together
-    for value in sorted_cards:
-        for card in value:
-            sorted_set += [card]
-    return sorted_set
+    return sorted(card_set, key=lambda c: c.cost.cmc)
 
 def sort_cards(cards, criterion, quiet=False):
     """Sorts a list of cards based on the specified criterion."""
