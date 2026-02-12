@@ -749,6 +749,93 @@ class Card:
 
         return outstr
 
+    def summary(self, ansi_color=False):
+        """Returns a compact, one-line summary of the card."""
+        # Rarity indicator
+        rarity_indicator = ''
+        if self.rarity:
+            r = self.rarity
+            if r in utils.json_rarity_unmap:
+                r = utils.json_rarity_unmap[r]
+
+            # Use shorthand: C, U, R, M, S, L
+            rarity_map = {
+                'common': 'C',
+                'uncommon': 'U',
+                'rare': 'R',
+                'mythic rare': 'M',
+                'mythic': 'M',
+                'special': 'S',
+                'basic land': 'L',
+                utils.rarity_common_marker: 'C',
+                utils.rarity_uncommon_marker: 'U',
+                utils.rarity_rare_marker: 'R',
+                utils.rarity_mythic_marker: 'M',
+                utils.rarity_special_marker: 'S',
+                utils.rarity_basic_land_marker: 'L',
+            }
+            indicator = rarity_map.get(r.lower() if hasattr(r, 'lower') else r, r[0].upper() if r else '?')
+
+            if ansi_color:
+                color = utils.Ansi.BOLD
+                r_lower = r.lower() if hasattr(r, 'lower') else ''
+                if r_lower == 'uncommon' or r == utils.rarity_uncommon_marker: color += utils.Ansi.CYAN
+                elif r_lower == 'rare' or r == utils.rarity_rare_marker: color += utils.Ansi.YELLOW
+                elif r_lower in ['mythic rare', 'mythic'] or r == utils.rarity_mythic_marker: color += utils.Ansi.RED
+                indicator = utils.colorize(indicator, color)
+
+            rarity_indicator = f'[{indicator}] '
+
+        # Name
+        cardname = titlecase(self.name)
+        if ansi_color:
+            color = utils.Ansi.BOLD
+            card_colors = self.cost.colors
+            if len(card_colors) > 1: color += utils.Ansi.YELLOW
+            elif len(card_colors) == 1:
+                c = card_colors[0]
+                if c == 'W': color += utils.Ansi.WHITE
+                elif c == 'U': color += utils.Ansi.CYAN
+                elif c == 'B': color += utils.Ansi.MAGENTA
+                elif c == 'R': color += utils.Ansi.RED
+                elif c == 'G': color += utils.Ansi.GREEN
+            else:
+                if 'land' not in [t.lower() for t in self.types]: color += utils.Ansi.CYAN
+            cardname = utils.colorize(cardname, color)
+
+        # Cost
+        coststr = self.cost.format(ansi_color=ansi_color)
+        if coststr == '_NOCOST_':
+            coststr = ''
+        else:
+            coststr = f' {coststr}'
+
+        # Type Line
+        supertypes = [titlecase(s) for s in self.supertypes]
+        types = [titlecase(t) for t in self.types]
+        typeline = ' '.join(supertypes + types)
+        if self.subtypes:
+            typeline += f' {utils.dash_marker} ' + ' '.join([titlecase(s) for s in self.subtypes])
+
+        if ansi_color:
+            typeline = utils.colorize(typeline, utils.Ansi.GREEN)
+
+        # P/T or Loyalty
+        stats = ''
+        if self.pt:
+            pt = utils.from_unary(self.pt)
+            if ansi_color: pt = utils.colorize(pt, utils.Ansi.RED)
+            stats = f' - {pt}'
+        elif self.loyalty:
+            loyalty = utils.from_unary(self.loyalty)
+            if ansi_color: loyalty = utils.colorize(loyalty, utils.Ansi.RED)
+            if any('battle' in t.lower() for t in self.types):
+                stats = f' - [[{loyalty}]]'
+            else:
+                stats = f' - ({loyalty})'
+
+        return f'{rarity_indicator}{cardname}{coststr} - {typeline}{stats}'
+
     def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False, ansi_color=False, for_md=False):
         """Formats the card data into a human-readable string.
 
