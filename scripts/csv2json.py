@@ -55,11 +55,17 @@ with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
             card["toughness"] = pt[1]
 
         # supertypes, types, subtypes
-        typelist = row[2].split(" ")
-        if typelist[0] == "Legendary":
-            card["supertypes"] = [typelist[0]]
-            typelist.remove("Legendary")
-        card["types"] = typelist
+        known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
+        supertypes = []
+        types = []
+        for t in row[2].split():
+            if t in known_supertypes:
+                supertypes.append(t)
+            else:
+                types.append(t)
+        if supertypes:
+            card["supertypes"] = supertypes
+        card["types"] = types
         if row[3] != "":
             card["subtypes"] = row[3].split(" ")
 
