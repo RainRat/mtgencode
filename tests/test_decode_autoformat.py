@@ -43,6 +43,16 @@ def test_auto_format_csv(encoded_file, tmp_path):
     content = outfile.read_text()
     assert 'name,mana_cost,type' in content
 
+def test_auto_format_summary(encoded_file, tmp_path):
+    outfile = tmp_path / "output.sum"
+    run_decode(encoded_file, str(outfile))
+
+    assert outfile.exists()
+    content = outfile.read_text()
+    # Summary format: [?] Test Card - Creature
+    assert 'Test Card' in content
+    assert '-' in content
+
 def test_explicit_flag_overrides_extension(encoded_file, tmp_path):
     # Extension is .json but we force --text
     outfile = tmp_path / "output.json"

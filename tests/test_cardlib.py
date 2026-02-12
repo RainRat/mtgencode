@@ -124,6 +124,24 @@ def test_card_format(sample_card_json):
     )
     assert colored_output == expected_colored_output
 
+def test_card_summary(sample_card_json):
+    card = Card(sample_card_json)
+
+    # Test plain summary
+    output = card.summary()
+    assert output == "[U] Ornithopter {0} - Artifact Creature ~ Thopter - 0/2"
+
+    # Test colored summary
+    colored_output = card.summary(ansi_color=True)
+    expected_name = utils.colorize("Ornithopter", utils.Ansi.BOLD + utils.Ansi.CYAN)
+    expected_cost = utils.colorize("{0}", utils.Ansi.CYAN)
+    expected_type = utils.colorize("Artifact Creature ~ Thopter", utils.Ansi.GREEN)
+    expected_pt = utils.colorize("0/2", utils.Ansi.RED)
+    expected_rarity_indicator = utils.colorize("U", utils.Ansi.BOLD + utils.Ansi.CYAN)
+
+    expected_colored_summary = f"[{expected_rarity_indicator}] {expected_name} {expected_cost} - {expected_type} - {expected_pt}"
+    assert colored_output == expected_colored_summary
+
 def test_planeswalker_to_mse_formatting():
     planeswalker_json = {
         "name": "Jules, the Wise",
