@@ -35,7 +35,7 @@ If you prefer to run it directly on your machine:
 
 3.  **Install Libraries:**
     ```bash
-    pip install -r requirements.txt
+    python3 -m pip install -r requirements.txt
     ```
 
 4.  **Download Language Data:**
@@ -56,11 +56,15 @@ python3 encode.py testdata/uthros.json | python3 decode.py
 ```
 
 ### 1. Get the Data
-Download `AllPrintings.json` from [MTGJSON](https://mtgjson.com/downloads/all-files/). This file contains data for every Magic card ever made. Create a `data/` folder and move the file there:
+Download card data from [MTGJSON](https://mtgjson.com/downloads/all-files/). We recommend `AllPrintings.json` for a complete dataset, but you can also use smaller files (like `Standard.json` or `Vintage.json`) for faster testing.
+
+Create a `data/` folder and place your downloaded JSON file there:
 
 ```bash
+# Create the directory
 mkdir -p data
-mv ~/Downloads/AllPrintings.json data/
+# Move your downloaded file into the data/ folder
+# (Example: mv ~/Downloads/AllPrintings.json data/)
 ```
 
 ### 2. Encode Cards (JSON -> Text)
@@ -113,6 +117,15 @@ Options for formatting the output:
 *   `--csv`: Creates a CSV file for spreadsheets.
 *   `--md`: Creates a Markdown file.
 
+> **Important:** If you used a specific encoding (like `named`) when running `encode.py`, you **must** use that same encoding flag when running `decode.py`.
+>
+> ```bash
+> # Example: If you encoded with 'named'
+> python3 encode.py data/AllPrintings.json output.txt -e named
+> # You must decode with 'named'
+> python3 decode.py output.txt -e named
+> ```
+
 **Automatic Format Detection:**
 If you provide an output filename, the tool automatically selects the format based on its extension:
 *   `.html` -> HTML webpage
@@ -120,8 +133,6 @@ If you provide an output filename, the tool automatically selects the format bas
 *   `.csv`  -> CSV spreadsheet
 *   `.md`   -> Markdown document
 *   `.mse-set` -> Magic Set Editor file
-
-> **Important:** If you used a specific encoding (like `named`) to create your text file, you must use the same `-e` flag when decoding (e.g., `python3 decode.py ... -e named`).
 
 ### Power User Tip: Piping
 The tools in this project are designed to work together using "pipes" (`|`). This allows you to process cards in a single step without creating temporary files.
