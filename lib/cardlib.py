@@ -353,7 +353,8 @@ def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep, linetrans =
 
     if fmt_labeled:
         labels = {fmt_labeled[k] : k for k in fmt_labeled}
-        field_label_regex = '[' + ''.join(list(labels.keys())) + ']'
+        # Sort labels by length descending to match longest first, if we ever have multi-char labels
+        sorted_labels = sorted(labels.keys(), key=len, reverse=True)
     def addf(fields, fkey, fval):
         # make sure you pass a pair
         if fval and fval[1]:
@@ -379,11 +380,11 @@ def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep, linetrans =
 
         lab = None
         if fmt_labeled:
-            labs = re.findall(field_label_regex, textfield)
-            # use the first label if we saw any at all
-            if len(labs) > 0:
-                lab = labs[0]
-                textfield = textfield.replace(lab, '', 1)
+            for l in sorted_labels:
+                if textfield.startswith(l):
+                    lab = l
+                    textfield = textfield[len(l):]
+                    break
         # try to use the field label if we got one
         if lab and lab in labels:
             fname = labels[lab]
