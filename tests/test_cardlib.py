@@ -87,7 +87,7 @@ def test_card_format(sample_card_json):
     gatherer_output = card.format(gatherer=True)
     expected_gatherer_output = (
         "Ornithopter {0} (uncommon)\n"
-        "Artifact Creature ~ Thopter (0/2)\n"
+        "Artifact Creature ~ Thopter (0/2)\n\n"
         "Flying"
     )
     assert gatherer_output == expected_gatherer_output
@@ -96,7 +96,7 @@ def test_card_format(sample_card_json):
     default_output = card.format(gatherer=False)
     expected_default_output = (
         "Ornithopter {0}\n"
-        "Artifact Creature ~ Thopter (uncommon)\n"
+        "Artifact Creature ~ Thopter (uncommon)\n\n"
         "Flying\n"
         "(0/2)"
     )
@@ -118,7 +118,7 @@ def test_card_format(sample_card_json):
     # Construction of default format with colors
     expected_colored_output = (
         f"{expected_name} {expected_cost}\n"
-        f"{expected_type} ({expected_rarity})\n"
+        f"{expected_type} ({expected_rarity})\n\n"
         "Flying\n"
         f"({expected_pt})"
     )
