@@ -346,7 +346,7 @@ def fields_from_json(src_json, linetrans = True):
     return parsed, valid and fields_check_valid(fields), fields
 
 
-def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep):
+def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep, linetrans = False):
     parsed = True
     valid = True
     fields = {}
@@ -403,6 +403,8 @@ def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep):
             valid = valid and fval.valid
             addf(fields, fname, (idx, fval))
         elif fname in [field_text]:
+            if linetrans:
+                textfield = transforms.text_pass_11_linetrans(textfield)
             fval = Manatext(textfield)
             valid = valid and fval.valid
             addf(fields, fname, (idx, fval))
@@ -469,7 +471,8 @@ class Card:
                                   fieldsep = fieldsep,
                                   linetrans = linetrans)
             p_success, v_success, parsed_fields = fields_from_format(sides[0], fmt_ordered, 
-                                                                     fmt_labeled,  fieldsep)
+                                                                     fmt_labeled,  fieldsep,
+                                                                     linetrans = linetrans)
             self.parsed = p_success
             self.valid = v_success
             self.fields = parsed_fields

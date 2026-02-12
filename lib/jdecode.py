@@ -356,7 +356,18 @@ def mtg_open_file(fname, verbose = False,
 
         for card_src in text.split(utils.cardsep):
             if card_src:
-                card = cardlib.Card(card_src, fmt_ordered=fmt_ordered)
+                card = cardlib.Card(card_src, fmt_ordered=fmt_ordered, linetrans=linetrans)
+
+                # Apply exclusions to cards from encoded text
+                skip = False
+                for cardtype in card.types:
+                    if exclude_types(cardtype):
+                        skip = True
+
+                if skip:
+                    skipped += 1
+                    continue
+
                 # unlike opening from json, we still want to return invalid cards
                 cards += [card]
                 if card.valid:
