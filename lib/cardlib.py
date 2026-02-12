@@ -891,6 +891,10 @@ class Card:
                     outstr += ' ((' + loyalty + '))'
 
         if formatted_mtext:
+            # Add a blank line before the rules text for better readability
+            # in plain text, color, and markdown formats.
+            if not for_html and not for_forum:
+                outstr += linebreak
             outstr += linebreak + formatted_mtext
 
         if not gatherer:
