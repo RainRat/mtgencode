@@ -51,8 +51,11 @@ with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
         }
         if row[5] != "":
             pt = row[5].split("/")
-            card["power"] = pt[0]
-            card["toughness"] = pt[1]
+            if len(pt) >= 2:
+                card["power"] = pt[0]
+                card["toughness"] = pt[1]
+            else:
+                card["pt"] = row[5]
 
         # supertypes, types, subtypes
         known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
