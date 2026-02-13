@@ -106,6 +106,7 @@ Options to customize how the data is formatted:
 *   `--encoding old`: Legacy format (Name comes first).
 *   `--encoding vec`: Vectorized format (numbers representing words) for specific model types.
 *   `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI generalize.
+*   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc` before encoding.
 
 ### `decode.py` (Viewing Results)
 Options for formatting the output:
