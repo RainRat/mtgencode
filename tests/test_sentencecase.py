@@ -35,3 +35,16 @@ def test_sentencecase_only_newlines():
     input_text = f"{utils.newline}{utils.newline}"
     expected = f"{utils.newline}{utils.newline}"
     assert sentencecase(input_text) == expected
+
+def test_sentencecase_with_this_marker():
+    # @ deals 2 damage. -> Grizzly Bears deals 2 damage.
+    input_text = f"{utils.this_marker} deals 2 damage."
+    # We want it to stay as is, because @ will be replaced by a capitalized name.
+    result = sentencecase(input_text)
+    assert result == f"{utils.this_marker} deals 2 damage."
+
+def test_sentencecase_with_x_marker():
+    # X is the number of... -> X is the number of...
+    input_text = f"{utils.x_marker} is the number of cards in your hand."
+    result = sentencecase(input_text)
+    assert result == f"{utils.x_marker} is the number of cards in your hand."

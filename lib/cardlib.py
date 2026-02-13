@@ -20,6 +20,8 @@ def cap(s):
     for i, char in enumerate(s):
         if char.isalpha():
             return s[:i] + char.upper() + s[i+1:]
+        if char in [utils.this_marker, utils.reserved_marker]:
+            return s
     return s
 # This function is used during decoding to apply sentence-style capitalization
 # while newline markers are still present.
