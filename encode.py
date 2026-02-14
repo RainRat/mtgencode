@@ -45,7 +45,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     final_sep = config.get('final_sep', final_sep)
 
     if verbose:
-        print('Preparing to encode:', file=sys.stderr)
+        print(utils.colorize('Preparing to encode:', utils.Ansi.BOLD + utils.Ansi.CYAN), file=sys.stderr)
         print('  Using encoding ' + repr(encoding), file=sys.stderr)
         if stable:
             print('  NOT randomizing order of cards.', file=sys.stderr)
@@ -87,7 +87,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     if oname:
         if verbose:
-            print('Writing output to: ' + oname, file=sys.stderr)
+            print(utils.colorize('Writing output to: ', utils.Ansi.BOLD + utils.Ansi.CYAN) + oname, file=sys.stderr)
         with open(oname, 'w', encoding='utf8') as ofile:
             writecards(ofile)
     else:
@@ -101,8 +101,8 @@ if __name__ == '__main__':
     
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infile',
-                        help='Input JSON file containing card data (e.g., AllPrintings.json), a CSV file, or an already encoded file.')
+    io_group.add_argument('infile', nargs='?', default='-',
+                        help='Input JSON file containing card data (e.g., AllPrintings.json), a CSV file, or an already encoded file. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console (stdout).')
 

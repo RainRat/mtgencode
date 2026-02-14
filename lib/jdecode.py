@@ -7,6 +7,58 @@ import csv
 import utils
 import cardlib
 
+def mtg_open_csv_reader(reader, verbose = False):
+    """
+    Processes a CSV reader containing card data.
+    """
+    srcs = {}
+    for row in reader:
+        # Map CSV columns to JSON-style dict keys
+        card_dict = {
+            'name': row.get('name', ''),
+            'manaCost': row.get('mana_cost', row.get('manaCost', '')),
+            'text': row.get('text', ''),
+            'rarity': row.get('rarity', ''),
+        }
+        if row.get('power'):
+            card_dict['power'] = row['power']
+        if row.get('toughness'):
+            card_dict['toughness'] = row['toughness']
+        if row.get('loyalty'):
+            card_dict['loyalty'] = row['loyalty']
+        elif row.get('defense'):
+            card_dict['defense'] = row['defense']
+
+        # Split type into supertypes and types
+        full_type = row.get('type', '')
+        supertypes = []
+        types = []
+        # Standard MTG supertypes
+        known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
+        for t in full_type.split():
+            if t in known_supertypes:
+                supertypes.append(t)
+            else:
+                types.append(t)
+        card_dict['supertypes'] = supertypes
+        card_dict['types'] = types
+
+        # Subtypes
+        subtypes = row.get('subtypes', '')
+        if subtypes:
+            card_dict['subtypes'] = subtypes.split()
+
+        cardname = card_dict['name'].lower()
+        if cardname in srcs:
+            srcs[cardname].append(card_dict)
+        else:
+            srcs[cardname] = [card_dict]
+
+    if verbose:
+        print('Opened ' + str(len(srcs)) + ' uniquely named cards from CSV.', file=sys.stderr)
+
+    return srcs, set()
+
 def mtg_open_csv(fname, verbose = False):
     """
     Reads a CSV file containing card data.
@@ -14,57 +66,11 @@ def mtg_open_csv(fname, verbose = False):
     """
     with open(fname, 'r', encoding='utf8', newline='') as f:
         reader = csv.DictReader(f)
-        srcs = {}
-        for row in reader:
-            # Map CSV columns to JSON-style dict keys
-            card_dict = {
-                'name': row.get('name', ''),
-                'manaCost': row.get('mana_cost', row.get('manaCost', '')),
-                'text': row.get('text', ''),
-                'rarity': row.get('rarity', ''),
-            }
-            if row.get('power'):
-                card_dict['power'] = row['power']
-            if row.get('toughness'):
-                card_dict['toughness'] = row['toughness']
-            if row.get('loyalty'):
-                card_dict['loyalty'] = row['loyalty']
-            elif row.get('defense'):
-                card_dict['defense'] = row['defense']
+        return mtg_open_csv_reader(reader, verbose)
 
-            # Split type into supertypes and types
-            full_type = row.get('type', '')
-            supertypes = []
-            types = []
-            # Standard MTG supertypes
-            known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
-            for t in full_type.split():
-                if t in known_supertypes:
-                    supertypes.append(t)
-                else:
-                    types.append(t)
-            card_dict['supertypes'] = supertypes
-            card_dict['types'] = types
-
-            # Subtypes
-            subtypes = row.get('subtypes', '')
-            if subtypes:
-                card_dict['subtypes'] = subtypes.split()
-
-            cardname = card_dict['name'].lower()
-            if cardname in srcs:
-                srcs[cardname].append(card_dict)
-            else:
-                srcs[cardname] = [card_dict]
-
-    if verbose:
-        print('Opened ' + str(len(srcs)) + ' uniquely named cards from CSV.', file=sys.stderr)
-
-    return srcs, set()
-
-def mtg_open_json(fname, verbose = False):
+def mtg_open_json_obj(jobj, verbose = False):
     """
-    Reads a JSON file containing card data.
+    Processes a JSON object containing card data.
 
     Supported formats:
     1. MTGJSON v4/v5 format (dictionary with a 'data' key).
@@ -76,9 +82,6 @@ def mtg_open_json(fname, verbose = False):
             allcards: Dictionary mapping card names (lowercase) to lists of card objects.
             bad_sets: Set of set codes flagged as 'funny', 'memorabilia', or 'alchemy'.
     """
-
-    with open(fname, 'r', encoding='utf8') as f:
-        jobj = json.load(f)
 
     is_mtgjson_format = isinstance(jobj, dict)
     if is_mtgjson_format:
@@ -156,6 +159,14 @@ def mtg_open_json(fname, verbose = False):
             #print bsides[uid]
 
     return allcards, bad_sets
+
+def mtg_open_json(fname, verbose = False):
+    """
+    Reads a JSON file containing card data.
+    """
+    with open(fname, 'r', encoding='utf8') as f:
+        jobj = json.load(f)
+    return mtg_open_json_obj(jobj, verbose)
 
 # filters to ignore some undesirable cards, only used when opening json
 def default_exclude_sets(cardset):
@@ -345,14 +356,39 @@ def mtg_open_file(fname, verbose = False,
 
     # Encoded Text File Handling
     elif fname == '-' or not fname.endswith('.json'):
-        if verbose:
-            print('Opening encoded card file: ' + ('<stdin>' if fname == '-' else fname), file=sys.stderr)
-
         if fname == '-':
             text = sys.stdin.read()
+            # Stdin Format Detection
+            stripped = text.strip()
+            # 1. JSON Detection
+            if stripped.startswith('{') or stripped.startswith('['):
+                try:
+                    jobj = json.loads(text)
+                    if verbose:
+                        print('Detected JSON input from stdin.', file=sys.stderr)
+                    json_srcs, bad_sets = mtg_open_json_obj(jobj, verbose)
+                    return _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
+                                               exclude_sets, exclude_types, exclude_layouts, report_fobj)
+                except json.JSONDecodeError:
+                    pass
+            # 2. CSV Detection
+            if stripped.startswith('name,'):
+                try:
+                    import io
+                    reader = csv.DictReader(io.StringIO(text))
+                    if verbose:
+                        print('Detected CSV input from stdin.', file=sys.stderr)
+                    csv_srcs, bad_sets = mtg_open_csv_reader(reader, verbose)
+                    return _process_json_srcs(csv_srcs, bad_sets, verbose, linetrans,
+                                               exclude_sets, exclude_types, exclude_layouts, report_fobj)
+                except Exception:
+                    pass
         else:
             with open(fname, 'rt', encoding='utf8') as f:
                 text = f.read()
+
+        if verbose:
+            print('Opening encoded card file: ' + ('<stdin>' if fname == '-' else fname), file=sys.stderr)
 
         for card_src in text.split(utils.cardsep):
             if card_src:
