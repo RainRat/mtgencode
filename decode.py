@@ -194,7 +194,18 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             writer.write(utils.html_append)
             return
 
-        for card in tqdm(cards, disable=quiet, desc="Decoding"):
+        for i, card in enumerate(tqdm(cards, disable=quiet, desc="Decoding")):
+            if i > 0 and not (for_html or for_mse or for_md or for_summary):
+                # Add a subtle separator between cards in terminal output
+                use_separator = False
+                if color_arg is True:
+                    use_separator = True
+                elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
+                    use_separator = True
+
+                if use_separator:
+                    writer.write(utils.colorize(utils.dash_marker * 30, utils.Ansi.BOLD + utils.Ansi.CYAN) + '\n\n')
+
             writecard(writer, card, for_md=for_md, for_summary=for_summary)
 
         if for_mse:
