@@ -133,6 +133,7 @@ If you provide an output filename, the tool automatically selects the format bas
 *   `.json` -> JSON data
 *   `.csv`  -> CSV spreadsheet
 *   `.md`   -> Markdown document
+*   `.sum`, `.summary` -> Compact one-line summary
 *   `.mse-set` -> Magic Set Editor file
 
 ### Power User Tip: Piping
