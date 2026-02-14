@@ -43,10 +43,6 @@ def sort_type(card_set):
 
     return sorted(card_set, key=type_priority)
 
-def sort_cmc(card_set):
-    """Sorts cards by their converted mana cost."""
-    return sorted(card_set, key=lambda c: c.cost.cmc)
-
 def sort_cards(cards, criterion, quiet=False):
     """Sorts a list of cards based on the specified criterion."""
     if not criterion:
@@ -55,7 +51,7 @@ def sort_cards(cards, criterion, quiet=False):
     if criterion == 'name':
         return sorted(cards, key=lambda c: c.name.lower())
     elif criterion == 'cmc':
-        return sort_cmc(cards)
+        return sorted(cards, key=lambda c: c.cost.cmc)
     elif criterion == 'color':
         # Flatten the list of lists returned by sort_colors
         segments = sort_colors(cards, quiet=quiet)
