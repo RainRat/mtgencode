@@ -139,7 +139,7 @@ def test_text_unpass_1_choice():
     # "choose one " + dash_marker
     # + newline + bullet_marker + ' ' + option
 
-    expected = "choose one ~\= opt 1\= opt 2"
+    expected = r"choose one ~\= opt 1\= opt 2"
     assert transforms.text_unpass_1_choice(input_text) == expected
 
 def test_text_unpass_2_counters():
