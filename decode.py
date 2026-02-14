@@ -16,66 +16,9 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import cardlib
+import sortlib
 from cbow import CBOW
 from namediff import Namediff
-
-def sort_colors(card_set, quiet=False):
-    """Sorts cards by their color identity."""
-    colors = {
-        'W': [], 'U': [], 'B': [], 'R': [], 'G': [],
-        'multi': [], 'colorless': [], 'lands': []
-    }
-
-    # Wrap in tqdm if not quiet
-    iterator = tqdm(card_set, disable=quiet, desc="Sorting")
-    for card in iterator:
-        card_colors = card.cost.colors
-        if len(card_colors) > 1:
-            colors['multi'].append(card)
-        elif len(card_colors) == 1:
-            colors[card_colors[0]].append(card)
-        else:
-            if "land" in card.types:
-                colors['lands'].append(card)
-            else:
-                colors['colorless'].append(card)
-
-    return [colors['W'], colors['U'], colors['B'], colors['R'], colors['G'],
-            colors['multi'], colors['colorless'], colors['lands']]
-
-def sort_type(card_set):
-    """Sorts cards by their primary card type."""
-    sorting = ["creature", "enchantment", "instant", "sorcery", "artifact", "planeswalker"]
-
-    def type_priority(card):
-        for i, card_type in enumerate(sorting):
-            if card_type in card.types:
-                return i
-        return len(sorting)
-
-    return sorted(card_set, key=type_priority)
-
-def sort_cmc(card_set):
-    """Sorts cards by their converted mana cost."""
-    return sorted(card_set, key=lambda c: c.cost.cmc)
-
-def sort_cards(cards, criterion, quiet=False):
-    """Sorts a list of cards based on the specified criterion."""
-    if not criterion:
-        return cards
-
-    if criterion == 'name':
-        return sorted(cards, key=lambda c: c.name.lower())
-    elif criterion == 'cmc':
-        return sort_cmc(cards)
-    elif criterion == 'color':
-        # Flatten the list of lists returned by sort_colors
-        segments = sort_colors(cards, quiet=quiet)
-        return [card for segment in segments for card in segment]
-    elif criterion == 'type':
-        return sort_type(cards)
-    else:
-        return cards
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
@@ -144,7 +87,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep)
 
     if sort:
-        cards = sort_cards(cards, sort, quiet=quiet)
+        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
 
     if limit > 0:
         cards = cards[:limit]
@@ -237,10 +180,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             # have to prepend html info
             writer.write(utils.html_prepend)
             # separate the write function to allow for writing smaller chunks of cards at a time
-            segments = sort_colors(cards, quiet=quiet)
+            segments = sortlib.sort_colors(cards, quiet=quiet)
             for i in range(len(segments)):
                 # sort color by type
-                segments[i] = sort_type(segments[i])
+                segments[i] = sortlib.sort_type(segments[i])
                 # this allows card boxes to be colored for each color
                 # for coloring of each box separately cardlib.Card.format() must change non-minimally
                 writer.write('<div id="' + utils.segment_ids[i] + '">')
