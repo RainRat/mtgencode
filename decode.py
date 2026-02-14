@@ -366,7 +366,7 @@ if __name__ == '__main__':
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input file containing encoded cards (or a JSON/CSV corpus) to decode. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .csv, .mse-set).')
+                        help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .csv, .md, .sum, .summary, .mse-set).')
 
     # Group: Output Format (Mutually Exclusive)
     # We use a mutually exclusive group to enforce one output format.
@@ -399,9 +399,9 @@ if __name__ == '__main__':
     # We provide a --raw flag to disable it.
     # We also keep -g for backward compatibility but make it a no-op that ensures True.
     content_group.add_argument('-g', '--gatherer', action='store_true', default=True,
-                        help='Explicitly enable Gatherer formatting (Default).')
+                        help='Format text like the official Gatherer website (Default).')
     content_group.add_argument('--raw', '--no-gatherer', dest='gatherer', action='store_false',
-                        help='Output raw text without Gatherer formatting.')
+                        help='Output raw text without any special formatting.')
 
     content_group.add_argument('-f', '--forum', action='store_true',
                         help='Use pretty formatting for mana symbols (compatible with MTG Salvation forums).')
@@ -417,13 +417,13 @@ if __name__ == '__main__':
     # Group: Processing & Debugging
     proc_group = parser.add_argument_group('Processing & Debugging')
     proc_group.add_argument('-c', '--creativity', action='store_true',
-                        help="Enable 'creativity' mode: calculate similarity to existing cards using CBOW (slow).")
+                        help="Calculate how unique these cards are compared to real Magic cards (requires Word2Vec).")
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Limit the number of cards to decode.')
     proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
                         help='Sort cards by the specified criterion.')
     proc_group.add_argument('-d', '--dump', action='store_true',
-                        help='Debug mode: print detailed information about cards that failed to validate.')
+                        help='Show detailed debug information for cards that were not processed correctly.')
     proc_group.add_argument('-v', '--verbose', action='store_true',
                         help='Enable verbose output.')
     proc_group.add_argument('-q', '--quiet', action='store_true',
