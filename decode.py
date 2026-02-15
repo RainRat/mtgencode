@@ -194,8 +194,23 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             writer.write(utils.html_append)
             return
 
+        first = True
         for card in tqdm(cards, disable=quiet, desc="Decoding"):
+            if not first and not (for_html or for_md or for_mse or for_summary):
+                # Add a divider between cards for console output
+                use_color = False
+                if color_arg is True:
+                    use_color = True
+                elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
+                    use_color = True
+
+                divider = '-' * 40
+                if use_color:
+                    divider = utils.colorize(divider, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                writer.write(divider + '\n')
+
             writecard(writer, card, for_md=for_md, for_summary=for_summary)
+            first = False
 
         if for_mse:
             # more formatting info
