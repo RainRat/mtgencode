@@ -3,6 +3,7 @@ import sys
 import os
 import re
 import csv
+import zipfile
 
 import utils
 import cardlib
@@ -168,6 +169,173 @@ def mtg_open_json(fname, verbose = False):
         jobj = json.load(f)
     return mtg_open_json_obj(jobj, verbose)
 
+def mtg_open_mse(fname, verbose = False):
+    """
+    Reads a Magic Set Editor (.mse-set) file.
+    """
+    with zipfile.ZipFile(fname, 'r') as zf:
+        try:
+            with zf.open('set') as f:
+                content = f.read().decode('utf-8')
+        except KeyError:
+            if verbose:
+                print(f"Warning: 'set' file not found in {fname}", file=sys.stderr)
+            return {}, set()
+
+    return mtg_open_mse_content(content, verbose=verbose)
+
+def mtg_open_mse_content(content, verbose=False):
+    """
+    Parses the 'set' file content from an MSE archive.
+    """
+    allcards_raw = []
+    lines = content.splitlines()
+
+    current_card = None
+    in_card = False
+
+    def clean_mse_text(text):
+        # Remove MSE tags like <sym-auto>
+        text = re.sub(r'</?sym-auto>', '', text)
+        return text.strip()
+
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+
+        if line.startswith('card:'):
+            if current_card:
+                allcards_raw.append(current_card)
+            current_card = {}
+            in_card = True
+        elif in_card:
+            if line.startswith('\t\t'):
+                # Multi-line value (continuation)
+                pass # Handled by the key-value branch below
+            elif line.startswith('\t'):
+                line = line[1:] # remove first tab
+                if ': ' in line:
+                    key, value = line.split(': ', 1)
+                    if key in ['rule text', 'rule text 2']:
+                        text_lines = [value]
+                        while i + 1 < len(lines) and lines[i+1].startswith('\t\t'):
+                            text_lines.append(lines[i+1][2:])
+                            i += 1
+                        current_card[key] = clean_mse_text('\n'.join(text_lines))
+                    else:
+                        current_card[key] = value.strip()
+                elif line.endswith(':'):
+                    key = line[:-1]
+                    if key in ['rule text', 'rule text 2']:
+                        text_lines = []
+                        while i + 1 < len(lines) and lines[i+1].startswith('\t\t'):
+                            text_lines.append(lines[i+1][2:])
+                            i += 1
+                        current_card[key] = clean_mse_text('\n'.join(text_lines))
+                    else:
+                        current_card[key] = ""
+            elif line.strip() == '' or not line.startswith('\t'):
+                # End of card block or irrelevant set info
+                pass
+        i += 1
+
+    if current_card:
+        allcards_raw.append(current_card)
+
+    def mse_mana_to_json(s):
+        if not s: return ""
+        if '/' in s and not any(c.isdigit() for c in s): # Hybrid like W/U
+             return "{" + s.upper() + "}"
+        res = ""
+        # Find all multi-digit numbers or single letters
+        tokens = re.findall(r'\d+|[a-zA-Z]', s)
+        for t in tokens:
+            res += "{" + t.upper() + "}"
+        return res
+
+    allcards = {}
+    for c in allcards_raw:
+        # Main side
+        d = {
+            'name': c.get('name', ''),
+            'manaCost': mse_mana_to_json(c.get('casting cost', '')),
+            'rarity': c.get('rarity', '').capitalize(),
+            'text': c.get('rule text', ''),
+        }
+        if c.get('power'): d['power'] = c['power']
+        if c.get('toughness'): d['toughness'] = c['toughness']
+        if c.get('loyalty'): d['loyalty'] = c['loyalty']
+
+        # Split types
+        full_type = c.get('super type', '')
+        supertypes = []
+        types = []
+        known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
+        for t in full_type.split():
+            if t in known_supertypes: supertypes.append(t)
+            else: types.append(t)
+        d['supertypes'] = supertypes
+        d['types'] = types
+
+        subtypes = c.get('sub type', '')
+        if subtypes:
+            d['subtypes'] = subtypes.split()
+
+        # Planeswalker loyalty costs
+        if d.get('loyalty'):
+            pw_abilities = []
+            for j in range(1, 10):
+                cost_key = f'loyalty cost {j}'
+                if cost_key in c:
+                    cost = c[cost_key]
+                    # We assume abilities are separated by newlines in 'rule text'
+                    # if they were exported by our to_mse
+                    # But for general MSE, they might be in separate fields.
+                    # Our to_mse puts them all in 'rule text'.
+                    pass
+            # Reconstructing PW text from loyalty costs and rule text is hard in general
+            # but if it was exported by us, the costs are missing from 'rule text'.
+            # However, Card.fields_from_json handles 'text' which should contain the costs.
+            # So if we want it to work with our encoder, we should probably
+            # try to put the costs back into the text if they are separate.
+            # But wait, MSE's 'rule text' for PWs in our to_mse HAS the costs stripped.
+
+        # Handle split card (B-side)
+        if 'name 2' in c:
+            b = {
+                'name': c.get('name 2', ''),
+                'manaCost': mse_mana_to_json(c.get('casting cost 2', '')),
+                'rarity': c.get('rarity 2', d['rarity']).capitalize(),
+                'text': c.get('rule text 2', ''),
+            }
+            if c.get('power 2'): b['power'] = c['power 2']
+            if c.get('toughness 2'): b['toughness'] = c['toughness 2']
+            if c.get('loyalty 2'): b['loyalty'] = c['loyalty 2']
+            full_type_2 = c.get('super type 2', '')
+            supertypes_2 = []
+            types_2 = []
+            for t in full_type_2.split():
+                if t in known_supertypes: supertypes_2.append(t)
+                else: types_2.append(t)
+            b['supertypes'] = supertypes_2
+            b['types'] = types_2
+            subtypes_2 = c.get('sub type 2', '')
+            if subtypes_2:
+                b['subtypes'] = subtypes_2.split()
+            d[utils.json_field_bside] = b
+
+        cardname = d['name'].lower()
+        if cardname:
+            if cardname in allcards:
+                allcards[cardname].append(d)
+            else:
+                allcards[cardname] = [d]
+
+    if verbose:
+        print('Opened ' + str(len(allcards)) + ' uniquely named cards from MSE set.', file=sys.stderr)
+
+    return allcards, set()
+
 # filters to ignore some undesirable cards, only used when opening json
 def default_exclude_sets(cardset):
     return cardset == 'Unglued' or cardset == 'Unhinged' or cardset == 'Celebration'
@@ -291,8 +459,8 @@ def mtg_open_file(fname, verbose = False,
         aggregated_srcs = {}
         aggregated_bad_sets = set()
 
-        # Look for .json, .csv, and .txt files
-        files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv') or f.endswith('.txt')])
+        # Look for .json, .csv, .mse-set, and .txt files
+        files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv') or f.endswith('.mse-set') or f.endswith('.txt')])
 
         txt_cards = []
         for f in files:
@@ -300,9 +468,11 @@ def mtg_open_file(fname, verbose = False,
             if verbose:
                 print(f"Loading {f}...", file=sys.stderr)
 
-            if f.endswith('.json') or f.endswith('.csv'):
+            if f.endswith('.json') or f.endswith('.csv') or f.endswith('.mse-set'):
                 if f.endswith('.json'):
                     srcs, bad = mtg_open_json(full_path, verbose=False)
+                elif f.endswith('.mse-set'):
+                    srcs, bad = mtg_open_mse(full_path, verbose=False)
                 else:
                     srcs, bad = mtg_open_csv(full_path, verbose=False)
                 aggregated_bad_sets.update(bad)
@@ -354,8 +524,17 @@ def mtg_open_file(fname, verbose = False,
         cards = _process_json_srcs(csv_srcs, bad_sets, verbose, linetrans,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj)
 
+    # Single MSE File Handling
+    elif fname.endswith('.mse-set'):
+        if verbose:
+            print('This looks like an MSE set file: ' + fname, file=sys.stderr)
+        mse_srcs, bad_sets = mtg_open_mse(fname, verbose)
+
+        cards = _process_json_srcs(mse_srcs, bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj)
+
     # Encoded Text File Handling
-    elif fname == '-' or not fname.endswith('.json'):
+    elif fname == '-' or (not fname.endswith('.json') and not fname.endswith('.mse-set')):
         if fname == '-':
             text = sys.stdin.read()
             # Stdin Format Detection
