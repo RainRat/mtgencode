@@ -1,6 +1,13 @@
 import csv
 import argparse
 import json
+import os
+import sys
+
+# Ensure lib is in path
+libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
+sys.path.append(libdir)
+import utils
 
 #convert a CSV file (that follows a specific format) to JSON, If you want to have custom cards in whole or part of your training.
 
@@ -58,14 +65,7 @@ with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
                 card["pt"] = row[5]
 
         # supertypes, types, subtypes
-        known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
-        supertypes = []
-        types = []
-        for t in row[2].split():
-            if t in known_supertypes:
-                supertypes.append(t)
-            else:
-                types.append(t)
+        supertypes, types = utils.split_types(row[2])
         if supertypes:
             card["supertypes"] = supertypes
         card["types"] = types

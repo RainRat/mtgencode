@@ -32,15 +32,7 @@ def mtg_open_csv_reader(reader, verbose = False):
 
         # Split type into supertypes and types
         full_type = row.get('type', '')
-        supertypes = []
-        types = []
-        # Standard MTG supertypes
-        known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
-        for t in full_type.split():
-            if t in known_supertypes:
-                supertypes.append(t)
-            else:
-                types.append(t)
+        supertypes, types = utils.split_types(full_type)
         card_dict['supertypes'] = supertypes
         card_dict['types'] = types
 
@@ -268,12 +260,7 @@ def mtg_open_mse_content(content, verbose=False):
 
         # Split types
         full_type = c.get('super type', '')
-        supertypes = []
-        types = []
-        known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
-        for t in full_type.split():
-            if t in known_supertypes: supertypes.append(t)
-            else: types.append(t)
+        supertypes, types = utils.split_types(full_type)
         d['supertypes'] = supertypes
         d['types'] = types
 
@@ -312,11 +299,7 @@ def mtg_open_mse_content(content, verbose=False):
             if c.get('toughness 2'): b['toughness'] = c['toughness 2']
             if c.get('loyalty 2'): b['loyalty'] = c['loyalty 2']
             full_type_2 = c.get('super type 2', '')
-            supertypes_2 = []
-            types_2 = []
-            for t in full_type_2.split():
-                if t in known_supertypes: supertypes_2.append(t)
-                else: types_2.append(t)
+            supertypes_2, types_2 = utils.split_types(full_type_2)
             b['supertypes'] = supertypes_2
             b['types'] = types_2
             subtypes_2 = c.get('sub type 2', '')
