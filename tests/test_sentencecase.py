@@ -48,3 +48,10 @@ def test_sentencecase_with_x_marker():
     input_text = f"{utils.x_marker} is the number of cards in your hand."
     result = sentencecase(input_text)
     assert result == f"{utils.x_marker} is the number of cards in your hand."
+
+def test_sentencecase_choice_options():
+    # Options in choice blocks should be capitalized.
+    # Choice format: [&^ =option 1 =option 2]
+    input_text = "[&^ =deal 3 damage =draw a card]"
+    expected = "[&^ =Deal 3 damage =Draw a card]"
+    assert sentencecase(input_text) == expected

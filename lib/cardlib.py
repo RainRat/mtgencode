@@ -31,13 +31,17 @@ def sentencecase(s):
     clines = []
     for line in lines:
         if line:
-            # First, split by ": " to handle activated abilities
-            parts = line.split(': ')
+            # Split by ": " to handle activated abilities
+            # and by " =" to handle choice options
+            parts = re.split(r'(: | =)', line)
             cparts = []
             for part in parts:
-                sentences = sent_tokenizer.tokenize(part)
-                cparts += [' '.join([cap(sent) for sent in sentences])]
-            clines += [': '.join(cparts)]
+                if part in [': ', ' =']:
+                    cparts += [part]
+                else:
+                    sentences = sent_tokenizer.tokenize(part)
+                    cparts += [' '.join([cap(sent) for sent in sentences])]
+            clines += [''.join(cparts)]
         else:
             clines += ['']
     return utils.newline.join(clines).replace(utils.reserved_marker, utils.x_marker)
