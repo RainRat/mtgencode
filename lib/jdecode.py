@@ -169,6 +169,31 @@ def mtg_open_json(fname, verbose = False):
         jobj = json.load(f)
     return mtg_open_json_obj(jobj, verbose)
 
+def mtg_open_jsonl_content(text, verbose = False):
+    """
+    Processes JSON Lines (.jsonl) content.
+    """
+    cards = []
+    for line in text.splitlines():
+        line = line.strip()
+        if line:
+            try:
+                cards.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    if cards:
+        return mtg_open_json_obj(cards, verbose)
+    return {}, set()
+
+def mtg_open_jsonl(fname, verbose = False):
+    """
+    Reads a JSON Lines (.jsonl) file containing card data.
+    Each line should be a single card object.
+    """
+    with open(fname, 'r', encoding='utf8') as f:
+        text = f.read()
+    return mtg_open_jsonl_content(text, verbose)
+
 def mtg_open_mse(fname, verbose = False):
     """
     Reads a Magic Set Editor (.mse-set) file.
@@ -454,13 +479,13 @@ def mtg_open_file(fname, verbose = False,
     # Directory Handling
     if fname != '-' and os.path.isdir(fname):
         if verbose:
-            print(f"Scanning directory {fname} for JSON/CSV files...", file=sys.stderr)
+            print(f"Scanning directory {fname} for JSON/CSV/JSONL files...", file=sys.stderr)
 
         aggregated_srcs = {}
         aggregated_bad_sets = set()
 
-        # Look for .json, .csv, .mse-set, and .txt files
-        files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv') or f.endswith('.mse-set') or f.endswith('.txt')])
+        # Look for .json, .csv, .jsonl, .mse-set, and .txt files
+        files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt')])
 
         txt_cards = []
         for f in files:
@@ -468,9 +493,11 @@ def mtg_open_file(fname, verbose = False,
             if verbose:
                 print(f"Loading {f}...", file=sys.stderr)
 
-            if f.endswith('.json') or f.endswith('.csv') or f.endswith('.mse-set'):
+            if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set'):
                 if f.endswith('.json'):
                     srcs, bad = mtg_open_json(full_path, verbose=False)
+                elif f.endswith('.jsonl'):
+                    srcs, bad = mtg_open_jsonl(full_path, verbose=False)
                 elif f.endswith('.mse-set'):
                     srcs, bad = mtg_open_mse(full_path, verbose=False)
                 else:
@@ -524,6 +551,15 @@ def mtg_open_file(fname, verbose = False,
         cards = _process_json_srcs(csv_srcs, bad_sets, verbose, linetrans,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj)
 
+    # Single JSONL File Handling
+    elif fname.endswith('.jsonl'):
+        if verbose:
+            print('This looks like a jsonl file: ' + fname, file=sys.stderr)
+        jsonl_srcs, bad_sets = mtg_open_jsonl(fname, verbose)
+
+        cards = _process_json_srcs(jsonl_srcs, bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj)
+
     # Single MSE File Handling
     elif fname.endswith('.mse-set'):
         if verbose:
@@ -539,9 +575,10 @@ def mtg_open_file(fname, verbose = False,
             text = sys.stdin.read()
             # Stdin Format Detection
             stripped = text.strip()
-            # 1. JSON Detection
+            # 1. JSON / JSONL Detection
             if stripped.startswith('{') or stripped.startswith('['):
                 try:
+                    # Try regular JSON first
                     jobj = json.loads(text)
                     if verbose:
                         print('Detected JSON input from stdin.', file=sys.stderr)
@@ -549,7 +586,13 @@ def mtg_open_file(fname, verbose = False,
                     return _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
                                                exclude_sets, exclude_types, exclude_layouts, report_fobj)
                 except json.JSONDecodeError:
-                    pass
+                    # Try JSONL
+                    jsonl_srcs, bad_sets = mtg_open_jsonl_content(text, verbose)
+                    if jsonl_srcs:
+                        if verbose:
+                            print('Detected JSONL input from stdin.', file=sys.stderr)
+                        return _process_json_srcs(jsonl_srcs, bad_sets, verbose, linetrans,
+                                                   exclude_sets, exclude_types, exclude_layouts, report_fobj)
             # 2. CSV Detection
             if stripped.startswith('name,'):
                 try:

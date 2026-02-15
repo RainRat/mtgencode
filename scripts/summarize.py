@@ -43,7 +43,7 @@ if __name__ == '__main__':
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='encoded card file or json corpus to process. Defaults to stdin (-).')
+                        help='encoded card file or JSON/JSONL corpus to process. Defaults to stdin (-).')
     io_group.add_argument('--json', action='store_true',
                         help='Output statistics in JSON format.')
 

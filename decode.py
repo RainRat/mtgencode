@@ -22,17 +22,19 @@ from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, html = False, text = False, json_out = False, csv_out = False, md_out = False, summary_out = False, quiet=False,
+         creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, summary_out = False, quiet=False,
          report_file=None, color_arg=None, limit=0, grep=None, sort=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
-    if not (html or text or for_mse or json_out or csv_out or md_out or summary_out):
+    if not (html or text or for_mse or json_out or jsonl_out or csv_out or md_out or summary_out):
         if oname:
             if oname.endswith('.html'):
                 html = True
             elif oname.endswith('.json'):
                 json_out = True
+            elif oname.endswith('.jsonl'):
+                jsonl_out = True
             elif oname.endswith('.csv'):
                 csv_out = True
             elif oname.endswith('.md'):
@@ -48,7 +50,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     # Mutually exclusive output formats are now enforced by argparse in main block,
     # but we keep this check for programmatic access safety.
-    if sum([bool(html), bool(for_mse), bool(json_out), bool(text), bool(csv_out), bool(md_out), bool(summary_out)]) > 1:
+    if sum([bool(html), bool(for_mse), bool(json_out), bool(jsonl_out), bool(text), bool(csv_out), bool(md_out), bool(summary_out)]) > 1:
         # If user explicitly requested multiple formats programmatically, we warn or error.
         # However, argparse logic below ensures text defaults to True only if others are False.
         # But if someone calls main() directly with multiple True, we should respect that or fail.
@@ -314,6 +316,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             with open(oname, 'w', encoding='utf8') as ofile:
                 json_cards = [card.to_dict() for card in cards]
                 json.dump(json_cards, ofile, indent=2)
+        if jsonl_out:
+            import json
+            if verbose:
+                print('Writing jsonl output to: ' + oname, file=sys.stderr)
+            with open(oname, 'w', encoding='utf8') as ofile:
+                for card in cards:
+                    ofile.write(json.dumps(card.to_dict()) + '\n')
         if csv_out:
             if verbose:
                 print('Writing csv output to: ' + oname, file=sys.stderr)
@@ -349,6 +358,11 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             import json
             json_cards = [card.to_dict() for card in cards]
             json.dump(json_cards, sys.stdout, indent=2)
+        elif jsonl_out:
+            import json
+            for card in cards:
+                sys.stdout.write(json.dumps(card.to_dict()) + '\n')
+            sys.stdout.flush()
         elif csv_out:
             write_csv_output(sys.stdout, cards, verbose=verbose)
             sys.stdout.flush()
@@ -379,6 +393,8 @@ if __name__ == '__main__':
                            help='Generate a nicely formatted HTML file (Auto-detected for .html).')
     fmt_group.add_argument('--json', action='store_true',
                            help='Generate a structured JSON file (Auto-detected for .json).')
+    fmt_group.add_argument('--jsonl', action='store_true',
+                           help='Generate a JSON Lines file (one card object per line). Auto-detected for .jsonl.')
     fmt_group.add_argument('--csv', action='store_true',
                            help='Generate a CSV file (Auto-detected for .csv).')
     fmt_group.add_argument('--md', action='store_true',
@@ -442,7 +458,7 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
-         json_out = args.json, csv_out = args.csv, md_out = args.md, summary_out = args.summary, quiet=args.quiet,
+         json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, summary_out = args.summary, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep,
          sort=args.sort)
 
