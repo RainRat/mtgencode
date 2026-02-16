@@ -557,6 +557,21 @@ def from_symbols(s, for_forum=False, for_html=False):
 
 unletters_regex = r"[^abcdefghijklmnopqrstuvwxyz']"
 
+# MTG Constants
+known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
+
+def split_types(full_type):
+    """Splits a type line string into supertypes and types."""
+    supertypes = []
+    types = []
+    for t in full_type.split():
+        if t in known_supertypes:
+            supertypes.append(t)
+        else:
+            types.append(t)
+    return supertypes, types
+
+
 class Ansi:
     RESET = '\033[0m'
     BOLD = '\033[1m'
