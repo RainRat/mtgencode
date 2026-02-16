@@ -75,6 +75,70 @@ def test_grep_filtering():
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
 
+def test_vgrep_filtering():
+    # Setup sample data
+    cards_data = [
+        {
+            "name": "Fire Dragon",
+            "types": ["Creature"],
+            "subtypes": ["Dragon"],
+            "text": "Flying\n{R}: Fire Dragon deals 1 damage.",
+            "manaCost": "{4}{R}{R}",
+            "power": "5",
+            "toughness": "5",
+            "rarity": "rare"
+        },
+        {
+            "name": "Water Elemental",
+            "types": ["Creature"],
+            "subtypes": ["Elemental"],
+            "text": "Islandwalk",
+            "manaCost": "{3}{U}{U}",
+            "power": "5",
+            "toughness": "4",
+            "rarity": "uncommon"
+        },
+        {
+            "name": "Fireball",
+            "types": ["Sorcery"],
+            "text": "Fireball deals X damage.",
+            "manaCost": "{X}{R}",
+            "rarity": "uncommon"
+        }
+    ]
+
+    with tempfile.NamedTemporaryFile(mode='w+', suffix='.json', delete=False, encoding='utf-8') as tmp:
+        json.dump(cards_data, tmp)
+        tmp_path = tmp.name
+
+    try:
+        # Test 1: Vgrep for "Dragon" - should exclude Fire Dragon
+        cards = jdecode.mtg_open_file(tmp_path, vgrep=["Dragon"])
+        assert len(cards) == 2
+        names = [c.name for c in cards]
+        assert "fire dragon" not in names
+        assert "water elemental" in names
+        assert "fireball" in names
+
+        # Test 2: Vgrep for "Fire" - should exclude Fire Dragon and Fireball
+        cards = jdecode.mtg_open_file(tmp_path, vgrep=["Fire"])
+        assert len(cards) == 1
+        assert cards[0].name == "water elemental"
+
+        # Test 3: Multiple vgreps (OR logic) - exclude "Dragon" or "Elemental"
+        cards = jdecode.mtg_open_file(tmp_path, vgrep=["Dragon", "Elemental"])
+        assert len(cards) == 1
+        assert cards[0].name == "fireball"
+
+        # Test 4: Combine grep and vgrep - "Fire" but not "Sorcery"
+        cards = jdecode.mtg_open_file(tmp_path, grep=["Fire"], vgrep=["Sorcery"])
+        assert len(cards) == 1
+        assert cards[0].name == "fire dragon"
+
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
 def test_grep_encoded_text():
     # Setup sample encoded data
     encoded_text = (
