@@ -109,7 +109,10 @@ if __name__ == '__main__':
     # Group: Encoding Options
     enc_group = parser.add_argument_group('Encoding Options')
     enc_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        help="Format for the output data. 'std' (default) puts the name last. 'named' puts the name first. 'vec' produces a vectorized format for training.",
+                        help="Card data format: 'std' (name last, default), 'named' (name first), "
+                             "'noname' (no name), 'rfields' (random field order), "
+                             "'old' (legacy), 'norarity' (no rarity), 'vec' (vectorized), "
+                             "or 'custom' (user-defined).",
     )
     enc_group.add_argument('--nolabel', action='store_true',
                         help="Remove field labels (e.g., '|cost|') from the output.")
