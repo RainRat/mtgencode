@@ -261,11 +261,9 @@ def mtg_open_mse_content(content, verbose=False):
 
     def mse_mana_to_json(s):
         if not s: return ""
-        if '/' in s and not any(c.isdigit() for c in s): # Hybrid like W/U
-             return "{" + s.upper() + "}"
+        # Improved regex to handle hybrid costs like W/U, 2/W, W/U/B, and W/P
+        tokens = re.findall(r'(?:[a-zA-Z0-9]/)+[a-zA-Z0-9]|\d+|[a-zA-Z]', s)
         res = ""
-        # Find all multi-digit numbers or single letters
-        tokens = re.findall(r'\d+|[a-zA-Z]', s)
         for t in tokens:
             res += "{" + t.upper() + "}"
         return res
@@ -282,6 +280,7 @@ def mtg_open_mse_content(content, verbose=False):
         if c.get('power'): d['power'] = c['power']
         if c.get('toughness'): d['toughness'] = c['toughness']
         if c.get('loyalty'): d['loyalty'] = c['loyalty']
+        if c.get('defense'): d['defense'] = c['defense']
 
         # Split types
         full_type = c.get('super type', '')
@@ -323,6 +322,7 @@ def mtg_open_mse_content(content, verbose=False):
             if c.get('power 2'): b['power'] = c['power 2']
             if c.get('toughness 2'): b['toughness'] = c['toughness 2']
             if c.get('loyalty 2'): b['loyalty'] = c['loyalty 2']
+            if c.get('defense 2'): b['defense'] = c['defense 2']
             full_type_2 = c.get('super type 2', '')
             supertypes_2, types_2 = utils.split_types(full_type_2)
             b['supertypes'] = supertypes_2
