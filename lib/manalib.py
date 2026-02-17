@@ -174,11 +174,7 @@ class Manatext:
             self.valid = False
 
     def __str__(self):
-        text = self.text
-        for cost in self.costs:
-            text = text.replace(utils.reserved_mana_marker, str(cost), 1)
-        # Unescape literal reserved_mana_marker characters
-        return text.replace('\u001e', utils.reserved_mana_marker)
+        return self.format()
 
     def format(self, for_forum = False, for_html = False, ansi_color = False):
         text = self.text
