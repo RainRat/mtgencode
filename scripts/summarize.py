@@ -10,10 +10,10 @@ import utils
 import jdecode
 from datalib import Datamine
 
-def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = False, limit = 0, json_out = False):
+def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = False, limit = 0, json_out = False, vgrep = None):
     # Use the robust mtg_open_file for all loading and filtering.
     # We disable default exclusions to match original summarize.py behavior.
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, grep=grep,
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, grep=grep, vgrep=vgrep,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False)
@@ -57,6 +57,8 @@ if __name__ == '__main__':
                         help='Limit the number of cards to process.')
     proc_group.add_argument('--grep', action='append',
                         help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+    proc_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Exclude cards matching regex (matches name, type, or text). Can be used multiple times (OR logic).')
     
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -79,5 +81,5 @@ if __name__ == '__main__':
     elif args.color is None and sys.stdout.isatty():
         use_color = True
 
-    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = use_color, limit = args.limit, json_out = args.json)
+    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = use_color, limit = args.limit, json_out = args.json, vgrep = args.vgrep)
     exit(0)

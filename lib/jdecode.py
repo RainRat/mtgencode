@@ -448,13 +448,14 @@ def mtg_open_file(fname, verbose = False,
                   exclude_sets = default_exclude_sets,
                   exclude_types = default_exclude_types,
                   exclude_layouts = default_exclude_layouts,
-                  report_file=None, grep=None):
+                  report_file=None, grep=None, vgrep=None):
 
     cards = []
     valid = 0
     skipped = 0
     invalid = 0
     unparsed = 0
+    txt_cards = []
     report_fobj = None
     if report_file:
         report_fobj = open(report_file, 'w', encoding='utf-8')
@@ -566,7 +567,7 @@ def mtg_open_file(fname, verbose = False,
                     if verbose:
                         print('Detected JSON input from stdin.', file=sys.stderr)
                     json_srcs, bad_sets = mtg_open_json_obj(jobj, verbose)
-                    return _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
+                    cards = _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
                                                exclude_sets, exclude_types, exclude_layouts, report_fobj)
                 except json.JSONDecodeError:
                     # Try JSONL
@@ -574,17 +575,17 @@ def mtg_open_file(fname, verbose = False,
                     if jsonl_srcs:
                         if verbose:
                             print('Detected JSONL input from stdin.', file=sys.stderr)
-                        return _process_json_srcs(jsonl_srcs, bad_sets, verbose, linetrans,
+                        cards = _process_json_srcs(jsonl_srcs, bad_sets, verbose, linetrans,
                                                    exclude_sets, exclude_types, exclude_layouts, report_fobj)
             # 2. CSV Detection
-            if stripped.startswith('name,'):
+            if not cards and stripped.startswith('name,'):
                 try:
                     import io
                     reader = csv.DictReader(io.StringIO(text))
                     if verbose:
                         print('Detected CSV input from stdin.', file=sys.stderr)
                     csv_srcs, bad_sets = mtg_open_csv_reader(reader, verbose)
-                    return _process_json_srcs(csv_srcs, bad_sets, verbose, linetrans,
+                    cards = _process_json_srcs(csv_srcs, bad_sets, verbose, linetrans,
                                                exclude_sets, exclude_types, exclude_layouts, report_fobj)
                 except Exception:
                     pass
@@ -592,23 +593,26 @@ def mtg_open_file(fname, verbose = False,
             with open(fname, 'rt', encoding='utf8') as f:
                 text = f.read()
 
-        if verbose:
-            print('Opening encoded card file: ' + ('<stdin>' if fname == '-' else fname), file=sys.stderr)
+        if not cards:
+            if verbose:
+                print('Opening encoded card file: ' + ('<stdin>' if fname == '-' else fname), file=sys.stderr)
 
-        for card_src in text.split(utils.cardsep):
-            if card_src:
-                card = cardlib.Card(card_src, fmt_ordered=fmt_ordered, linetrans=linetrans)
+            for card_src in text.split(utils.cardsep):
+                if card_src:
+                    card = cardlib.Card(card_src, fmt_ordered=fmt_ordered, linetrans=linetrans)
 
-                # Apply exclusions to cards from encoded text
-                skip = False
-                for cardtype in card.types:
-                    if exclude_types(cardtype):
-                        skip = True
+                    # Apply exclusions to cards from encoded text
+                    skip = False
+                    for cardtype in card.types:
+                        if exclude_types(cardtype):
+                            skip = True
 
-                if skip:
-                    skipped += 1
-                    continue
+                    if not skip:
+                        txt_cards.append(card)
+                    else:
+                        skipped += 1
 
+            for card in txt_cards:
                 # unlike opening from json, we still want to return invalid cards
                 cards += [card]
                 if card.valid:
@@ -616,19 +620,19 @@ def mtg_open_file(fname, verbose = False,
                 elif card.parsed:
                     invalid += 1
                     if verbose:
-                        print ('Invalid card: ' + card_src, file=sys.stderr)
+                        print ('Invalid card: ' + (card.raw if card.raw else card.encode()), file=sys.stderr)
                     if report_fobj:
-                        report_fobj.write(card_src + utils.cardsep)
+                        report_fobj.write((card.raw if card.raw else card.encode()) + utils.cardsep)
                 else:
                     unparsed += 1
                     if verbose:
-                        print ('Failed to parse card: ' + card_src, file=sys.stderr)
+                        print ('Failed to parse card: ' + (card.raw if card.raw else card.encode()), file=sys.stderr)
                     if report_fobj:
-                        report_fobj.write(card_src + utils.cardsep)
+                        report_fobj.write((card.raw if card.raw else card.encode()) + utils.cardsep)
 
-        if verbose:
-             print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
-                    + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
+            if verbose:
+                 print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
+                        + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
 
     # Single JSON File Handling
     else:
@@ -639,9 +643,12 @@ def mtg_open_file(fname, verbose = False,
         cards = _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj)
 
-    if grep:
-        greps = [re.compile(p, re.IGNORECASE) for p in grep]
+    if grep or vgrep:
+        greps = [re.compile(p, re.IGNORECASE) for p in (grep if grep else [])]
+        vgreps = [re.compile(p, re.IGNORECASE) for p in (vgrep if vgrep else [])]
+
         def match_card(card):
+            # Positive filtering (AND logic): card must match ALL grep patterns
             for pattern in greps:
                 found = False
                 if pattern.search(card.name): found = True
@@ -652,6 +659,19 @@ def mtg_open_file(fname, verbose = False,
 
                 if not found:
                     return False
+
+            # Negative filtering (OR logic): card must match NONE of the vgrep patterns
+            for pattern in vgreps:
+                found = False
+                if pattern.search(card.name): found = True
+                elif any(pattern.search(t) for t in card.types): found = True
+                elif any(pattern.search(t) for t in card.supertypes): found = True
+                elif any(pattern.search(t) for t in card.subtypes): found = True
+                elif pattern.search(card.text.text): found = True
+
+                if found:
+                    return False
+
             return True
         cards = [c for c in cards if match_card(c)]
 

@@ -23,7 +23,7 @@ from namediff import Namediff
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, summary_out = False, quiet=False,
-         report_file=None, color_arg=None, limit=0, grep=None, sort=None):
+         report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -86,7 +86,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     else:
         raise ValueError('decode.py: unknown encoding: ' + encoding)
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep)
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep, vgrep=vgrep)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -463,6 +463,8 @@ if __name__ == '__main__':
                         help='File path to save the text of cards that failed to parse/validate (useful for debugging).')
     proc_group.add_argument('--grep', action='append',
                         help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+    proc_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Exclude cards matching regex (matches name, type, or text). Can be used multiple times (OR logic).')
 
     args = parser.parse_args()
 
@@ -475,6 +477,6 @@ if __name__ == '__main__':
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
          json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, summary_out = args.summary, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep,
-         sort=args.sort)
+         sort=args.sort, vgrep=args.vgrep)
 
     exit(0)

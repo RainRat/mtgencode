@@ -213,6 +213,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Limit the number of cards to sort.')
     proc_group.add_argument('--grep', action='append',
                         help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+    proc_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Exclude cards matching regex (matches name, type, or text). Can be used multiple times (OR logic).')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -246,7 +248,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
     # Use the robust jdecode.mtg_open_file for loading and filtering.
     # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
     # verbose=True enables jdecode diagnostic output (e.g. invalid cards).
-    cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, fmt_ordered=fmt_ordered, grep=args.grep,
+    cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, fmt_ordered=fmt_ordered, grep=args.grep, vgrep=args.vgrep,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False)

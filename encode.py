@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, randomize = False, nolabel = False, stable = False,
-         report_file=None, quiet=False, limit=0, grep=None, sort=None):
+         report_file=None, quiet=False, limit=0, grep=None, sort=None, vgrep=None):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
     fieldsep = utils.fieldsep
@@ -56,7 +56,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if not line_transformations:
             print('  NOT using line reordering transformations', file=sys.stderr)
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations, report_file=report_file, grep=grep)
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations, report_file=report_file, grep=grep, vgrep=vgrep)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -128,6 +128,8 @@ if __name__ == '__main__':
                         help='Sort cards by the specified criterion.')
     proc_group.add_argument('--grep', action='append',
                         help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+    proc_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Exclude cards matching regex (matches name, type, or text). Can be used multiple times (OR logic).')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -142,5 +144,5 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
          stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet,
-         limit=args.limit, grep=args.grep, sort=args.sort)
+         limit=args.limit, grep=args.grep, sort=args.sort, vgrep=args.vgrep)
     exit(0)
