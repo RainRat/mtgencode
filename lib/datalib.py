@@ -11,16 +11,16 @@ def padrows(l):
     for ll in l:
         for i, field in enumerate(ll):
             if i < len(lens):
-                lens[i] = max(len(str(field)), lens[i])
+                lens[i] = max(utils.visible_len(str(field)), lens[i])
             else:
-                lens += [len(str(field))]
+                lens += [utils.visible_len(str(field))]
     # now pad out to that length
     padded = []
     for ll in l:
         padded += ['']
         for i, field in enumerate(ll):
             s = str(field)
-            pad = ' ' * (lens[i] - len(s))
+            pad = ' ' * (lens[i] - utils.visible_len(s))
             padded[-1] += (s + pad + ' ')
     return padded
 def printrows(l):

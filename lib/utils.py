@@ -587,3 +587,10 @@ def colorize(text, color_code):
     if not text:
         return text
     return f"{color_code}{text}{Ansi.RESET}"
+
+# Regular expression for matching ANSI escape sequences
+_ansi_escape_re = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+def visible_len(s):
+    """Returns the length of a string without ANSI escape sequences."""
+    return len(_ansi_escape_re.sub('', s))

@@ -248,3 +248,16 @@ def test_colorize_combined():
     color = utils.Ansi.BOLD + utils.Ansi.RED
     expected = f"\033[1m\033[91mBold Red\033[0m"
     assert utils.colorize(text, color) == expected
+
+def test_visible_len():
+    # Plain text
+    assert utils.visible_len("hello") == 5
+    # Colorized text
+    assert utils.visible_len(utils.colorize("hello", utils.Ansi.RED)) == 5
+    # Combined styles
+    assert utils.visible_len(utils.colorize("world", utils.Ansi.BOLD + utils.Ansi.CYAN)) == 5
+    # Empty string
+    assert utils.visible_len("") == 0
+    # Text with embedded codes
+    text = f"Part 1 {utils.Ansi.RED}Part 2{utils.Ansi.RESET} Part 3"
+    assert utils.visible_len(text) == len("Part 1 Part 2 Part 3")
