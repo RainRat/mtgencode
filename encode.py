@@ -102,7 +102,7 @@ if __name__ == '__main__':
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input JSON file containing card data (e.g., AllPrintings.json), a CSV/JSONL file, or an already encoded file. Defaults to stdin (-).')
+                        help='Input card data (JSON, JSONL, CSV, or MSE), an encoded file, or a directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console (stdout).')
 
