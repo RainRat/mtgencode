@@ -422,7 +422,10 @@ if __name__ == '__main__':
     # Group: Content Formatting
     content_group = parser.add_argument_group('Content Formatting')
     content_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        help="Format of the input data. Default is 'std' (standard).")
+                        help="Card data format: 'std' (name last, default), 'named' (name first), "
+                             "'noname' (no name), 'rfields' (random field order), "
+                             "'old' (legacy), 'norarity' (no rarity), 'vec' (vectorized), "
+                             "or 'custom' (user-defined).")
 
     # Gatherer formatting is on by default.
     parser.set_defaults(gatherer=True)

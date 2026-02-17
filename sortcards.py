@@ -205,7 +205,10 @@ Supports any encoding format supported by encode.py/decode.py.""",
     # Group: Encoding Options
     enc_group = parser.add_argument_group('Encoding Options')
     enc_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        help="Format of the input data. 'std' (default) puts the name last. 'named' puts the name first. Must match the format of the input file.")
+                        help="Card data format: 'std' (name last, default), 'named' (name first), "
+                             "'noname' (no name), 'rfields' (random field order), "
+                             "'old' (legacy), 'norarity' (no rarity), 'vec' (vectorized), "
+                             "or 'custom' (user-defined).")
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
