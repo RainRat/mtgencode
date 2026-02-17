@@ -14,7 +14,8 @@ from tqdm import tqdm
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, randomize = False, nolabel = False, stable = False,
-         report_file=None, quiet=False, limit=0, grep=None, sort=None, vgrep=None):
+         report_file=None, quiet=False, limit=0, grep=None, sort=None, vgrep=None,
+         seed=None):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
     fieldsep = utils.fieldsep
@@ -49,6 +50,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         print('  Using encoding ' + repr(encoding), file=sys.stderr)
         if stable:
             print('  NOT randomizing order of cards.', file=sys.stderr)
+        elif sort:
+             print('  Sorting cards by ' + sort + '.', file=sys.stderr)
+        else:
+            print('  Randomizing order of cards (seed ' + str(seed if seed is not None else 1371367) + ').', file=sys.stderr)
         if randomize_mana:
             print('  Randomizing order of symbols in manacosts.', file=sys.stderr)
         if not fmt_labeled:
@@ -56,17 +61,15 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if not line_transformations:
             print('  NOT using line reordering transformations', file=sys.stderr)
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations, report_file=report_file, grep=grep, vgrep=vgrep)
+    if sort:
+        stable = True
+
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations,
+                                  report_file=report_file, grep=grep, vgrep=vgrep,
+                                  shuffle=not stable, seed=seed if seed is not None else 1371367)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
-        stable = True
-
-    # This should give a random but consistent ordering, to make comparing changes
-    # between the output of different versions easier.
-    if not stable:
-        random.seed(1371367)
-        random.shuffle(cards)
 
     if limit > 0:
         cards = cards[:limit]
@@ -127,6 +130,10 @@ if __name__ == '__main__':
                         help='Limit the number of cards to encode.')
     proc_group.add_argument('-s', '--stable', action='store_true',
                         help='Preserve the original order of cards from the input file (do not shuffle).')
+    proc_group.add_argument('--seed', type=int,
+                        help='Seed for the random number generator (default: 1371367).')
+    proc_group.add_argument('--sample', type=int, default=0,
+                        help='Alias for --limit N. If used, cards are shuffled unless --stable is provided.')
     proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
                         help='Sort cards by the specified criterion.')
     proc_group.add_argument('--grep', action='append',
@@ -144,8 +151,14 @@ if __name__ == '__main__':
                         help='File path to save raw JSON of cards that failed to parse (useful for debugging).')
 
     args = parser.parse_args()
+
+    # Handle --sample
+    if args.sample > 0:
+        args.limit = args.sample
+
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
          stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet,
-         limit=args.limit, grep=args.grep, sort=args.sort, vgrep=args.vgrep)
+         limit=args.limit, grep=args.grep, sort=args.sort, vgrep=args.vgrep,
+         seed=args.seed)
     exit(0)

@@ -214,6 +214,12 @@ Supports any encoding format supported by encode.py/decode.py.""",
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Limit the number of cards to sort.')
+    proc_group.add_argument('--shuffle', action='store_true',
+                        help='Randomize the order of cards before sorting.')
+    proc_group.add_argument('--seed', type=int,
+                        help='Seed for the random number generator.')
+    proc_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random cards from the input (equivalent to --shuffle --limit N).')
     proc_group.add_argument('--grep', action='append',
                         help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
@@ -248,13 +254,19 @@ Supports any encoding format supported by encode.py/decode.py.""",
 
     # We could support custom formats if needed, but this covers the main ones.
 
+    # Handle --sample
+    if args.sample > 0:
+        args.shuffle = True
+        args.limit = args.sample
+
     # Use the robust jdecode.mtg_open_file for loading and filtering.
     # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
     # verbose=True enables jdecode diagnostic output (e.g. invalid cards).
     cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, fmt_ordered=fmt_ordered, grep=args.grep, vgrep=args.vgrep,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
-                                  exclude_layouts=lambda x: False)
+                                  exclude_layouts=lambda x: False,
+                                  shuffle=args.shuffle, seed=args.seed)
 
     if args.limit > 0:
         cards = cards[:args.limit]

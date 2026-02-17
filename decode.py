@@ -23,7 +23,8 @@ from namediff import Namediff
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, summary_out = False, quiet=False,
-         report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None):
+         report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None,
+         shuffle=False, seed=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -86,7 +87,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     else:
         raise ValueError('decode.py: unknown encoding: ' + encoding)
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep, vgrep=vgrep)
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep, vgrep=vgrep,
+                                  shuffle=shuffle, seed=seed)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -454,6 +456,12 @@ if __name__ == '__main__':
                         help="Calculate how unique these cards are compared to real Magic cards (requires Word2Vec).")
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Limit the number of cards to decode.')
+    proc_group.add_argument('--shuffle', action='store_true',
+                        help='Randomize the order of cards before decoding.')
+    proc_group.add_argument('--seed', type=int,
+                        help='Seed for the random number generator.')
+    proc_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random cards from the input (equivalent to --shuffle --limit N).')
     proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
                         help='Sort cards by the specified criterion.')
     proc_group.add_argument('-d', '--dump', action='store_true',
@@ -475,11 +483,16 @@ if __name__ == '__main__':
     if args.mse and not args.outfile:
         parser.error("--mse requires an output filename.")
 
+    # Handle --sample
+    if args.sample > 0:
+        args.shuffle = True
+        args.limit = args.sample
+
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
          json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, summary_out = args.summary, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep,
-         sort=args.sort, vgrep=args.vgrep)
+         sort=args.sort, vgrep=args.vgrep, shuffle=args.shuffle, seed=args.seed)
 
     exit(0)
