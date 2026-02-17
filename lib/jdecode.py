@@ -4,6 +4,7 @@ import os
 import re
 import csv
 import zipfile
+import random
 
 import utils
 import cardlib
@@ -448,7 +449,8 @@ def mtg_open_file(fname, verbose = False,
                   exclude_sets = default_exclude_sets,
                   exclude_types = default_exclude_types,
                   exclude_layouts = default_exclude_layouts,
-                  report_file=None, grep=None, vgrep=None):
+                  report_file=None, grep=None, vgrep=None,
+                  shuffle=False, seed=None):
 
     cards = []
     valid = 0
@@ -674,5 +676,10 @@ def mtg_open_file(fname, verbose = False,
 
             return True
         cards = [c for c in cards if match_card(c)]
+
+    if shuffle:
+        if seed is not None:
+            random.seed(seed)
+        random.shuffle(cards)
 
     return _check_parsing_quality(cards, report_fobj)
