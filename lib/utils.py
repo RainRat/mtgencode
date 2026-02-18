@@ -594,3 +594,38 @@ _ansi_escape_re = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 def visible_len(s):
     """Returns the length of a string without ANSI escape sequences."""
     return len(_ansi_escape_re.sub('', s))
+
+def print_operation_summary(op_name, success_count, fail_count, quiet=False):
+    """Prints a standardized, colorized summary of a CLI operation to stderr."""
+    if quiet:
+        return
+
+    import sys
+
+    # Only use color if stderr is a TTY
+    use_color = sys.stderr.isatty()
+
+    header = f"\n>> {op_name} complete:"
+    if use_color:
+        header = colorize(header, Ansi.BOLD + Ansi.CYAN)
+
+    success_str = f"  - {success_count} cards successfully processed."
+    if use_color and success_count > 0:
+        success_str = colorize(success_str, Ansi.GREEN)
+
+    fail_str = f"  - {fail_count} cards failed."
+    if use_color and fail_count > 0:
+        fail_str = colorize(fail_str, Ansi.BOLD + Ansi.RED)
+    elif fail_count == 0:
+        fail_str = "  - No errors encountered."
+        if use_color:
+            fail_str = colorize(fail_str, Ansi.GREEN)
+
+    footer = "----------------------------------------"
+    if use_color:
+        footer = colorize(footer, Ansi.BOLD + Ansi.CYAN)
+
+    print(header, file=sys.stderr)
+    print(success_str, file=sys.stderr)
+    print(fail_str, file=sys.stderr)
+    print(footer, file=sys.stderr)
