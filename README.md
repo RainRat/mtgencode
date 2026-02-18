@@ -178,6 +178,12 @@ Extracts a single card from the massive `AllPrintings.json` file. This is useful
 python3 scripts/extract_one.py data/AllPrintings.json SET_CODE "Card Name"
 ```
 
+### `splitcards.py`
+Splits a card dataset into multiple files, which is essential for creating training and validation sets for AI models.
+```bash
+python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --ratios 0.9 0.1
+```
+
 ---
 
 ## Troubleshooting
