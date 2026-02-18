@@ -106,33 +106,6 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             cards[i].nearest_names = nearest_names[i]
             cards[i].nearest_cards = nearest_cards[i]
 
-    def write_csv_output(writer, cards, verbose=False):
-        import csv
-        fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
-        csv_writer = csv.DictWriter(writer, fieldnames=fieldnames)
-        csv_writer.writeheader()
-
-        iterator = cards
-        # Only use tqdm if we are writing to a file (writer is not stdout) or if we are not in quiet mode
-        # But we don't have access to quiet mode here easily without passing it.
-        # Since this is a helper, let's just iterate. Main loop handles progress usually.
-
-        for card in cards:
-            d = card.to_dict()
-            # Flatten/map fields for CSV
-            row = {
-                'name': d.get('name', ''),
-                'mana_cost': d.get('manaCost', ''),
-                'type': ' '.join(d.get('supertypes', []) + d.get('types', [])),
-                'subtypes': ' '.join(d.get('subtypes', [])),
-                'text': d.get('text', ''),
-                'power': d.get('power', d.get('pt', '') if '/' not in d.get('pt', '') else ''),
-                'toughness': d.get('toughness', ''),
-                'loyalty': d.get('loyalty', d.get('defense', '')),
-                'rarity': d.get('rarity', ''),
-            }
-            csv_writer.writerow(row)
-
     def hoverimg(cardname, dist, nd, for_html=False, for_md=False):
         # Gracefully handle cases where the card returned by CBOW is not in the Namediff set
         # This happens in testing when CBOW uses full data but Namediff uses a subset
@@ -177,6 +150,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         return namestr
 
     def writecards(writer, for_html=False, for_md=False, for_summary=False):
+        success_count = 0
+        fail_count = 0
         if for_mse:
             # have to prepend a massive chunk of formatting info
             writer.write(utils.mse_prepend)
@@ -192,33 +167,43 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 # for coloring of each box separately cardlib.Card.format() must change non-minimally
                 writer.write('<div id="' + utils.segment_ids[i] + '">')
                 for card in segments[i]:
-                    writecard(writer, card, for_html=True)
+                    try:
+                        writecard(writer, card, for_html=True)
+                        success_count += 1
+                    except Exception:
+                        fail_count += 1
                 writer.write("</div><hr>")
             # closing the html file
             writer.write(utils.html_append)
-            return
+            return success_count, fail_count
 
         first = True
         for card in tqdm(cards, disable=quiet, desc="Decoding"):
-            if not first and not (for_html or for_md or for_mse or for_summary):
-                # Add a divider between cards for console output
-                use_color = False
-                if color_arg is True:
-                    use_color = True
-                elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
-                    use_color = True
+            try:
+                if not first and not (for_html or for_md or for_mse or for_summary):
+                    # Add a divider between cards for console output
+                    use_color = False
+                    if color_arg is True:
+                        use_color = True
+                    elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
+                        use_color = True
 
-                divider = '-' * 40
-                if use_color:
-                    divider = utils.colorize(divider, utils.Ansi.BOLD + utils.Ansi.CYAN)
-                writer.write(divider + '\n')
+                    divider = '-' * 40
+                    if use_color:
+                        divider = utils.colorize(divider, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                    writer.write(divider + '\n')
 
-            writecard(writer, card, for_md=for_md, for_summary=for_summary)
-            first = False
+                writecard(writer, card, for_md=for_md, for_summary=for_summary)
+                success_count += 1
+                first = False
+            except Exception:
+                fail_count += 1
 
         if for_mse:
             # more formatting info
             writer.write('version control:\n\ttype: none\napprentice code: ')
+
+        return success_count, fail_count
 
     def writecard(writer, card, for_html=False, for_md=False, for_summary=False):
         try:
@@ -302,22 +287,31 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
 
 
+    total_success = 0
+    total_fail = 0
+
     if oname:
         if text and not for_mse:
             if verbose:
                 print('Writing text output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
-                writecards(ofile)
+                s, f = writecards(ofile)
+                total_success += s
+                total_fail += f
         if summary_out:
             if verbose:
                 print('Writing summary output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
-                writecards(ofile, for_summary=True)
+                s, f = writecards(ofile, for_summary=True)
+                total_success += s
+                total_fail += f
         if md_out:
             if verbose:
                 print('Writing markdown output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
-                writecards(ofile, for_md=True)
+                s, f = writecards(ofile, for_md=True)
+                total_success += s
+                total_fail += f
         if html:
             fname = oname
             if not fname.endswith('.html'):
@@ -325,13 +319,21 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             if verbose:
                 print('Writing html output to: ' + fname, file=sys.stderr)
             with open(fname, 'w', encoding='utf8') as ofile:
-                writecards(ofile, for_html=True)
+                s, f = writecards(ofile, for_html=True)
+                total_success += s
+                total_fail += f
         if json_out:
             import json
             if verbose:
                 print('Writing json output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
-                json_cards = [card.to_dict() for card in cards]
+                json_cards = []
+                for card in cards:
+                    try:
+                        json_cards.append(card.to_dict())
+                        total_success += 1
+                    except Exception:
+                        total_fail += 1
                 json.dump(json_cards, ofile, indent=2)
         if jsonl_out:
             import json
@@ -339,12 +341,38 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 print('Writing jsonl output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
                 for card in cards:
-                    ofile.write(json.dumps(card.to_dict()) + '\n')
+                    try:
+                        ofile.write(json.dumps(card.to_dict()) + '\n')
+                        total_success += 1
+                    except Exception:
+                        total_fail += 1
         if csv_out:
             if verbose:
                 print('Writing csv output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8', newline='') as ofile:
-                write_csv_output(ofile, cards, verbose=verbose)
+                # write_csv_output doesn't easily return counts, so we do it manually or assume cards
+                import csv
+                fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
+                csv_writer = csv.DictWriter(ofile, fieldnames=fieldnames)
+                csv_writer.writeheader()
+                for card in cards:
+                    try:
+                        d = card.to_dict()
+                        row = {
+                            'name': d.get('name', ''),
+                            'mana_cost': d.get('manaCost', ''),
+                            'type': ' '.join(d.get('supertypes', []) + d.get('types', [])),
+                            'subtypes': ' '.join(d.get('subtypes', [])),
+                            'text': d.get('text', ''),
+                            'power': d.get('power', d.get('pt', '') if '/' not in d.get('pt', '') else ''),
+                            'toughness': d.get('toughness', ''),
+                            'loyalty': d.get('loyalty', d.get('defense', '')),
+                            'rarity': d.get('rarity', ''),
+                        }
+                        csv_writer.writerow(row)
+                        total_success += 1
+                    except Exception:
+                        total_fail += 1
 
         if for_mse:
             mse_oname = oname
@@ -360,7 +388,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
             # Write cards to the temporary 'set' file
             with open('set', 'w', encoding='utf8') as ofile:
-                writecards(ofile)
+                s, f = writecards(ofile)
+                total_success += s
+                total_fail += f
 
             # Use the freaky mse extension instead of zip.
             with zipfile.ZipFile(mse_oname, mode='w') as zf:
@@ -373,20 +403,55 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     else:
         if json_out:
             import json
-            json_cards = [card.to_dict() for card in cards]
+            json_cards = []
+            for card in cards:
+                try:
+                    json_cards.append(card.to_dict())
+                    total_success += 1
+                except Exception:
+                    total_fail += 1
             json.dump(json_cards, sys.stdout, indent=2)
         elif jsonl_out:
             import json
             for card in cards:
-                sys.stdout.write(json.dumps(card.to_dict()) + '\n')
+                try:
+                    sys.stdout.write(json.dumps(card.to_dict()) + '\n')
+                    total_success += 1
+                except Exception:
+                    total_fail += 1
             sys.stdout.flush()
         elif csv_out:
-            write_csv_output(sys.stdout, cards, verbose=verbose)
+            import csv
+            fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
+            csv_writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
+            csv_writer.writeheader()
+            for card in cards:
+                try:
+                    d = card.to_dict()
+                    row = {
+                        'name': d.get('name', ''),
+                        'mana_cost': d.get('manaCost', ''),
+                        'type': ' '.join(d.get('supertypes', []) + d.get('types', [])),
+                        'subtypes': ' '.join(d.get('subtypes', [])),
+                        'text': d.get('text', ''),
+                        'power': d.get('power', d.get('pt', '') if '/' not in d.get('pt', '') else ''),
+                        'toughness': d.get('toughness', ''),
+                        'loyalty': d.get('loyalty', d.get('defense', '')),
+                        'rarity': d.get('rarity', ''),
+                    }
+                    csv_writer.writerow(row)
+                    total_success += 1
+                except Exception:
+                    total_fail += 1
             sys.stdout.flush()
         else:
             # Correctly propagate for_html=html, for_md=md_out, for_summary=summary_out
-            writecards(sys.stdout, for_html=html, for_md=md_out, for_summary=summary_out)
+            s, f = writecards(sys.stdout, for_html=html, for_md=md_out, for_summary=summary_out)
+            total_success += s
+            total_fail += f
         sys.stdout.flush()
+
+    utils.print_operation_summary("Decoding", total_success, total_fail, quiet=quiet)
 
 if __name__ == '__main__':
     import argparse
