@@ -51,21 +51,21 @@ if __name__ == '__main__':
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-x', '--outliers', action='store_true',
-                        help='show additional diagnostics and edge cases')
+                        help='Show extra details and unusual cards.')
     proc_group.add_argument('-a', '--all', action='store_true',
-                        help='show all information and dump invalid cards')
+                        help='Show all information and dump invalid cards.')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
-                        help='Limit the number of cards to process.')
+                        help='Only process the first N cards.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Randomize the order of cards before summarizing.')
     proc_group.add_argument('--seed', type=int,
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
-                        help='Pick N random cards from the input (equivalent to --shuffle --limit N).')
+                        help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
     proc_group.add_argument('--grep', action='append',
-                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+                        help='Only include cards that match a regex (matches name, type, or text). Use multiple times for AND logic.')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
-                        help='Exclude cards matching regex (matches name, type, or text). Can be used multiple times (OR logic).')
+                        help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
     
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')

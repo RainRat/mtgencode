@@ -125,21 +125,21 @@ if __name__ == '__main__':
     # Group: Data Processing
     proc_group = parser.add_argument_group('Data Processing')
     proc_group.add_argument('-r', '--randomize', action='store_true',
-                        help='Shuffle mana symbols (e.g., {W}{U} vs {U}{W}) for data augmentation.')
+                        help='Randomize the order of mana symbols (e.g., {W}{U} vs {U}{W}) to help the AI learn better.')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
-                        help='Limit the number of cards to encode.')
+                        help='Only process the first N cards.')
     proc_group.add_argument('-s', '--stable', action='store_true',
-                        help='Preserve the original order of cards from the input file (do not shuffle).')
+                        help='Keep the original order of cards from the input file (do not shuffle).')
     proc_group.add_argument('--seed', type=int,
-                        help='Seed for the random number generator (default: 1371367).')
+                        help='Seed for the random number generator (Default: 1371367).')
     proc_group.add_argument('--sample', type=int, default=0,
-                        help='Alias for --limit N. If used, cards are shuffled unless --stable is provided.')
+                        help='Pick N random cards from the input (shorthand for --limit N). Cards are shuffled by default unless --stable is used.')
     proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
-                        help='Sort cards by the specified criterion.')
+                        help='Sort cards by the specified criterion (enables --stable).')
     proc_group.add_argument('--grep', action='append',
-                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+                        help='Only include cards that match a regex (matches name, type, or text). Use multiple times for AND logic.')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
-                        help='Exclude cards matching regex (matches name, type, or text). Can be used multiple times (OR logic).')
+                        help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')

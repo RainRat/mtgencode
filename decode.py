@@ -500,9 +500,9 @@ if __name__ == '__main__':
     # We provide a --raw flag to disable it.
     # We also keep -g for backward compatibility but make it a no-op that ensures True.
     content_group.add_argument('-g', '--gatherer', action='store_true', default=True,
-                        help='Format text like the official Gatherer website (Default).')
+                        help='Format text like the official Gatherer website (Default). This applies modern wording and capitalization.')
     content_group.add_argument('--raw', '--no-gatherer', dest='gatherer', action='store_false',
-                        help='Output raw text without any special formatting.')
+                        help='Output raw text exactly as it appears in the encoded data.')
 
     content_group.add_argument('-f', '--forum', action='store_true',
                         help='Use pretty formatting for mana symbols (compatible with MTG Salvation forums).')
@@ -520,13 +520,13 @@ if __name__ == '__main__':
     proc_group.add_argument('-c', '--creativity', action='store_true',
                         help="Calculate how unique these cards are compared to real Magic cards (requires Word2Vec).")
     proc_group.add_argument('-n', '--limit', type=int, default=0,
-                        help='Limit the number of cards to decode.')
+                        help='Only process the first N cards.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Randomize the order of cards before decoding.')
     proc_group.add_argument('--seed', type=int,
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
-                        help='Pick N random cards from the input (equivalent to --shuffle --limit N).')
+                        help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
     proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
                         help='Sort cards by the specified criterion.')
     proc_group.add_argument('-d', '--dump', action='store_true',
@@ -538,9 +538,9 @@ if __name__ == '__main__':
     proc_group.add_argument('--report-failed',
                         help='File path to save the text of cards that failed to parse/validate (useful for debugging).')
     proc_group.add_argument('--grep', action='append',
-                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+                        help='Only include cards that match a regex (matches name, type, or text). Use multiple times for AND logic.')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
-                        help='Exclude cards matching regex (matches name, type, or text). Can be used multiple times (OR logic).')
+                        help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
 
     args = parser.parse_args()
 
