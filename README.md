@@ -101,8 +101,10 @@ Customization options for formatting data:
 *   `-e named`: Name comes first.
 *   `-e vec`: Numerical format for specific model types.
 *   `-r`, `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
-*   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc` before encoding.
+*   `-s`, `--stable`: Preserve the original order of cards from the input (shuffling is enabled by default).
+*   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc` before encoding. Automatically enables `--stable`.
 *   `--limit N`: Only process the first N cards.
+*   `--sample N`: Shorthand for `--limit N`. Cards are shuffled by default unless `--stable` is used.
 
 ### `decode.py` (Viewing Results)
 Options for formatting the output:
@@ -113,6 +115,10 @@ Options for formatting the output:
 *   `--json`: Creates a structured JSON file.
 *   `--csv`: Creates a spreadsheet file.
 *   `--md`: Creates a Markdown document.
+*   `--shuffle`: Randomizes the order of cards (shuffling is off by default for decoding).
+*   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc`.
+*   `--limit N`: Only process the first N cards.
+*   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
 
 > **Important:** If you used a specific encoding (like `named`) when running `encode.py`, you **must** use that same encoding flag when running `decode.py`.
 >
@@ -143,6 +149,24 @@ python3 encode.py data/AllPrintings.json --limit 10 | python3 decode.py
 python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - sorted_cards.txt
 ```
 *   **Note:** Use a hyphen (`-`) as the filename to tell a script to read from standard input.
+
+### Advanced Filtering
+You can filter which cards are processed using regular expressions (regex). This works for `encode.py`, `decode.py`, and `summarize.py`.
+
+*   `--grep "pattern"`: Only include cards that match the pattern (checks name, type, and rules text).
+*   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the pattern.
+
+**Examples:**
+```bash
+# Process only Goblin creatures
+python3 encode.py data/AllPrintings.json --grep "Goblin" --grep "Creature"
+
+# Exclude cards with the "Infect" mechanic
+python3 encode.py data/AllPrintings.json --vgrep "Infect"
+
+# Find only legendary artifacts
+python3 scripts/summarize.py data/AllPrintings.json --grep "Legendary Artifact"
+```
 
 ---
 
