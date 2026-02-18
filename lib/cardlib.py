@@ -752,6 +752,7 @@ class Card:
                                           fieldsep = fieldsep,
                                           randomize_fields = randomize_fields, 
                                           randomize_mana = randomize_mana,
+                                          randomize_lines = randomize_lines,
                                           initial_sep = initial_sep, final_sep = final_sep))
 
         return outstr
