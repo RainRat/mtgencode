@@ -153,7 +153,7 @@ python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - so
 ### Advanced Filtering
 You can filter which cards are processed using regular expressions (regex). This works for `encode.py`, `decode.py`, and `summarize.py`.
 
-*   `--grep "pattern"`: Only include cards that match the pattern (checks name, type, and rules text).
+*   `--grep "pattern"`: Only include cards that match the pattern. Patterns are checked against the name, type, and rules text fields individually. Use multiple `--grep` flags for AND logic.
 *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the pattern.
 
 **Examples:**
@@ -165,7 +165,7 @@ python3 encode.py data/AllPrintings.json --grep "Goblin" --grep "Creature"
 python3 encode.py data/AllPrintings.json --vgrep "Infect"
 
 # Find only legendary artifacts
-python3 scripts/summarize.py data/AllPrintings.json --grep "Legendary Artifact"
+python3 scripts/summarize.py data/AllPrintings.json --grep "Legendary" --grep "Artifact"
 ```
 
 ---
