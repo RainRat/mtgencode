@@ -522,6 +522,31 @@ class Card:
         setattr(self, field_text + '_lines_words', [])
         setattr(self, field_other, [])
 
+    def _get_ansi_color(self):
+        """Returns the ANSI color code for the card based on its colors and types."""
+        color = utils.Ansi.BOLD
+        card_colors = self.cost.colors
+        if len(card_colors) > 1:
+            color += utils.Ansi.YELLOW  # Multicolored
+        elif len(card_colors) == 1:
+            c = card_colors[0]
+            if c == 'W':
+                color += utils.Ansi.WHITE
+            elif c == 'U':
+                color += utils.Ansi.CYAN
+            elif c == 'B':
+                color += utils.Ansi.MAGENTA
+            elif c == 'R':
+                color += utils.Ansi.RED
+            elif c == 'G':
+                color += utils.Ansi.GREEN
+        else:
+            # Colorless / Artifacts
+            # Lands are typically just BOLD, non-land colorless are CYAN
+            if 'land' not in [t.lower() for t in self.types]:
+                color += utils.Ansi.CYAN
+        return color
+
     # These setters are invoked via name mangling, so they have to match 
     # the field names specified above to be used. Otherwise we just
     # always fall back to the (uninteresting) default handler.
@@ -797,18 +822,7 @@ class Card:
         # Name
         cardname = titlecase(self.name)
         if ansi_color:
-            color = utils.Ansi.BOLD
-            card_colors = self.cost.colors
-            if len(card_colors) > 1: color += utils.Ansi.YELLOW
-            elif len(card_colors) == 1:
-                c = card_colors[0]
-                if c == 'W': color += utils.Ansi.WHITE
-                elif c == 'U': color += utils.Ansi.CYAN
-                elif c == 'B': color += utils.Ansi.MAGENTA
-                elif c == 'R': color += utils.Ansi.RED
-                elif c == 'G': color += utils.Ansi.GREEN
-            else:
-                if 'land' not in [t.lower() for t in self.types]: color += utils.Ansi.CYAN
+            color = self._get_ansi_color()
             cardname = utils.colorize(cardname, color)
 
         # Cost
@@ -881,22 +895,7 @@ class Card:
             cardname = '_NONAME_'
 
         if ansi_color:
-            color = utils.Ansi.BOLD
-            card_colors = self.cost.colors
-            if len(card_colors) > 1:
-                color += utils.Ansi.YELLOW # Multicolored
-            elif len(card_colors) == 1:
-                c = card_colors[0]
-                if c == 'W': color += utils.Ansi.WHITE
-                elif c == 'U': color += utils.Ansi.CYAN
-                elif c == 'B': color += utils.Ansi.MAGENTA
-                elif c == 'R': color += utils.Ansi.RED
-                elif c == 'G': color += utils.Ansi.GREEN
-            else:
-                if 'land' in self.types:
-                    pass # Keep just bold for lands
-                else:
-                    color += utils.Ansi.CYAN # Artifacts/Colorless
+            color = self._get_ansi_color()
             cardname = utils.colorize(cardname, color)
 
         coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color)
