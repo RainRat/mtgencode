@@ -5,6 +5,7 @@ import re
 import csv
 import zipfile
 import random
+import io
 
 import utils
 import cardlib
@@ -463,65 +464,103 @@ def mtg_open_file(fname, verbose = False,
         report_fobj = open(report_file, 'w', encoding='utf-8')
 
     # Directory Handling
-    if fname != '-' and os.path.isdir(fname):
+    if fname != '-' and (os.path.isdir(fname) or fname.endswith('.zip')):
+        is_zip = fname.endswith('.zip')
         if verbose:
-            print(f"Scanning directory {fname} for JSON/CSV/JSONL files...", file=sys.stderr)
+            if is_zip:
+                print(f"Opening ZIP archive {fname}...", file=sys.stderr)
+            else:
+                print(f"Scanning directory {fname} for JSON/CSV/JSONL files...", file=sys.stderr)
 
         aggregated_srcs = {}
         aggregated_bad_sets = set()
-
-        # Look for .json, .csv, .jsonl, .mse-set, and .txt files
-        files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt')])
-
         txt_cards = []
-        for f in files:
-            full_path = os.path.join(fname, f)
-            if verbose:
-                print(f"Loading {f}...", file=sys.stderr)
+
+        def process_file_content(f, content, is_zip):
+            # Inner helper to avoid duplication between ZIP and directory
+            srcs, bad = {}, set()
+            t_cards = []
 
             if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set'):
-                if f.endswith('.json'):
-                    srcs, bad = mtg_open_json(full_path, verbose=False)
+                if f.endswith('.mse-set'):
+                    # Nested ZIP handling
+                    with zipfile.ZipFile(io.BytesIO(content if is_zip else open(f, 'rb').read()), 'r') as nested_zf:
+                        try:
+                            with nested_zf.open('set') as nested_f:
+                                inner_content = nested_f.read().decode('utf-8')
+                            srcs, bad = mtg_open_mse_content(inner_content, verbose=False)
+                        except KeyError:
+                            if verbose:
+                                print(f"Warning: 'set' file not found in nested MSE file {f}", file=sys.stderr)
+                elif f.endswith('.json'):
+                    try:
+                        jobj = json.loads(content if is_zip else open(f, 'r', encoding='utf8').read())
+                        srcs, bad = mtg_open_json_obj(jobj, verbose=False)
+                    except json.JSONDecodeError:
+                        pass
                 elif f.endswith('.jsonl'):
-                    srcs, bad = mtg_open_jsonl(full_path, verbose=False)
-                elif f.endswith('.mse-set'):
-                    srcs, bad = mtg_open_mse(full_path, verbose=False)
-                else:
-                    srcs, bad = mtg_open_csv(full_path, verbose=False)
+                    srcs, bad = mtg_open_jsonl_content(content if is_zip else open(f, 'r', encoding='utf8').read(), verbose=False)
+                else: # .csv
+                    reader = csv.DictReader(io.StringIO(content if is_zip else open(f, 'r', encoding='utf8').read()))
+                    srcs, bad = mtg_open_csv_reader(reader, verbose=False)
+            elif f.endswith('.txt'):
+                text = content if is_zip else open(f, 'r', encoding='utf8').read()
+                if utils.fieldsep in text:
+                    for card_src in text.split(utils.cardsep):
+                        if card_src:
+                            card = cardlib.Card(card_src, fmt_ordered=fmt_ordered, linetrans=linetrans)
+                            skip = False
+                            for cardtype in card.types:
+                                if exclude_types(cardtype):
+                                    skip = True
+                            if not skip:
+                                t_cards.append(card)
+
+            return srcs, bad, t_cards
+
+        if is_zip:
+            with zipfile.ZipFile(fname, 'r') as zf:
+                files = sorted([f for f in zf.namelist() if not f.endswith('/') and (f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt'))])
+                for f in files:
+                    if verbose:
+                        print(f"  Loading {f} from ZIP...", file=sys.stderr)
+                    with zf.open(f) as zfile:
+                        content = zfile.read().decode('utf-8') if not f.endswith('.mse-set') else zfile.read()
+                        srcs, bad, t_cards = process_file_content(f, content, True)
+                        aggregated_bad_sets.update(bad)
+                        for key, val in srcs.items():
+                            if key in aggregated_srcs:
+                                aggregated_srcs[key].extend(val)
+                            else:
+                                aggregated_srcs[key] = val
+                        txt_cards.extend(t_cards)
+        else:
+            files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt')])
+            for f in files:
+                if verbose:
+                    print(f"Loading {f}...", file=sys.stderr)
+                full_path = os.path.join(fname, f)
+                # For directories, we don't read content here but let the helper do it
+                srcs, bad, t_cards = process_file_content(full_path, None, False)
                 aggregated_bad_sets.update(bad)
                 for key, val in srcs.items():
                     if key in aggregated_srcs:
                         aggregated_srcs[key].extend(val)
                     else:
                         aggregated_srcs[key] = val
-            elif f.endswith('.txt'):
-                # Encoded text files are processed directly into Card objects
-                with open(full_path, 'rt', encoding='utf8') as f_txt:
-                    text = f_txt.read()
-
-                # Heuristic to avoid loading non-card text files:
-                # Must contain at least one field separator
-                if utils.fieldsep not in text:
-                    continue
-
-                for card_src in text.split(utils.cardsep):
-                    if card_src:
-                        card = cardlib.Card(card_src, fmt_ordered=fmt_ordered, linetrans=linetrans)
-
-                        # Apply exclusions to cards from encoded text
-                        skip = False
-                        for cardtype in card.types:
-                            if exclude_types(cardtype):
-                                skip = True
-
-                        if not skip:
-                            txt_cards.append(card)
+                txt_cards.extend(t_cards)
 
         if verbose:
              if aggregated_srcs:
-                 print('Opened ' + str(len(aggregated_srcs)) + ' uniquely named cards from JSON/CSV files.', file=sys.stderr)
+                 if is_zip:
+                     print('Opened ' + str(len(aggregated_srcs)) + ' uniquely named cards from JSON/CSV files inside ZIP.', file=sys.stderr)
+                 else:
+                     print('Opened ' + str(len(aggregated_srcs)) + ' uniquely named cards from JSON/CSV files.', file=sys.stderr)
              if txt_cards:
-                 print('Opened ' + str(len(txt_cards)) + ' cards from encoded text files.', file=sys.stderr)
+                 if is_zip:
+                     print('Opened ' + str(len(txt_cards)) + ' cards from encoded text files inside ZIP.', file=sys.stderr)
+                 else:
+                     print('Opened ' + str(len(txt_cards)) + ' cards from encoded text files.', file=sys.stderr)
 
         cards = _process_json_srcs(aggregated_srcs, aggregated_bad_sets, verbose, linetrans,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj)
@@ -582,7 +621,6 @@ def mtg_open_file(fname, verbose = False,
             # 2. CSV Detection
             if not cards and stripped.startswith('name,'):
                 try:
-                    import io
                     reader = csv.DictReader(io.StringIO(text))
                     if verbose:
                         print('Detected CSV input from stdin.', file=sys.stderr)
