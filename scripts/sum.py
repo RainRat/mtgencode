@@ -8,10 +8,10 @@ sys.path.append(libdir)
 
 def calculate_stats(data):
     nonempty = len(data)
-    name_avg = sum(item[2] for item in data) / nonempty
-    name_dupes = sum(item[2] == 1.0 for item in data)
-    card_avg = sum(item[3] for item in data) / nonempty
-    card_dupes = sum(item[3] == 1.0 for item in data)
+    name_avg = sum(float(item[2]) for item in data) / nonempty
+    name_dupes = sum(float(item[2]) == 1.0 for item in data)
+    card_avg = sum(float(item[3]) for item in data) / nonempty
+    card_dupes = sum(float(item[3]) == 1.0 for item in data)
     return nonempty, name_avg, name_dupes, card_avg, card_dupes
 
 def main(fname):
