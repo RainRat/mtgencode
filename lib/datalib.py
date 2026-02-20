@@ -89,6 +89,7 @@ class Datamine:
         self.by_toughness = {}
         self.by_pt = {}
         self.by_loyalty = {}
+        self.by_rarity = {}
         self.by_textlines = {}
         self.by_textlen = {}
 
@@ -109,6 +110,7 @@ class Datamine:
             'by_toughness' : self.by_toughness,
             'by_pt' : self.by_pt,
             'by_loyalty' : self.by_loyalty,
+            'by_rarity' : self.by_rarity,
             'by_textlines' : self.by_textlines,
             'by_textlen' : self.by_textlen,
         }
@@ -159,6 +161,12 @@ class Datamine:
                 inc(self.by_pt, card.pt, [card])
 
                 inc(self.by_loyalty, card.loyalty, [card])
+
+                # normalize rarity
+                rarity = card.rarity
+                if rarity in utils.json_rarity_unmap:
+                    rarity = utils.json_rarity_unmap[rarity]
+                inc(self.by_rarity, rarity, [card])
 
                 inc(self.by_textlines, len(card.text_lines), [card])
                 inc(self.by_textlen, len(card.text.encode()), [card])
@@ -231,6 +239,8 @@ class Datamine:
         print(color_line('--------------------', use_color))
         print(color_header(str(len(self.by_cmc)) + ' different CMCs, ' +
               str(len(self.by_cost)) + ' unique mana costs', use_color))
+        avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
+        print('Average CMC: {:.2f}'.format(avg_cmc))
         print('-- Breakdown by CMC: --')
         d = sorted(self.by_cmc, reverse=False)
         rows = []
@@ -244,6 +254,13 @@ class Datamine:
         rows = []
         for k in d[0:vsize]:
             rows += [[utils.from_mana(k), color_count(len(self.by_cost[k]), use_color)]]
+        printrows(padrows(rows))
+        print(color_line('--------------------', use_color))
+        print(color_header(str(len(self.by_rarity)) + ' represented rarities', use_color))
+        print('-- Breakdown by rarity: --')
+        rows = []
+        for k in sorted(self.by_rarity.keys()):
+            rows += [[k, color_count(len(self.by_rarity[k]), use_color)]]
         printrows(padrows(rows))
         print(color_line('--------------------', use_color))
         print(color_header(str(len(self.by_pt)) + ' unique p/t combinations', use_color))
@@ -428,5 +445,6 @@ class Datamine:
                 'textlen_max': max(self.by_textlen),
                 'textlines_min': min(self.by_textlines),
                 'textlines_max': max(self.by_textlines),
+                'avg_cmc': sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0,
             }
         return result
