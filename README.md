@@ -97,28 +97,32 @@ python3 decode.py encoded_output.txt my_set.mse-set
 
 ### `encode.py` (Preparing Data)
 Customization options for formatting data:
-*   `-e std`: Standard format (Name comes last). Default.
-*   `-e named`: Name comes first.
-*   `-e vec`: Numerical format for specific model types.
-*   `-r`, `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
+*   `-e {std,named,noname,rfields,old,norarity,vec,custom}`: Choose the data format. 'std' (name last) is the default.
+*   `--nolabel`: Remove field labels (like `|cost|`) from the output for a cleaner look.
+*   `--nolinetrans`: Keep the original order of card text lines.
+*   `-r`, `--randomize`: Randomize mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
 *   `-s`, `--stable`: Preserve the original order of cards from the input (shuffling is enabled by default).
-*   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc` before encoding. Automatically enables `--stable`.
-*   `--limit N`: Only process the first N cards.
+*   `--sort {name,color,type,cmc}`: Sort cards before encoding. This automatically enables `--stable`.
+*   `-n LIMIT`, `--limit LIMIT`: Only process the first N cards.
 *   `--sample N`: Shorthand for `--limit N`. Cards are shuffled by default unless `--stable` is used.
 
 ### `decode.py` (Viewing Results)
 Options for formatting the output:
-*   `--gatherer`: Formats text like the official Gatherer website (Default).
-*   `--raw`: Shows raw text without special formatting.
-*   `--html`: Creates a webpage with card images.
-*   `--mse`: Creates a file for Magic Set Editor.
-*   `--json`: Creates a structured JSON file.
-*   `--csv`: Creates a spreadsheet file.
-*   `--md`: Creates a Markdown document.
-*   `--shuffle`: Randomizes the order of cards (shuffling is off by default for decoding).
-*   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc`.
-*   `--limit N`: Only process the first N cards.
-*   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+*   `--text`: Force plain text output (Default format).
+*   `--gatherer`: Use modern Gatherer-style wording and capitalization (Default style).
+*   `--raw`: Show raw text exactly as it appears in the encoded data.
+*   `--html`: Create a nicely formatted HTML page.
+*   `--json`: Create a structured JSON file.
+*   `--jsonl`: Create a JSON Lines file (one card per line).
+*   `--csv`: Create a spreadsheet (CSV) file.
+*   `--md`: Create a Markdown document.
+*   `--summary`: Create a compact one-line summary for each card.
+*   `--mse`: Create a file for Magic Set Editor (requires an output filename).
+*   `-e ENCODING`: If you used a specific encoding flag with `encode.py`, you must use it here too.
+*   `--shuffle`: Randomize the order of cards (shuffling is off by default for decoding).
+*   `--sort {name,color,type,cmc}`: Sort cards before displaying them.
+*   `-n LIMIT`, `--limit LIMIT`: Only process the first N cards.
+*   `--sample N`: Pick N random cards from the input (shorthand for `--shuffle --limit N`).
 
 > **Important:** If you used a specific encoding (like `named`) when running `encode.py`, you **must** use that same encoding flag when running `decode.py`.
 >
@@ -153,8 +157,8 @@ python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - so
 ### Advanced Filtering
 You can filter which cards are processed using regular expressions (regex). This works for `encode.py`, `decode.py`, and `summarize.py`.
 
-*   `--grep "pattern"`: Only include cards that match the pattern. Patterns are checked against the name, type, and rules text fields individually. Use multiple `--grep` flags for AND logic.
-*   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the pattern.
+*   `--grep "pattern"`: Only include cards that match the pattern. Patterns are checked against the name, supertypes, types, subtypes, and rules text. Use multiple `--grep` flags for AND logic.
+*   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the pattern. Use multiple flags for OR logic.
 
 **Examples:**
 ```bash
@@ -187,13 +191,25 @@ We provide extra tools in the `scripts/` folder to help you manage your data.
 ### `sortcards.py`
 Organizes encoded cards into categories (like Color or Card Type) and wraps them in `[spoiler]` tags. This is useful for posting generated cards on forums.
 ```bash
+# Basic sorting
 python3 sortcards.py encoded_output.txt sorted_output.txt
+
+# Common options
+# --sort {name,color,type,cmc}: Choose how to group the cards.
+# --grep / --vgrep: Filter which cards are included in the sort.
 ```
 
 ### `summarize.py`
-Shows statistics about your encoded cards, such as the distribution of card types and colors:
+Provides a statistical breakdown of your card dataset, including color distribution, card types, and rarities.
 ```bash
+# Basic summary
 python3 scripts/summarize.py encoded_output.txt
+
+# Detailed analysis
+python3 scripts/summarize.py encoded_output.txt --outliers --all
+
+# Machine-readable output
+python3 scripts/summarize.py encoded_output.txt --json
 ```
 
 ### `extract_one.py`
