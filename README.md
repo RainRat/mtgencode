@@ -193,7 +193,14 @@ python3 sortcards.py encoded_output.txt sorted_output.txt
 ### `summarize.py`
 Shows statistics about your encoded cards, such as the distribution of card types and colors:
 ```bash
+# View statistics in your terminal
 python3 scripts/summarize.py encoded_output.txt
+
+# Save statistics to a file
+python3 scripts/summarize.py encoded_output.txt summary.txt
+
+# Save statistics in JSON format (Auto-detected from extension)
+python3 scripts/summarize.py encoded_output.txt summary.json
 ```
 
 ### `extract_one.py`
