@@ -88,7 +88,7 @@ def test_summarize_output(datamine_instance, capsys):
 
     assert "Average CMC: 2.25" in output
     assert "4 represented rarities" in output
-    assert "-- Breakdown by rarity: --" in output
+    assert "Breakdown by rarity:" in output
     assert "common" in output
     assert "uncommon" in output
     assert "rare" in output

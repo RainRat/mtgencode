@@ -38,7 +38,7 @@ def main(fname, verbose = True, outliers = False, dump_all = False, grep = None,
         cards = cards[:limit]
 
     card_srcs = []
-    for card in tqdm(cards, disable=quiet or not verbose, desc="Analyzing cards", unit="card"):
+    for card in tqdm(cards, disable=quiet, desc="Analyzing cards", unit="card"):
         if card.json:
             card_srcs.append(card.json)
         else:
