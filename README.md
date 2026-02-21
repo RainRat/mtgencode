@@ -111,6 +111,7 @@ Options for formatting the output:
 *   `--gatherer`: Formats text like the official Gatherer website (Default).
 *   `--raw`: Shows raw text without special formatting.
 *   `--html`: Creates a webpage with card images.
+*   `--deck`: Creates a standard MTG decklist.
 *   `--mse`: Creates a file for Magic Set Editor.
 *   `--json`: Creates a structured JSON file.
 *   `--csv`: Creates a spreadsheet file.
@@ -136,6 +137,7 @@ The tool automatically selects the format based on the file extension of your ou
 *   `.csv`  -> Spreadsheet
 *   `.md`   -> Markdown document
 *   `.sum`, `.summary` -> One-line summary
+*   `.deck`, `.dek` -> MTG Decklist
 *   `.mse-set` -> Magic Set Editor file
 
 ### Using Pipes
