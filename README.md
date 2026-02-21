@@ -70,7 +70,7 @@ Convert the JSON data into a simple text format for AI training.
 # Basic encoding
 python3 encode.py data/AllPrintings.json encoded_output.txt --verbose
 ```
-*   **Input:** `data/AllPrintings.json` (You can also provide a folder path to process all files inside it).
+*   **Input:** `data/AllPrintings.json`. You can also provide a folder path or a ZIP file to process all compatible files inside it.
 *   **Output:** `encoded_output.txt` (A text file with one card per entry).
 
 ### 3. Decode Cards (Text to Readable)
@@ -99,7 +99,12 @@ python3 decode.py encoded_output.txt my_set.mse-set
 Customization options for formatting data:
 *   `-e std`: Standard format (Name comes last). Default.
 *   `-e named`: Name comes first.
-*   `-e vec`: Numerical format for specific model types.
+*   `-e noname`: No card names included.
+*   `-e rfields`: Randomizes the order of fields (like cost, types, text) for each card.
+*   `-e old`: Legacy encoding format.
+*   `-e norarity`: Standard format but without rarity labels.
+*   `-e vec`: Numerical format for vector-based models.
+*   `-e custom`: Use your own user-defined formatting rules (see `lib/cardlib.py`).
 *   `-r`, `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
 *   `-s`, `--stable`: Preserve the original order of cards from the input (shuffling is enabled by default).
 *   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc` before encoding. Automatically enables `--stable`.
@@ -113,8 +118,11 @@ Options for formatting the output:
 *   `--html`: Creates a webpage with card images.
 *   `--mse`: Creates a file for Magic Set Editor.
 *   `--json`: Creates a structured JSON file.
+*   `--jsonl`: Creates a JSON Lines file (one card per line).
 *   `--csv`: Creates a spreadsheet file.
 *   `--md`: Creates a Markdown document.
+*   `--summary`: Creates a compact one-line summary for each card.
+*   `--color` / `--no-color`: Manually enable or disable ANSI color output in your terminal.
 *   `--shuffle`: Randomizes the order of cards (shuffling is off by default for decoding).
 *   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc`.
 *   `--limit N`: Only process the first N cards.
@@ -187,8 +195,13 @@ We provide extra tools in the `scripts/` folder to help you manage your data.
 ### `sortcards.py`
 Organizes encoded cards into categories (like Color or Card Type) and wraps them in `[spoiler]` tags. This is useful for posting generated cards on forums.
 ```bash
+# Basic sorting
 python3 sortcards.py encoded_output.txt sorted_output.txt
+
+# Sort with filters and sampling
+python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "Elf"
 ```
+*   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, `--grep`, and `--vgrep`.
 
 ### `summarize.py`
 Shows statistics about your encoded cards, such as the distribution of card types and colors:
@@ -196,11 +209,26 @@ Shows statistics about your encoded cards, such as the distribution of card type
 # View statistics in your terminal
 python3 scripts/summarize.py encoded_output.txt
 
-# Save statistics to a file
-python3 scripts/summarize.py encoded_output.txt summary.txt
+# Show extra details and unusual cards (outliers)
+python3 scripts/summarize.py encoded_output.txt -x
 
-# Save statistics in JSON format (Auto-detected from extension)
+# Save statistics to a file (JSON format is auto-detected)
 python3 scripts/summarize.py encoded_output.txt summary.json
+```
+*   **Options:**
+    *   `-x`, `--outliers`: Show extra details and unusual cards.
+    *   `-a`, `--all`: Show all information, including dumping invalid cards.
+    *   `--json`: Force JSON output.
+    *   Supports filtering flags: `--limit`, `--sample`, `--grep`, `--vgrep`.
+
+### `csv2json.py` & `combinejson.py`
+Used for integrating custom cards into your dataset. See [CUSTOM.md](CUSTOM.md) for a full guide.
+```bash
+# Convert a spreadsheet to JSON
+python3 scripts/csv2json.py my_cards.csv my_cards.json
+
+# Merge custom cards with official data
+python3 scripts/combinejson.py data/AllPrintings.json my_cards.json AllCards.json
 ```
 
 ### `extract_one.py`
@@ -221,7 +249,9 @@ python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --r
 
 *   **Missing Data:** If you see an error about `punkt` or `punkt_tab`, run the download command in the Installation section.
 *   **File Not Found:** If `encode.py` fails, check that your `data/AllPrintings.json` file is in the correct folder.
+*   **Format Mismatch:** If you used a specific encoding flag (like `-e named`) with `encode.py`, you **must** use the same flag with `decode.py`.
 *   **Missing Symbols:** If card symbols (like mana) show as squares, you need to install the Magic fonts. See [DEPENDENCIES.md](DEPENDENCIES.md) for help.
+*   **Parsing Errors:** Some cards in older JSON formats may not parse correctly. Use the `--report-unparsed` (for `encode.py`) or `--report-failed` (for `decode.py`) flags to identify them.
 
 ---
 
