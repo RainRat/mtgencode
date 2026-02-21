@@ -690,26 +690,12 @@ def mtg_open_file(fname, verbose = False,
         def match_card(card):
             # Positive filtering (AND logic): card must match ALL grep patterns
             for pattern in greps:
-                found = False
-                if pattern.search(card.name): found = True
-                elif any(pattern.search(t) for t in card.types): found = True
-                elif any(pattern.search(t) for t in card.supertypes): found = True
-                elif any(pattern.search(t) for t in card.subtypes): found = True
-                elif pattern.search(card.text.text): found = True
-
-                if not found:
+                if not card.search(pattern):
                     return False
 
             # Negative filtering (OR logic): card must match NONE of the vgrep patterns
             for pattern in vgreps:
-                found = False
-                if pattern.search(card.name): found = True
-                elif any(pattern.search(t) for t in card.types): found = True
-                elif any(pattern.search(t) for t in card.supertypes): found = True
-                elif any(pattern.search(t) for t in card.subtypes): found = True
-                elif pattern.search(card.text.text): found = True
-
-                if found:
+                if card.search(pattern):
                     return False
 
             return True

@@ -782,6 +782,20 @@ class Card:
 
         return outstr
 
+    def search(self, pattern):
+        """Returns True if the pattern matches any of the card's fields."""
+        if pattern.search(self.name):
+            return True
+        if any(pattern.search(t) for t in self.types):
+            return True
+        if any(pattern.search(t) for t in self.supertypes):
+            return True
+        if any(pattern.search(t) for t in self.subtypes):
+            return True
+        if pattern.search(self.text.text):
+            return True
+        return False
+
     def summary(self, ansi_color=False):
         """Returns a compact, one-line summary of the card."""
         # Rarity indicator
