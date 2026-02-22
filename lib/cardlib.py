@@ -552,6 +552,20 @@ class Card:
                 color += utils.Ansi.CYAN
         return color
 
+    def _get_rarity_ansi_color(self, rarity):
+        """Returns the ANSI color code for a given rarity string or marker."""
+        if not rarity:
+            return utils.Ansi.BOLD
+        r_lower = rarity.lower() if hasattr(rarity, 'lower') else rarity
+        color = utils.Ansi.BOLD
+        if r_lower == 'uncommon' or rarity == utils.rarity_uncommon_marker:
+            color += utils.Ansi.CYAN
+        elif r_lower == 'rare' or rarity == utils.rarity_rare_marker:
+            color += utils.Ansi.YELLOW
+        elif r_lower in ['mythic rare', 'mythic'] or rarity == utils.rarity_mythic_marker:
+            color += utils.Ansi.RED
+        return color
+
     # These setters are invoked via name mangling, so they have to match 
     # the field names specified above to be used. Otherwise we just
     # always fall back to the (uninteresting) default handler.
@@ -829,11 +843,7 @@ class Card:
             indicator = rarity_map.get(r.lower() if hasattr(r, 'lower') else r, r[0].upper() if r else '?')
 
             if ansi_color:
-                color = utils.Ansi.BOLD
-                r_lower = r.lower() if hasattr(r, 'lower') else ''
-                if r_lower == 'uncommon' or r == utils.rarity_uncommon_marker: color += utils.Ansi.CYAN
-                elif r_lower == 'rare' or r == utils.rarity_rare_marker: color += utils.Ansi.YELLOW
-                elif r_lower in ['mythic rare', 'mythic'] or r == utils.rarity_mythic_marker: color += utils.Ansi.RED
+                color = self._get_rarity_ansi_color(r)
                 indicator = utils.colorize(indicator, color)
 
             rarity_indicator = f'[{indicator}] '
@@ -944,15 +954,8 @@ class Card:
 
         rarity_display = rarity
         if ansi_color and rarity:
-            r_lower = rarity.lower()
-            if r_lower == 'uncommon':
-                rarity_display = utils.colorize(rarity, utils.Ansi.CYAN)
-            elif r_lower == 'rare':
-                rarity_display = utils.colorize(rarity, utils.Ansi.YELLOW)
-            elif r_lower in ['mythic rare', 'mythic']:
-                rarity_display = utils.colorize(rarity, utils.Ansi.RED)
-            elif r_lower == 'common':
-                rarity_display = utils.colorize(rarity, utils.Ansi.BOLD)
+            color = self._get_rarity_ansi_color(rarity)
+            rarity_display = utils.colorize(rarity, color)
 
         if rarity and gatherer:
             outstr += ' (' + rarity_display + ')'
