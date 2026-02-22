@@ -451,6 +451,7 @@ def mtg_open_file(fname, verbose = False,
                   exclude_types = default_exclude_types,
                   exclude_layouts = default_exclude_layouts,
                   report_file=None, grep=None, vgrep=None,
+                  sets=None, rarities=None,
                   shuffle=False, seed=None):
 
     cards = []
@@ -683,9 +684,20 @@ def mtg_open_file(fname, verbose = False,
         cards = _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj)
 
-    if grep or vgrep:
+    if grep or vgrep or sets or rarities:
         greps = [re.compile(p, re.IGNORECASE) for p in (grep if grep else [])]
         vgreps = [re.compile(p, re.IGNORECASE) for p in (vgrep if vgrep else [])]
+
+        target_sets = [s.upper() for s in sets] if sets else None
+        target_rarities = []
+        target_rarities_lower = [r.lower() for r in rarities] if rarities else None
+        if rarities:
+            for r in rarities:
+                r_lower = r.lower()
+                if r_lower in utils.json_rarity_map:
+                    target_rarities.append(utils.json_rarity_map[r_lower])
+                else:
+                    target_rarities.append(r)
 
         def match_card(card):
             # Positive filtering (AND logic): card must match ALL grep patterns
@@ -696,6 +708,18 @@ def mtg_open_file(fname, verbose = False,
             # Negative filtering (OR logic): card must match NONE of the vgrep patterns
             for pattern in vgreps:
                 if card.search(pattern):
+                    return False
+
+            # Set filtering
+            if target_sets:
+                if not card.set_code or card.set_code.upper() not in target_sets:
+                    return False
+
+            # Rarity filtering
+            if target_rarities:
+                if not card.rarity:
+                    return False
+                if card.rarity not in target_rarities and card.rarity.lower() not in target_rarities_lower:
                     return False
 
             return True

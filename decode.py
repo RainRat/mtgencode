@@ -25,7 +25,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, summary_out = False, deck_out = False, quiet=False,
          report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None,
-         shuffle=False, seed=None):
+         sets=None, rarities=None, shuffle=False, seed=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -91,7 +91,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         raise ValueError('decode.py: unknown encoding: ' + encoding)
 
     cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep, vgrep=vgrep,
-                                  shuffle=shuffle, seed=seed)
+                                  sets=sets, rarities=rarities, shuffle=shuffle, seed=seed)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -575,6 +575,10 @@ if __name__ == '__main__':
                         help='Only include cards that match a regex (matches name, type, or text). Use multiple times for AND logic.')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
                         help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
+    proc_group.add_argument('--set', action='append',
+                        help='Only include cards from these sets (e.g., MOM, MRD).')
+    proc_group.add_argument('--rarity', action='append',
+                        help='Only include cards of these rarities (common, uncommon, rare, mythic).')
 
     args = parser.parse_args()
 
@@ -592,6 +596,7 @@ if __name__ == '__main__':
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
          json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, summary_out = args.summary, deck_out = args.deck, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep,
-         sort=args.sort, vgrep=args.vgrep, shuffle=args.shuffle, seed=args.seed)
+         sort=args.sort, vgrep=args.vgrep, sets=args.set, rarities=args.rarity,
+         shuffle=args.shuffle, seed=args.seed)
 
     exit(0)
