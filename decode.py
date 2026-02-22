@@ -17,18 +17,19 @@ import utils
 import jdecode
 import cardlib
 import sortlib
+from titlecase import titlecase
 from cbow import CBOW
 from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, summary_out = False, quiet=False,
+         creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, summary_out = False, deck_out = False, quiet=False,
          report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None,
          shuffle=False, seed=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
-    if not (html or text or for_mse or json_out or jsonl_out or csv_out or md_out or summary_out):
+    if not (html or text or for_mse or json_out or jsonl_out or csv_out or md_out or summary_out or deck_out):
         if oname:
             if oname.endswith('.html'):
                 html = True
@@ -44,6 +45,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 summary_out = True
             elif oname.endswith('.mse-set'):
                 for_mse = True
+            elif oname.endswith('.deck') or oname.endswith('.dek'):
+                deck_out = True
             else:
                 text = True
         else:
@@ -51,7 +54,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     # Mutually exclusive output formats are now enforced by argparse in main block,
     # but we keep this check for programmatic access safety.
-    if sum([bool(html), bool(for_mse), bool(json_out), bool(jsonl_out), bool(text), bool(csv_out), bool(md_out), bool(summary_out)]) > 1:
+    if sum([bool(html), bool(for_mse), bool(json_out), bool(jsonl_out), bool(text), bool(csv_out), bool(md_out), bool(summary_out), bool(deck_out)]) > 1:
         # If user explicitly requested multiple formats programmatically, we warn or error.
         # However, argparse logic below ensures text defaults to True only if others are False.
         # But if someone calls main() directly with multiple True, we should respect that or fail.
@@ -290,6 +293,35 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     total_success = 0
     total_fail = 0
 
+    if deck_out:
+        from collections import OrderedDict
+        counts = OrderedDict()
+        for card in cards:
+            key = (card.name, card.set_code, card.number)
+            counts[key] = counts.get(key, 0) + 1
+
+        output_f = sys.stdout
+        if oname:
+            if verbose:
+                print('Writing decklist output to: ' + oname, file=sys.stderr)
+            output_f = open(oname, 'w', encoding='utf8')
+
+        try:
+            for (name, set_code, number), count in counts.items():
+                line = f"{count} {titlecase(name)}"
+                if set_code:
+                    line += f" ({set_code.upper()})"
+                    if number:
+                        line += f" {number}"
+                output_f.write(line + '\n')
+            total_success = len(cards)
+        finally:
+            if oname:
+                output_f.close()
+
+        utils.print_operation_summary("Decoding", total_success, total_fail, quiet=quiet)
+        return
+
     if oname:
         if text and not for_mse:
             if verbose:
@@ -462,7 +494,7 @@ if __name__ == '__main__':
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input card data (JSON, JSONL, CSV, MSE, or ZIP), an encoded file, or a directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .jsonl, .csv, .md, .sum, .summary, .mse-set).')
+                        help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .jsonl, .csv, .md, .sum, .summary, .deck, .dek, .mse-set).')
 
     # Group: Output Format (Mutually Exclusive)
     # We use a mutually exclusive group to enforce one output format.
@@ -483,6 +515,8 @@ if __name__ == '__main__':
                            help='Generate a Markdown file (Auto-detected for .md).')
     fmt_group.add_argument('--summary', action='store_true',
                            help='Generate a compact one-line summary for each card (Auto-detected for .sum or .summary).')
+    fmt_group.add_argument('--deck', '--decklist', action='store_true',
+                           help='Generate a standard MTG decklist (Auto-detected for .deck or .dek).')
     fmt_group.add_argument('--mse', action='store_true',
                            help='Generate a Magic Set Editor set file (Auto-detected for .mse-set). Requires an output filename.')
 
@@ -556,7 +590,7 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
-         json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, summary_out = args.summary, quiet=args.quiet,
+         json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, summary_out = args.summary, deck_out = args.deck, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep,
          sort=args.sort, vgrep=args.vgrep, shuffle=args.shuffle, seed=args.seed)
 

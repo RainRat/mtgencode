@@ -457,6 +457,8 @@ class Card:
         # looks like a json object
         if isinstance(src, dict):
             self.json = src
+            self.set_code = src.get('setCode')
+            self.number = src.get('number')
             if utils.json_field_bside in src:
                 self.bside = Card(src[utils.json_field_bside],
                                   fmt_ordered = fmt_ordered,
@@ -521,6 +523,9 @@ class Card:
         setattr(self, field_text + '_words', [])
         setattr(self, field_text + '_lines_words', [])
         setattr(self, field_other, [])
+        # metadata for interoperability
+        self.set_code = None
+        self.number = None
 
     def _get_ansi_color(self):
         """Returns the ANSI color code for the card based on its colors and types."""
@@ -1089,6 +1094,12 @@ class Card:
         # Text
         if self.text.text:
             d['text'] = self.get_text(force_unpass=True)
+
+        # Metadata
+        if self.set_code:
+            d['setCode'] = self.set_code
+        if self.number:
+            d['number'] = self.number
 
         # B-Side (Recursive)
         if self.bside:
