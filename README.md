@@ -142,6 +142,7 @@ Options for formatting the output:
 The tool automatically selects the format based on the file extension of your output file:
 *   `.html` -> Webpage
 *   `.json` -> JSON data
+*   `.jsonl` -> JSON Lines data
 *   `.csv`  -> Spreadsheet
 *   `.md`   -> Markdown document
 *   `.sum`, `.summary` -> One-line summary
