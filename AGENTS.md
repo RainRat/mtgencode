@@ -13,7 +13,7 @@ This project includes a Docker setup for a consistent development environment.
 To build the Docker image and start an interactive session, run the following command:
 
 ```bash
-./docker-interactive.sh
+bash docker-interactive.sh
 ```
 
 ### Windows
@@ -26,10 +26,14 @@ For Windows users, a batch script is provided to avoid line-ending issues:
 
 ## Reporting Unparsed Cards
 
-When working with large JSON files like `AllPrintings.json`, you may encounter cards that fail to parse. To make it easier to debug these issues without sharing the entire file, you can use the `--report-unparsed` flag to save the problematic card data to a separate file.
+When working with large JSON files like `AllPrintings.json`, you may encounter cards that fail to parse. To make it easier to debug these issues without sharing the entire file, you can use reporting flags to save the problematic card data to a separate file.
+
+*   **For `encode.py`:** Use `--report-unparsed`
+*   **For `decode.py`:** Use `--report-failed`
 
 ```bash
-./encode.py data/AllPrintings.json --report-unparsed unparsed_cards.json
+# Example for encoding
+python3 encode.py data/AllPrintings.json --report-unparsed unparsed_cards.json
 ```
 
-This will create a file named `unparsed_cards.json` containing the raw JSON data for any cards that could not be parsed.
+This will create a file containing the raw data for any cards that could not be parsed or validated.
