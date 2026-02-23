@@ -105,6 +105,8 @@ Customization options for formatting data:
 *   `-e norarity`: Standard format but without rarity labels.
 *   `-e vec`: Numerical format for vector-based models.
 *   `-e custom`: Use your own user-defined formatting rules (see `lib/cardlib.py`).
+*   `--nolabel`: Removes field labels (e.g., `|cost|`, `|text|`) from the output.
+*   `--nolinetrans`: Disables the automatic reordering and normalization of card text lines.
 *   `-r`, `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
 *   `-s`, `--stable`: Preserve the original order of cards from the input (shuffling is enabled by default).
 *   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc` before encoding. Automatically enables `--stable`.
@@ -113,7 +115,7 @@ Customization options for formatting data:
 
 ### `decode.py` (Viewing Results)
 Options for formatting the output:
-*   `--gatherer`: Formats text like the official Gatherer website (Default).
+*   `-g`, `--gatherer`: Formats text like the official Gatherer website (Default). This applies modern wording and capitalization.
 *   `--raw`: Shows raw text without special formatting.
 *   `--html`: Creates a webpage with card images.
 *   `--deck`: Creates a standard MTG decklist.
@@ -162,21 +164,23 @@ python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - so
 *   **Note:** Use a hyphen (`-`) as the filename to tell a script to read from standard input.
 
 ### Advanced Filtering
-You can filter which cards are processed using regular expressions (regex). This works for `encode.py`, `decode.py`, and `summarize.py`.
+You can filter which cards are processed using regular expressions, set codes, or rarities. These flags work across `encode.py`, `decode.py`, `sortcards.py`, and `scripts/summarize.py`.
 
-*   `--grep "pattern"`: Only include cards that match the pattern. Patterns are checked against the name, type, and rules text fields individually. Use multiple `--grep` flags for AND logic.
-*   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the pattern.
+*   `--grep "pattern"`: Only include cards that match the regex pattern. It checks the name, rules text, and all parts of the type line (supertypes, types, and subtypes). Use multiple `--grep` flags for **AND** logic (all patterns must match).
+*   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the regex pattern. Use multiple flags for **OR** logic (matching any pattern excludes the card).
+*   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets (OR logic).
+*   `--rarity NAME`: Only include cards of specific rarities. You can use full names (e.g., `common`, `mythic`) or shorthand markers (`C`, `U`, `R`, `M`). Supports multiple rarities (OR logic).
 
 **Examples:**
 ```bash
 # Process only Goblin creatures
 python3 encode.py data/AllPrintings.json --grep "Goblin" --grep "Creature"
 
-# Exclude cards with the "Infect" mechanic
-python3 encode.py data/AllPrintings.json --vgrep "Infect"
+# Find only legendary artifacts from the MOM set
+python3 scripts/summarize.py data/AllPrintings.json --grep "Legendary" --grep "Artifact" --set MOM
 
-# Find only legendary artifacts
-python3 scripts/summarize.py data/AllPrintings.json --grep "Legendary" --grep "Artifact"
+# Process only rare cards, excluding those with the "Infect" mechanic
+python3 encode.py data/AllPrintings.json --vgrep "Infect" --rarity rare
 ```
 
 ---
