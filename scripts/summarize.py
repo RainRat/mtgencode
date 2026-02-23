@@ -20,7 +20,7 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
-def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = None, limit = 0, json_out = False, vgrep = None, shuffle = False, seed = None, quiet = False, oname = None):
+def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = None, limit = 0, json_out = False, vgrep = None, sets = None, rarities = None, shuffle = False, seed = None, quiet = False, oname = None):
 
     # Set default format to JSON if no specific output format is selected and outfile is .json
     if not json_out and oname and oname.endswith('.json'):
@@ -29,6 +29,7 @@ def main(fname, verbose = True, outliers = False, dump_all = False, grep = None,
     # Use the robust mtg_open_file for all loading and filtering.
     # We disable default exclusions to match original summarize.py behavior.
     cards = jdecode.mtg_open_file(fname, verbose=verbose, grep=grep, vgrep=vgrep,
+                                  sets=sets, rarities=rarities,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False,
@@ -102,6 +103,10 @@ if __name__ == '__main__':
                         help='Only include cards that match a regex (matches name, type, or text). Use multiple times for AND logic.')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
                         help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
+    proc_group.add_argument('--set', action='append',
+                        help='Only include cards from these sets (e.g., MOM, MRD).')
+    proc_group.add_argument('--rarity', action='append',
+                        help='Only include cards of these rarities (common, uncommon, rare, mythic).')
     
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -124,5 +129,5 @@ if __name__ == '__main__':
         args.shuffle = True
         args.limit = args.sample
 
-    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep, shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile)
+    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep, sets = args.set, rarities = args.rarity, shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile)
     exit(0)
