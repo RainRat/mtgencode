@@ -817,6 +817,17 @@ class Card:
 
     def summary(self, ansi_color=False):
         """Returns a compact, one-line summary of the card."""
+        # Status indicator
+        status = ''
+        if not self.parsed:
+            status = '[!] '
+            if ansi_color:
+                status = utils.colorize(status, utils.Ansi.BOLD + utils.Ansi.RED)
+        elif not self.valid:
+            status = '[?] '
+            if ansi_color:
+                status = utils.colorize(status, utils.Ansi.YELLOW)
+
         # Rarity indicator
         rarity_indicator = ''
         if self.rarity:
@@ -876,16 +887,20 @@ class Card:
         if self.pt:
             pt = utils.from_unary(self.pt)
             if ansi_color: pt = utils.colorize(pt, utils.Ansi.RED)
-            stats = f' - {pt}'
+            stats = pt
         elif self.loyalty:
             loyalty = utils.from_unary(self.loyalty)
             if ansi_color: loyalty = utils.colorize(loyalty, utils.Ansi.RED)
             if any('battle' in t.lower() for t in self.types):
-                stats = f' - [[{loyalty}]]'
+                stats = f'[[{loyalty}]]'
             else:
-                stats = f' - ({loyalty})'
+                stats = f'({loyalty})'
 
-        return f'{rarity_indicator}{cardname}{coststr} - {typeline}{stats}'
+        # Construct final summary string with consistent bullet separators
+        res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
+        if stats:
+            res += f' \u2022 {stats}'
+        return res
 
     def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False, ansi_color=False, for_md=False):
         """Formats the card data into a human-readable string.
