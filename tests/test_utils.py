@@ -1,4 +1,7 @@
 import pytest
+import sys
+import io
+from unittest.mock import patch
 from lib import utils
 from lib import config
 from lib.utils import to_unary, from_unary
@@ -49,7 +52,6 @@ def test_to_unary_capped(capsys):
 def test_to_unary_exceptions():
     # 1000000 -> 1000000 (example exception if it was there, but it's not by default)
     # Let's check what's in config.unary_exceptions
-    from lib import config
     for k, v in config.unary_exceptions.items():
         assert to_unary(str(k)) == v
 
@@ -261,3 +263,136 @@ def test_visible_len():
     # Text with embedded codes
     text = f"Part 1 {utils.Ansi.RED}Part 2{utils.Ansi.RESET} Part 3"
     assert utils.visible_len(text) == len("Part 1 Part 2 Part 3")
+
+# --- Extra Coverage for utils.py ---
+
+def test_split_types():
+    # Test standard case
+    assert utils.split_types("Legendary Creature") == (["Legendary"], ["Creature"])
+    # Test multiple supertypes
+    assert utils.split_types("Legendary Snow Creature") == (["Legendary", "Snow"], ["Creature"])
+    # Test only types
+    assert utils.split_types("Artifact Creature") == ([], ["Artifact", "Creature"])
+    # Test only supertypes (weird but possible)
+    assert utils.split_types("Basic") == (["Basic"], [])
+    # Test empty
+    assert utils.split_types("") == ([], [])
+    # Test with types not in known_supertypes
+    assert utils.split_types("World Enchantment") == (["World"], ["Enchantment"])
+    # Test multiple types
+    assert utils.split_types("Creature Enchantment") == ([], ["Creature", "Enchantment"])
+
+def test_print_operation_summary():
+    # Test quiet mode
+    with patch('sys.stderr', new=io.StringIO()) as fake_stderr:
+        utils.print_operation_summary("Test Op", 10, 0, quiet=True)
+        assert fake_stderr.getvalue() == ""
+
+    # Test non-TTY (no color)
+    with patch('sys.stderr', new=io.StringIO()) as fake_stderr:
+        fake_stderr.isatty = lambda: False
+        utils.print_operation_summary("Test Op", 5, 2)
+        output = fake_stderr.getvalue()
+        assert "Test Op complete:" in output
+        assert "5 cards successfully processed" in output
+        assert "2 cards failed" in output
+        assert "\033[" not in output  # No ANSI codes
+
+    # Test TTY (color)
+    with patch('sys.stderr', new=io.StringIO()) as fake_stderr:
+        fake_stderr.isatty = lambda: True
+        utils.print_operation_summary("Test Op", 5, 2)
+        output = fake_stderr.getvalue()
+        assert "\033[" in output  # Should have ANSI codes
+        assert "Test Op complete:" in output
+
+    # Test no errors case (non-TTY)
+    with patch('sys.stderr', new=io.StringIO()) as fake_stderr:
+        fake_stderr.isatty = lambda: False
+        utils.print_operation_summary("Test Op", 10, 0)
+        output = fake_stderr.getvalue()
+        assert "No errors encountered" in output
+        assert "\033[" not in output
+
+    # Test no errors case (TTY)
+    with patch('sys.stderr', new=io.StringIO()) as fake_stderr:
+        fake_stderr.isatty = lambda: True
+        utils.print_operation_summary("Test Op", 10, 0)
+        output = fake_stderr.getvalue()
+        assert "No errors encountered" in output
+        assert "\033[" in output
+
+def test_mana_alt_extra():
+    # len < 2 branch
+    # Single character symbols are len 1.
+    assert utils.mana_alt('W') == 'W'
+
+    # Invalid symbol
+    with pytest.raises(ValueError, match="invalid mana symbol for mana_alt()"):
+        utils.mana_alt('INVALID')
+
+    # Standard 2-char symbol
+    assert utils.mana_alt('WU') == 'UW'
+
+def test_mana_sym_to_encoding_extra():
+    # Invalid symbol
+    with pytest.raises(ValueError, match="invalid mana symbol for mana_sym_to_encoding()"):
+        utils.mana_sym_to_encoding('INVALID')
+
+def test_mana_untranslate_html():
+    # Only colorless
+    # {^} -> colorless_total = 1. jmanastr = ''.
+    # Should return <img class='mana-1'>
+    res = utils.mana_untranslate("{^}", for_html=True)
+    assert res == "<img class='mana-1'>"
+
+    # Only colored
+    # {WW} -> jmanastr = "<img class='mana-W'>". colorless_total = 0.
+    res = utils.mana_untranslate("{WW}", for_html=True)
+    assert res == "<img class='mana-W'>"
+
+    # Mixed
+    # {^WW} -> colorless_total = 1. jmanastr = "<img class='mana-W'>".
+    res = utils.mana_untranslate("{^WW}", for_html=True)
+    assert res == "<img class='mana-1'><img class='mana-W'>"
+
+def test_mana_untranslate_forum():
+    # Only colorless
+    # {^} -> [mana]1[/mana]
+    res = utils.mana_untranslate("{^}", for_forum=True)
+    assert res == "[mana]1[/mana]"
+
+    # Only colored
+    # {WW} -> [mana]W[/mana]
+    res = utils.mana_untranslate("{WW}", for_forum=True)
+    assert res == "[mana]W[/mana]"
+
+    # Mixed
+    # {^WW} -> [mana]1W[/mana]
+    res = utils.mana_untranslate("{^WW}", for_forum=True)
+    assert res == "[mana]1W[/mana]"
+
+def test_mana_untranslate_unknown_symbol():
+    # Hit line 475: idx += 1 if symbol unknown
+    # {?} where ? is not in mana_symall_decode
+    # mana_untranslate ignores characters it doesn't recognize
+    res = utils.mana_untranslate("{?}", for_forum=False)
+    assert res == "{0}" # It didn't find any valid symbols or colorless
+
+def test_mana_untranslate_with_unary_marker():
+    # Hit line 452 by temporarily setting mana_unary_marker
+    old_marker = utils.mana_unary_marker
+    try:
+        utils.mana_unary_marker = '&'
+        # {&^} -> inner is "&^".
+        # idx 0: match '&'. idx becomes 1.
+        # idx 1: match '^'. idx becomes 2. colorless_total becomes 1.
+        res = utils.mana_untranslate("{&^}", for_forum=False)
+        assert res == "{1}"
+    finally:
+        utils.mana_unary_marker = old_marker
+
+def test_mana_translate_unary_branches():
+    # Hit lines 432-435 in mana_translate
+    res = utils.to_mana("{&^}")
+    assert res == "{^}" # &^ is unary 1, becomes encoded ^
