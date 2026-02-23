@@ -171,6 +171,8 @@ class Datamine:
                 inc(self.by_textlines, len(card.text_lines), [card])
                 inc(self.by_textlen, len(card.text.encode()), [card])
 
+        self.avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
+
     # summarize the indices
     def summarize(self, hsize = 10, vsize = 10, cmcsize = 20, use_color = False):
 
@@ -246,8 +248,7 @@ class Datamine:
 
         print(color_header(str(len(self.by_cmc)) + ' different CMCs, ' +
               str(len(self.by_cost)) + ' unique mana costs', use_color))
-        avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
-        print('Average CMC: {:.2f}'.format(avg_cmc))
+        print('Average CMC: {:.2f}'.format(self.avg_cmc))
         print(color_header('Breakdown by CMC:', use_color))
         d = sorted(self.by_cmc, reverse=False)
         rows = []
@@ -465,6 +466,6 @@ class Datamine:
                 'textlen_max': max(self.by_textlen),
                 'textlines_min': min(self.by_textlines),
                 'textlines_max': max(self.by_textlines),
-                'avg_cmc': sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0,
+                'avg_cmc': self.avg_cmc,
             }
         return result
