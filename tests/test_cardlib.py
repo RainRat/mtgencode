@@ -113,7 +113,7 @@ def test_card_format(sample_card_json):
     expected_cost = utils.colorize("{0}", utils.Ansi.CYAN)
     expected_type = utils.colorize("Artifact Creature ~ Thopter", utils.Ansi.GREEN)
     expected_pt = utils.colorize("0/2", utils.Ansi.RED)
-    expected_rarity = utils.colorize("uncommon", utils.Ansi.CYAN)
+    expected_rarity = utils.colorize("uncommon", utils.Ansi.BOLD + utils.Ansi.CYAN)
 
     # Construction of default format with colors
     expected_colored_output = (
