@@ -692,8 +692,8 @@ class Card:
         # 8. Newlines
         mtext = transforms.text_unpass_7_newlines(mtext)
 
-        # 9. Unicode (MSE only)
-        if mse:
+        # 9. Unicode (MSE or Gatherer)
+        if mse or gatherer:
             mtext = transforms.text_unpass_8_unicode(mtext)
 
         # 10. Final formatting via Manatext
@@ -856,7 +856,7 @@ class Card:
         types = [titlecase(t) for t in self.types]
         typeline = ' '.join(supertypes + types)
         if self.subtypes:
-            typeline += f' {utils.dash_marker} ' + ' '.join([titlecase(s) for s in self.subtypes])
+            typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in self.subtypes])
 
         if ansi_color:
             typeline = utils.colorize(typeline, utils.Ansi.GREEN)
@@ -977,7 +977,10 @@ class Card:
             typeline += ' '.join(supertypes + types)
 
         if self.__dict__[field_subtypes]:
-            typeline += (' ' + utils.dash_marker)
+            if gatherer:
+                typeline += ' \u2014'
+            else:
+                typeline += (' ' + utils.dash_marker)
             for subtype in self.__dict__[field_subtypes]:
                 typeline += ' ' + titlecase(subtype)
 

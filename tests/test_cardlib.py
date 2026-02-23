@@ -87,7 +87,7 @@ def test_card_format(sample_card_json):
     gatherer_output = card.format(gatherer=True)
     expected_gatherer_output = (
         "Ornithopter {0} (uncommon)\n"
-        "Artifact Creature ~ Thopter (0/2)\n\n"
+        "Artifact Creature — Thopter (0/2)\n\n"
         "Flying"
     )
     assert gatherer_output == expected_gatherer_output
@@ -129,13 +129,13 @@ def test_card_summary(sample_card_json):
 
     # Test plain summary
     output = card.summary()
-    assert output == "[U] Ornithopter {0} - Artifact Creature ~ Thopter - 0/2"
+    assert output == "[U] Ornithopter {0} - Artifact Creature — Thopter - 0/2"
 
     # Test colored summary
     colored_output = card.summary(ansi_color=True)
     expected_name = utils.colorize("Ornithopter", utils.Ansi.BOLD + utils.Ansi.CYAN)
     expected_cost = utils.colorize("{0}", utils.Ansi.CYAN)
-    expected_type = utils.colorize("Artifact Creature ~ Thopter", utils.Ansi.GREEN)
+    expected_type = utils.colorize("Artifact Creature — Thopter", utils.Ansi.GREEN)
     expected_pt = utils.colorize("0/2", utils.Ansi.RED)
     expected_rarity_indicator = utils.colorize("U", utils.Ansi.BOLD + utils.Ansi.CYAN)
 

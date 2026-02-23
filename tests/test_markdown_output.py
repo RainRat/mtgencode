@@ -29,7 +29,7 @@ def test_decode_markdown_cli(tmp_path):
 
     content = outfile.read_text(encoding="utf-8")
     assert "**Markdown Card**" in content
-    assert "Creature ~ Human (1/1)" in content
+    assert "Creature — Human (1/1)" in content
 
 def test_decode_markdown_auto_extension(tmp_path):
     infile = tmp_path / "input.txt"
