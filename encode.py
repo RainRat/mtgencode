@@ -15,7 +15,7 @@ from tqdm import tqdm
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, randomize = False, nolabel = False, stable = False,
          report_file=None, quiet=False, limit=0, grep=None, sort=None, vgrep=None,
-         sets=None, rarities=None, seed=None):
+         sets=None, rarities=None, seed=None, decklist_file=None):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
     fieldsep = utils.fieldsep
@@ -67,7 +67,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations,
                                   report_file=report_file, grep=grep, vgrep=vgrep,
                                   sets=sets, rarities=rarities,
-                                  shuffle=not stable, seed=seed if seed is not None else 1371367)
+                                  shuffle=not stable, seed=seed if seed is not None else 1371367,
+                                  decklist_file=decklist_file)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -145,6 +146,8 @@ if __name__ == '__main__':
                         help='Only include cards from these sets (e.g., MOM, MRD).')
     proc_group.add_argument('--rarity', action='append',
                         help='Only include cards of these rarities (common, uncommon, rare, mythic).')
+    proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
+                        help='Filter cards using a standard MTG decklist file. Also supports card multiplication based on counts in the decklist.')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -165,5 +168,5 @@ if __name__ == '__main__':
          nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
          stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet,
          limit=args.limit, grep=args.grep, sort=args.sort, vgrep=args.vgrep,
-         sets=args.set, rarities=args.rarity, seed=args.seed)
+         sets=args.set, rarities=args.rarity, seed=args.seed, decklist_file=args.deck)
     exit(0)

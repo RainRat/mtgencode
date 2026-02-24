@@ -228,6 +228,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Only include cards from these sets (e.g., MOM, MRD).')
     proc_group.add_argument('--rarity', action='append',
                         help='Only include cards of these rarities (common, uncommon, rare, mythic).')
+    proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
+                        help='Filter cards using a standard MTG decklist file. Also supports card multiplication based on counts in the decklist.')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -271,7 +273,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False,
-                                  shuffle=args.shuffle, seed=args.seed)
+                                  shuffle=args.shuffle, seed=args.seed,
+                                  decklist_file=args.deck)
 
     if args.limit > 0:
         cards = cards[:args.limit]

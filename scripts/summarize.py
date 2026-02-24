@@ -20,7 +20,7 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
-def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = None, limit = 0, json_out = False, vgrep = None, sets = None, rarities = None, shuffle = False, seed = None, quiet = False, oname = None):
+def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = None, limit = 0, json_out = False, vgrep = None, sets = None, rarities = None, shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None):
 
     # Set default format to JSON if no specific output format is selected and outfile is .json
     if not json_out and oname and oname.endswith('.json'):
@@ -33,7 +33,8 @@ def main(fname, verbose = True, outliers = False, dump_all = False, grep = None,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False,
-                                  shuffle=shuffle, seed=seed)
+                                  shuffle=shuffle, seed=seed,
+                                  decklist_file=decklist_file)
 
     if limit > 0:
         cards = cards[:limit]
@@ -107,6 +108,8 @@ if __name__ == '__main__':
                         help='Only include cards from these sets (e.g., MOM, MRD).')
     proc_group.add_argument('--rarity', action='append',
                         help='Only include cards of these rarities (common, uncommon, rare, mythic).')
+    proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
+                        help='Filter cards using a standard MTG decklist file. Also supports card multiplication based on counts in the decklist.')
     
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -129,5 +132,5 @@ if __name__ == '__main__':
         args.shuffle = True
         args.limit = args.sample
 
-    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep, sets = args.set, rarities = args.rarity, shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile)
+    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep, sets = args.set, rarities = args.rarity, shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck)
     exit(0)
