@@ -261,7 +261,7 @@ class Datamine:
                    reverse = True)
         rows = []
         for k in d[0:vsize]:
-            rows += [[utils.from_mana(k), color_count(len(self.by_cost[k]), use_color)]]
+            rows += [[utils.from_mana(k, ansi_color=use_color), color_count(len(self.by_cost[k]), use_color)]]
         printrows(padrows(rows))
         print()
 
@@ -384,7 +384,7 @@ class Datamine:
                            key=len,
                            reverse=True)[0]
             print(color_header('Longest mana cost: (' + str(len(lcost)) + ')', use_color))
-            print('  ' + utils.from_mana(lcost))
+            print('  ' + utils.from_mana(lcost, ansi_color=use_color))
             print('\n' + plimit(self.by_cost[lcost][0].encode()) + '\n')
         else:
             print('No cards indexed by cost?')

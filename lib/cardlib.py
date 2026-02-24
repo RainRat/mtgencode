@@ -690,7 +690,7 @@ class Card:
         mtext = utils.from_unary(mtext)
 
         # 5. Symbols unpass (called BEFORE cardname to avoid Zombie {T}est bug)
-        mtext = utils.from_symbols(mtext, for_forum, for_html)
+        mtext = utils.from_symbols(mtext, for_forum, for_html, ansi_color=ansi_color)
 
         # 6. Sentencecase
         mtext = sentencecase(mtext)

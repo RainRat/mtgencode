@@ -1,5 +1,45 @@
 import re
 
+class Ansi:
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    MAGENTA = '\033[95m'
+    CYAN = '\033[96m'
+    WHITE = '\033[97m'
+
+def colorize(text, color_code):
+    if not text:
+        return text
+    return f"{color_code}{text}{Ansi.RESET}"
+
+# Regular expression for matching ANSI escape sequences
+_ansi_escape_re = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+def visible_len(s):
+    """Returns the length of a string without ANSI escape sequences."""
+    return len(_ansi_escape_re.sub('', s))
+
+def get_mana_ansi_color(sym):
+    """Returns the appropriate ANSI color code for a given mana symbol."""
+    sym = sym.upper()
+    colors = []
+    if 'W' in sym: colors.append(Ansi.WHITE)
+    if 'U' in sym: colors.append(Ansi.CYAN)
+    if 'B' in sym: colors.append(Ansi.MAGENTA)
+    if 'R' in sym: colors.append(Ansi.RED)
+    if 'G' in sym: colors.append(Ansi.GREEN)
+
+    if len(colors) > 1:
+        return Ansi.BOLD + Ansi.YELLOW
+    elif len(colors) == 1:
+        return Ansi.BOLD + colors[0]
+    else:
+        return Ansi.BOLD
+
 # Utilities for handling unicode, unary numbers, mana costs, and special symbols.
 # For convenience we redefine everything from config so that it can all be accessed
 # from the utils module.
@@ -441,7 +481,7 @@ def mana_translate(jmanastr):
 # convert an encoded mana string back to json
 mana_symlen_min = min([len(sym) for sym in mana_symall_decode])
 mana_symlen_max = max([len(sym) for sym in mana_symall_decode])
-def mana_untranslate(manastr, for_forum = False, for_html = False):
+def mana_untranslate(manastr, for_forum = False, for_html = False, ansi_color = False):
     inner = manastr[1:-1]
     jmanastr = ''
     colorless_total = 0
@@ -467,6 +507,9 @@ def mana_untranslate(manastr, for_forum = False, for_html = False):
                         jmanastr = jmanastr + decoded
                     elif for_forum:
                         jmanastr = jmanastr + mana_decode_direct_forum(sym)
+                    elif ansi_color:
+                        decoded = mana_decode_direct(sym)
+                        jmanastr = jmanastr + colorize(decoded, get_mana_ansi_color(decoded))
                     else:
                         jmanastr = jmanastr + mana_decode_direct(sym)
                     break
@@ -489,6 +532,12 @@ def mana_untranslate(manastr, for_forum = False, for_html = False):
             return (mana_forum_open_delimiter + ('' if colorless_total == 0 
                                                  else str(colorless_total))
                     + jmanastr + mana_forum_close_delimiter)
+    elif ansi_color:
+        colorless_str = colorize(mana_json_open_delimiter + str(colorless_total) + mana_json_close_delimiter, Ansi.BOLD)
+        if jmanastr == '':
+            return colorless_str
+        else:
+            return ('' if colorless_total == 0 else colorless_str) + jmanastr
     else:
         if jmanastr == '':
             return mana_json_open_delimiter + str(colorless_total) + mana_json_close_delimiter
@@ -503,8 +552,8 @@ def to_mana(s):
     return re.sub(mana_json_regex, lambda m: mana_translate(m.group(0).upper()), s)
 
 
-def from_mana(s, for_forum=False, for_html=False):
-    return re.sub(mana_regex, lambda m: mana_untranslate(m.group(0).upper(), for_forum=for_forum, for_html=for_html), s)
+def from_mana(s, for_forum=False, for_html=False, ansi_color=False):
+    return re.sub(mana_regex, lambda m: mana_untranslate(m.group(0).upper(), for_forum=for_forum, for_html=for_html, ansi_color=ansi_color), s)
     
 # Translation could also be accomplished using the datamine.Manacost object's
 # display methods, but these direct string transformations are retained for
@@ -544,13 +593,15 @@ def to_symbols(s):
     return re.sub(json_symbol_regex, lambda m: json_symbol_trans[m.group(0)], s)
 
 
-def from_symbols(s, for_forum=False, for_html=False):
+def from_symbols(s, for_forum=False, for_html=False, ansi_color=False):
     def replace(match):
         sym = match.group(0)
         if for_html:
             return symbol_html_trans[sym]
         elif for_forum:
             return symbol_forum_trans[sym]
+        elif ansi_color:
+            return colorize(symbol_trans[sym], Ansi.BOLD + Ansi.CYAN)
         else:
             return symbol_trans[sym]
     return re.sub(symbol_regex, replace, s)
@@ -571,29 +622,6 @@ def split_types(full_type):
             types.append(t)
     return supertypes, types
 
-
-class Ansi:
-    RESET = '\033[0m'
-    BOLD = '\033[1m'
-    RED = '\033[91m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    MAGENTA = '\033[95m'
-    CYAN = '\033[96m'
-    WHITE = '\033[97m'
-
-def colorize(text, color_code):
-    if not text:
-        return text
-    return f"{color_code}{text}{Ansi.RESET}"
-
-# Regular expression for matching ANSI escape sequences
-_ansi_escape_re = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-
-def visible_len(s):
-    """Returns the length of a string without ANSI escape sequences."""
-    return len(_ansi_escape_re.sub('', s))
 
 def print_operation_summary(op_name, success_count, fail_count, quiet=False):
     """Prints a standardized, colorized summary of a CLI operation to stderr."""

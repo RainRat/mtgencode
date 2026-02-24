@@ -113,7 +113,12 @@ class TestManacost:
 
         # ANSI Color
         colored = m.format(ansi_color=True)
-        assert colored == utils.colorize("{W}{U}{B}{R}{G}", utils.Ansi.CYAN)
+        expected = (utils.colorize("{W}", utils.Ansi.BOLD + utils.Ansi.WHITE) +
+                    utils.colorize("{U}", utils.Ansi.BOLD + utils.Ansi.CYAN) +
+                    utils.colorize("{B}", utils.Ansi.BOLD + utils.Ansi.MAGENTA) +
+                    utils.colorize("{R}", utils.Ansi.BOLD + utils.Ansi.RED) +
+                    utils.colorize("{G}", utils.Ansi.BOLD + utils.Ansi.GREEN))
+        assert colored == expected
 
         # None
         assert Manacost("").format() == "_NOCOST_"
@@ -179,7 +184,7 @@ class TestManatext:
         # {X} -> {XX} -> format() -> {X}
         # In Manatext, cost.format(ansi_color=True) is called
         colored = mt.format(ansi_color=True)
-        expected_cost = utils.colorize("{X}", utils.Ansi.CYAN)
+        expected_cost = utils.colorize("{X}", utils.Ansi.BOLD)
         assert colored == f"Pay {expected_cost}."
 
     def test_encode(self):

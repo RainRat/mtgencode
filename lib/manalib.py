@@ -108,11 +108,8 @@ class Manacost:
             return '_NOCOST_'
         
         else:
-            s = utils.mana_untranslate(utils.mana_open_delimiter + ''.join(self.sequence)
-                                          + utils.mana_close_delimiter, for_forum, for_html)
-            if ansi_color:
-                return utils.colorize(s, utils.Ansi.CYAN)
-            return s
+            return utils.mana_untranslate(utils.mana_open_delimiter + ''.join(self.sequence)
+                                          + utils.mana_close_delimiter, for_forum, for_html, ansi_color=ansi_color)
 
     def encode(self, randomize = False):
         if self.none:
