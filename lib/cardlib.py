@@ -689,9 +689,6 @@ class Card:
         # 4. Unary unpass
         mtext = utils.from_unary(mtext)
 
-        # 5. Symbols unpass (called BEFORE cardname to avoid Zombie {T}est bug)
-        mtext = utils.from_symbols(mtext, for_forum, for_html)
-
         # 6. Sentencecase
         mtext = sentencecase(mtext)
 
@@ -709,6 +706,9 @@ class Card:
         # 9. Unicode (MSE or Gatherer)
         if mse or gatherer:
             mtext = transforms.text_unpass_8_unicode(mtext)
+
+        # 9.5. Symbols unpass (called AFTER sentencecase to avoid color corruption)
+        mtext = utils.from_symbols(mtext, for_forum, for_html, ansi_color=ansi_color)
 
         # 10. Final formatting via Manatext
         newtext = Manatext('')
