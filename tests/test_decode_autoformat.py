@@ -49,9 +49,9 @@ def test_auto_format_summary(encoded_file, tmp_path):
 
     assert outfile.exists()
     content = outfile.read_text()
-    # Summary format: [?] Test Card - Creature
+    # Summary format: [?] Test Card • Creature
     assert 'Test Card' in content
-    assert '-' in content
+    assert '\u2022' in content
 
 def test_explicit_flag_overrides_extension(encoded_file, tmp_path):
     # Extension is .json but we force --text
