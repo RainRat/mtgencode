@@ -441,7 +441,7 @@ def text_pass_7_choice(s):
     s = choice_formatting_helper(
         s, r'choose two \u2014 ', 2)  # ty Profane Command
     s = choice_formatting_helper(s, r'choose one or both \u2014', 0)
-    s = choice_formatting_helper(s, r'choose one or more \u2014', 0)
+    s = choice_formatting_helper(s, r'choose one or more \u2014', 0, suffix=' or more')
     s = choice_formatting_helper(s, r'choose khans or dragons.', 1)
     # this is for 'an opponent chooses one', which will be a bit weird but
     # still work out
@@ -662,20 +662,28 @@ def text_unpass_1_choice(s, delimit = False):
         fragments = choice[1:-1].split(bullet_marker)
         countfrag = fragments[0]
         optfrags = fragments[1:]
-        choicecount = int(utils.from_unary(re.findall(utils.number_unary_regex, countfrag)[0]))
+
+        unary_part_match = re.match(utils.number_unary_regex, countfrag)
+        if unary_part_match:
+            choicecount = int(utils.from_unary(unary_part_match.group(0)))
+            suffix = countfrag[unary_part_match.end():].strip()
+        else:
+            choicecount = 0
+            suffix = countfrag.strip()
+
         newchoice = ''
 
         if choicecount == 0:
-            if len(countfrag) == 2:
-                newchoice += 'choose one or both '
-            else:
+            if 'or more' in suffix:
                 newchoice += 'choose one or more '
+            else:
+                newchoice += 'choose one or both '
         elif choicecount == 1:
-            newchoice += 'choose one '
+            newchoice += 'choose one' + ((' ' + suffix) if suffix else '') + ' '
         elif choicecount == 2:
-            newchoice += 'choose two '
+            newchoice += 'choose two' + ((' ' + suffix) if suffix else '') + ' '
         else:
-            newchoice += 'choose ' + utils.to_unary(str(choicecount)) + ' '
+            newchoice += 'choose ' + utils.to_unary(str(choicecount)) + ((' ' + suffix) if suffix else '') + ' '
         newchoice += dash_marker
         
         for option in optfrags:
