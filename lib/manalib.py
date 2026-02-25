@@ -109,9 +109,8 @@ class Manacost:
         
         else:
             s = utils.mana_untranslate(utils.mana_open_delimiter + ''.join(self.sequence)
-                                          + utils.mana_close_delimiter, for_forum, for_html)
-            if ansi_color:
-                return utils.colorize(s, utils.Ansi.CYAN)
+                                          + utils.mana_close_delimiter, for_forum, for_html,
+                                          ansi_color = ansi_color)
             return s
 
     def encode(self, randomize = False):
@@ -179,7 +178,9 @@ class Manatext:
     def format(self, for_forum = False, for_html = False, ansi_color = False):
         text = self.text
         for cost in self.costs:
-            text = text.replace(utils.reserved_mana_marker, cost.format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color), 1)
+            text = text.replace(utils.reserved_mana_marker,
+                                cost.format(for_forum=for_forum, for_html=for_html,
+                                            ansi_color=ansi_color), 1)
         if for_html:
             text = text.replace('\n', '<br>\n')
         # Unescape literal reserved_mana_marker characters
