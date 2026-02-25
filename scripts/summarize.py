@@ -20,7 +20,10 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
-def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = None, limit = 0, json_out = False, vgrep = None, sets = None, rarities = None, shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None):
+def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = None, limit = 0, json_out = False, vgrep = None,
+         grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
+         grep_text=None, vgrep_text=None,
+         sets = None, rarities = None, shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None):
 
     # Set default format to JSON if no specific output format is selected and outfile is .json
     if not json_out and oname and oname.endswith('.json'):
@@ -29,6 +32,9 @@ def main(fname, verbose = True, outliers = False, dump_all = False, grep = None,
     # Use the robust mtg_open_file for all loading and filtering.
     # We disable default exclusions to match original summarize.py behavior.
     cards = jdecode.mtg_open_file(fname, verbose=verbose, grep=grep, vgrep=vgrep,
+                                  grep_name=grep_name, vgrep_name=vgrep_name,
+                                  grep_types=grep_types, vgrep_types=vgrep_types,
+                                  grep_text=grep_text, vgrep_text=vgrep_text,
                                   sets=sets, rarities=rarities,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
@@ -102,8 +108,20 @@ if __name__ == '__main__':
                         help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
     proc_group.add_argument('--grep', action='append',
                         help='Only include cards that match a regex (matches name, type, or text). Use multiple times for AND logic.')
+    proc_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a regex.')
+    proc_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a regex.')
+    proc_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a regex.')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
                         help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
+    proc_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a regex.')
+    proc_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a regex.')
+    proc_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a regex.')
     proc_group.add_argument('--set', action='append',
                         help='Only include cards from these sets (e.g., MOM, MRD).')
     proc_group.add_argument('--rarity', action='append',
@@ -132,5 +150,9 @@ if __name__ == '__main__':
         args.shuffle = True
         args.limit = args.sample
 
-    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep, sets = args.set, rarities = args.rarity, shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck)
+    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep,
+         grep_name=args.grep_name, vgrep_name=args.exclude_name,
+         grep_types=args.grep_type, vgrep_types=args.exclude_type,
+         grep_text=args.grep_text, vgrep_text=args.exclude_text,
+         sets = args.set, rarities = args.rarity, shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck)
     exit(0)
