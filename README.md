@@ -202,20 +202,23 @@ python3 encode.py data/AllPrintings.json --vgrep "Infect" --rarity rare
 We provide extra tools in the `scripts/` folder to help you manage your data.
 
 ### `sortcards.py`
-Organizes encoded cards into categories (like Color or Card Type) and wraps them in `[spoiler]` tags. This is useful for posting generated cards on forums.
+Organizes cards into categories (like Color or Card Type) and wraps them in `[spoiler]` tags. This is useful for posting cards on forums. It works with any card data (JSON, CSV, etc.) or encoded text.
 ```bash
 # Basic sorting
-python3 sortcards.py encoded_output.txt sorted_output.txt
+python3 sortcards.py data/AllPrintings.json sorted_output.txt
 
-# Sort with filters and sampling
+# Sort encoded cards with filters and sampling
 python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "Elf"
 ```
 *   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, `--grep`, and `--vgrep`.
 
 ### `summarize.py`
-Shows statistics about your encoded cards, such as the distribution of card types and colors:
+Shows statistics about your card data, such as the distribution of card types and colors. You can use it on original JSON files or your encoded output:
 ```bash
-# View statistics in your terminal
+# View statistics for the entire official dataset
+python3 scripts/summarize.py data/AllPrintings.json
+
+# View statistics for your encoded output
 python3 scripts/summarize.py encoded_output.txt
 
 # Show extra details and unusual cards (outliers)
@@ -247,9 +250,13 @@ python3 scripts/extract_one.py data/AllPrintings.json SET_CODE "Card Name"
 ```
 
 ### `splitcards.py`
-Splits a card dataset into multiple files, which is essential for creating training and validation sets for AI models.
+Splits a card dataset into multiple files. This is essential for creating training and validation sets for AI models. It supports all input formats (JSON, CSV, encoded text, etc.).
 ```bash
+# Split encoded cards into training and validation sets
 python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --ratios 0.9 0.1
+
+# Split a JSON file into multiple parts
+python3 scripts/splitcards.py data/AllPrintings.json --outputs part1.json part2.json --ratios 0.5 0.5 -f json
 ```
 *   **Options:**
     *   `-f`, `--format`: Output format (`text`, `json`, `jsonl`, `csv`). Default is `text`.
