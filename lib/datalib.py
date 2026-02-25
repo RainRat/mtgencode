@@ -30,9 +30,6 @@ def printrows(l):
 # index management helpers
 
 
-def index_size(d):
-    return sum([len(d[k]) for k in d])
-
 def inc(d, k, obj):
     if k or k == 0:
         if k in d:
@@ -317,7 +314,7 @@ class Datamine:
         rows = [['Index Name', 'Keys', 'Total Members']]
         for index in self.indices:
             rows += [[index, color_count(len(self.indices[index]), use_color),
-                      color_count(index_size(self.indices[index]), use_color)]]
+                      color_count(sum(len(v) for v in self.indices[index].values()), use_color)]]
         printrows(padrows(rows))
         print()
 

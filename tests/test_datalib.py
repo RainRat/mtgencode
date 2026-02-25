@@ -7,7 +7,7 @@ import io
 # Ensure lib is in path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 
-from datalib import Datamine, padrows, index_size, inc, plimit
+from datalib import Datamine, padrows, inc, plimit
 from cardlib import Card
 import utils
 
@@ -93,11 +93,6 @@ def test_padrows_with_color():
     assert padded[0].find('Count') == 14
     assert padded[1].find(color_text) == 14
     assert padded[2].find('10') == 14
-
-def test_index_size():
-    d = {'a': [1, 2], 'b': [3]}
-    assert index_size(d) == 3
-    assert index_size({}) == 0
 
 def test_inc():
     d = {}
