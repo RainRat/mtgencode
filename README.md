@@ -112,6 +112,7 @@ Customization options for formatting data:
 *   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc` before encoding. Automatically enables `--stable`.
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Shorthand for `--limit N`. Cards are shuffled by default unless `--stable` is used.
+*   `--report-unparsed FILE`: Save the raw JSON of cards that failed to parse into a separate file.
 
 ### `decode.py` (Viewing Results)
 Options for formatting the output:
@@ -130,6 +131,7 @@ Options for formatting the output:
 *   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc`.
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+*   `--report-failed FILE`: Save the text of cards that failed to parse or validate into a separate file.
 
 > **Important:** If you used a specific encoding (like `named`) when running `encode.py`, you **must** use that same encoding flag when running `decode.py`.
 >
@@ -249,6 +251,9 @@ Splits a card dataset into multiple files, which is essential for creating train
 ```bash
 python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --ratios 0.9 0.1
 ```
+*   **Options:**
+    *   `-f`, `--format`: Output format (`text`, `json`, `jsonl`, `csv`). Default is `text`.
+    *   `--shuffle` / `--no-shuffle`: Whether to randomize the order of cards before splitting (Enabled by default).
 
 ---
 
@@ -262,8 +267,25 @@ python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --r
 
 ---
 
+## Testing & Development
+
+### Running Tests
+To ensure everything is working correctly, you can run the full test suite. We use `pytest` for testing:
+
+```bash
+# Run all tests
+PYTHONPATH=. python3 -m pytest
+```
+
+### Contributing
+We welcome contributions! If you are a developer looking to help:
+1.  **Read AGENTS.md:** It contains technical guidelines and tips for working with this codebase.
+2.  **Verify Changes:** Always run the tests before submitting any pull requests.
+3.  **Style:** Keep documentation simple and follow the 'Plain English' principles used throughout this project.
+
+---
+
 ## Documentation & Help
 *   [DEPENDENCIES.md](DEPENDENCIES.md): Setup for external tools like Magic Set Editor.
 *   [CUSTOM.md](CUSTOM.md): How to use your own custom cards.
 *   [AGENTS.md](AGENTS.md): Technical info for AI agents.
-*   **Run Tests:** `python3 -m pytest`
