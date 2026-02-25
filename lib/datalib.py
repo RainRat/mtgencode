@@ -171,9 +171,7 @@ class Datamine:
     # summarize the indices
     def summarize(self, hsize = 10, vsize = 10, cmcsize = 20, use_color = False):
 
-        print(color_line('========================================', use_color))
-        print(color_line('             DATASET SUMMARY            ', use_color))
-        print(color_line('========================================', use_color))
+        print(color_line('DATASET SUMMARY', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print(color_count(len(self.cards), use_color) + ' valid cards, ' +
               color_count(len(self.invalid_cards), use_color, utils.Ansi.BOLD + utils.Ansi.RED) + ' invalid cards.')
         print(color_count(len(self.allcards), use_color) + ' cards parsed, ' +
@@ -305,14 +303,12 @@ class Datamine:
         for k in d[0:vsize]:
             rows += [[k, color_count(len(self.by_textlines[k]), use_color)]]
         printrows(padrows(rows))
-        print(color_line('========================================', use_color))
+        print()
 
     # describe outliers in the indices
     def outliers(self, hsize=10, vsize=10, dump_invalid=False, use_color = False):
 
-        print(color_line('========================================', use_color))
-        print(color_line('            OUTLIER ANALYSIS            ', use_color))
-        print(color_line('========================================', use_color))
+        print(color_line('OUTLIER ANALYSIS', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print(color_line('Overview of indices:', use_color))
         rows = [['Index Name', 'Keys', 'Total Members']]
         for index in self.indices:
@@ -439,7 +435,7 @@ class Datamine:
                 print('\n' + repr(card.fields))
         elif len(self.unparsed_cards) > 0:
             print('Not summarizing.')
-        print(color_line('========================================', use_color))
+        print()
 
     def to_dict(self):
         """Returns a dictionary representation of the collected statistics."""

@@ -181,7 +181,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             return success_count, fail_count
 
         first = True
-        for card in tqdm(cards, disable=quiet, desc="Decoding"):
+        for card in tqdm(cards, disable=quiet or len(cards) < 5, desc="Decoding"):
             try:
                 if not first and not (for_html or for_md or for_mse or for_summary):
                     # Add a divider between cards for console output
