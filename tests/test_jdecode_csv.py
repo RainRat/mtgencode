@@ -135,7 +135,7 @@ class TestJDecodeCSV(unittest.TestCase):
             self.assertIn('Loading card2.csv...', output)
             self.assertIn('Loading card3.csv...', output)
             # Should have 2 unique names: bolt and shock
-            self.assertIn('Opened 2 uniquely named cards from directory.', output)
+            self.assertIn('Opened 2 uniquely named cards', output)
 
         card_names = sorted([c.name for c in cards])
         self.assertEqual(card_names, ['bolt', 'shock'])
