@@ -1,6 +1,13 @@
 import csv
 import argparse
 import json
+import os
+import sys
+
+# Ensure lib is in path
+libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
+sys.path.append(libdir)
+import utils
 
 #convert a CSV file (that follows a specific format) to JSON, If you want to have custom cards in whole or part of your training.
 
@@ -8,14 +15,30 @@ import json
 # 2. Convert your custom.csv to json, i.e. "python csv2json.py custom.csv custom.json"
 # 3. Merge your json with the full official json, i.e. "python combinejson.py AllPrintings.json custom.json AllCustom.json"
 
-parser = argparse.ArgumentParser()
-parser.add_argument('filename1', help='CSV filename (input)')
-parser.add_argument('filename2', help='JSON filename (output)')
+parser = argparse.ArgumentParser(
+    description='Converts a CSV file of custom Magic cards into MTGJSON format.',
+    epilog='''
+CSV Format:
+  The CSV must have at least 7 columns in this order:
+  1. Name (e.g., "Giant Growth")
+  2. Mana Cost (e.g., "{G}")
+  3. Types & Supertypes (e.g., "Legendary Creature")
+  4. Subtypes (e.g., "Elf Warrior")
+  5. Rules Text (e.g., "Target creature gets +3/+3 until end of turn.")
+  6. P/T (e.g., "3/3")
+  7. Rarity (e.g., "C", "U", "R", "M")
+
+  The first row (header) is ignored if the first column is exactly "name".
+''',
+    formatter_class=argparse.RawDescriptionHelpFormatter
+)
+parser.add_argument('csv_file', help='Path to the input CSV file.')
+parser.add_argument('json_output', help='Path to the output JSON file.')
 args = parser.parse_args()
 
 rarity_mapping = {"R": "rare", "U": "uncommon", "C": "common", "M": "mythic"}
 
-with open(args.filename1) as csvfile, open(args.filename2, 'w') as jsonfile:
+with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
     reader = csv.reader(csvfile)
     json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
 
@@ -28,22 +51,24 @@ with open(args.filename1) as csvfile, open(args.filename2, 'w') as jsonfile:
         card = {
             "layout": "normal",
             "manaCost": row[1],
-            "name": row[0].replace("\"", ""),
+            "name": row[0],
             "rarity": temprarity,
             "setCode": "CUS",
-            "text": row[4].replace("\\", "\\n").replace("\"", "\\\""),
+            "text": row[4],
         }
         if row[5] != "":
             pt = row[5].split("/")
-            card["power"] = pt[0]
-            card["toughness"] = pt[1]
+            if len(pt) >= 2:
+                card["power"] = pt[0]
+                card["toughness"] = pt[1]
+            else:
+                card["pt"] = row[5]
 
         # supertypes, types, subtypes
-        typelist = row[2].split(" ")
-        if typelist[0] == "Legendary":
-            card["supertypes"] = [typelist[0]]
-            typelist.remove("Legendary")
-        card["types"] = typelist
+        supertypes, types = utils.split_types(row[2])
+        if supertypes:
+            card["supertypes"] = supertypes
+        card["types"] = types
         if row[3] != "":
             card["subtypes"] = row[3].split(" ")
 

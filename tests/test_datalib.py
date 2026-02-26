@@ -7,8 +7,9 @@ import io
 # Ensure lib is in path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 
-from datalib import Datamine, padrows, index_size, inc, plimit
+from datalib import Datamine, padrows, inc, plimit
 from cardlib import Card
+import utils
 
 # Sample Data Fixture
 @pytest.fixture
@@ -68,10 +69,30 @@ def test_padrows():
     assert padded[0].strip() == 'A   BB'
     assert padded[1].strip() == 'CCC D'
 
-def test_index_size():
-    d = {'a': [1, 2], 'b': [3]}
-    assert index_size(d) == 3
-    assert index_size({}) == 0
+def test_padrows_with_color():
+    color_text = utils.colorize("1", utils.Ansi.BOLD + utils.Ansi.GREEN)
+    data = [
+        ['Index', 'Count'],
+        ['A', color_text],
+        ['LongIndexName', '10']
+    ]
+    padded = padrows(data)
+
+    # Column 0: Index(5), A(1), LongIndexName(13) -> lens[0] = 13
+    # Column 1: Count(5), color_text(visible 1), 10(2) -> lens[1] = 5
+
+    # Row 0: 'Index' + 8 spaces + 1 space + 'Count' + 0 spaces + 1 space = 20 chars
+    # Row 1: 'A' + 12 spaces + 1 space + color_text + 4 spaces + 1 space = 20 chars (visible)
+    # Row 2: 'LongIndexName' + 0 spaces + 1 space + '10' + 3 spaces + 1 space = 20 chars
+
+    assert utils.visible_len(padded[0]) == 13 + 1 + 5 + 1
+    assert utils.visible_len(padded[1]) == 13 + 1 + 5 + 1
+    assert utils.visible_len(padded[2]) == 13 + 1 + 5 + 1
+
+    # Check that they start at the same position
+    assert padded[0].find('Count') == 14
+    assert padded[1].find(color_text) == 14
+    assert padded[2].find('10') == 14
 
 def test_inc():
     d = {}
@@ -168,6 +189,84 @@ def test_datamine_with_invalid_card():
         dm.summarize()
     finally:
         sys.stdout = old_stdout
+
+def test_pt_ranking_outliers(capsys):
+    # Create cards with power 20 and 25
+    # Power 20 -> & + 20 ^ -> len 21
+    # Power 25 -> twenty~five -> len 11 (mapped via exceptions)
+    # Power 2.5 -> &^^.&^^^^^ (decimal)
+    cards = [
+        {
+            "name": "Giant 20",
+            "types": ["Creature"],
+            "power": "20",
+            "toughness": "20",
+            "rarity": "Common"
+        },
+        {
+            "name": "Giant 25",
+            "types": ["Creature"],
+            "power": "25",
+            "toughness": "25",
+            "rarity": "Common"
+        },
+        {
+            "name": "Giant 2.5",
+            "types": ["Creature"],
+            "power": "2.5",
+            "toughness": "2.5",
+            "rarity": "Common"
+        }
+    ]
+
+    dm = Datamine(cards)
+    dm.summarize()
+
+    captured = capsys.readouterr()
+    output = captured.out
+
+    # Correct ranking should find 25 as largest, and 2.5 should not break anything
+    assert "Largest power: 25" in output
+    assert "largest toughness: 25" in output
+
+    # Check outliers specifically
+    dm.outliers()
+    captured = capsys.readouterr()
+    output = captured.out
+    # Note: outliers use utils.from_unary for display, which returns the exception label (e.g. "twenty~five")
+    assert "Largest creature power: twenty~five" in output
+    assert "Largest creature toughness: twenty~five" in output
+
+def test_datamine_to_dict(datamine_instance):
+    result = datamine_instance.to_dict()
+
+    # Check structure
+    assert 'counts' in result
+    assert 'indices' in result
+    assert 'stats' in result
+
+    # Check counts
+    assert result['counts']['valid'] == 3
+    assert result['counts']['invalid'] == 0
+    assert result['counts']['parsed'] == 3
+    assert result['counts']['unparsed'] == 0
+
+    # Check indices
+    assert 'by_name' in result['indices']
+    assert result['indices']['by_name']['card a'] == 1
+    assert 'by_color' in result['indices']
+    assert result['indices']['by_color']['R'] == 1
+    assert result['indices']['by_color']['U'] == 1
+    assert result['indices']['by_color']['A'] == 1
+
+    # Check stats
+    # Text lengths in sample data: "Text A" (6), "Text B" (6), "Text C" (6)
+    # Note: text.encode() might add newlines or markers.
+    # Manatext("Text A").encode() -> "Text A"
+    assert result['stats']['textlen_min'] == 6
+    assert result['stats']['textlen_max'] == 6
+    assert result['stats']['textlines_min'] == 1
+    assert result['stats']['textlines_max'] == 1
 
 def test_datamine_with_parsed_but_invalid_card():
     # Card that parses (has name/types/etc in roughly correct format)

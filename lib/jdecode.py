@@ -3,9 +3,56 @@ import sys
 import os
 import re
 import csv
+import zipfile
+import random
+import io
 
 import utils
 import cardlib
+
+def mtg_open_csv_reader(reader, verbose = False):
+    """
+    Processes a CSV reader containing card data.
+    """
+    srcs = {}
+    for row in reader:
+        # Map CSV columns to JSON-style dict keys
+        card_dict = {
+            'name': row.get('name', ''),
+            'manaCost': row.get('mana_cost', row.get('manaCost', '')),
+            'text': row.get('text', ''),
+            'rarity': row.get('rarity', ''),
+        }
+        if row.get('power'):
+            card_dict['power'] = row['power']
+        if row.get('toughness'):
+            card_dict['toughness'] = row['toughness']
+        if row.get('loyalty'):
+            card_dict['loyalty'] = row['loyalty']
+        elif row.get('defense'):
+            card_dict['defense'] = row['defense']
+
+        # Split type into supertypes and types
+        full_type = row.get('type', '')
+        supertypes, types = utils.split_types(full_type)
+        card_dict['supertypes'] = supertypes
+        card_dict['types'] = types
+
+        # Subtypes
+        subtypes = row.get('subtypes', '')
+        if subtypes:
+            card_dict['subtypes'] = subtypes.split()
+
+        cardname = card_dict['name'].lower()
+        if cardname in srcs:
+            srcs[cardname].append(card_dict)
+        else:
+            srcs[cardname] = [card_dict]
+
+    if verbose:
+        print('Opened ' + str(len(srcs)) + ' uniquely named cards from CSV.', file=sys.stderr)
+
+    return srcs, set()
 
 def mtg_open_csv(fname, verbose = False):
     """
@@ -14,57 +61,11 @@ def mtg_open_csv(fname, verbose = False):
     """
     with open(fname, 'r', encoding='utf8', newline='') as f:
         reader = csv.DictReader(f)
-        srcs = {}
-        for row in reader:
-            # Map CSV columns to JSON-style dict keys
-            card_dict = {
-                'name': row.get('name', ''),
-                'manaCost': row.get('mana_cost', row.get('manaCost', '')),
-                'text': row.get('text', ''),
-                'rarity': row.get('rarity', ''),
-            }
-            if row.get('power'):
-                card_dict['power'] = row['power']
-            if row.get('toughness'):
-                card_dict['toughness'] = row['toughness']
-            if row.get('loyalty'):
-                card_dict['loyalty'] = row['loyalty']
-            elif row.get('defense'):
-                card_dict['defense'] = row['defense']
+        return mtg_open_csv_reader(reader, verbose)
 
-            # Split type into supertypes and types
-            full_type = row.get('type', '')
-            supertypes = []
-            types = []
-            # Standard MTG supertypes
-            known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
-            for t in full_type.split():
-                if t in known_supertypes:
-                    supertypes.append(t)
-                else:
-                    types.append(t)
-            card_dict['supertypes'] = supertypes
-            card_dict['types'] = types
-
-            # Subtypes
-            subtypes = row.get('subtypes', '')
-            if subtypes:
-                card_dict['subtypes'] = subtypes.split()
-
-            cardname = card_dict['name'].lower()
-            if cardname in srcs:
-                srcs[cardname].append(card_dict)
-            else:
-                srcs[cardname] = [card_dict]
-
-    if verbose:
-        print('Opened ' + str(len(srcs)) + ' uniquely named cards from CSV.', file=sys.stderr)
-
-    return srcs, set()
-
-def mtg_open_json(fname, verbose = False):
+def mtg_open_json_obj(jobj, verbose = False):
     """
-    Reads a JSON file containing card data.
+    Processes a JSON object containing card data.
 
     Supported formats:
     1. MTGJSON v4/v5 format (dictionary with a 'data' key).
@@ -76,9 +77,6 @@ def mtg_open_json(fname, verbose = False):
             allcards: Dictionary mapping card names (lowercase) to lists of card objects.
             bad_sets: Set of set codes flagged as 'funny', 'memorabilia', or 'alchemy'.
     """
-
-    with open(fname, 'r', encoding='utf8') as f:
-        jobj = json.load(f)
 
     is_mtgjson_format = isinstance(jobj, dict)
     if is_mtgjson_format:
@@ -157,6 +155,242 @@ def mtg_open_json(fname, verbose = False):
 
     return allcards, bad_sets
 
+def mtg_open_json(fname, verbose = False):
+    """
+    Reads a JSON file containing card data.
+    """
+    with open(fname, 'r', encoding='utf8') as f:
+        jobj = json.load(f)
+    return mtg_open_json_obj(jobj, verbose)
+
+def mtg_open_jsonl_content(text, verbose = False):
+    """
+    Processes JSON Lines (.jsonl) content.
+    """
+    cards = []
+    for line in text.splitlines():
+        line = line.strip()
+        if line:
+            try:
+                cards.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    if cards:
+        return mtg_open_json_obj(cards, verbose)
+    return {}, set()
+
+def mtg_open_jsonl(fname, verbose = False):
+    """
+    Reads a JSON Lines (.jsonl) file containing card data.
+    Each line should be a single card object.
+    """
+    with open(fname, 'r', encoding='utf8') as f:
+        text = f.read()
+    return mtg_open_jsonl_content(text, verbose)
+
+def mtg_open_mse(fname, verbose = False):
+    """
+    Reads a Magic Set Editor (.mse-set) file.
+    """
+    with zipfile.ZipFile(fname, 'r') as zf:
+        try:
+            with zf.open('set') as f:
+                content = f.read().decode('utf-8')
+        except KeyError:
+            if verbose:
+                print(f"Warning: 'set' file not found in {fname}", file=sys.stderr)
+            return {}, set()
+
+    return mtg_open_mse_content(content, verbose=verbose)
+
+def parse_decklist(fpath):
+    """
+    Parses a standard MTG decklist file.
+    Returns a dictionary mapping lowercase card names to counts.
+    """
+    name_counts = {}
+    if not os.path.exists(fpath):
+        return name_counts
+
+    # Standard MTG decklist line: [Count] Name [(Set)] [Number]
+    # Example: 4 Grizzly Bears (LEA) 201
+    # We want to be lenient and capture the name primarily.
+    # Note: Some names can contain dashes or other symbols.
+    with open(fpath, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            # Skip empty lines, comments, and standard decklist separators
+            if not line or line.startswith(('#', '//', 'Sideboard', 'Deck')):
+                continue
+
+            # Match count and name
+            # Optional count at start (digits followed by space or 'x' and space)
+            # followed by name. Name ends before a '(' or '[' or '#' (comment).
+            match = re.match(r'^(\d+[xX]?\s+)?([^(\[\n#]+)', line)
+            if match:
+                count_str = match.group(1)
+                name = match.group(2).strip()
+
+                count = 1
+                if count_str:
+                    # Clean up the count string
+                    count_str = count_str.strip().lower().replace('x', '')
+                    try:
+                        count = int(count_str)
+                    except ValueError:
+                        count = 1
+
+                name_lower = name.lower()
+                # Exclude common non-card words that might slip through
+                if name_lower in ['sideboard', 'deck', 'maybeboard']:
+                    continue
+
+                name_counts[name_lower] = name_counts.get(name_lower, 0) + count
+    return name_counts
+
+def mtg_open_mse_content(content, verbose=False):
+    """
+    Parses the 'set' file content from an MSE archive.
+    """
+    allcards_raw = []
+    lines = content.splitlines()
+
+    current_card = None
+    in_card = False
+
+    def clean_mse_text(text):
+        # Remove MSE tags like <sym-auto>
+        text = re.sub(r'</?sym-auto>', '', text)
+        return text.strip()
+
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+
+        if line.startswith('card:'):
+            if current_card:
+                allcards_raw.append(current_card)
+            current_card = {}
+            in_card = True
+        elif in_card:
+            if line.startswith('\t\t'):
+                # Multi-line value (continuation)
+                pass # Handled by the key-value branch below
+            elif line.startswith('\t'):
+                line = line[1:] # remove first tab
+                if ': ' in line:
+                    key, value = line.split(': ', 1)
+                    if key in ['rule text', 'rule text 2']:
+                        text_lines = [value]
+                        while i + 1 < len(lines) and lines[i+1].startswith('\t\t'):
+                            text_lines.append(lines[i+1][2:])
+                            i += 1
+                        current_card[key] = clean_mse_text('\n'.join(text_lines))
+                    else:
+                        current_card[key] = value.strip()
+                elif line.endswith(':'):
+                    key = line[:-1]
+                    if key in ['rule text', 'rule text 2']:
+                        text_lines = []
+                        while i + 1 < len(lines) and lines[i+1].startswith('\t\t'):
+                            text_lines.append(lines[i+1][2:])
+                            i += 1
+                        current_card[key] = clean_mse_text('\n'.join(text_lines))
+                    else:
+                        current_card[key] = ""
+            elif line.strip() == '' or not line.startswith('\t'):
+                # End of card block or irrelevant set info
+                pass
+        i += 1
+
+    if current_card:
+        allcards_raw.append(current_card)
+
+    def mse_mana_to_json(s):
+        if not s: return ""
+        # Improved regex to handle hybrid costs like W/U, 2/W, W/U/B, and W/P
+        tokens = re.findall(r'(?:[a-zA-Z0-9]/)+[a-zA-Z0-9]|\d+|[a-zA-Z]', s)
+        res = ""
+        for t in tokens:
+            res += "{" + t.upper() + "}"
+        return res
+
+    allcards = {}
+    for c in allcards_raw:
+        # Main side
+        d = {
+            'name': c.get('name', ''),
+            'manaCost': mse_mana_to_json(c.get('casting cost', '')),
+            'rarity': c.get('rarity', '').capitalize(),
+            'text': c.get('rule text', ''),
+        }
+        if c.get('power'): d['power'] = c['power']
+        if c.get('toughness'): d['toughness'] = c['toughness']
+        if c.get('loyalty'): d['loyalty'] = c['loyalty']
+        if c.get('defense'): d['defense'] = c['defense']
+
+        # Split types
+        full_type = c.get('super type', '')
+        supertypes, types = utils.split_types(full_type)
+        d['supertypes'] = supertypes
+        d['types'] = types
+
+        subtypes = c.get('sub type', '')
+        if subtypes:
+            d['subtypes'] = subtypes.split()
+
+        # Planeswalker loyalty costs
+        if d.get('loyalty'):
+            pw_abilities = []
+            for j in range(1, 10):
+                cost_key = f'loyalty cost {j}'
+                if cost_key in c:
+                    cost = c[cost_key]
+                    # We assume abilities are separated by newlines in 'rule text'
+                    # if they were exported by our to_mse
+                    # But for general MSE, they might be in separate fields.
+                    # Our to_mse puts them all in 'rule text'.
+                    pass
+            # Reconstructing PW text from loyalty costs and rule text is hard in general
+            # but if it was exported by us, the costs are missing from 'rule text'.
+            # However, Card.fields_from_json handles 'text' which should contain the costs.
+            # So if we want it to work with our encoder, we should probably
+            # try to put the costs back into the text if they are separate.
+            # But wait, MSE's 'rule text' for PWs in our to_mse HAS the costs stripped.
+
+        # Handle split card (B-side)
+        if 'name 2' in c:
+            b = {
+                'name': c.get('name 2', ''),
+                'manaCost': mse_mana_to_json(c.get('casting cost 2', '')),
+                'rarity': c.get('rarity 2', d['rarity']).capitalize(),
+                'text': c.get('rule text 2', ''),
+            }
+            if c.get('power 2'): b['power'] = c['power 2']
+            if c.get('toughness 2'): b['toughness'] = c['toughness 2']
+            if c.get('loyalty 2'): b['loyalty'] = c['loyalty 2']
+            if c.get('defense 2'): b['defense'] = c['defense 2']
+            full_type_2 = c.get('super type 2', '')
+            supertypes_2, types_2 = utils.split_types(full_type_2)
+            b['supertypes'] = supertypes_2
+            b['types'] = types_2
+            subtypes_2 = c.get('sub type 2', '')
+            if subtypes_2:
+                b['subtypes'] = subtypes_2.split()
+            d[utils.json_field_bside] = b
+
+        cardname = d['name'].lower()
+        if cardname:
+            if cardname in allcards:
+                allcards[cardname].append(d)
+            else:
+                allcards[cardname] = [d]
+
+    if verbose:
+        print('Opened ' + str(len(allcards)) + ' uniquely named cards from MSE set.', file=sys.stderr)
+
+    return allcards, set()
+
 # filters to ignore some undesirable cards, only used when opening json
 def default_exclude_sets(cardset):
     return cardset == 'Unglued' or cardset == 'Unhinged' or cardset == 'Celebration'
@@ -201,16 +435,26 @@ def _check_parsing_quality(cards, report_fobj):
 
 def _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
                        exclude_sets, exclude_types, exclude_layouts,
-                       report_fobj):
+                       report_fobj, decklist_names=None):
     cards = []
     valid = 0
     skipped = 0
     invalid = 0
     unparsed = 0
 
+    # If decklist is provided, we use it as our primary list of names to process
+    if decklist_names:
+        target_names = sorted(decklist_names.keys())
+        if verbose:
+            missing = [name for name in target_names if name not in json_srcs]
+            if missing:
+                print(f"Warning: {len(missing)} cards from decklist not found in source: {', '.join(missing[:5])}{'...' if len(missing) > 5 else ''}", file=sys.stderr)
+    else:
+        target_names = sorted(json_srcs)
+
     # sorted for stability
-    for json_cardname in sorted(json_srcs):
-        if len(json_srcs[json_cardname]) > 0:
+    for json_cardname in target_names:
+        if json_cardname in json_srcs and len(json_srcs[json_cardname]) > 0:
             jcards = json_srcs[json_cardname]
 
             idx, card = _find_best_candidate(jcards, exclude_sets, linetrans)
@@ -235,7 +479,10 @@ def _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
 
             if card.valid:
                 valid += 1
-                cards += [card]
+                # Handle multiplication from decklist
+                count = decklist_names[json_cardname] if decklist_names else 1
+                for _ in range(count):
+                    cards += [card]
             elif card.parsed:
                 invalid += 1
                 if verbose:
@@ -256,55 +503,187 @@ def _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
 
     return cards
 
+def _process_text_cards(txt_cards, decklist_names, verbose, report_fobj=None):
+    """
+    Processes a list of Card objects from encoded text, applying decklist filters/multipliers.
+    """
+    cards = []
+    valid = 0
+    invalid = 0
+    unparsed = 0
+
+    def handle_card(card, count):
+        nonlocal valid, invalid, unparsed
+        for _ in range(count):
+            cards.append(card)
+            if card.valid:
+                valid += 1
+            elif card.parsed:
+                invalid += 1
+                if verbose:
+                    print ('Invalid card: ' + (card.raw if card.raw else card.encode()), file=sys.stderr)
+                if report_fobj:
+                    report_fobj.write((card.raw if card.raw else card.encode()) + utils.cardsep)
+            else:
+                unparsed += 1
+                if verbose:
+                    print ('Failed to parse card: ' + (card.raw if card.raw else card.encode()), file=sys.stderr)
+                if report_fobj:
+                    report_fobj.write((card.raw if card.raw else card.encode()) + utils.cardsep)
+
+    if decklist_names:
+        name_to_txt_card = {}
+        for c in txt_cards:
+            name_l = c.name.lower()
+            if name_l in decklist_names and name_l not in name_to_txt_card:
+                name_to_txt_card[name_l] = c
+
+        # Iterating over decklist names ensures we get the right counts and multiplication
+        for name in sorted(decklist_names.keys()):
+            if name in name_to_txt_card:
+                card = name_to_txt_card[name]
+                count = decklist_names[name]
+                handle_card(card, count)
+    else:
+        for card in txt_cards:
+            handle_card(card, 1)
+
+    return cards, valid, invalid, unparsed
+
 def mtg_open_file(fname, verbose = False,
                   linetrans = True, fmt_ordered = cardlib.fmt_ordered_default,
                   exclude_sets = default_exclude_sets,
                   exclude_types = default_exclude_types,
                   exclude_layouts = default_exclude_layouts,
-                  report_file=None, grep=None):
+                  report_file=None, grep=None, vgrep=None,
+                  grep_name=None, vgrep_name=None,
+                  grep_types=None, vgrep_types=None,
+                  grep_text=None, vgrep_text=None,
+                  sets=None, rarities=None,
+                  shuffle=False, seed=None,
+                  decklist_file=None):
 
     cards = []
     valid = 0
     skipped = 0
     invalid = 0
     unparsed = 0
+    txt_cards = []
     report_fobj = None
     if report_file:
         report_fobj = open(report_file, 'w', encoding='utf-8')
 
-    # Directory Handling
-    if fname != '-' and os.path.isdir(fname):
+    decklist_names = None
+    if decklist_file:
+        decklist_names = parse_decklist(decklist_file)
         if verbose:
-            print(f"Scanning directory {fname} for JSON/CSV files...", file=sys.stderr)
+            print(f"Loaded decklist from {decklist_file} with {len(decklist_names)} unique cards.", file=sys.stderr)
+
+    # Directory Handling
+    if fname != '-' and (os.path.isdir(fname) or fname.endswith('.zip')):
+        is_zip = fname.endswith('.zip')
+        if verbose:
+            if is_zip:
+                print(f"Opening ZIP archive {fname}...", file=sys.stderr)
+            else:
+                print(f"Scanning directory {fname} for JSON/CSV/JSONL files...", file=sys.stderr)
 
         aggregated_srcs = {}
         aggregated_bad_sets = set()
+        txt_cards = []
 
-        # Look for .json and .csv files
-        files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv')])
+        def process_file_content(f, content, is_zip):
+            # Inner helper to avoid duplication between ZIP and directory
+            srcs, bad = {}, set()
+            t_cards = []
 
-        for f in files:
-            full_path = os.path.join(fname, f)
-            if verbose:
-                print(f"Loading {f}...", file=sys.stderr)
-            # Use verbose=False to avoid spamming "Opened X uniquely named cards" for every file
-            if f.endswith('.json'):
-                srcs, bad = mtg_open_json(full_path, verbose=False)
-            else:
-                srcs, bad = mtg_open_csv(full_path, verbose=False)
-            aggregated_bad_sets.update(bad)
+            if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set'):
+                if f.endswith('.mse-set'):
+                    # Nested ZIP handling
+                    with zipfile.ZipFile(io.BytesIO(content if is_zip else open(f, 'rb').read()), 'r') as nested_zf:
+                        try:
+                            with nested_zf.open('set') as nested_f:
+                                inner_content = nested_f.read().decode('utf-8')
+                            srcs, bad = mtg_open_mse_content(inner_content, verbose=False)
+                        except KeyError:
+                            if verbose:
+                                print(f"Warning: 'set' file not found in nested MSE file {f}", file=sys.stderr)
+                elif f.endswith('.json'):
+                    try:
+                        jobj = json.loads(content if is_zip else open(f, 'r', encoding='utf8').read())
+                        srcs, bad = mtg_open_json_obj(jobj, verbose=False)
+                    except json.JSONDecodeError:
+                        pass
+                elif f.endswith('.jsonl'):
+                    srcs, bad = mtg_open_jsonl_content(content if is_zip else open(f, 'r', encoding='utf8').read(), verbose=False)
+                else: # .csv
+                    reader = csv.DictReader(io.StringIO(content if is_zip else open(f, 'r', encoding='utf8').read()))
+                    srcs, bad = mtg_open_csv_reader(reader, verbose=False)
+            elif f.endswith('.txt'):
+                text = content if is_zip else open(f, 'r', encoding='utf8').read()
+                if utils.fieldsep in text:
+                    for card_src in text.split(utils.cardsep):
+                        if card_src:
+                            card = cardlib.Card(card_src, fmt_ordered=fmt_ordered, linetrans=linetrans)
+                            skip = False
+                            for cardtype in card.types:
+                                if exclude_types(cardtype):
+                                    skip = True
+                            if not skip:
+                                t_cards.append(card)
 
-            for key, val in srcs.items():
-                if key in aggregated_srcs:
-                    aggregated_srcs[key].extend(val)
-                else:
-                    aggregated_srcs[key] = val
+            return srcs, bad, t_cards
+
+        if is_zip:
+            with zipfile.ZipFile(fname, 'r') as zf:
+                files = sorted([f for f in zf.namelist() if not f.endswith('/') and (f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt'))])
+                for f in files:
+                    if verbose:
+                        print(f"  Loading {f} from ZIP...", file=sys.stderr)
+                    with zf.open(f) as zfile:
+                        content = zfile.read().decode('utf-8') if not f.endswith('.mse-set') else zfile.read()
+                        srcs, bad, t_cards = process_file_content(f, content, True)
+                        aggregated_bad_sets.update(bad)
+                        for key, val in srcs.items():
+                            if key in aggregated_srcs:
+                                aggregated_srcs[key].extend(val)
+                            else:
+                                aggregated_srcs[key] = val
+                        txt_cards.extend(t_cards)
+        else:
+            files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt')])
+            for f in files:
+                if verbose:
+                    print(f"Loading {f}...", file=sys.stderr)
+                full_path = os.path.join(fname, f)
+                # For directories, we don't read content here but let the helper do it
+                srcs, bad, t_cards = process_file_content(full_path, None, False)
+                aggregated_bad_sets.update(bad)
+                for key, val in srcs.items():
+                    if key in aggregated_srcs:
+                        aggregated_srcs[key].extend(val)
+                    else:
+                        aggregated_srcs[key] = val
+                txt_cards.extend(t_cards)
 
         if verbose:
-             print('Opened ' + str(len(aggregated_srcs)) + ' uniquely named cards from directory.', file=sys.stderr)
+             if aggregated_srcs:
+                 if is_zip:
+                     print('Opened ' + str(len(aggregated_srcs)) + ' uniquely named cards from JSON/CSV files inside ZIP.', file=sys.stderr)
+                 else:
+                     print('Opened ' + str(len(aggregated_srcs)) + ' uniquely named cards from JSON/CSV files.', file=sys.stderr)
+             if txt_cards:
+                 if is_zip:
+                     print('Opened ' + str(len(txt_cards)) + ' cards from encoded text files inside ZIP.', file=sys.stderr)
+                 else:
+                     print('Opened ' + str(len(txt_cards)) + ' cards from encoded text files.', file=sys.stderr)
 
         cards = _process_json_srcs(aggregated_srcs, aggregated_bad_sets, verbose, linetrans,
-                                   exclude_sets, exclude_types, exclude_layouts, report_fobj)
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                   decklist_names=decklist_names)
+        # Combine with cards from encoded text files
+        processed_txt, _, _, _ = _process_text_cards(txt_cards, decklist_names, verbose, report_fobj=report_fobj)
+        cards.extend(processed_txt)
 
     # Single CSV File Handling
     elif fname.endswith('.csv'):
@@ -313,38 +692,99 @@ def mtg_open_file(fname, verbose = False,
         csv_srcs, bad_sets = mtg_open_csv(fname, verbose)
 
         cards = _process_json_srcs(csv_srcs, bad_sets, verbose, linetrans,
-                                   exclude_sets, exclude_types, exclude_layouts, report_fobj)
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                   decklist_names=decklist_names)
+
+    # Single JSONL File Handling
+    elif fname.endswith('.jsonl'):
+        if verbose:
+            print('This looks like a jsonl file: ' + fname, file=sys.stderr)
+        jsonl_srcs, bad_sets = mtg_open_jsonl(fname, verbose)
+
+        cards = _process_json_srcs(jsonl_srcs, bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                   decklist_names=decklist_names)
+
+    # Single MSE File Handling
+    elif fname.endswith('.mse-set'):
+        if verbose:
+            print('This looks like an MSE set file: ' + fname, file=sys.stderr)
+        mse_srcs, bad_sets = mtg_open_mse(fname, verbose)
+
+        cards = _process_json_srcs(mse_srcs, bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                   decklist_names=decklist_names)
 
     # Encoded Text File Handling
-    elif fname == '-' or not fname.endswith('.json'):
-        if verbose:
-            print('Opening encoded card file: ' + ('<stdin>' if fname == '-' else fname), file=sys.stderr)
-
+    elif fname == '-' or (not fname.endswith('.json') and not fname.endswith('.mse-set')):
         if fname == '-':
             text = sys.stdin.read()
+            # Stdin Format Detection
+            stripped = text.strip()
+            # 1. JSON / JSONL Detection
+            if stripped.startswith('{') or stripped.startswith('['):
+                try:
+                    # Try regular JSON first
+                    jobj = json.loads(text)
+                    if verbose:
+                        print('Detected JSON input from stdin.', file=sys.stderr)
+                    json_srcs, bad_sets = mtg_open_json_obj(jobj, verbose)
+                    cards = _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
+                                               exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                               decklist_names=decklist_names)
+                except json.JSONDecodeError:
+                    # Try JSONL
+                    jsonl_srcs, bad_sets = mtg_open_jsonl_content(text, verbose)
+                    if jsonl_srcs:
+                        if verbose:
+                            print('Detected JSONL input from stdin.', file=sys.stderr)
+                        cards = _process_json_srcs(jsonl_srcs, bad_sets, verbose, linetrans,
+                                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                                   decklist_names=decklist_names)
+            # 2. CSV Detection
+            if not cards and stripped.startswith('name,'):
+                try:
+                    reader = csv.DictReader(io.StringIO(text))
+                    if verbose:
+                        print('Detected CSV input from stdin.', file=sys.stderr)
+                    csv_srcs, bad_sets = mtg_open_csv_reader(reader, verbose)
+                    cards = _process_json_srcs(csv_srcs, bad_sets, verbose, linetrans,
+                                               exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                               decklist_names=decklist_names)
+                except Exception:
+                    pass
         else:
             with open(fname, 'rt', encoding='utf8') as f:
                 text = f.read()
 
-        for card_src in text.split(utils.cardsep):
-            if card_src:
-                card = cardlib.Card(card_src, fmt_ordered=fmt_ordered)
-                # unlike opening from json, we still want to return invalid cards
-                cards += [card]
-                if card.valid:
-                    valid += 1
-                elif card.parsed:
-                    invalid += 1
-                    if verbose:
-                        print ('Invalid card: ' + card_src, file=sys.stderr)
-                    if report_fobj:
-                         report_fobj.write(card_src + utils.cardsep)
-                    else:
-                        unparsed += 1
+        if not cards:
+            if verbose:
+                print('Opening encoded card file: ' + ('<stdin>' if fname == '-' else fname), file=sys.stderr)
 
-        if verbose:
-             print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
-                    + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
+            for card_src in text.split(utils.cardsep):
+                if card_src:
+                    card = cardlib.Card(card_src, fmt_ordered=fmt_ordered, linetrans=linetrans)
+
+                    # Apply exclusions to cards from encoded text
+                    skip = False
+                    for cardtype in card.types:
+                        if exclude_types(cardtype):
+                            skip = True
+
+                    if not skip:
+                        txt_cards.append(card)
+                    else:
+                        skipped += 1
+
+            processed_txt, valid_txt, invalid_txt, unparsed_txt = _process_text_cards(txt_cards, decklist_names, verbose, report_fobj=report_fobj)
+            cards.extend(processed_txt)
+            valid += valid_txt
+            invalid += invalid_txt
+            unparsed += unparsed_txt
+
+            if verbose:
+                 print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
+                        + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
 
     # Single JSON File Handling
     else:
@@ -353,22 +793,81 @@ def mtg_open_file(fname, verbose = False,
         json_srcs, bad_sets = mtg_open_json(fname, verbose)
 
         cards = _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
-                                   exclude_sets, exclude_types, exclude_layouts, report_fobj)
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                   decklist_names=decklist_names)
 
-    if grep:
-        greps = [re.compile(p, re.IGNORECASE) for p in grep]
+    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text:
+        greps = [re.compile(p, re.IGNORECASE) for p in (grep if grep else [])]
+        vgreps = [re.compile(p, re.IGNORECASE) for p in (vgrep if vgrep else [])]
+        greps_name = [re.compile(p, re.IGNORECASE) for p in (grep_name if grep_name else [])]
+        vgreps_name = [re.compile(p, re.IGNORECASE) for p in (vgrep_name if vgrep_name else [])]
+        greps_types = [re.compile(p, re.IGNORECASE) for p in (grep_types if grep_types else [])]
+        vgreps_types = [re.compile(p, re.IGNORECASE) for p in (vgrep_types if vgrep_types else [])]
+        greps_text = [re.compile(p, re.IGNORECASE) for p in (grep_text if grep_text else [])]
+        vgreps_text = [re.compile(p, re.IGNORECASE) for p in (vgrep_text if vgrep_text else [])]
+
+        target_sets = [s.upper() for s in sets] if sets else None
+        target_rarities = []
+        target_rarities_lower = [r.lower() for r in rarities] if rarities else None
+        if rarities:
+            for r in rarities:
+                r_lower = r.lower()
+                if r_lower in utils.json_rarity_map:
+                    target_rarities.append(utils.json_rarity_map[r_lower])
+                else:
+                    target_rarities.append(r)
+
         def match_card(card):
+            # Generic filtering (AND logic for greps, OR logic for vgreps)
             for pattern in greps:
-                found = False
-                if pattern.search(card.name): found = True
-                elif any(pattern.search(t) for t in card.types): found = True
-                elif any(pattern.search(t) for t in card.supertypes): found = True
-                elif any(pattern.search(t) for t in card.subtypes): found = True
-                elif pattern.search(card.text.text): found = True
-
-                if not found:
+                if not card.search(pattern):
                     return False
+            for pattern in vgreps:
+                if card.search(pattern):
+                    return False
+
+            # Name filtering
+            for pattern in greps_name:
+                if not card.search_name(pattern):
+                    return False
+            for pattern in vgreps_name:
+                if card.search_name(pattern):
+                    return False
+
+            # Type filtering
+            for pattern in greps_types:
+                if not card.search_types(pattern):
+                    return False
+            for pattern in vgreps_types:
+                if card.search_types(pattern):
+                    return False
+
+            # Text filtering
+            for pattern in greps_text:
+                if not card.search_text(pattern):
+                    return False
+            for pattern in vgreps_text:
+                if card.search_text(pattern):
+                    return False
+
+            # Set filtering
+            if target_sets:
+                if not card.set_code or card.set_code.upper() not in target_sets:
+                    return False
+
+            # Rarity filtering
+            if target_rarities:
+                if not card.rarity:
+                    return False
+                if card.rarity not in target_rarities and card.rarity.lower() not in target_rarities_lower:
+                    return False
+
             return True
         cards = [c for c in cards if match_card(c)]
+
+    if shuffle:
+        if seed is not None:
+            random.seed(seed)
+        random.shuffle(cards)
 
     return _check_parsing_quality(cards, report_fobj)

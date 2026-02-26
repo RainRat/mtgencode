@@ -11,16 +11,16 @@ def padrows(l):
     for ll in l:
         for i, field in enumerate(ll):
             if i < len(lens):
-                lens[i] = max(len(str(field)), lens[i])
+                lens[i] = max(utils.visible_len(str(field)), lens[i])
             else:
-                lens += [len(str(field))]
+                lens += [utils.visible_len(str(field))]
     # now pad out to that length
     padded = []
     for ll in l:
         padded += ['']
         for i, field in enumerate(ll):
             s = str(field)
-            pad = ' ' * (lens[i] - len(s))
+            pad = ' ' * (lens[i] - utils.visible_len(s))
             padded[-1] += (s + pad + ' ')
     return padded
 def printrows(l):
@@ -29,9 +29,6 @@ def printrows(l):
 
 # index management helpers
 
-
-def index_size(d):
-    return sum([len(d[k]) for k in d])
 
 def inc(d, k, obj):
     if k or k == 0:
@@ -46,6 +43,17 @@ def plimit(s, mlen = 1000):
         return s[:mlen] + '[...]'
     else:
         return s
+
+def color_count(count, use_color, color_code=utils.Ansi.BOLD + utils.Ansi.GREEN):
+    s = str(count)
+    if use_color and count > 0:
+        return utils.colorize(s, color_code)
+    return s
+
+def color_line(text, use_color, color_code=utils.Ansi.BOLD + utils.Ansi.CYAN):
+    if use_color:
+        return utils.colorize(text, color_code)
+    return text
 
 class Datamine:
     # build the global indices
@@ -73,6 +81,7 @@ class Datamine:
         self.by_toughness = {}
         self.by_pt = {}
         self.by_loyalty = {}
+        self.by_rarity = {}
         self.by_textlines = {}
         self.by_textlen = {}
 
@@ -93,6 +102,7 @@ class Datamine:
             'by_toughness' : self.by_toughness,
             'by_pt' : self.by_pt,
             'by_loyalty' : self.by_loyalty,
+            'by_rarity' : self.by_rarity,
             'by_textlines' : self.by_textlines,
             'by_textlen' : self.by_textlen,
         }
@@ -144,143 +154,176 @@ class Datamine:
 
                 inc(self.by_loyalty, card.loyalty, [card])
 
+                # normalize rarity
+                rarity = card.rarity
+                if rarity in utils.json_rarity_unmap:
+                    rarity = utils.json_rarity_unmap[rarity]
+                inc(self.by_rarity, rarity, [card])
+
                 inc(self.by_textlines, len(card.text_lines), [card])
                 inc(self.by_textlen, len(card.text.encode()), [card])
 
+        self.avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
+
     # summarize the indices
-    # Yes, this printing code is pretty terrible.
-    def summarize(self, hsize = 10, vsize = 10, cmcsize = 20):
-        print('====================')
-        print(str(len(self.cards)) + ' valid cards, ' +
-              str(len(self.invalid_cards)) + ' invalid cards.')
-        print(str(len(self.allcards)) + ' cards parsed, ' +
-              str(len(self.unparsed_cards)) + ' failed to parse')
-        print('--------------------')
-        print(str(len(self.by_name)) + ' unique card names')
-        print('--------------------')
-        print((str(len(self.by_color_inclusive)) + ' represented colors (including colorless as \'A\'), '
-               + str(len(self.by_color)) + ' combinations'))
-        print('Breakdown by color:')
-        rows = [list(self.by_color_inclusive.keys())]
-        rows += [[len(self.by_color_inclusive[k]) for k in rows[0]]]
+    def summarize(self, hsize = 10, vsize = 10, cmcsize = 20, use_color = False):
+
+        print(color_line('DATASET SUMMARY', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+        print(color_count(len(self.cards), use_color) + ' valid cards, ' +
+              color_count(len(self.invalid_cards), use_color, utils.Ansi.BOLD + utils.Ansi.RED) + ' invalid cards.')
+        print(color_count(len(self.allcards), use_color) + ' cards parsed, ' +
+              color_count(len(self.unparsed_cards), use_color, utils.Ansi.BOLD + utils.Ansi.RED) + ' failed to parse')
+        print()
+
+        print(color_line(str(len(self.by_name)) + ' unique card names', use_color))
+        print()
+
+        print(color_line(str(len(self.by_color_inclusive)) + ' represented colors (including colorless as \'A\'), '
+               + str(len(self.by_color)) + ' combinations', use_color))
+        print(color_line('Breakdown by color:', use_color))
+        rows = []
+        for k in sorted(self.by_color_inclusive.keys()):
+            rows += [[k, color_count(len(self.by_color_inclusive[k]), use_color)]]
         printrows(padrows(rows))
-        print('Breakdown by number of colors:')
-        rows = [list(self.by_color_count.keys())]
-        rows += [[len(self.by_color_count[k]) for k in rows[0]]]
+        print(color_line('Breakdown by number of colors:', use_color))
+        rows = []
+        for k in sorted(self.by_color_count.keys()):
+            rows += [[str(k), color_count(len(self.by_color_count[k]), use_color)]]
         printrows(padrows(rows))
-        print('--------------------')
-        print(str(len(self.by_type_inclusive)) + ' unique card types, ' +
-              str(len(self.by_type)) + ' combinations')
-        print('Breakdown by type:')
+        print()
+
+        print(color_line(str(len(self.by_type_inclusive)) + ' unique card types, ' +
+              str(len(self.by_type)) + ' combinations', use_color))
+        print(color_line('Breakdown by type:', use_color))
         d = sorted(self.by_type_inclusive,
                    key=lambda x: len(self.by_type_inclusive[x]),
                    reverse=True)
-        rows = [[k for k in d[:hsize]]]
-        rows += [[len(self.by_type_inclusive[k]) for k in rows[0]]]
+        rows = []
+        for k in d[:vsize]:
+            rows += [[k, color_count(len(self.by_type_inclusive[k]), use_color)]]
         printrows(padrows(rows))
-        print('--------------------')
-        print((str(len(self.by_subtype_inclusive)) + ' unique subtypes, '
-               + str(len(self.by_subtype)) + ' combinations'))
-        print('-- Popular subtypes: --')
+        print()
+
+        print(color_line(str(len(self.by_subtype_inclusive)) + ' unique subtypes, '
+               + str(len(self.by_subtype)) + ' combinations', use_color))
+        print(color_line('Popular subtypes:', use_color))
         d = sorted(self.by_subtype_inclusive,
                    key=lambda x: len(self.by_subtype_inclusive[x]),
                    reverse=True)
         rows = []
         for k in d[0:vsize]:
-            rows += [[k, len(self.by_subtype_inclusive[k])]]
+            rows += [[k, color_count(len(self.by_subtype_inclusive[k]), use_color)]]
         printrows(padrows(rows))
-        print('-- Top combinations: --')
+        print(color_line('Top combinations:', use_color))
         d = sorted(self.by_subtype,
                    key=lambda x: len(self.by_subtype[x]),
                    reverse = True)
         rows = []
         for k in d[0:vsize]:
-            rows += [[k, len(self.by_subtype[k])]]
+            rows += [[k, color_count(len(self.by_subtype[k]), use_color)]]
         printrows(padrows(rows))
-        print('--------------------')
-        print((str(len(self.by_supertype_inclusive)) + ' unique supertypes, '
-               + str(len(self.by_supertype)) + ' combinations'))
-        print('Breakdown by supertype:')
+        print()
+
+        print(color_line(str(len(self.by_supertype_inclusive)) + ' unique supertypes, '
+               + str(len(self.by_supertype)) + ' combinations', use_color))
+        print(color_line('Breakdown by supertype:', use_color))
         d = sorted(self.by_supertype_inclusive,
                    key=lambda x: len(self.by_supertype_inclusive[x]),
                    reverse=True)
-        rows = [[k for k in d[:hsize]]]
-        rows += [[len(self.by_supertype_inclusive[k]) for k in rows[0]]]
+        rows = []
+        for k in d[:vsize]:
+            rows += [[k, color_count(len(self.by_supertype_inclusive[k]), use_color)]]
         printrows(padrows(rows))
-        print('--------------------')
-        print(str(len(self.by_cmc)) + ' different CMCs, ' +
-              str(len(self.by_cost)) + ' unique mana costs')
-        print('Breakdown by CMC:')
+        print()
+
+        print(color_line(str(len(self.by_cmc)) + ' different CMCs, ' +
+              str(len(self.by_cost)) + ' unique mana costs', use_color))
+        print('Average CMC: {:.2f}'.format(self.avg_cmc))
+        print(color_line('Breakdown by CMC:', use_color))
         d = sorted(self.by_cmc, reverse=False)
-        rows = [[k for k in d[:cmcsize]]]
-        rows += [[len(self.by_cmc[k]) for k in rows[0]]]
+        rows = []
+        for k in d[:vsize]:
+            rows += [[str(k), color_count(len(self.by_cmc[k]), use_color)]]
         printrows(padrows(rows))
-        print('-- Popular mana costs: --')
+        print(color_line('Popular mana costs:', use_color))
         d = sorted(self.by_cost,
                    key=lambda x: len(self.by_cost[x]),
                    reverse = True)
         rows = []
         for k in d[0:vsize]:
-            rows += [[utils.from_mana(k), len(self.by_cost[k])]]
+            rows += [[utils.from_mana(k), color_count(len(self.by_cost[k]), use_color)]]
         printrows(padrows(rows))
-        print('--------------------')
-        print(str(len(self.by_pt)) + ' unique p/t combinations')
+        print()
+
+        print(color_line(str(len(self.by_rarity)) + ' represented rarities', use_color))
+        print(color_line('Breakdown by rarity:', use_color))
+        rows = []
+        for k in sorted(self.by_rarity.keys()):
+            rows += [[k, color_count(len(self.by_rarity[k]), use_color)]]
+        printrows(padrows(rows))
+        print()
+
+        print(color_line(str(len(self.by_pt)) + ' unique p/t combinations', use_color))
         if len(self.by_power) > 0 and len(self.by_toughness) > 0:
-            print(('Largest power: ' + str(max(list(map(len, self.by_power))) - 1) +
-                   ', largest toughness: ' + str(max(list(map(len, self.by_toughness))) - 1)))
-        print('-- Popular p/t values: --')
+            print(('Largest power: ' + str(max(map(utils.from_unary_single, self.by_power))) +
+                   ', largest toughness: ' + str(max(map(utils.from_unary_single, self.by_toughness)))))
+        print(color_line('Popular p/t values:', use_color))
         d = sorted(self.by_pt,
                    key=lambda x: len(self.by_pt[x]),
                    reverse = True)
         rows = []
         for k in d[0:vsize]:
-            rows += [[utils.from_unary(k), len(self.by_pt[k])]]
+            rows += [[utils.from_unary(k), color_count(len(self.by_pt[k]), use_color)]]
         printrows(padrows(rows))
-        print('--------------------')
-        print('Loyalty values:')
+        print()
+
+        print(color_line('Loyalty values:', use_color))
         d = sorted(self.by_loyalty,
                    key=lambda x: len(self.by_loyalty[x]),
                    reverse = True)
         rows = []
         for k in d[0:vsize]:
-            rows += [[utils.from_unary(k), len(self.by_loyalty[k])]]
+            rows += [[utils.from_unary(k), color_count(len(self.by_loyalty[k]), use_color)]]
         printrows(padrows(rows))
-        print('--------------------')
+        print()
+
         if len(self.by_textlen) > 0 and len(self.by_textlines) > 0:
-            print(('Card text ranges from ' + str(min(self.by_textlen)) + ' to '
-                   + str(max(self.by_textlen)) + ' characters in length'))
-            print(('Card text ranges from ' + str(min(self.by_textlines)) + ' to '
-                   + str(max(self.by_textlines)) + ' lines'))
-        print('-- Line counts by frequency: --')
+            print(color_line('Card text ranges from ' + str(min(self.by_textlen)) + ' to '
+                   + str(max(self.by_textlen)) + ' characters in length', use_color))
+            print(color_line('Card text ranges from ' + str(min(self.by_textlines)) + ' to '
+                   + str(max(self.by_textlines)) + ' lines', use_color))
+        print(color_line('Line counts by frequency:', use_color))
         d = sorted(self.by_textlines,
                    key=lambda x: len(self.by_textlines[x]),
                    reverse = True)
         rows = []
         for k in d[0:vsize]:
-            rows += [[k, len(self.by_textlines[k])]]
+            rows += [[k, color_count(len(self.by_textlines[k]), use_color)]]
         printrows(padrows(rows))
-        print('====================')
+        print()
 
     # describe outliers in the indices
-    def outliers(self, hsize=10, vsize=10, dump_invalid=False):
-        print('********************')
-        print('Overview of indices:')
+    def outliers(self, hsize=10, vsize=10, dump_invalid=False, use_color = False):
+
+        print(color_line('OUTLIER ANALYSIS', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+        print(color_line('Overview of indices:', use_color))
         rows = [['Index Name', 'Keys', 'Total Members']]
         for index in self.indices:
-            rows += [[index, len(self.indices[index]),
-                      index_size(self.indices[index])]]
+            rows += [[index, color_count(len(self.indices[index]), use_color),
+                      color_count(sum(len(v) for v in self.indices[index].values()), use_color)]]
         printrows(padrows(rows))
-        print('********************')
+        print()
+
         if len(self.by_name) > 0:
             scardname = sorted(self.by_name,
                                key=len,
                                reverse=False)[0]
-            print('Shortest Cardname: (' + str(len(scardname)) + ')')
+            print(color_line('Shortest Cardname: (' + str(len(scardname)) + ')', use_color))
             print('  ' + scardname)
             lcardname = sorted(self.by_name,
                                key=len,
                                reverse=True)[0]
-            print('Longest Cardname: (' + str(len(lcardname)) + ')')
+            print(color_line('Longest Cardname: (' + str(len(lcardname)) + ')', use_color))
             print('  ' + lcardname)
             d = sorted(self.by_name,
                        key=lambda x: len(self.by_name[x]),
@@ -288,20 +331,21 @@ class Datamine:
             rows = []
             for k in d[0:vsize]:
                 if len(self.by_name[k]) > 1:
-                    rows += [[k, len(self.by_name[k])]]
+                    rows += [[k, color_count(len(self.by_name[k]), use_color)]]
             if rows == []:
                 print('No duplicated cardnames')
             else:
-                print('-- Most duplicated names: --')
+                print(color_line('Most duplicated names:', use_color))
                 printrows(padrows(rows))
         else:
             print('No cards indexed by name?')
-        print('--------------------')
+        print()
+
         if len(self.by_type) > 0:
             ltypes = sorted(self.by_type,
                             key=len,
                             reverse=True)[0]
-            print('Longest card type: (' + str(len(ltypes)) + ')')
+            print(color_line('Longest card type: (' + str(len(ltypes)) + ')', use_color))
             print('  ' + ltypes)
         else:
             print('No cards indexed by type?')
@@ -309,7 +353,7 @@ class Datamine:
             lsubtypes = sorted(self.by_subtype,
                                key=len,
                                reverse=True)[0]
-            print('Longest subtype: (' + str(len(lsubtypes)) + ')')
+            print(color_line('Longest subtype: (' + str(len(lsubtypes)) + ')', use_color))
             print('  ' + lsubtypes)
         else:
             print('No cards indexed by subtype?')
@@ -317,70 +361,99 @@ class Datamine:
             lsupertypes = sorted(self.by_supertype,
                                  key=len,
                                  reverse=True)[0]
-            print('Longest supertype: (' + str(len(lsupertypes)) + ')')
+            print(color_line('Longest supertype: (' + str(len(lsupertypes)) + ')', use_color))
             print('  ' + lsupertypes)
         else:
             print('No cards indexed by supertype?')
-        print('--------------------')
+        print()
+
         if len(self.by_cost) > 0:
             lcost = sorted(self.by_cost,
                            key=len,
                            reverse=True)[0]
-            print('Longest mana cost: (' + str(len(lcost)) + ')')
+            print(color_line('Longest mana cost: (' + str(len(lcost)) + ')', use_color))
             print('  ' + utils.from_mana(lcost))
             print('\n' + plimit(self.by_cost[lcost][0].encode()) + '\n')
         else:
             print('No cards indexed by cost?')
         if len(self.by_cmc) > 0:
             lcmc = sorted(self.by_cmc, reverse=True)[0]
-            print('Largest cmc: (' + str(lcmc) + ')')
+            print(color_line('Largest cmc: (' + str(lcmc) + ')', use_color))
             print('  ' + str(self.by_cmc[lcmc][0].cost))
             print('\n' + plimit(self.by_cmc[lcmc][0].encode()))
         else:
             print('No cards indexed by cmc?')
-        print('--------------------')
+        print()
+
         if len(self.by_power) > 0:
             lpower = sorted(self.by_power,
-                            key=len,
+                            key=utils.from_unary_single,
                             reverse=True)[0]
-            print('Largest creature power: ' + utils.from_unary(lpower))
+            print(color_line('Largest creature power: ' + utils.from_unary(lpower), use_color))
             print('\n' + plimit(self.by_power[lpower][0].encode()) + '\n')
         else:
             print('No cards indexed by power?')
         if len(self.by_toughness) > 0:
             ltoughness = sorted(self.by_toughness,
-                                key=len,
+                                key=utils.from_unary_single,
                                 reverse=True)[0]
-            print('Largest creature toughness: ' +
-                  utils.from_unary(ltoughness))
+            print(color_line('Largest creature toughness: ' +
+                  utils.from_unary(ltoughness), use_color))
             print('\n' + plimit(self.by_toughness[ltoughness][0].encode()))
         else:
             print('No cards indexed by toughness?')
-        print('--------------------')
+        print()
+
         if len(self.by_textlines) > 0:
             llines = sorted(self.by_textlines, reverse=True)[0]
-            print('Most lines of text in a card: ' + str(llines))
+            print(color_line('Most lines of text in a card: ' + str(llines), use_color))
             print('\n' + plimit(self.by_textlines[llines][0].encode()) + '\n')
         else:
             print('No cards indexed by line count?')
         if len(self.by_textlen) > 0:
             ltext = sorted(self.by_textlen, reverse=True)[0]
-            print('Most chars in a card text: ' + str(ltext))
+            print(color_line('Most chars in a card text: ' + str(ltext), use_color))
             print('\n' + plimit(self.by_textlen[ltext][0].encode()))
         else:
             print('No cards indexed by char count?')
-        print('--------------------')
-        print('There were ' + str(len(self.invalid_cards)) + ' invalid cards.')
+        print()
+
+        print(color_line('There were ' + color_count(len(self.invalid_cards), use_color, utils.Ansi.BOLD + utils.Ansi.RED) + ' invalid cards.', use_color))
         if dump_invalid:
             for card in self.invalid_cards:
                 print('\n' + repr(card.fields))
         elif len(self.invalid_cards) > 0:
             print('Not summarizing.')
-        print('--------------------')
-        print('There were ' + str(len(self.unparsed_cards)) + ' unparsed cards.')
+        print()
+
+        print(color_line('There were ' + color_count(len(self.unparsed_cards), use_color, utils.Ansi.BOLD + utils.Ansi.RED) + ' unparsed cards.', use_color))
         if dump_invalid:
             for card in self.unparsed_cards:
                 print('\n' + repr(card.fields))
         elif len(self.unparsed_cards) > 0:
             print('Not summarizing.')
-        print('====================')
+        print()
+
+    def to_dict(self):
+        """Returns a dictionary representation of the collected statistics."""
+        result = {
+            'counts': {
+                'valid': len(self.cards),
+                'invalid': len(self.invalid_cards),
+                'parsed': len(self.allcards),
+                'unparsed': len(self.unparsed_cards),
+            },
+            'indices': {}
+        }
+        for name, index in self.indices.items():
+            result['indices'][name] = {str(k): len(v) for k, v in index.items()}
+
+        if self.by_textlen:
+            result['stats'] = {
+                'textlen_min': min(self.by_textlen),
+                'textlen_max': max(self.by_textlen),
+                'textlines_min': min(self.by_textlines),
+                'textlines_max': max(self.by_textlines),
+                'avg_cmc': self.avg_cmc,
+            }
+        return result

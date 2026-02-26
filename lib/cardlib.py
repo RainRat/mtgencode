@@ -20,6 +20,8 @@ def cap(s):
     for i, char in enumerate(s):
         if char.isalpha():
             return s[:i] + char.upper() + s[i+1:]
+        if char in [utils.this_marker, utils.reserved_marker]:
+            return s
     return s
 # This function is used during decoding to apply sentence-style capitalization
 # while newline markers are still present.
@@ -29,13 +31,19 @@ def sentencecase(s):
     clines = []
     for line in lines:
         if line:
-            # First, split by ": " to handle activated abilities
-            parts = line.split(': ')
+            # Split by ": " to handle activated abilities
+            # and by " =" to handle choice options
+            parts = re.split(r'(: | =)', line)
             cparts = []
             for part in parts:
-                sentences = sent_tokenizer.tokenize(part)
-                cparts += [' '.join([cap(sent) for sent in sentences])]
-            clines += [': '.join(cparts)]
+                if part in [': ', ' =']:
+                    cparts += [part]
+                else:
+                    sentences = sent_tokenizer.tokenize(part)
+                    cparts += [' '.join([cap(sent) for sent in sentences])]
+            clines += [''.join(cparts)]
+        else:
+            clines += ['']
     return utils.newline.join(clines).replace(utils.reserved_marker, utils.x_marker)
 
 # These are used later to determine what the fields of the Card object are called.
@@ -344,14 +352,15 @@ def fields_from_json(src_json, linetrans = True):
     return parsed, valid and fields_check_valid(fields), fields
 
 
-def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep):
+def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep, linetrans = False):
     parsed = True
     valid = True
     fields = {}
 
     if fmt_labeled:
         labels = {fmt_labeled[k] : k for k in fmt_labeled}
-        field_label_regex = '[' + ''.join(list(labels.keys())) + ']'
+        # Sort labels by length descending to match longest first, if we ever have multi-char labels
+        sorted_labels = sorted(labels.keys(), key=len, reverse=True)
     def addf(fields, fkey, fval):
         # make sure you pass a pair
         if fval and fval[1]:
@@ -377,11 +386,11 @@ def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep):
 
         lab = None
         if fmt_labeled:
-            labs = re.findall(field_label_regex, textfield)
-            # use the first label if we saw any at all
-            if len(labs) > 0:
-                lab = labs[0]
-                textfield = textfield.replace(lab, '', 1)
+            for l in sorted_labels:
+                if textfield.startswith(l):
+                    lab = l
+                    textfield = textfield[len(l):]
+                    break
         # try to use the field label if we got one
         if lab and lab in labels:
             fname = labels[lab]
@@ -401,6 +410,8 @@ def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep):
             valid = valid and fval.valid
             addf(fields, fname, (idx, fval))
         elif fname in [field_text]:
+            if linetrans:
+                textfield = transforms.text_pass_11_linetrans(textfield)
             fval = Manatext(textfield)
             valid = valid and fval.valid
             addf(fields, fname, (idx, fval))
@@ -446,6 +457,8 @@ class Card:
         # looks like a json object
         if isinstance(src, dict):
             self.json = src
+            self.set_code = src.get('setCode')
+            self.number = src.get('number')
             if utils.json_field_bside in src:
                 self.bside = Card(src[utils.json_field_bside],
                                   fmt_ordered = fmt_ordered,
@@ -467,7 +480,8 @@ class Card:
                                   fieldsep = fieldsep,
                                   linetrans = linetrans)
             p_success, v_success, parsed_fields = fields_from_format(sides[0], fmt_ordered, 
-                                                                     fmt_labeled,  fieldsep)
+                                                                     fmt_labeled,  fieldsep,
+                                                                     linetrans = linetrans)
             self.parsed = p_success
             self.valid = v_success
             self.fields = parsed_fields
@@ -509,6 +523,48 @@ class Card:
         setattr(self, field_text + '_words', [])
         setattr(self, field_text + '_lines_words', [])
         setattr(self, field_other, [])
+        # metadata for interoperability
+        self.set_code = None
+        self.number = None
+
+    def _get_ansi_color(self):
+        """Returns the ANSI color code for the card based on its colors and types."""
+        color = utils.Ansi.BOLD
+        card_colors = self.cost.colors
+        if len(card_colors) > 1:
+            color += utils.Ansi.YELLOW  # Multicolored
+        elif len(card_colors) == 1:
+            c = card_colors[0]
+            if c == 'W':
+                color += utils.Ansi.WHITE
+            elif c == 'U':
+                color += utils.Ansi.CYAN
+            elif c == 'B':
+                color += utils.Ansi.MAGENTA
+            elif c == 'R':
+                color += utils.Ansi.RED
+            elif c == 'G':
+                color += utils.Ansi.GREEN
+        else:
+            # Colorless / Artifacts
+            # Lands are typically just BOLD, non-land colorless are CYAN
+            if 'land' not in [t.lower() for t in self.types]:
+                color += utils.Ansi.CYAN
+        return color
+
+    def _get_rarity_ansi_color(self, rarity):
+        """Returns the ANSI color code for a given rarity string or marker."""
+        if not rarity:
+            return utils.Ansi.BOLD
+        r_lower = rarity.lower() if hasattr(rarity, 'lower') else rarity
+        color = utils.Ansi.BOLD
+        if r_lower == 'uncommon' or rarity == utils.rarity_uncommon_marker:
+            color += utils.Ansi.CYAN
+        elif r_lower == 'rare' or rarity == utils.rarity_rare_marker:
+            color += utils.Ansi.YELLOW
+        elif r_lower in ['mythic rare', 'mythic'] or rarity == utils.rarity_mythic_marker:
+            color += utils.Ansi.RED
+        return color
 
     # These setters are invoked via name mangling, so they have to match 
     # the field names specified above to be used. Otherwise we just
@@ -588,6 +644,84 @@ class Card:
         for idx, value in values:
             self.__dict__[field_other] += [(idx, value)]
 
+    def get_text(self, text_obj=None, name_obj=None, gatherer=False, for_forum=False, for_html=False, mse=False, ansi_color=False, force_unpass=False):
+        """Centralizes rules text unpassing logic.
+
+        Args:
+            text_obj (Manatext): The rules text object to process. Defaults to self.text.
+            name_obj (str): The card name to use for replacements. Defaults to self.name.
+            gatherer (bool): Whether to use Gatherer-style formatting.
+            for_forum (bool): Whether to use forum-style mana formatting.
+            for_html (bool): Whether to use HTML-style mana formatting.
+            mse (bool): Whether to use Magic Set Editor style formatting.
+            ansi_color (bool): Whether to use ANSI color codes.
+            force_unpass (bool): Whether to force unpassing of counters and self-references
+                                even if gatherer is False. Used by to_dict().
+
+        Returns:
+            str: The unpassed and formatted rules text.
+        """
+        if text_obj is None:
+            text_obj = self.text
+        if name_obj is None:
+            name_obj = self.name
+
+        if not text_obj.text:
+            return ''
+
+        mtext = text_obj.text
+        if gatherer or mse:
+            cardname = titlecase(transforms.name_unpass_1_dashes(name_obj))
+        else:
+            cardname = titlecase(name_obj)
+
+        # 1. Choice unpass
+        delimit_choice = not (gatherer or mse)
+        mtext = transforms.text_unpass_1_choice(mtext, delimit=delimit_choice)
+
+        # 2. Counters unpass
+        if gatherer or mse or force_unpass:
+            mtext = transforms.text_unpass_2_counters(mtext)
+
+        # 3. Uncast unpass
+        mtext = transforms.text_unpass_3_uncast(mtext)
+
+        # 4. Unary unpass
+        mtext = utils.from_unary(mtext)
+
+        # 6. Sentencecase
+        mtext = sentencecase(mtext)
+
+        # 7. Self-references (this_marker)
+        if mse:
+            mtext = mtext.replace(utils.this_marker, '<atom-cardname><nospellcheck>'
+                                  + utils.this_marker + '</nospellcheck></atom-cardname>')
+            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
+        elif gatherer or force_unpass:
+            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
+
+        # 8. Newlines
+        mtext = transforms.text_unpass_7_newlines(mtext)
+
+        # 9. Unicode (MSE or Gatherer)
+        if mse or gatherer:
+            mtext = transforms.text_unpass_8_unicode(mtext)
+
+        # 9.5. Symbols unpass (called AFTER sentencecase to avoid color corruption)
+        mtext = utils.from_symbols(mtext, for_forum, for_html, ansi_color=ansi_color)
+
+        # 10. Final formatting via Manatext
+        newtext = Manatext('')
+        newtext.text = mtext
+        newtext.costs = text_obj.costs
+        res = newtext.format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color)
+
+        # 11. MSE symbol tagging
+        if mse:
+            res = res.replace('{', '<sym-auto>').replace('}', '</sym-auto>')
+
+        return res
+
     # Output functions that produce various formats. encode() is specific to
     # the NN representation, use str() or format() for output intended for human
     # readers.
@@ -662,11 +796,127 @@ class Card:
                                           fieldsep = fieldsep,
                                           randomize_fields = randomize_fields, 
                                           randomize_mana = randomize_mana,
+                                          randomize_lines = randomize_lines,
                                           initial_sep = initial_sep, final_sep = final_sep))
 
         return outstr
 
-    def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False, ansi_color=False):
+    def search(self, pattern):
+        """Returns True if the pattern matches any of the card's fields."""
+        if self.search_name(pattern):
+            return True
+        if self.search_types(pattern):
+            return True
+        if self.search_text(pattern):
+            return True
+        return False
+
+    def search_name(self, pattern):
+        """Returns True if the pattern matches the card's name."""
+        return bool(pattern.search(self.name))
+
+    def search_types(self, pattern):
+        """Returns True if the pattern matches any of the card's types (supertypes, types, or subtypes)."""
+        if any(pattern.search(t) for t in self.supertypes):
+            return True
+        if any(pattern.search(t) for t in self.types):
+            return True
+        if any(pattern.search(t) for t in self.subtypes):
+            return True
+        return False
+
+    def search_text(self, pattern):
+        """Returns True if the pattern matches the card's rules text."""
+        return bool(pattern.search(self.text.text))
+
+    def summary(self, ansi_color=False):
+        """Returns a compact, one-line summary of the card."""
+        # Status indicator
+        status = ''
+        if not self.parsed:
+            status = '[!] '
+            if ansi_color:
+                status = utils.colorize(status, utils.Ansi.BOLD + utils.Ansi.RED)
+        elif not self.valid:
+            status = '[?] '
+            if ansi_color:
+                status = utils.colorize(status, utils.Ansi.YELLOW)
+
+        # Rarity indicator
+        rarity_indicator = ''
+        if self.rarity:
+            r = self.rarity
+            if r in utils.json_rarity_unmap:
+                r = utils.json_rarity_unmap[r]
+
+            # Use shorthand: C, U, R, M, S, L
+            rarity_map = {
+                'common': 'C',
+                'uncommon': 'U',
+                'rare': 'R',
+                'mythic rare': 'M',
+                'mythic': 'M',
+                'special': 'S',
+                'basic land': 'L',
+                utils.rarity_common_marker: 'C',
+                utils.rarity_uncommon_marker: 'U',
+                utils.rarity_rare_marker: 'R',
+                utils.rarity_mythic_marker: 'M',
+                utils.rarity_special_marker: 'S',
+                utils.rarity_basic_land_marker: 'L',
+            }
+            indicator = rarity_map.get(r.lower() if hasattr(r, 'lower') else r, r[0].upper() if r else '?')
+
+            if ansi_color:
+                color = self._get_rarity_ansi_color(r)
+                indicator = utils.colorize(indicator, color)
+
+            rarity_indicator = f'[{indicator}] '
+
+        # Name
+        cardname = titlecase(self.name)
+        if ansi_color:
+            color = self._get_ansi_color()
+            cardname = utils.colorize(cardname, color)
+
+        # Cost
+        coststr = self.cost.format(ansi_color=ansi_color)
+        if coststr == '_NOCOST_':
+            coststr = ''
+        else:
+            coststr = f' {coststr}'
+
+        # Type Line
+        supertypes = [titlecase(s) for s in self.supertypes]
+        types = [titlecase(t) for t in self.types]
+        typeline = ' '.join(supertypes + types)
+        if self.subtypes:
+            typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in self.subtypes])
+
+        if ansi_color:
+            typeline = utils.colorize(typeline, utils.Ansi.GREEN)
+
+        # P/T or Loyalty
+        stats = ''
+        if self.pt:
+            pt = utils.from_unary(self.pt)
+            if ansi_color: pt = utils.colorize(pt, utils.Ansi.RED)
+            stats = pt
+        elif self.loyalty:
+            loyalty = utils.from_unary(self.loyalty)
+            if ansi_color: loyalty = utils.colorize(loyalty, utils.Ansi.RED)
+            if any('battle' in t.lower() for t in self.types):
+                stats = f'[[{loyalty}]]'
+            else:
+                stats = f'({loyalty})'
+
+        # Construct final summary string with consistent bullet separators
+        res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
+        if stats:
+            res += f' \u2022 {stats}'
+        return res
+
+    def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False, ansi_color=False, for_md=False):
         """Formats the card data into a human-readable string.
 
         Args:
@@ -679,6 +929,8 @@ class Card:
             for_html (bool, optional): Whether to create a .html file with pretty forum formatting.
                 Defaults to False.
             ansi_color (bool, optional): Whether to use ANSI color codes for terminal output.
+                Defaults to False.
+            for_md (bool, optional): Whether to use Markdown formatting.
                 Defaults to False.
 
         Returns:
@@ -701,35 +953,23 @@ class Card:
             cardname = '_NONAME_'
 
         if ansi_color:
-            cardname = utils.colorize(cardname, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+            color = self._get_ansi_color()
+            cardname = utils.colorize(cardname, color)
 
         coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color)
         rarity = self.__dict__[field_rarity]
         if rarity in utils.json_rarity_unmap:
             rarity = utils.json_rarity_unmap[rarity]
 
-        mtext = self.__dict__[field_text].text
-        if gatherer:
-            mtext = transforms.text_unpass_1_choice(mtext, delimit=False)
-            mtext = transforms.text_unpass_2_counters(mtext)
-            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
-        else:
-            mtext = transforms.text_unpass_1_choice(mtext, delimit=True)
-
-        mtext = transforms.text_unpass_3_uncast(mtext)
-        mtext = utils.from_unary(mtext)
-        mtext = utils.from_symbols(mtext, for_forum, for_html)
-        mtext = sentencecase(mtext)
-        mtext = transforms.text_unpass_7_newlines(mtext)
-        newtext = Manatext('')
-        newtext.text = mtext
-        newtext.costs = self.__dict__[field_text].costs
-        formatted_mtext = newtext.format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color)
+        formatted_mtext = self.get_text(gatherer=gatherer, for_forum=for_forum,
+                                        for_html=for_html, ansi_color=ansi_color)
 
         if for_html:
             outstr += '<b>' + cardname + '</b>'
         elif for_forum:
             outstr += '[b]' + cardname + '[/b]'
+        elif for_md:
+            outstr += '**' + cardname + '**'
         else:
             outstr += cardname
 
@@ -741,8 +981,13 @@ class Card:
                        + self.format(gatherer=gatherer, for_forum=True, for_html=False, vdump=vdump, ansi_color=False).replace('\n', '<br>')
                        + '</p></span></div><a href="#top" style="float: right;">back to top</a>')
 
+        rarity_display = rarity
+        if ansi_color and rarity:
+            color = self._get_rarity_ansi_color(rarity)
+            rarity_display = utils.colorize(rarity, color)
+
         if rarity and gatherer:
-            outstr += ' (' + rarity + ')'
+            outstr += ' (' + rarity_display + ')'
 
         if vdump:
             if not self.parsed:
@@ -764,7 +1009,10 @@ class Card:
             typeline += ' '.join(supertypes + types)
 
         if self.__dict__[field_subtypes]:
-            typeline += (' ' + utils.dash_marker)
+            if gatherer:
+                typeline += ' \u2014'
+            else:
+                typeline += (' ' + utils.dash_marker)
             for subtype in self.__dict__[field_subtypes]:
                 typeline += ' ' + titlecase(subtype)
 
@@ -774,7 +1022,7 @@ class Card:
         outstr += typeline
 
         if rarity and not gatherer:
-            outstr += ' (' + rarity.lower() + ')'
+            outstr += ' (' + rarity_display.lower() + ')'
 
         if gatherer:
             if self.__dict__[field_pt]:
@@ -791,6 +1039,10 @@ class Card:
                     outstr += ' ((' + loyalty + '))'
 
         if formatted_mtext:
+            # Add a blank line before the rules text for better readability
+            # in plain text, color, and markdown formats.
+            if not for_html and not for_forum:
+                outstr += linebreak
             outstr += linebreak + formatted_mtext
 
         if not gatherer:
@@ -813,12 +1065,16 @@ class Card:
                 outstr += '<i>'
             elif for_forum:
                 outstr += '[i]'
+            elif for_md:
+                outstr += '_'
             else:
                 outstr += utils.dash_marker * 2
 
             for i, (idx, value) in enumerate(self.__dict__[field_other]):
                 if for_html and i > 0:
                     outstr += '<br>\n'
+                elif for_md and i > 0:
+                    outstr += '  \n'
                 else:
                     outstr += linebreak
                 outstr += '(' + str(idx) + ') ' + str(value)
@@ -827,12 +1083,14 @@ class Card:
                 outstr += '</i>'
             elif for_forum:
                 outstr += '[/i]'
+            elif for_md:
+                outstr += '_'
 
         if self.bside:
             outstr += linebreak
             if not for_html:
                 outstr += utils.dash_marker * 8 + linebreak
-            outstr += self.bside.format(gatherer=gatherer, for_forum=for_forum and not for_html, for_html=for_html, vdump=vdump, ansi_color=ansi_color)
+            outstr += self.bside.format(gatherer=gatherer, for_forum=for_forum and not for_html, for_html=for_html, vdump=vdump, ansi_color=ansi_color, for_md=for_md)
 
         if for_html:
             outstr += "</div>"
@@ -884,21 +1142,13 @@ class Card:
 
         # Text
         if self.text.text:
-            mtext = self.text.text
-            # Unpass pipeline similar to format()
-            mtext = transforms.text_unpass_1_choice(mtext, delimit=True)
-            mtext = transforms.text_unpass_2_counters(mtext)
-            mtext = transforms.text_unpass_3_uncast(mtext)
-            mtext = utils.from_unary(mtext)
-            mtext = utils.from_symbols(mtext, False, False)
-            mtext = sentencecase(mtext)
-            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
-            mtext = transforms.text_unpass_7_newlines(mtext)
+            d['text'] = self.get_text(force_unpass=True)
 
-            newtext = Manatext('')
-            newtext.text = mtext
-            newtext.costs = self.text.costs
-            d['text'] = newtext.format()
+        # Metadata
+        if self.set_code:
+            d['setCode'] = self.set_code
+        if self.number:
+            d['number'] = self.number
 
         # B-Side (Recursive)
         if self.bside:
@@ -951,31 +1201,7 @@ class Card:
                 outstr += '\tpower: ' + ptstring[0] + '\n'
                 outstr += '\ttoughness: ' + ptstring[1] + '\n'
 
-        if self.__dict__[field_text].text:
-            mtext = self.__dict__[field_text].text
-            mtext = transforms.text_unpass_1_choice(mtext, delimit = False)
-            mtext = transforms.text_unpass_2_counters(mtext)
-            mtext = transforms.text_unpass_3_uncast(mtext)
-            mtext = utils.from_unary(mtext)
-            mtext = utils.from_symbols(mtext, False, False)
-            mtext = sentencecase(mtext)
-            # I don't really want these MSE specific passes in transforms,
-            # but they could be pulled out separately somewhere else in here.
-            mtext = mtext.replace(utils.this_marker, '<atom-cardname><nospellcheck>'
-                                  + utils.this_marker + '</nospellcheck></atom-cardname>')
-            mtext = transforms.text_unpass_6_cardname(mtext, cardname)
-            mtext = transforms.text_unpass_7_newlines(mtext)
-            mtext = transforms.text_unpass_8_unicode(mtext)
-            newtext = Manatext('')
-            newtext.text = mtext
-            newtext.costs = self.__dict__[field_text].costs
-            newtext = newtext.format()
-
-            # See, the thing is, I think it's simplest and easiest to just leave it like this.
-            # What could possibly go wrong?
-            newtext = newtext.replace('{','<sym-auto>').replace('}','</sym-auto>')
-        else:
-            newtext = ''
+        newtext = self.get_text(mse=True)
 
         # Annoying special case for bsides;
         # This could be improved by having an intermediate function that returned
@@ -1018,25 +1244,9 @@ class Card:
                     outstr += '\tpower 2: ' + ptstring2[0] + '\n'
                     outstr += '\ttoughness 2: ' + ptstring2[1] + '\n'
 
-            if self.bside.__dict__[field_text].text:
-                mtext2 = self.bside.__dict__[field_text].text
-                mtext2 = transforms.text_unpass_1_choice(mtext2, delimit = False)
-                mtext2 = transforms.text_unpass_2_counters(mtext2)
-                mtext2 = transforms.text_unpass_3_uncast(mtext2)
-                mtext2 = utils.from_unary(mtext2)
-                mtext2 = utils.from_symbols(mtext2, False, False)
-                mtext2 = sentencecase(mtext2)
-                mtext2 = mtext2.replace(utils.this_marker, '<atom-cardname><nospellcheck>'
-                                      + utils.this_marker + '</nospellcheck></atom-cardname>')
-                mtext2 = transforms.text_unpass_6_cardname(mtext2, cardname2)
-                mtext2 = transforms.text_unpass_7_newlines(mtext2)
-                mtext2 = transforms.text_unpass_8_unicode(mtext2)
-                newtext2 = Manatext('')
-                newtext2.text = mtext2
-                newtext2.costs = self.bside.__dict__[field_text].costs
-                newtext2 = newtext2.format()
-                newtext2 = newtext2.replace('{','<sym-auto>').replace('}','</sym-auto>')
-                newtext2 = newtext2.replace('\n','\n\t\t')
+            newtext2 = self.bside.get_text(mse=True)
+            if newtext2:
+                newtext2 = newtext2.replace('\n', '\n\t\t')
                 outstr += '\trule text 2:\n\t\t' + newtext2 + '\n'
 
         # Need to do Special Things if it's a planeswalker.

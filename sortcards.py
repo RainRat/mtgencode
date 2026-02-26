@@ -198,21 +198,50 @@ Supports any encoding format supported by encode.py/decode.py.""",
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Path to the encoded card file to sort. Defaults to stdin (-).')
+                        help='Input card data (JSON, JSONL, CSV, MSE, or ZIP), an encoded file, or a directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console (stdout).')
 
     # Group: Encoding Options
     enc_group = parser.add_argument_group('Encoding Options')
     enc_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        help="Format of the input data. 'std' (default) puts the name last. 'named' puts the name first. Must match the format of the input file.")
+                        help="Card data format: 'std' (name last, default), 'named' (name first), "
+                             "'noname' (no name), 'rfields' (random field order), "
+                             "'old' (legacy), 'norarity' (no rarity), 'vec' (vectorized), "
+                             "or 'custom' (user-defined).")
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Limit the number of cards to sort.')
+    proc_group.add_argument('--shuffle', action='store_true',
+                        help='Randomize the order of cards before sorting.')
+    proc_group.add_argument('--seed', type=int,
+                        help='Seed for the random number generator.')
+    proc_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random cards from the input (equivalent to --shuffle --limit N).')
     proc_group.add_argument('--grep', action='append',
                         help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+    proc_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a regex.')
+    proc_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a regex.')
+    proc_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a regex.')
+    proc_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Exclude cards matching regex (matches name, type, or text). Can be used multiple times (OR logic).')
+    proc_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a regex.')
+    proc_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a regex.')
+    proc_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a regex.')
+    proc_group.add_argument('--set', action='append',
+                        help='Only include cards from these sets (e.g., MOM, MRD).')
+    proc_group.add_argument('--rarity', action='append',
+                        help='Only include cards of these rarities (common, uncommon, rare, mythic).')
+    proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
+                        help='Filter cards using a standard MTG decklist file. Also supports card multiplication based on counts in the decklist.')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -220,6 +249,13 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Enable verbose output, including loading diagnostics.')
     debug_group.add_argument('-q', '--quiet', action='store_true',
                         help='Suppress all non-error output (progress bars and summary).')
+
+    # Color options
+    color_group = debug_group.add_mutually_exclusive_group()
+    color_group.add_argument('--color', action='store_true', default=None,
+                        help='Force enable ANSI color output.')
+    color_group.add_argument('--no-color', action='store_false', dest='color',
+                        help='Disable ANSI color output.')
 
     args = parser.parse_args()
 
@@ -236,13 +272,25 @@ Supports any encoding format supported by encode.py/decode.py.""",
 
     # We could support custom formats if needed, but this covers the main ones.
 
+    # Handle --sample
+    if args.sample > 0:
+        args.shuffle = True
+        args.limit = args.sample
+
     # Use the robust jdecode.mtg_open_file for loading and filtering.
     # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
     # verbose=True enables jdecode diagnostic output (e.g. invalid cards).
-    cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, fmt_ordered=fmt_ordered, grep=args.grep,
+    cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, fmt_ordered=fmt_ordered,
+                                  grep=args.grep, vgrep=args.vgrep,
+                                  grep_name=args.grep_name, vgrep_name=args.exclude_name,
+                                  grep_types=args.grep_type, vgrep_types=args.exclude_type,
+                                  grep_text=args.grep_text, vgrep_text=args.exclude_text,
+                                  sets=args.set, rarities=args.rarity,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
-                                  exclude_layouts=lambda x: False)
+                                  exclude_layouts=lambda x: False,
+                                  shuffle=args.shuffle, seed=args.seed,
+                                  decklist_file=args.deck)
 
     if args.limit > 0:
         cards = cards[:args.limit]
@@ -264,15 +312,30 @@ Supports any encoding format supported by encode.py/decode.py.""",
             sys.exit(1)
 
     try:
+        # Determine if we should use color for the summary
+        use_color = False
+        if args.color is True:
+            use_color = True
+        elif args.color is None and sys.stderr.isatty():
+            use_color = True
+
         # Print summary (to stderr to separate from data)
         # Summary is shown unless --quiet is specified
         for cardclass, card_list in classes.items():
             if card_list is None:
                 if not args.quiet:
-                    print(cardclass, file=sys.stderr)
+                    header = cardclass
+                    if use_color:
+                        header = utils.colorize(header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                    print(header, file=sys.stderr)
             else:
                 if not args.quiet:
-                    print(f'  {cardclass}: {len(card_list)}', file=sys.stderr)
+                    name = cardclass
+                    count = str(len(card_list))
+                    if use_color:
+                        if len(card_list) > 0:
+                            count = utils.colorize(count, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                    print(f'  {name}: {count}', file=sys.stderr)
 
         # Write content
         for cardclass, card_list in classes.items():

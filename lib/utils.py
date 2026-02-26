@@ -122,6 +122,7 @@ unary_marker = config.unary_marker
 unary_counter = config.unary_counter
 unary_max = config.unary_max
 unary_exceptions = config.unary_exceptions
+_unary_exceptions_inv = {v: k for k, v in unary_exceptions.items()}
 
 def to_unary(s, warn = False):
     def replace_number(match):
@@ -145,6 +146,20 @@ def from_unary(s):
         return str(i)
 
     return _number_unary_re.sub(replace_unary, s)
+
+def from_unary_single(s):
+    """Converts a single unary string (possibly with exceptions) back to a numerical value."""
+    if not s:
+        return 0
+    if s in _unary_exceptions_inv:
+        return _unary_exceptions_inv[s]
+    try:
+        res = from_unary(s)
+        if '.' in res:
+            return float(res)
+        return int(res)
+    except (ValueError, TypeError):
+        return 0
 
 # mana syntax
 mana_open_delimiter = '{'
@@ -441,10 +456,32 @@ def mana_translate(jmanastr):
 # convert an encoded mana string back to json
 mana_symlen_min = min([len(sym) for sym in mana_symall_decode])
 mana_symlen_max = max([len(sym) for sym in mana_symall_decode])
-def mana_untranslate(manastr, for_forum = False, for_html = False):
+def mana_untranslate(manastr, for_forum = False, for_html = False, ansi_color = False):
     inner = manastr[1:-1]
     jmanastr = ''
     colorless_total = 0
+
+    def get_sym_color(sym):
+        # Individual symbol color mapping
+        if not ansi_color:
+            return None
+        sym_upper = sym.upper()
+        if sym_upper in ['W']:
+            return Ansi.WHITE
+        if sym_upper in ['U']:
+            return Ansi.CYAN
+        if sym_upper in ['B']:
+            return Ansi.MAGENTA
+        if sym_upper in ['R']:
+            return Ansi.RED
+        if sym_upper in ['G']:
+            return Ansi.GREEN
+        if any(c in sym_upper for c in 'WUBRG'):
+            # Hybrid or Phyrexian with colors
+            return Ansi.BOLD + Ansi.YELLOW
+        # Colorless, X, S, E, etc.
+        return Ansi.BOLD
+
     idx = 0
     while idx < len(inner):
         # taking this branch is an infinite loop if unary_marker is empty
@@ -468,7 +505,12 @@ def mana_untranslate(manastr, for_forum = False, for_html = False):
                     elif for_forum:
                         jmanastr = jmanastr + mana_decode_direct_forum(sym)
                     else:
-                        jmanastr = jmanastr + mana_decode_direct(sym)
+                        decoded = mana_decode_direct(sym)
+                        if ansi_color:
+                            color = get_sym_color(mana_symall_decode[sym])
+                            if color:
+                                decoded = colorize(decoded, color)
+                        jmanastr = jmanastr + decoded
                     break
             # otherwise we'll go into an infinite loop if we see a symbol we don't know
             if idx == old_idx:
@@ -490,12 +532,20 @@ def mana_untranslate(manastr, for_forum = False, for_html = False):
                                                  else str(colorless_total))
                     + jmanastr + mana_forum_close_delimiter)
     else:
+        colorless_str = ''
+        if colorless_total > 0 or jmanastr == '':
+            colorless_str = mana_json_open_delimiter + str(colorless_total) + mana_json_close_delimiter
+            if ansi_color:
+                colorless_str = colorize(colorless_str, Ansi.BOLD)
+
         if jmanastr == '':
-            return mana_json_open_delimiter + str(colorless_total) + mana_json_close_delimiter
+            return colorless_str
         else:
-            return (('' if colorless_total == 0 else 
-                     mana_json_open_delimiter + str(colorless_total) + mana_json_close_delimiter)
-                    + jmanastr)
+            # If jmanastr is not empty, we only include colorless if it's > 0
+            if colorless_total > 0:
+                return colorless_str + jmanastr
+            else:
+                return jmanastr
 
 # finally, replacing all instances in a string
 # notice the calls to .upper(), this way we recognize lowercase symbols as well just in case
@@ -503,8 +553,8 @@ def to_mana(s):
     return re.sub(mana_json_regex, lambda m: mana_translate(m.group(0).upper()), s)
 
 
-def from_mana(s, for_forum=False, for_html=False):
-    return re.sub(mana_regex, lambda m: mana_untranslate(m.group(0).upper(), for_forum=for_forum, for_html=for_html), s)
+def from_mana(s, for_forum=False, for_html=False, ansi_color=False):
+    return re.sub(mana_regex, lambda m: mana_untranslate(m.group(0).upper(), for_forum=for_forum, for_html=for_html, ansi_color=ansi_color), s)
     
 # Translation could also be accomplished using the datamine.Manacost object's
 # display methods, but these direct string transformations are retained for
@@ -538,13 +588,13 @@ json_symbol_regex = (re.escape(mana_json_open_delimiter) + '['
                      + json_symbol_tap + json_symbol_tap.lower()
                      + json_symbol_untap + json_symbol_untap.lower()
                      + ']' + re.escape(mana_json_close_delimiter))
-symbol_regex = '[' + tap_marker + untap_marker + ']'
+symbol_regex = r'\b[' + tap_marker + untap_marker + r']\b'
 
 def to_symbols(s):
     return re.sub(json_symbol_regex, lambda m: json_symbol_trans[m.group(0)], s)
 
 
-def from_symbols(s, for_forum=False, for_html=False):
+def from_symbols(s, for_forum=False, for_html=False, ansi_color=False):
     def replace(match):
         sym = match.group(0)
         if for_html:
@@ -552,10 +602,28 @@ def from_symbols(s, for_forum=False, for_html=False):
         elif for_forum:
             return symbol_forum_trans[sym]
         else:
-            return symbol_trans[sym]
+            res = symbol_trans[sym]
+            if ansi_color:
+                res = colorize(res, Ansi.BOLD + Ansi.YELLOW)
+            return res
     return re.sub(symbol_regex, replace, s)
 
 unletters_regex = r"[^abcdefghijklmnopqrstuvwxyz']"
+
+# MTG Constants
+known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
+
+def split_types(full_type):
+    """Splits a type line string into supertypes and types."""
+    supertypes = []
+    types = []
+    for t in full_type.split():
+        if t in known_supertypes:
+            supertypes.append(t)
+        else:
+            types.append(t)
+    return supertypes, types
+
 
 class Ansi:
     RESET = '\033[0m'
@@ -566,8 +634,54 @@ class Ansi:
     BLUE = '\033[94m'
     MAGENTA = '\033[95m'
     CYAN = '\033[96m'
+    WHITE = '\033[97m'
+    UNDERLINE = '\033[4m'
 
 def colorize(text, color_code):
     if not text:
         return text
     return f"{color_code}{text}{Ansi.RESET}"
+
+# Regular expression for matching ANSI escape sequences
+_ansi_escape_re = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+def visible_len(s):
+    """Returns the length of a string without ANSI escape sequences."""
+    return len(_ansi_escape_re.sub('', s))
+
+def print_operation_summary(op_name, success_count, fail_count, quiet=False):
+    """Prints a standardized, colorized summary of a CLI operation to stderr."""
+    if quiet:
+        return
+
+    import sys
+
+    # Only use color if stderr is a TTY
+    use_color = sys.stderr.isatty()
+
+    if fail_count == 0:
+        summary = f">> {op_name} complete: {success_count} cards processed."
+        if use_color:
+            summary = colorize(summary, Ansi.BOLD + Ansi.GREEN)
+        print('\n' + summary, file=sys.stderr)
+    else:
+        header = f"\n>> {op_name} complete:"
+        if use_color:
+            header = colorize(header, Ansi.BOLD + Ansi.CYAN)
+
+        success_str = f"  - {success_count} cards successfully processed."
+        if use_color and success_count > 0:
+            success_str = colorize(success_str, Ansi.GREEN)
+
+        fail_str = f"  - {fail_count} cards failed."
+        if use_color and fail_count > 0:
+            fail_str = colorize(fail_str, Ansi.BOLD + Ansi.RED)
+
+        footer = "----------------------------------------"
+        if use_color:
+            footer = colorize(footer, Ansi.BOLD + Ansi.CYAN)
+
+        print(header, file=sys.stderr)
+        print(success_str, file=sys.stderr)
+        print(fail_str, file=sys.stderr)
+        print(footer, file=sys.stderr)

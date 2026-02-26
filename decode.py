@@ -16,26 +16,39 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import cardlib
+import sortlib
+from titlecase import titlecase
 from cbow import CBOW
 from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, html = False, text = False, json_out = False, csv_out = False, quiet=False,
-         report_file=None, color_arg=None, limit=0, grep=None):
+         creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, summary_out = False, deck_out = False, quiet=False,
+         report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None,
+         grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
+         grep_text=None, vgrep_text=None,
+         sets=None, rarities=None, shuffle=False, seed=None, decklist_file=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
-    if not (html or text or for_mse or json_out or csv_out):
+    if not (html or text or for_mse or json_out or jsonl_out or csv_out or md_out or summary_out or deck_out):
         if oname:
             if oname.endswith('.html'):
                 html = True
             elif oname.endswith('.json'):
                 json_out = True
+            elif oname.endswith('.jsonl'):
+                jsonl_out = True
             elif oname.endswith('.csv'):
                 csv_out = True
+            elif oname.endswith('.md'):
+                md_out = True
+            elif oname.endswith('.sum') or oname.endswith('.summary'):
+                summary_out = True
             elif oname.endswith('.mse-set'):
                 for_mse = True
+            elif oname.endswith('.deck') or oname.endswith('.dek'):
+                deck_out = True
             else:
                 text = True
         else:
@@ -43,7 +56,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     # Mutually exclusive output formats are now enforced by argparse in main block,
     # but we keep this check for programmatic access safety.
-    if sum([bool(html), bool(for_mse), bool(json_out), bool(text), bool(csv_out)]) > 1:
+    if sum([bool(html), bool(for_mse), bool(json_out), bool(jsonl_out), bool(text), bool(csv_out), bool(md_out), bool(summary_out), bool(deck_out)]) > 1:
         # If user explicitly requested multiple formats programmatically, we warn or error.
         # However, argparse logic below ensures text defaults to True only if others are False.
         # But if someone calls main() directly with multiple True, we should respect that or fail.
@@ -79,7 +92,14 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     else:
         raise ValueError('decode.py: unknown encoding: ' + encoding)
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep)
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep, vgrep=vgrep,
+                                  grep_name=grep_name, vgrep_name=vgrep_name,
+                                  grep_types=grep_types, vgrep_types=vgrep_types,
+                                  grep_text=grep_text, vgrep_text=vgrep_text,
+                                  sets=sets, rarities=rarities, shuffle=shuffle, seed=seed, decklist_file=decklist_file)
+
+    if sort:
+        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
 
     if limit > 0:
         cards = cards[:limit]
@@ -94,43 +114,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             cards[i].nearest_names = nearest_names[i]
             cards[i].nearest_cards = nearest_cards[i]
 
-    def write_csv_output(writer, cards, verbose=False):
-        import csv
-        fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
-        csv_writer = csv.DictWriter(writer, fieldnames=fieldnames)
-        csv_writer.writeheader()
-
-        iterator = cards
-        # Only use tqdm if we are writing to a file (writer is not stdout) or if we are not in quiet mode
-        # But we don't have access to quiet mode here easily without passing it.
-        # Since this is a helper, let's just iterate. Main loop handles progress usually.
-
-        for card in cards:
-            d = card.to_dict()
-            # Flatten/map fields for CSV
-            row = {
-                'name': d.get('name', ''),
-                'mana_cost': d.get('manaCost', ''),
-                'type': ' '.join(d.get('supertypes', []) + d.get('types', [])),
-                'subtypes': ' '.join(d.get('subtypes', [])),
-                'text': d.get('text', ''),
-                'power': d.get('power', d.get('pt', '') if '/' not in d.get('pt', '') else ''),
-                'toughness': d.get('toughness', ''),
-                'loyalty': d.get('loyalty', d.get('defense', '')),
-                'rarity': d.get('rarity', ''),
-            }
-            if 'pt' in d and 'power' not in d:
-                    # Handle case where pt is "X/Y" string in to_dict but split in CSV logic
-                    if '/' in d['pt']:
-                        p, t = d['pt'].split('/', 1)
-                        row['power'] = p
-                        row['toughness'] = t
-                    else:
-                        row['power'] = d['pt'] # Fallback?
-
-            csv_writer.writerow(row)
-
-    def hoverimg(cardname, dist, nd, for_html=False):
+    def hoverimg(cardname, dist, nd, for_html=False, for_md=False):
         # Gracefully handle cases where the card returned by CBOW is not in the Namediff set
         # This happens in testing when CBOW uses full data but Namediff uses a subset
         if cardname not in nd.names:
@@ -156,13 +140,26 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                            + ');" alt=""/></span></a>' + ': ' + str(dist) + '\n</div>\n')
             else:
                 namestr = '<div>' + truename + ': ' + str(dist) + '</div>'
+        elif for_md:
+            if code:
+                try:
+                    set_code, number_jpg = code.split('/')
+                    number = number_jpg.replace('.jpg', '')
+                    scryfall_url = f'https://scryfall.com/card/{set_code}/{number}'
+                    namestr = f"* [{truename}]({scryfall_url}): {dist:.3f}\n"
+                except ValueError:
+                    namestr = f"* {truename}: {dist:.3f}\n"
+            else:
+                namestr = f"* {truename}: {dist:.3f}\n"
         elif for_forum:
             namestr = '[card]' + truename + '[/card]' + ': ' + str(dist) + '\n'
         else:
             namestr = truename + ': ' + str(dist) + '\n'
         return namestr
 
-    def writecards(writer, for_html=False):
+    def writecards(writer, for_html=False, for_md=False, for_summary=False):
+        success_count = 0
+        fail_count = 0
         if for_mse:
             # have to prepend a massive chunk of formatting info
             writer.write(utils.mse_prepend)
@@ -170,28 +167,53 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             # have to prepend html info
             writer.write(utils.html_prepend)
             # separate the write function to allow for writing smaller chunks of cards at a time
-            segments = sort_colors(cards)
+            segments = sortlib.sort_colors(cards, quiet=quiet)
             for i in range(len(segments)):
-                # sort color by CMC
-                segments[i] = sort_type(segments[i])
+                # sort color by type
+                segments[i] = sortlib.sort_type(segments[i])
                 # this allows card boxes to be colored for each color
                 # for coloring of each box separately cardlib.Card.format() must change non-minimally
                 writer.write('<div id="' + utils.segment_ids[i] + '">')
                 for card in segments[i]:
-                    writecard(writer, card, for_html=True)
+                    try:
+                        writecard(writer, card, for_html=True)
+                        success_count += 1
+                    except Exception:
+                        fail_count += 1
                 writer.write("</div><hr>")
             # closing the html file
             writer.write(utils.html_append)
-            return
+            return success_count, fail_count
 
-        for card in tqdm(cards, disable=quiet, desc="Decoding"):
-            writecard(writer, card)
+        first = True
+        for card in tqdm(cards, disable=quiet or len(cards) < 5, desc="Decoding"):
+            try:
+                if not first and not (for_html or for_md or for_mse or for_summary):
+                    # Add a divider between cards for console output
+                    use_color = False
+                    if color_arg is True:
+                        use_color = True
+                    elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
+                        use_color = True
+
+                    divider = '-' * 40
+                    if use_color:
+                        divider = utils.colorize(divider, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                    writer.write(divider + '\n')
+
+                writecard(writer, card, for_md=for_md, for_summary=for_summary)
+                success_count += 1
+                first = False
+            except Exception:
+                fail_count += 1
 
         if for_mse:
             # more formatting info
             writer.write('version control:\n\ttype: none\napprentice code: ')
 
-    def writecard(writer, card, for_html=False):
+        return success_count, fail_count
+
+    def writecard(writer, card, for_html=False, for_md=False, for_summary=False):
         try:
             if for_mse:
                 writer.write(card.to_mse())
@@ -205,6 +227,16 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                        vdump = vdump) + '\n'
                 fstring = fstring.replace('<', '(').replace('>', ')')
                 writer.write(('\n' + fstring[:-1]).replace('\n', '\n\t\t'))
+            elif for_summary:
+                # Determine if we should use color
+                use_color = False
+                if color_arg is True:
+                    use_color = True
+                elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
+                    use_color = True
+
+                writer.write(card.summary(ansi_color=use_color) + '\n')
+                return
             else:
                 # Determine if we should use color
                 # Use color if:
@@ -212,14 +244,14 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 # 2. User didn't specify (color_arg == None) AND writer is stdout AND stdout is a TTY
                 # 3. User didn't disable it (color_arg != False)
                 use_color = False
-                if not for_html and not for_mse:
+                if not for_html and not for_mse and not for_md:
                     if color_arg is True:
                         use_color = True
                     elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
                         use_color = True
 
                 fstring = card.format(gatherer = gatherer, for_forum = for_forum,
-                                      vdump = vdump, for_html = for_html, ansi_color = use_color)
+                                      vdump = vdump, for_html = for_html, ansi_color = use_color, for_md = for_md)
                 if for_html and creativity:
                     fstring = fstring[:-6] # chop off the closing </div> to stick stuff in
 
@@ -234,21 +266,25 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if creativity:
             if for_html:
                 cstring = '~~ closest cards ~~\n<br>\n'
+            elif for_md:
+                cstring = '### ~~ closest cards ~~\n'
             else:
                 cstring = '~~ closest cards ~~\n'
             nearest = card.nearest_cards
             for dist, cardname in nearest:
-                cstring += hoverimg(cardname, dist, namediff, for_html=for_html)
+                cstring += hoverimg(cardname, dist, namediff, for_html=for_html, for_md=for_md)
 
             if for_html:
                 cstring += "<br>\n"
                 cstring += '~~ closest names ~~\n<br>\n'
+            elif for_md:
+                cstring += '### ~~ closest names ~~\n'
             else:
                 cstring += '~~ closest names ~~\n'
 
             nearest = card.nearest_names
             for dist, cardname in nearest:
-                cstring += hoverimg(cardname, dist, namediff, for_html=for_html)
+                cstring += hoverimg(cardname, dist, namediff, for_html=for_html, for_md=for_md)
             if for_mse:
                 cstring = ('\n\n' + cstring[:-1]).replace('\n', '\n\t\t')
             elif for_html:
@@ -257,71 +293,62 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         writer.write('\n')
 
-    # Sorting by colors
-    def sort_colors(card_set):
-        colors = {
-            'W': [], 'U': [], 'B': [], 'R': [], 'G': [],
-            'multi': [], 'colorless': [], 'lands': []
-        }
-
-        # Wrap in tqdm if not quiet
-        iterator = tqdm(card_set, disable=quiet, desc="Sorting")
-        for card in iterator:
-            card_colors = card.cost.colors
-            if len(card_colors) > 1:
-                colors['multi'].append(card)
-            elif len(card_colors) == 1:
-                colors[card_colors[0]].append(card)
-            else:
-                if "land" in card.types:
-                    colors['lands'].append(card)
-                else:
-                    colors['colorless'].append(card)
-
-        return [colors['W'], colors['U'], colors['B'], colors['R'], colors['G'],
-                colors['multi'], colors['colorless'], colors['lands']]
-
-    def sort_type(card_set):
-        sorting = ["creature", "enchantment", "instant", "sorcery", "artifact", "planeswalker"]
-        sorted_cards = [[],[],[],[],[],[],[]]
-        sorted_set = []
-        for card in card_set:
-            types = card.types
-            for i in range(len(sorting)):
-                if sorting[i] in types:
-                    sorted_cards[i] += [card]
-                    break
-            else:
-                sorted_cards[6] += [card]
-        for value in sorted_cards:
-            for card in value:
-                sorted_set += [card]
-        return sorted_set
 
 
+    total_success = 0
+    total_fail = 0
 
-    def sort_cmc(card_set):
-        sorted_cards = []
-        sorted_set = []
-        for card in card_set:
-            # make sure there is an empty set for each CMC
-            while len(sorted_cards)-1 < card.cost.cmc:
-                sorted_cards += [[]]
-            # add card to correct set of CMC values
-            sorted_cards[card.cost.cmc] += [card]
-        # combine each set of CMC valued cards together
-        for value in sorted_cards:
-            for card in value:
-                sorted_set += [card]
-        return sorted_set
+    if deck_out:
+        from collections import OrderedDict
+        counts = OrderedDict()
+        for card in cards:
+            key = (card.name, card.set_code, card.number)
+            counts[key] = counts.get(key, 0) + 1
 
+        output_f = sys.stdout
+        if oname:
+            if verbose:
+                print('Writing decklist output to: ' + oname, file=sys.stderr)
+            output_f = open(oname, 'w', encoding='utf8')
+
+        try:
+            for (name, set_code, number), count in counts.items():
+                line = f"{count} {titlecase(name)}"
+                if set_code:
+                    line += f" ({set_code.upper()})"
+                    if number:
+                        line += f" {number}"
+                output_f.write(line + '\n')
+            total_success = len(cards)
+        finally:
+            if oname:
+                output_f.close()
+
+        utils.print_operation_summary("Decoding", total_success, total_fail, quiet=quiet)
+        return
 
     if oname:
         if text and not for_mse:
             if verbose:
                 print('Writing text output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
-                writecards(ofile)
+                s, f = writecards(ofile)
+                total_success += s
+                total_fail += f
+        if summary_out:
+            if verbose:
+                print('Writing summary output to: ' + oname, file=sys.stderr)
+            with open(oname, 'w', encoding='utf8') as ofile:
+                s, f = writecards(ofile, for_summary=True)
+                total_success += s
+                total_fail += f
+        if md_out:
+            if verbose:
+                print('Writing markdown output to: ' + oname, file=sys.stderr)
+            with open(oname, 'w', encoding='utf8') as ofile:
+                s, f = writecards(ofile, for_md=True)
+                total_success += s
+                total_fail += f
         if html:
             fname = oname
             if not fname.endswith('.html'):
@@ -329,19 +356,60 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             if verbose:
                 print('Writing html output to: ' + fname, file=sys.stderr)
             with open(fname, 'w', encoding='utf8') as ofile:
-                writecards(ofile, for_html=True)
+                s, f = writecards(ofile, for_html=True)
+                total_success += s
+                total_fail += f
         if json_out:
             import json
             if verbose:
                 print('Writing json output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
-                json_cards = [card.to_dict() for card in cards]
+                json_cards = []
+                for card in cards:
+                    try:
+                        json_cards.append(card.to_dict())
+                        total_success += 1
+                    except Exception:
+                        total_fail += 1
                 json.dump(json_cards, ofile, indent=2)
+        if jsonl_out:
+            import json
+            if verbose:
+                print('Writing jsonl output to: ' + oname, file=sys.stderr)
+            with open(oname, 'w', encoding='utf8') as ofile:
+                for card in cards:
+                    try:
+                        ofile.write(json.dumps(card.to_dict()) + '\n')
+                        total_success += 1
+                    except Exception:
+                        total_fail += 1
         if csv_out:
             if verbose:
                 print('Writing csv output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8', newline='') as ofile:
-                write_csv_output(ofile, cards, verbose=verbose)
+                # write_csv_output doesn't easily return counts, so we do it manually or assume cards
+                import csv
+                fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
+                csv_writer = csv.DictWriter(ofile, fieldnames=fieldnames)
+                csv_writer.writeheader()
+                for card in cards:
+                    try:
+                        d = card.to_dict()
+                        row = {
+                            'name': d.get('name', ''),
+                            'mana_cost': d.get('manaCost', ''),
+                            'type': ' '.join(d.get('supertypes', []) + d.get('types', [])),
+                            'subtypes': ' '.join(d.get('subtypes', [])),
+                            'text': d.get('text', ''),
+                            'power': d.get('power', d.get('pt', '') if '/' not in d.get('pt', '') else ''),
+                            'toughness': d.get('toughness', ''),
+                            'loyalty': d.get('loyalty', d.get('defense', '')),
+                            'rarity': d.get('rarity', ''),
+                        }
+                        csv_writer.writerow(row)
+                        total_success += 1
+                    except Exception:
+                        total_fail += 1
 
         if for_mse:
             mse_oname = oname
@@ -357,7 +425,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
             # Write cards to the temporary 'set' file
             with open('set', 'w', encoding='utf8') as ofile:
-                writecards(ofile)
+                s, f = writecards(ofile)
+                total_success += s
+                total_fail += f
 
             # Use the freaky mse extension instead of zip.
             with zipfile.ZipFile(mse_oname, mode='w') as zf:
@@ -370,15 +440,55 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     else:
         if json_out:
             import json
-            json_cards = [card.to_dict() for card in cards]
+            json_cards = []
+            for card in cards:
+                try:
+                    json_cards.append(card.to_dict())
+                    total_success += 1
+                except Exception:
+                    total_fail += 1
             json.dump(json_cards, sys.stdout, indent=2)
+        elif jsonl_out:
+            import json
+            for card in cards:
+                try:
+                    sys.stdout.write(json.dumps(card.to_dict()) + '\n')
+                    total_success += 1
+                except Exception:
+                    total_fail += 1
+            sys.stdout.flush()
         elif csv_out:
-            write_csv_output(sys.stdout, cards, verbose=verbose)
+            import csv
+            fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
+            csv_writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
+            csv_writer.writeheader()
+            for card in cards:
+                try:
+                    d = card.to_dict()
+                    row = {
+                        'name': d.get('name', ''),
+                        'mana_cost': d.get('manaCost', ''),
+                        'type': ' '.join(d.get('supertypes', []) + d.get('types', [])),
+                        'subtypes': ' '.join(d.get('subtypes', [])),
+                        'text': d.get('text', ''),
+                        'power': d.get('power', d.get('pt', '') if '/' not in d.get('pt', '') else ''),
+                        'toughness': d.get('toughness', ''),
+                        'loyalty': d.get('loyalty', d.get('defense', '')),
+                        'rarity': d.get('rarity', ''),
+                    }
+                    csv_writer.writerow(row)
+                    total_success += 1
+                except Exception:
+                    total_fail += 1
             sys.stdout.flush()
         else:
-            # Correctly propagate for_html=html
-            writecards(sys.stdout, for_html=html)
+            # Correctly propagate for_html=html, for_md=md_out, for_summary=summary_out
+            s, f = writecards(sys.stdout, for_html=html, for_md=md_out, for_summary=summary_out)
+            total_success += s
+            total_fail += f
         sys.stdout.flush()
+
+    utils.print_operation_summary("Decoding", total_success, total_fail, quiet=quiet)
 
 if __name__ == '__main__':
     import argparse
@@ -387,30 +497,41 @@ if __name__ == '__main__':
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input file containing encoded cards (or a JSON/CSV corpus) to decode. Defaults to stdin (-).')
+                        help='Input card data (JSON, JSONL, CSV, MSE, or ZIP), an encoded file, or a directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .csv, .mse-set).')
+                        help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .jsonl, .csv, .md, .sum, .summary, .deck, .dek, .mse-set).')
 
     # Group: Output Format (Mutually Exclusive)
     # We use a mutually exclusive group to enforce one output format.
-    # Note: We cannot attach this directly to a titled argument group in argparse easily while keeping the title.
-    # So we define the arguments in the main parser but link them via a mutex group.
-    fmt_group = parser.add_mutually_exclusive_group()
+    # By adding the mutex group to a titled argument group, we improve the help output's visual hierarchy.
+    fmt_group_title = parser.add_argument_group('Output Format')
+    fmt_group = fmt_group_title.add_mutually_exclusive_group()
     fmt_group.add_argument('--text', action='store_true',
                            help='Force plain text output (Default unless detected from extension).')
     fmt_group.add_argument('--html', action='store_true',
                            help='Generate a nicely formatted HTML file (Auto-detected for .html).')
     fmt_group.add_argument('--json', action='store_true',
                            help='Generate a structured JSON file (Auto-detected for .json).')
+    fmt_group.add_argument('--jsonl', action='store_true',
+                           help='Generate a JSON Lines file (one card object per line). Auto-detected for .jsonl.')
     fmt_group.add_argument('--csv', action='store_true',
                            help='Generate a CSV file (Auto-detected for .csv).')
+    fmt_group.add_argument('--md', action='store_true',
+                           help='Generate a Markdown file (Auto-detected for .md).')
+    fmt_group.add_argument('--summary', action='store_true',
+                           help='Generate a compact one-line summary for each card (Auto-detected for .sum or .summary).')
+    fmt_group.add_argument('--deck', '--decklist', action='store_true',
+                           help='Generate a standard MTG decklist (Auto-detected for .deck or .dek).')
     fmt_group.add_argument('--mse', action='store_true',
                            help='Generate a Magic Set Editor set file (Auto-detected for .mse-set). Requires an output filename.')
 
     # Group: Content Formatting
     content_group = parser.add_argument_group('Content Formatting')
     content_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        help="Format of the input data. Default is 'std' (standard).")
+                        help="Card data format: 'std' (name last, default), 'named' (name first), "
+                             "'noname' (no name), 'rfields' (random field order), "
+                             "'old' (legacy), 'norarity' (no rarity), 'vec' (vectorized), "
+                             "or 'custom' (user-defined).")
 
     # Gatherer formatting is on by default.
     parser.set_defaults(gatherer=True)
@@ -418,9 +539,9 @@ if __name__ == '__main__':
     # We provide a --raw flag to disable it.
     # We also keep -g for backward compatibility but make it a no-op that ensures True.
     content_group.add_argument('-g', '--gatherer', action='store_true', default=True,
-                        help='Explicitly enable Gatherer formatting (Default).')
+                        help='Format text like the official Gatherer website (Default). This applies modern wording and capitalization.')
     content_group.add_argument('--raw', '--no-gatherer', dest='gatherer', action='store_false',
-                        help='Output raw text without Gatherer formatting.')
+                        help='Output raw text exactly as it appears in the encoded data.')
 
     content_group.add_argument('-f', '--forum', action='store_true',
                         help='Use pretty formatting for mana symbols (compatible with MTG Salvation forums).')
@@ -436,11 +557,19 @@ if __name__ == '__main__':
     # Group: Processing & Debugging
     proc_group = parser.add_argument_group('Processing & Debugging')
     proc_group.add_argument('-c', '--creativity', action='store_true',
-                        help="Enable 'creativity' mode: calculate similarity to existing cards using CBOW (slow).")
+                        help="Calculate how unique these cards are compared to real Magic cards (requires Word2Vec).")
     proc_group.add_argument('-n', '--limit', type=int, default=0,
-                        help='Limit the number of cards to decode.')
+                        help='Only process the first N cards.')
+    proc_group.add_argument('--shuffle', action='store_true',
+                        help='Randomize the order of cards before decoding.')
+    proc_group.add_argument('--seed', type=int,
+                        help='Seed for the random number generator.')
+    proc_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
+                        help='Sort cards by the specified criterion.')
     proc_group.add_argument('-d', '--dump', action='store_true',
-                        help='Debug mode: print detailed information about cards that failed to validate.')
+                        help='Show detailed debug information for cards that were not processed correctly.')
     proc_group.add_argument('-v', '--verbose', action='store_true',
                         help='Enable verbose output.')
     proc_group.add_argument('-q', '--quiet', action='store_true',
@@ -448,7 +577,27 @@ if __name__ == '__main__':
     proc_group.add_argument('--report-failed',
                         help='File path to save the text of cards that failed to parse/validate (useful for debugging).')
     proc_group.add_argument('--grep', action='append',
-                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+                        help='Only include cards that match a regex (matches name, type, or text). Use multiple times for AND logic.')
+    proc_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a regex.')
+    proc_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a regex.')
+    proc_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a regex.')
+    proc_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
+    proc_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a regex.')
+    proc_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a regex.')
+    proc_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a regex.')
+    proc_group.add_argument('--set', action='append',
+                        help='Only include cards from these sets (e.g., MOM, MRD).')
+    proc_group.add_argument('--rarity', action='append',
+                        help='Only include cards of these rarities (common, uncommon, rare, mythic).')
+    proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck_filter',
+                        help='Filter cards using a standard MTG decklist file. Also supports card multiplication based on counts in the decklist.')
 
     args = parser.parse_args()
 
@@ -456,9 +605,21 @@ if __name__ == '__main__':
     if args.mse and not args.outfile:
         parser.error("--mse requires an output filename.")
 
+    # Handle --sample
+    if args.sample > 0:
+        args.shuffle = True
+        args.limit = args.sample
+
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
-         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, json_out = args.json, csv_out = args.csv, quiet=args.quiet,
-         report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep)
+         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
+         json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, summary_out = args.summary, deck_out = args.deck, quiet=args.quiet,
+         report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep,
+         sort=args.sort, vgrep=args.vgrep,
+         grep_name=args.grep_name, vgrep_name=args.exclude_name,
+         grep_types=args.grep_type, vgrep_types=args.exclude_type,
+         grep_text=args.grep_text, vgrep_text=args.exclude_text,
+         sets=args.set, rarities=args.rarity,
+         shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter)
 
     exit(0)

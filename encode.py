@@ -9,11 +9,15 @@ import random
 import utils
 import jdecode
 import cardlib
+import sortlib
 from tqdm import tqdm
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, randomize = False, nolabel = False, stable = False,
-         report_file=None, quiet=False, limit=0, grep=None):
+         report_file=None, quiet=False, limit=0, grep=None, sort=None, vgrep=None,
+         grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
+         grep_text=None, vgrep_text=None,
+         sets=None, rarities=None, seed=None, decklist_file=None):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
     fieldsep = utils.fieldsep
@@ -44,10 +48,14 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     final_sep = config.get('final_sep', final_sep)
 
     if verbose:
-        print('Preparing to encode:', file=sys.stderr)
+        print(utils.colorize('Preparing to encode:', utils.Ansi.BOLD + utils.Ansi.CYAN), file=sys.stderr)
         print('  Using encoding ' + repr(encoding), file=sys.stderr)
         if stable:
             print('  NOT randomizing order of cards.', file=sys.stderr)
+        elif sort:
+             print('  Sorting cards by ' + sort + '.', file=sys.stderr)
+        else:
+            print('  Randomizing order of cards (seed ' + str(seed if seed is not None else 1371367) + ').', file=sys.stderr)
         if randomize_mana:
             print('  Randomizing order of symbols in manacosts.', file=sys.stderr)
         if not fmt_labeled:
@@ -55,19 +63,26 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if not line_transformations:
             print('  NOT using line reordering transformations', file=sys.stderr)
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations, report_file=report_file, grep=grep)
+    if sort:
+        stable = True
 
-    # This should give a random but consistent ordering, to make comparing changes
-    # between the output of different versions easier.
-    if not stable:
-        random.seed(1371367)
-        random.shuffle(cards)
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations,
+                                  report_file=report_file, grep=grep, vgrep=vgrep,
+                                  grep_name=grep_name, vgrep_name=vgrep_name,
+                                  grep_types=grep_types, vgrep_types=vgrep_types,
+                                  grep_text=grep_text, vgrep_text=vgrep_text,
+                                  sets=sets, rarities=rarities,
+                                  shuffle=not stable, seed=seed if seed is not None else 1371367,
+                                  decklist_file=decklist_file)
+
+    if sort:
+        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
 
     if limit > 0:
         cards = cards[:limit]
 
     def writecards(writer):
-        for card in tqdm(cards, disable=quiet):
+        for card in tqdm(cards, disable=quiet or len(cards) < 5):
             if encoding in ['vec']:
                 writer.write(card.vectorize() + '\n\n')
             else:
@@ -82,7 +97,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     if oname:
         if verbose:
-            print('Writing output to: ' + oname, file=sys.stderr)
+            print(utils.colorize('Writing output to: ', utils.Ansi.BOLD + utils.Ansi.CYAN) + oname, file=sys.stderr)
         with open(oname, 'w', encoding='utf8') as ofile:
             writecards(ofile)
     else:
@@ -96,15 +111,18 @@ if __name__ == '__main__':
     
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infile',
-                        help='Input JSON file containing card data (e.g., AllPrintings.json), a CSV file, or an already encoded file.')
+    io_group.add_argument('infile', nargs='?', default='-',
+                        help='Input card data (JSON, JSONL, CSV, MSE, or ZIP), an encoded file, or a directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console (stdout).')
 
     # Group: Encoding Options
     enc_group = parser.add_argument_group('Encoding Options')
     enc_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        help="Format for the output data. 'std' (default) puts the name last. 'named' puts the name first. 'vec' produces a vectorized format for training.",
+                        help="Card data format: 'std' (name last, default), 'named' (name first), "
+                             "'noname' (no name), 'rfields' (random field order), "
+                             "'old' (legacy), 'norarity' (no rarity), 'vec' (vectorized), "
+                             "or 'custom' (user-defined).",
     )
     enc_group.add_argument('--nolabel', action='store_true',
                         help="Remove field labels (e.g., '|cost|') from the output.")
@@ -114,13 +132,39 @@ if __name__ == '__main__':
     # Group: Data Processing
     proc_group = parser.add_argument_group('Data Processing')
     proc_group.add_argument('-r', '--randomize', action='store_true',
-                        help='Shuffle mana symbols (e.g., {W}{U} vs {U}{W}) for data augmentation.')
+                        help='Randomize the order of mana symbols (e.g., {W}{U} vs {U}{W}) to help the AI learn better.')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
-                        help='Limit the number of cards to encode.')
+                        help='Only process the first N cards.')
     proc_group.add_argument('-s', '--stable', action='store_true',
-                        help='Preserve the original order of cards from the input file (do not shuffle).')
+                        help='Keep the original order of cards from the input file (do not shuffle).')
+    proc_group.add_argument('--seed', type=int,
+                        help='Seed for the random number generator (Default: 1371367).')
+    proc_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random cards from the input (shorthand for --limit N). Cards are shuffled by default unless --stable is used.')
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
+                        help='Sort cards by the specified criterion (enables --stable).')
     proc_group.add_argument('--grep', action='append',
-                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+                        help='Only include cards that match a regex (matches name, type, or text). Use multiple times for AND logic.')
+    proc_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a regex.')
+    proc_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a regex.')
+    proc_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a regex.')
+    proc_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
+    proc_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a regex.')
+    proc_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a regex.')
+    proc_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a regex.')
+    proc_group.add_argument('--set', action='append',
+                        help='Only include cards from these sets (e.g., MOM, MRD).')
+    proc_group.add_argument('--rarity', action='append',
+                        help='Only include cards of these rarities (common, uncommon, rare, mythic).')
+    proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
+                        help='Filter cards using a standard MTG decklist file. Also supports card multiplication based on counts in the decklist.')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -132,8 +176,17 @@ if __name__ == '__main__':
                         help='File path to save raw JSON of cards that failed to parse (useful for debugging).')
 
     args = parser.parse_args()
+
+    # Handle --sample
+    if args.sample > 0:
+        args.limit = args.sample
+
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
          stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet,
-         limit=args.limit, grep=args.grep)
+         limit=args.limit, grep=args.grep, sort=args.sort, vgrep=args.vgrep,
+         grep_name=args.grep_name, vgrep_name=args.exclude_name,
+         grep_types=args.grep_type, vgrep_types=args.exclude_type,
+         grep_text=args.grep_text, vgrep_text=args.exclude_text,
+         sets=args.set, rarities=args.rarity, seed=args.seed, decklist_file=args.deck)
     exit(0)

@@ -1,4 +1,5 @@
 import pytest
+import sys
 import json
 import os
 import shutil
@@ -623,7 +624,7 @@ def test_html_creativity_output():
             f.write("|1test|9test")
 
     try:
-        subprocess.run(["python", "decode.py", temp_infile, outfile, "--html", "--creativity"], check=True)
+        subprocess.run([sys.executable, "decode.py", temp_infile, outfile, "--html", "--creativity"], check=True)
         assert os.path.exists(outfile)
         with open(outfile, "r") as f:
             content = f.read()

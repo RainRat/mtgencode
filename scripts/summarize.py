@@ -1,70 +1,158 @@
 #!/usr/bin/env python3
 import sys
 import os
+import argparse
+import json
+from contextlib import redirect_stdout
 
+# Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
+
 import utils
 import jdecode
 from datalib import Datamine
 
-def main(fname, verbose = True, outliers = False, dump_all = False, grep = None):
+# Try to import tqdm for progress bars
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(iterable, **kwargs):
+        return iterable
+
+def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = None, limit = 0, json_out = False, vgrep = None,
+         grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
+         grep_text=None, vgrep_text=None,
+         sets = None, rarities = None, shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None):
+
+    # Set default format to JSON if no specific output format is selected and outfile is .json
+    if not json_out and oname and oname.endswith('.json'):
+        json_out = True
+
     # Use the robust mtg_open_file for all loading and filtering.
     # We disable default exclusions to match original summarize.py behavior.
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, grep=grep,
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, grep=grep, vgrep=vgrep,
+                                  grep_name=grep_name, vgrep_name=vgrep_name,
+                                  grep_types=grep_types, vgrep_types=vgrep_types,
+                                  grep_text=grep_text, vgrep_text=vgrep_text,
+                                  sets=sets, rarities=rarities,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
-                                  exclude_layouts=lambda x: False)
-    # Datamine expects card_srcs (strings) or Card objects?
-    # Let's check datalib.py again.
+                                  exclude_layouts=lambda x: False,
+                                  shuffle=shuffle, seed=seed,
+                                  decklist_file=decklist_file)
 
-    # Actually, Datamine.__init__ does:
-    # for card_src in card_srcs:
-    #     card = Card(card_src)
-    # But it also works if card_src IS a Card object?
-    # Wait, Card(card_object) might fail?
-
-    # If I pass Card objects to Datamine, it might re-parse them if I'm not careful.
-    # Let's check cardlib.py Card constructor again.
-
-    # In Card.__init__(self, src, ...):
-    # if isinstance(src, dict): ...
-    # else: self.raw = src ...
-
-    # If I pass a Card object, it will be treated as "else" and it might fail.
-    # So I should pass the raw strings or dicts.
-
-    # Actually, I can just pass the list of Cards and update Datamine to handle it.
-    # But it's easier to just pass card.raw or card.json.
+    if limit > 0:
+        cards = cards[:limit]
 
     card_srcs = []
-    for card in cards:
+    for card in tqdm(cards, disable=quiet or len(cards) < 5, desc="Analyzing cards", unit="card"):
         if card.json:
             card_srcs.append(card.json)
         else:
             card_srcs.append(card.raw if card.raw else card.encode())
 
     mine = Datamine(card_srcs)
-    mine.summarize()
-    if outliers or dump_all:
-        mine.outliers(dump_invalid = dump_all)
+
+    # Determine if we should use color
+    actual_use_color = False
+    if use_color is True:
+        actual_use_color = True
+    elif use_color is None and not oname and sys.stdout.isatty():
+        actual_use_color = True
+
+    output_f = sys.stdout
+    if oname:
+        if verbose:
+            print(f'Writing {"JSON " if json_out else ""}summary to: {oname}', file=sys.stderr)
+        output_f = open(oname, 'w', encoding='utf8')
+
+    try:
+        if json_out:
+            output_f.write(json.dumps(mine.to_dict(), indent=2) + '\n')
+        else:
+            with redirect_stdout(output_f):
+                mine.summarize(use_color=actual_use_color)
+                if outliers or dump_all:
+                    mine.outliers(dump_invalid = dump_all, use_color=actual_use_color)
+    finally:
+        if oname:
+            output_f.close()
 
 
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Summarizes Magic: The Gathering card datasets.")
     
-    parser.add_argument('infile', 
-                        help='encoded card file or json corpus to process')
-    parser.add_argument('-x', '--outliers', action='store_true',
-                        help='show additional diagnostics and edge cases')
-    parser.add_argument('-a', '--all', action='store_true',
-                        help='show all information and dump invalid cards')
-    parser.add_argument('-v', '--verbose', action='store_true', 
-                        help='verbose output')
-    parser.add_argument('--grep', action='append',
-                        help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+    # Group: Input / Output
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('infile', nargs='?', default='-',
+                        help='Input card data (JSON, JSONL, CSV, MSE, or ZIP), an encoded file, or a directory. Defaults to stdin (-).')
+    io_group.add_argument('outfile', nargs='?', default=None,
+                        help='Path to save the summary output. If not provided, output prints to the console. The format is automatically detected from the file extension (.json for JSON, otherwise text).')
+    io_group.add_argument('--json', action='store_true',
+                        help='Output statistics in JSON format (Auto-detected for .json).')
+
+    # Group: Processing Options
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-x', '--outliers', action='store_true',
+                        help='Show extra details and unusual cards.')
+    proc_group.add_argument('-a', '--all', action='store_true',
+                        help='Show all information and dump invalid cards.')
+    proc_group.add_argument('-n', '--limit', type=int, default=0,
+                        help='Only process the first N cards.')
+    proc_group.add_argument('--shuffle', action='store_true',
+                        help='Randomize the order of cards before summarizing.')
+    proc_group.add_argument('--seed', type=int,
+                        help='Seed for the random number generator.')
+    proc_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
+    proc_group.add_argument('--grep', action='append',
+                        help='Only include cards that match a regex (matches name, type, or text). Use multiple times for AND logic.')
+    proc_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a regex.')
+    proc_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a regex.')
+    proc_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a regex.')
+    proc_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
+    proc_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a regex.')
+    proc_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a regex.')
+    proc_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a regex.')
+    proc_group.add_argument('--set', action='append',
+                        help='Only include cards from these sets (e.g., MOM, MRD).')
+    proc_group.add_argument('--rarity', action='append',
+                        help='Only include cards of these rarities (common, uncommon, rare, mythic).')
+    proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
+                        help='Filter cards using a standard MTG decklist file. Also supports card multiplication based on counts in the decklist.')
     
+    # Group: Logging & Debugging
+    debug_group = parser.add_argument_group('Logging & Debugging')
+    debug_group.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable verbose output.')
+    debug_group.add_argument('-q', '--quiet', action='store_true',
+                        help='Suppress the progress bar.')
+
+    # Color options
+    color_group = debug_group.add_mutually_exclusive_group()
+    color_group.add_argument('--color', action='store_true', default=None,
+                        help='Force enable ANSI color output.')
+    color_group.add_argument('--no-color', action='store_false', dest='color',
+                        help='Disable ANSI color output.')
+
     args = parser.parse_args()
-    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep)
+
+    # Handle --sample
+    if args.sample > 0:
+        args.shuffle = True
+        args.limit = args.sample
+
+    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep,
+         grep_name=args.grep_name, vgrep_name=args.exclude_name,
+         grep_types=args.grep_type, vgrep_types=args.exclude_type,
+         grep_text=args.grep_text, vgrep_text=args.exclude_text,
+         sets = args.set, rarities = args.rarity, shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck)
     exit(0)
