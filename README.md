@@ -171,7 +171,7 @@ You can filter which cards are processed using regular expressions, set codes, o
 *   `--grep "pattern"`: Only include cards that match the regex pattern. It checks the name, rules text, and all parts of the type line (supertypes, types, and subtypes). Use multiple `--grep` flags for **AND** logic (all patterns must match).
 *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the regex pattern. Use multiple flags for **OR** logic (matching any pattern excludes the card).
 *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets (OR logic).
-*   `--rarity NAME`: Only include cards of specific rarities. You can use full names (e.g., `common`, `mythic`) or shorthand markers (`C`, `U`, `R`, `M`). Supports multiple rarities (OR logic).
+*   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `uncommon`, `rare`, `mythic`). Supports multiple rarities (OR logic).
 
 **Examples:**
 ```bash
