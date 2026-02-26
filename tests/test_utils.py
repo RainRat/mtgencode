@@ -180,6 +180,11 @@ def test_from_symbols():
     assert utils.from_symbols(f"{t}") == "{T}"
     assert utils.from_symbols(f"{q}") == "{Q}"
 
+    # Test word boundary fix (HCI/UX improvement)
+    assert utils.from_symbols("This") == "This"
+    assert utils.from_symbols("Quick") == "Quick"
+    assert utils.from_symbols(f"{t}: something") == "{T}: something"
+
     # Forum
     assert utils.from_symbols(f"{t}", for_forum=True) == "[mana]T[/mana]"
     assert utils.from_symbols(f"{q}", for_forum=True) == "[mana]Q[/mana]"
@@ -234,6 +239,7 @@ def test_ansi_constants():
     assert utils.Ansi.BOLD == '\033[1m'
     assert utils.Ansi.RED == '\033[91m'
     assert utils.Ansi.CYAN == '\033[96m'
+    assert utils.Ansi.UNDERLINE == '\033[4m'
 
 def test_colorize_simple():
     text = "Hello"
@@ -311,7 +317,7 @@ def test_print_operation_summary():
         fake_stderr.isatty = lambda: False
         utils.print_operation_summary("Test Op", 10, 0)
         output = fake_stderr.getvalue()
-        assert "No errors encountered" in output
+        assert "Test Op complete: 10 cards processed." in output
         assert "\033[" not in output
 
     # Test no errors case (TTY)
@@ -319,7 +325,7 @@ def test_print_operation_summary():
         fake_stderr.isatty = lambda: True
         utils.print_operation_summary("Test Op", 10, 0)
         output = fake_stderr.getvalue()
-        assert "No errors encountered" in output
+        assert "Test Op complete: 10 cards processed." in output
         assert "\033[" in output
 
 def test_mana_alt_extra():

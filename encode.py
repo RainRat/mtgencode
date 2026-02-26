@@ -77,7 +77,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         cards = cards[:limit]
 
     def writecards(writer):
-        for card in tqdm(cards, disable=quiet):
+        for card in tqdm(cards, disable=quiet or len(cards) < 5):
             if encoding in ['vec']:
                 writer.write(card.vectorize() + '\n\n')
             else:
