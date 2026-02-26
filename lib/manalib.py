@@ -167,9 +167,7 @@ class Manatext:
             self.text = self.text.replace(manastr, utils.reserved_mana_marker, 1)
 
         if (utils.mana_open_delimiter in self.text 
-            or utils.mana_close_delimiter in self.text
-            or utils.mana_json_open_delimiter in self.text 
-            or utils.mana_json_close_delimiter in self.text):
+            or utils.mana_close_delimiter in self.text):
             self.valid = False
 
     def __str__(self):
