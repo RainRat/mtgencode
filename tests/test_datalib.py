@@ -190,6 +190,53 @@ def test_datamine_with_invalid_card():
     finally:
         sys.stdout = old_stdout
 
+def test_pt_ranking_outliers(capsys):
+    # Create cards with power 20 and 25
+    # Power 20 -> & + 20 ^ -> len 21
+    # Power 25 -> twenty~five -> len 11 (mapped via exceptions)
+    # Power 2.5 -> &^^.&^^^^^ (decimal)
+    cards = [
+        {
+            "name": "Giant 20",
+            "types": ["Creature"],
+            "power": "20",
+            "toughness": "20",
+            "rarity": "Common"
+        },
+        {
+            "name": "Giant 25",
+            "types": ["Creature"],
+            "power": "25",
+            "toughness": "25",
+            "rarity": "Common"
+        },
+        {
+            "name": "Giant 2.5",
+            "types": ["Creature"],
+            "power": "2.5",
+            "toughness": "2.5",
+            "rarity": "Common"
+        }
+    ]
+
+    dm = Datamine(cards)
+    dm.summarize()
+
+    captured = capsys.readouterr()
+    output = captured.out
+
+    # Correct ranking should find 25 as largest, and 2.5 should not break anything
+    assert "Largest power: 25" in output
+    assert "largest toughness: 25" in output
+
+    # Check outliers specifically
+    dm.outliers()
+    captured = capsys.readouterr()
+    output = captured.out
+    # Note: outliers use utils.from_unary for display, which returns the exception label (e.g. "twenty~five")
+    assert "Largest creature power: twenty~five" in output
+    assert "Largest creature toughness: twenty~five" in output
+
 def test_datamine_to_dict(datamine_instance):
     result = datamine_instance.to_dict()
 

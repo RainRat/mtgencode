@@ -122,6 +122,7 @@ unary_marker = config.unary_marker
 unary_counter = config.unary_counter
 unary_max = config.unary_max
 unary_exceptions = config.unary_exceptions
+_unary_exceptions_inv = {v: k for k, v in unary_exceptions.items()}
 
 def to_unary(s, warn = False):
     def replace_number(match):
@@ -145,6 +146,20 @@ def from_unary(s):
         return str(i)
 
     return _number_unary_re.sub(replace_unary, s)
+
+def from_unary_single(s):
+    """Converts a single unary string (possibly with exceptions) back to a numerical value."""
+    if not s:
+        return 0
+    if s in _unary_exceptions_inv:
+        return _unary_exceptions_inv[s]
+    try:
+        res = from_unary(s)
+        if '.' in res:
+            return float(res)
+        return int(res)
+    except (ValueError, TypeError):
+        return 0
 
 # mana syntax
 mana_open_delimiter = '{'

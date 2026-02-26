@@ -267,8 +267,8 @@ class Datamine:
 
         print(color_line(str(len(self.by_pt)) + ' unique p/t combinations', use_color))
         if len(self.by_power) > 0 and len(self.by_toughness) > 0:
-            print(('Largest power: ' + str(max(list(map(len, self.by_power))) - 1) +
-                   ', largest toughness: ' + str(max(list(map(len, self.by_toughness))) - 1)))
+            print(('Largest power: ' + str(max(map(utils.from_unary_single, self.by_power))) +
+                   ', largest toughness: ' + str(max(map(utils.from_unary_single, self.by_toughness)))))
         print(color_line('Popular p/t values:', use_color))
         d = sorted(self.by_pt,
                    key=lambda x: len(self.by_pt[x]),
@@ -391,7 +391,7 @@ class Datamine:
 
         if len(self.by_power) > 0:
             lpower = sorted(self.by_power,
-                            key=len,
+                            key=utils.from_unary_single,
                             reverse=True)[0]
             print(color_line('Largest creature power: ' + utils.from_unary(lpower), use_color))
             print('\n' + plimit(self.by_power[lpower][0].encode()) + '\n')
@@ -399,7 +399,7 @@ class Datamine:
             print('No cards indexed by power?')
         if len(self.by_toughness) > 0:
             ltoughness = sorted(self.by_toughness,
-                                key=len,
+                                key=utils.from_unary_single,
                                 reverse=True)[0]
             print(color_line('Largest creature toughness: ' +
                   utils.from_unary(ltoughness), use_color))
