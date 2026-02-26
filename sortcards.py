@@ -19,7 +19,7 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
-def sortcards(cards, verbose=False):
+def sortcards(cards, verbose=False, use_summary=False, use_color=False):
     """
     Sorts a list of Card objects into various categories.
     """
@@ -62,6 +62,23 @@ def sortcards(cards, verbose=False):
         ('four colors', []),
         ('five colors', []),
         ('6+ colors', []),
+        ('By rarity:', None),
+        ('common', []),
+        ('uncommon', []),
+        ('rare', []),
+        ('mythic', []),
+        ('special', []),
+        ('basic land', []),
+        ('unknown rarity', []),
+        ('By CMC:', None),
+        ('CMC 0', []),
+        ('CMC 1', []),
+        ('CMC 2', []),
+        ('CMC 3', []),
+        ('CMC 4', []),
+        ('CMC 5', []),
+        ('CMC 6', []),
+        ('CMC 7+', []),
     ])
 
     iterator = cards
@@ -69,9 +86,13 @@ def sortcards(cards, verbose=False):
         iterator = tqdm(cards, desc="Sorting cards", unit="card")
 
     for card in iterator:
-        # Use card.raw for the original string representation
-        # Ensure we have a string to write out
-        card_str = card.raw if card.raw else card.encode()
+        # Determine the string representation to use
+        if use_summary:
+            card_str = card.summary(ansi_color=use_color)
+        else:
+            # Use card.raw for the original string representation
+            # Ensure we have a string to write out
+            card_str = card.raw if card.raw else card.encode()
 
         # special classes
         # Check if it's a split card (has a bside)
@@ -183,6 +204,42 @@ def sortcards(cards, verbose=False):
             classes['five colors'].append(card_str)
         else:
             classes['6+ colors'].append(card_str)
+
+        # rarity classes
+        rarity = card.rarity
+        if rarity in [utils.rarity_common_marker, 'common']:
+            classes['common'].append(card_str)
+        elif rarity in [utils.rarity_uncommon_marker, 'uncommon']:
+            classes['uncommon'].append(card_str)
+        elif rarity in [utils.rarity_rare_marker, 'rare']:
+            classes['rare'].append(card_str)
+        elif rarity in [utils.rarity_mythic_marker, 'mythic', 'mythic rare']:
+            classes['mythic'].append(card_str)
+        elif rarity in [utils.rarity_special_marker, 'special']:
+            classes['special'].append(card_str)
+        elif rarity in [utils.rarity_basic_land_marker, 'basic land']:
+            classes['basic land'].append(card_str)
+        else:
+            classes['unknown rarity'].append(card_str)
+
+        # CMC classes
+        cmc = card.cost.cmc
+        if cmc == 0:
+            classes['CMC 0'].append(card_str)
+        elif cmc == 1:
+            classes['CMC 1'].append(card_str)
+        elif cmc == 2:
+            classes['CMC 2'].append(card_str)
+        elif cmc == 3:
+            classes['CMC 3'].append(card_str)
+        elif cmc == 4:
+            classes['CMC 4'].append(card_str)
+        elif cmc == 5:
+            classes['CMC 5'].append(card_str)
+        elif cmc == 6:
+            classes['CMC 6'].append(card_str)
+        elif cmc >= 7:
+            classes['CMC 7+'].append(card_str)
         
     return classes
 
@@ -242,6 +299,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Only include cards of these rarities (common, uncommon, rare, mythic).')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file. Also supports card multiplication based on counts in the decklist.')
+    proc_group.add_argument('--summary', action='store_true',
+                        help='Output compact card summaries instead of full encoded text.')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -295,8 +354,15 @@ Supports any encoding format supported by encode.py/decode.py.""",
     if args.limit > 0:
         cards = cards[:args.limit]
 
+    # Determine if we should use color for the summary
+    use_color = False
+    if args.color is True:
+        use_color = True
+    elif args.color is None and sys.stderr.isatty():
+        use_color = True
+
     # Progress bar is shown unless --quiet is specified
-    classes = sortcards(cards, verbose=not args.quiet)
+    classes = sortcards(cards, verbose=not args.quiet, use_summary=args.summary, use_color=use_color)
 
     outputter = sys.stdout
     ofile = None
