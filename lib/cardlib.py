@@ -803,17 +803,31 @@ class Card:
 
     def search(self, pattern):
         """Returns True if the pattern matches any of the card's fields."""
-        if pattern.search(self.name):
+        if self.search_name(pattern):
+            return True
+        if self.search_types(pattern):
+            return True
+        if self.search_text(pattern):
+            return True
+        return False
+
+    def search_name(self, pattern):
+        """Returns True if the pattern matches the card's name."""
+        return bool(pattern.search(self.name))
+
+    def search_types(self, pattern):
+        """Returns True if the pattern matches any of the card's types (supertypes, types, or subtypes)."""
+        if any(pattern.search(t) for t in self.supertypes):
             return True
         if any(pattern.search(t) for t in self.types):
             return True
-        if any(pattern.search(t) for t in self.supertypes):
-            return True
         if any(pattern.search(t) for t in self.subtypes):
             return True
-        if pattern.search(self.text.text):
-            return True
         return False
+
+    def search_text(self, pattern):
+        """Returns True if the pattern matches the card's rules text."""
+        return bool(pattern.search(self.text.text))
 
     def summary(self, ansi_color=False):
         """Returns a compact, one-line summary of the card."""

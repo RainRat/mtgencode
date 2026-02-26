@@ -556,6 +556,9 @@ def mtg_open_file(fname, verbose = False,
                   exclude_types = default_exclude_types,
                   exclude_layouts = default_exclude_layouts,
                   report_file=None, grep=None, vgrep=None,
+                  grep_name=None, vgrep_name=None,
+                  grep_types=None, vgrep_types=None,
+                  grep_text=None, vgrep_text=None,
                   sets=None, rarities=None,
                   shuffle=False, seed=None,
                   decklist_file=None):
@@ -793,9 +796,15 @@ def mtg_open_file(fname, verbose = False,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                    decklist_names=decklist_names)
 
-    if grep or vgrep or sets or rarities:
+    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text:
         greps = [re.compile(p, re.IGNORECASE) for p in (grep if grep else [])]
         vgreps = [re.compile(p, re.IGNORECASE) for p in (vgrep if vgrep else [])]
+        greps_name = [re.compile(p, re.IGNORECASE) for p in (grep_name if grep_name else [])]
+        vgreps_name = [re.compile(p, re.IGNORECASE) for p in (vgrep_name if vgrep_name else [])]
+        greps_types = [re.compile(p, re.IGNORECASE) for p in (grep_types if grep_types else [])]
+        vgreps_types = [re.compile(p, re.IGNORECASE) for p in (vgrep_types if vgrep_types else [])]
+        greps_text = [re.compile(p, re.IGNORECASE) for p in (grep_text if grep_text else [])]
+        vgreps_text = [re.compile(p, re.IGNORECASE) for p in (vgrep_text if vgrep_text else [])]
 
         target_sets = [s.upper() for s in sets] if sets else None
         target_rarities = []
@@ -809,14 +818,36 @@ def mtg_open_file(fname, verbose = False,
                     target_rarities.append(r)
 
         def match_card(card):
-            # Positive filtering (AND logic): card must match ALL grep patterns
+            # Generic filtering (AND logic for greps, OR logic for vgreps)
             for pattern in greps:
                 if not card.search(pattern):
                     return False
-
-            # Negative filtering (OR logic): card must match NONE of the vgrep patterns
             for pattern in vgreps:
                 if card.search(pattern):
+                    return False
+
+            # Name filtering
+            for pattern in greps_name:
+                if not card.search_name(pattern):
+                    return False
+            for pattern in vgreps_name:
+                if card.search_name(pattern):
+                    return False
+
+            # Type filtering
+            for pattern in greps_types:
+                if not card.search_types(pattern):
+                    return False
+            for pattern in vgreps_types:
+                if card.search_types(pattern):
+                    return False
+
+            # Text filtering
+            for pattern in greps_text:
+                if not card.search_text(pattern):
+                    return False
+            for pattern in vgreps_text:
+                if card.search_text(pattern):
                     return False
 
             # Set filtering

@@ -15,6 +15,8 @@ from tqdm import tqdm
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, randomize = False, nolabel = False, stable = False,
          report_file=None, quiet=False, limit=0, grep=None, sort=None, vgrep=None,
+         grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
+         grep_text=None, vgrep_text=None,
          sets=None, rarities=None, seed=None, decklist_file=None):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
@@ -66,6 +68,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=line_transformations,
                                   report_file=report_file, grep=grep, vgrep=vgrep,
+                                  grep_name=grep_name, vgrep_name=vgrep_name,
+                                  grep_types=grep_types, vgrep_types=vgrep_types,
+                                  grep_text=grep_text, vgrep_text=vgrep_text,
                                   sets=sets, rarities=rarities,
                                   shuffle=not stable, seed=seed if seed is not None else 1371367,
                                   decklist_file=decklist_file)
@@ -140,8 +145,20 @@ if __name__ == '__main__':
                         help='Sort cards by the specified criterion (enables --stable).')
     proc_group.add_argument('--grep', action='append',
                         help='Only include cards that match a regex (matches name, type, or text). Use multiple times for AND logic.')
+    proc_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a regex.')
+    proc_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a regex.')
+    proc_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a regex.')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
                         help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
+    proc_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a regex.')
+    proc_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a regex.')
+    proc_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a regex.')
     proc_group.add_argument('--set', action='append',
                         help='Only include cards from these sets (e.g., MOM, MRD).')
     proc_group.add_argument('--rarity', action='append',
@@ -168,5 +185,8 @@ if __name__ == '__main__':
          nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
          stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet,
          limit=args.limit, grep=args.grep, sort=args.sort, vgrep=args.vgrep,
+         grep_name=args.grep_name, vgrep_name=args.exclude_name,
+         grep_types=args.grep_type, vgrep_types=args.exclude_type,
+         grep_text=args.grep_text, vgrep_text=args.exclude_text,
          sets=args.set, rarities=args.rarity, seed=args.seed, decklist_file=args.deck)
     exit(0)

@@ -222,8 +222,20 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Pick N random cards from the input (equivalent to --shuffle --limit N).')
     proc_group.add_argument('--grep', action='append',
                         help='Filter cards by regex (matches name, type, or text). Can be used multiple times (AND logic).')
+    proc_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a regex.')
+    proc_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a regex.')
+    proc_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a regex.')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
                         help='Exclude cards matching regex (matches name, type, or text). Can be used multiple times (OR logic).')
+    proc_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a regex.')
+    proc_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a regex.')
+    proc_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a regex.')
     proc_group.add_argument('--set', action='append',
                         help='Only include cards from these sets (e.g., MOM, MRD).')
     proc_group.add_argument('--rarity', action='append',
@@ -268,7 +280,11 @@ Supports any encoding format supported by encode.py/decode.py.""",
     # Use the robust jdecode.mtg_open_file for loading and filtering.
     # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
     # verbose=True enables jdecode diagnostic output (e.g. invalid cards).
-    cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, fmt_ordered=fmt_ordered, grep=args.grep, vgrep=args.vgrep,
+    cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, fmt_ordered=fmt_ordered,
+                                  grep=args.grep, vgrep=args.vgrep,
+                                  grep_name=args.grep_name, vgrep_name=args.exclude_name,
+                                  grep_types=args.grep_type, vgrep_types=args.exclude_type,
+                                  grep_text=args.grep_text, vgrep_text=args.exclude_text,
                                   sets=args.set, rarities=args.rarity,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
