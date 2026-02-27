@@ -159,7 +159,7 @@ def test_datamine_summarize(datamine_instance, capsys):
     assert "3 unique card names" in output
     assert "Breakdown by color:" in output
     assert "Breakdown by CMC:" in output
-    assert "Loyalty values:" in output
+    # Loyalty values is now skipped if empty (better UX)
 
 def test_datamine_outliers(datamine_instance, capsys):
     datamine_instance.outliers()

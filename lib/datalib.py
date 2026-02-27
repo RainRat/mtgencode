@@ -165,8 +165,51 @@ class Datamine:
 
         self.avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
 
+    def _print_breakdown(self, title, data_dict, total_cards, use_color, limit=None, sort_key=None, reverse=True, format_key=None):
+        """Prints a standardized, visual breakdown of card data."""
+        if not data_dict:
+            return
+
+        print(color_line(title, use_color))
+
+        # Determine sorting
+        if sort_key:
+            keys = sorted(data_dict.keys(), key=sort_key, reverse=reverse)
+        else:
+            # Default to sorting by value (frequency)
+            keys = sorted(data_dict.keys(), key=lambda x: len(data_dict[x]), reverse=reverse)
+
+        if limit:
+            keys = keys[:limit]
+
+        rows = []
+        bar_width = 25
+
+        for k in keys:
+            count = len(data_dict[k])
+            percent = (count / total_cards) * 100 if total_cards > 0 else 0
+
+            # Format key if needed
+            display_key = format_key(k) if format_key else str(k)
+
+            # Create progress bar
+            filled_len = int(round(bar_width * count / total_cards)) if total_cards > 0 else 0
+            bar = '█' * filled_len + '░' * (bar_width - filled_len)
+            if use_color:
+                bar = utils.colorize(bar, utils.Ansi.CYAN if filled_len > 0 else utils.Ansi.RESET)
+
+            rows.append([
+                '  ' + display_key,
+                color_count(count, use_color),
+                f'({percent:5.1f}%)',
+                bar
+            ])
+
+        printrows(padrows(rows))
+
     # summarize the indices
     def summarize(self, hsize = 10, vsize = 10, cmcsize = 20, use_color = False):
+        total_valid = len(self.cards)
 
         print(color_line('DATASET SUMMARY', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print(color_count(len(self.cards), use_color) + ' valid cards, ' +
@@ -178,128 +221,64 @@ class Datamine:
         print(color_line(str(len(self.by_name)) + ' unique card names', use_color))
         print()
 
+        # Breakdown by color
         print(color_line(str(len(self.by_color_inclusive)) + ' represented colors (including colorless as \'A\'), '
                + str(len(self.by_color)) + ' combinations', use_color))
-        print(color_line('Breakdown by color:', use_color))
-        rows = []
-        for k in sorted(self.by_color_inclusive.keys()):
-            rows += [[k, color_count(len(self.by_color_inclusive[k]), use_color)]]
-        printrows(padrows(rows))
-        print(color_line('Breakdown by number of colors:', use_color))
-        rows = []
-        for k in sorted(self.by_color_count.keys()):
-            rows += [[str(k), color_count(len(self.by_color_count[k]), use_color)]]
-        printrows(padrows(rows))
+        self._print_breakdown('Breakdown by color:', self.by_color_inclusive, total_valid, use_color, sort_key=str, reverse=False)
+        self._print_breakdown('Breakdown by number of colors:', self.by_color_count, total_valid, use_color, sort_key=int, reverse=False)
         print()
 
+        # Breakdown by types
         print(color_line(str(len(self.by_type_inclusive)) + ' unique card types, ' +
               str(len(self.by_type)) + ' combinations', use_color))
-        print(color_line('Breakdown by type:', use_color))
-        d = sorted(self.by_type_inclusive,
-                   key=lambda x: len(self.by_type_inclusive[x]),
-                   reverse=True)
-        rows = []
-        for k in d[:vsize]:
-            rows += [[k, color_count(len(self.by_type_inclusive[k]), use_color)]]
-        printrows(padrows(rows))
+        self._print_breakdown('Breakdown by type:', self.by_type_inclusive, total_valid, use_color, limit=vsize)
         print()
 
+        # Breakdown by subtypes
         print(color_line(str(len(self.by_subtype_inclusive)) + ' unique subtypes, '
                + str(len(self.by_subtype)) + ' combinations', use_color))
-        print(color_line('Popular subtypes:', use_color))
-        d = sorted(self.by_subtype_inclusive,
-                   key=lambda x: len(self.by_subtype_inclusive[x]),
-                   reverse=True)
-        rows = []
-        for k in d[0:vsize]:
-            rows += [[k, color_count(len(self.by_subtype_inclusive[k]), use_color)]]
-        printrows(padrows(rows))
-        print(color_line('Top combinations:', use_color))
-        d = sorted(self.by_subtype,
-                   key=lambda x: len(self.by_subtype[x]),
-                   reverse = True)
-        rows = []
-        for k in d[0:vsize]:
-            rows += [[k, color_count(len(self.by_subtype[k]), use_color)]]
-        printrows(padrows(rows))
+        self._print_breakdown('Popular subtypes:', self.by_subtype_inclusive, total_valid, use_color, limit=vsize)
+        self._print_breakdown('Top combinations:', self.by_subtype, total_valid, use_color, limit=vsize)
         print()
 
+        # Breakdown by supertypes
         print(color_line(str(len(self.by_supertype_inclusive)) + ' unique supertypes, '
                + str(len(self.by_supertype)) + ' combinations', use_color))
-        print(color_line('Breakdown by supertype:', use_color))
-        d = sorted(self.by_supertype_inclusive,
-                   key=lambda x: len(self.by_supertype_inclusive[x]),
-                   reverse=True)
-        rows = []
-        for k in d[:vsize]:
-            rows += [[k, color_count(len(self.by_supertype_inclusive[k]), use_color)]]
-        printrows(padrows(rows))
+        self._print_breakdown('Breakdown by supertype:', self.by_supertype_inclusive, total_valid, use_color, limit=vsize)
         print()
 
+        # CMC and Cost
         print(color_line(str(len(self.by_cmc)) + ' different CMCs, ' +
               str(len(self.by_cost)) + ' unique mana costs', use_color))
         print('Average CMC: {:.2f}'.format(self.avg_cmc))
-        print(color_line('Breakdown by CMC:', use_color))
-        d = sorted(self.by_cmc, reverse=False)
-        rows = []
-        for k in d[:vsize]:
-            rows += [[str(k), color_count(len(self.by_cmc[k]), use_color)]]
-        printrows(padrows(rows))
-        print(color_line('Popular mana costs:', use_color))
-        d = sorted(self.by_cost,
-                   key=lambda x: len(self.by_cost[x]),
-                   reverse = True)
-        rows = []
-        for k in d[0:vsize]:
-            rows += [[utils.from_mana(k), color_count(len(self.by_cost[k]), use_color)]]
-        printrows(padrows(rows))
+        self._print_breakdown('Breakdown by CMC:', self.by_cmc, total_valid, use_color, limit=vsize, sort_key=float, reverse=False)
+        self._print_breakdown('Popular mana costs:', self.by_cost, total_valid, use_color, limit=vsize, format_key=utils.from_mana)
         print()
 
+        # Rarity
         print(color_line(str(len(self.by_rarity)) + ' represented rarities', use_color))
-        print(color_line('Breakdown by rarity:', use_color))
-        rows = []
-        for k in sorted(self.by_rarity.keys()):
-            rows += [[k, color_count(len(self.by_rarity[k]), use_color)]]
-        printrows(padrows(rows))
+        self._print_breakdown('Breakdown by rarity:', self.by_rarity, total_valid, use_color, sort_key=str, reverse=False)
         print()
 
+        # Power/Toughness
         print(color_line(str(len(self.by_pt)) + ' unique p/t combinations', use_color))
         if len(self.by_power) > 0 and len(self.by_toughness) > 0:
             print(('Largest power: ' + str(max(map(utils.from_unary_single, self.by_power))) +
                    ', largest toughness: ' + str(max(map(utils.from_unary_single, self.by_toughness)))))
-        print(color_line('Popular p/t values:', use_color))
-        d = sorted(self.by_pt,
-                   key=lambda x: len(self.by_pt[x]),
-                   reverse = True)
-        rows = []
-        for k in d[0:vsize]:
-            rows += [[utils.from_unary(k), color_count(len(self.by_pt[k]), use_color)]]
-        printrows(padrows(rows))
+        self._print_breakdown('Popular p/t values:', self.by_pt, total_valid, use_color, limit=vsize, format_key=utils.from_unary)
         print()
 
-        print(color_line('Loyalty values:', use_color))
-        d = sorted(self.by_loyalty,
-                   key=lambda x: len(self.by_loyalty[x]),
-                   reverse = True)
-        rows = []
-        for k in d[0:vsize]:
-            rows += [[utils.from_unary(k), color_count(len(self.by_loyalty[k]), use_color)]]
-        printrows(padrows(rows))
+        # Loyalty
+        self._print_breakdown('Loyalty values:', self.by_loyalty, total_valid, use_color, limit=vsize, format_key=utils.from_unary)
         print()
 
+        # Text length
         if len(self.by_textlen) > 0 and len(self.by_textlines) > 0:
             print(color_line('Card text ranges from ' + str(min(self.by_textlen)) + ' to '
                    + str(max(self.by_textlen)) + ' characters in length', use_color))
             print(color_line('Card text ranges from ' + str(min(self.by_textlines)) + ' to '
                    + str(max(self.by_textlines)) + ' lines', use_color))
-        print(color_line('Line counts by frequency:', use_color))
-        d = sorted(self.by_textlines,
-                   key=lambda x: len(self.by_textlines[x]),
-                   reverse = True)
-        rows = []
-        for k in d[0:vsize]:
-            rows += [[k, color_count(len(self.by_textlines[k]), use_color)]]
-        printrows(padrows(rows))
+        self._print_breakdown('Line counts by frequency:', self.by_textlines, total_valid, use_color, limit=vsize, sort_key=int, reverse=False)
         print()
 
     # describe outliers in the indices
