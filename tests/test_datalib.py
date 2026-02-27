@@ -44,6 +44,16 @@ def sample_cards_data():
             "colors": [],
             "text": "Text C",
             "rarity": "Rare"
+        },
+        {
+            "name": "Planeswalker D",
+            "types": ["Planeswalker"],
+            "manaCost": "{2}{W}{W}",
+            "cmc": 4,
+            "colors": ["W"],
+            "text": "Text D",
+            "rarity": "Mythic",
+            "loyalty": 3
         }
     ]
 
@@ -115,7 +125,7 @@ def test_plimit():
 
 # Test Datamine Class
 def test_datamine_init(datamine_instance):
-    assert len(datamine_instance.cards) == 3
+    assert len(datamine_instance.cards) == 4
     assert len(datamine_instance.invalid_cards) == 0
     assert len(datamine_instance.unparsed_cards) == 0
 
@@ -155,8 +165,8 @@ def test_datamine_summarize(datamine_instance, capsys):
     captured = capsys.readouterr()
     output = captured.out
 
-    assert "3 valid cards" in output
-    assert "3 unique card names" in output
+    assert "4 valid cards" in output
+    assert "4 unique card names" in output
     assert "Breakdown by color:" in output
     assert "Breakdown by CMC:" in output
     assert "Loyalty values:" in output
@@ -246,9 +256,9 @@ def test_datamine_to_dict(datamine_instance):
     assert 'stats' in result
 
     # Check counts
-    assert result['counts']['valid'] == 3
+    assert result['counts']['valid'] == 4
     assert result['counts']['invalid'] == 0
-    assert result['counts']['parsed'] == 3
+    assert result['counts']['parsed'] == 4
     assert result['counts']['unparsed'] == 0
 
     # Check indices
@@ -260,13 +270,18 @@ def test_datamine_to_dict(datamine_instance):
     assert result['indices']['by_color']['A'] == 1
 
     # Check stats
-    # Text lengths in sample data: "Text A" (6), "Text B" (6), "Text C" (6)
+    # Text lengths in sample data: "Text A" (6), "Text B" (6), "Text C" (6), "Text D" (6)
     # Note: text.encode() might add newlines or markers.
     # Manatext("Text A").encode() -> "Text A"
     assert result['stats']['textlen_min'] == 6
     assert result['stats']['textlen_max'] == 6
     assert result['stats']['textlines_min'] == 1
     assert result['stats']['textlines_max'] == 1
+
+    # Check avg power/toughness
+    # Card A: 1/1, Card C: 2/2. Total power = 3, Total count = 2. Avg = 1.5
+    assert result['stats']['avg_power'] == 1.5
+    assert result['stats']['avg_toughness'] == 1.5
 
 def test_datamine_with_parsed_but_invalid_card():
     # Card that parses (has name/types/etc in roughly correct format)
