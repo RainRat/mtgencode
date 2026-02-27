@@ -186,7 +186,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             return success_count, fail_count
 
         first = True
-        for card in tqdm(cards, disable=quiet or len(cards) < 5, desc="Decoding"):
+        total = len(cards)
+        for i, card in enumerate(tqdm(cards, disable=quiet or total < 5, desc="Decoding")):
             try:
                 if not first and not (for_html or for_md or for_mse or for_summary):
                     # Add a divider between cards for console output
@@ -196,7 +197,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                     elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
                         use_color = True
 
-                    divider = '-' * 40
+                    index_str = f" [ Card {i+1} / {total} ] "
+                    divider = "--" + index_str + "-" * max(2, 40 - 2 - len(index_str))
                     if use_color:
                         divider = utils.colorize(divider, utils.Ansi.BOLD + utils.Ansi.CYAN)
                     writer.write(divider + '\n')

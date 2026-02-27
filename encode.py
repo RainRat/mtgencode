@@ -82,27 +82,43 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         cards = cards[:limit]
 
     def writecards(writer):
-        for card in tqdm(cards, disable=quiet or len(cards) < 5):
-            if encoding in ['vec']:
-                writer.write(card.vectorize() + '\n\n')
-            else:
-                writer.write(card.encode(fmt_ordered = fmt_ordered,
-                                         fmt_labeled = fmt_labeled,
-                                         fieldsep = fieldsep,
-                                         randomize_fields = randomize_fields,
-                                         randomize_mana = randomize_mana,
-                                         initial_sep = initial_sep,
-                                         final_sep = final_sep) 
-                             + utils.cardsep)
+        success_count = 0
+        fail_count = 0
+        for card in tqdm(cards, disable=quiet or len(cards) < 5, desc="Encoding"):
+            try:
+                if encoding in ['vec']:
+                    writer.write(card.vectorize() + '\n\n')
+                else:
+                    writer.write(card.encode(fmt_ordered = fmt_ordered,
+                                             fmt_labeled = fmt_labeled,
+                                             fieldsep = fieldsep,
+                                             randomize_fields = randomize_fields,
+                                             randomize_mana = randomize_mana,
+                                             initial_sep = initial_sep,
+                                             final_sep = final_sep)
+                                 + utils.cardsep)
+                success_count += 1
+            except Exception:
+                fail_count += 1
+        return success_count, fail_count
 
+    total_success = 0
+    total_fail = 0
     if oname:
         if verbose:
             print(utils.colorize('Writing output to: ', utils.Ansi.BOLD + utils.Ansi.CYAN) + oname, file=sys.stderr)
         with open(oname, 'w', encoding='utf8') as ofile:
-            writecards(ofile)
+            s, f = writecards(ofile)
+            total_success += s
+            total_fail += f
     else:
-        writecards(sys.stdout)
+        s, f = writecards(sys.stdout)
+        total_success += s
+        total_fail += f
         sys.stdout.flush()
+
+    # Provide clear feedback on operation completion
+    utils.print_operation_summary("Encoding", total_success, total_fail, quiet=quiet)
 
 
 if __name__ == '__main__':
