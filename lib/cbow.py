@@ -29,8 +29,17 @@ max_w = 50
 
 def read_vector_file(fname):
     with open(fname, 'rb') as f:
-        words = int(f.read(4).decode('ascii'))
-        size = int(f.read(4).decode('ascii'))
+        header = b""
+        while True:
+            ch = f.read(1)
+            if not ch or ch == b"\n":
+                break
+            header += ch
+        header_parts = header.decode('ascii').split()
+        if len(header_parts) < 2:
+            raise struct.error("Invalid header format")
+        words = int(header_parts[0])
+        size = int(header_parts[1])
         vocab = [' '] * (words * max_w)
         M = []
         for b in range(0,words):

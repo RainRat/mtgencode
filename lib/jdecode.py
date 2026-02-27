@@ -478,10 +478,10 @@ def _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
                 continue
 
             if card.valid:
-                valid += 1
                 # Handle multiplication from decklist
                 count = decklist_names[json_cardname] if decklist_names else 1
                 for _ in range(count):
+                    valid += 1
                     cards += [card]
             elif card.parsed:
                 invalid += 1

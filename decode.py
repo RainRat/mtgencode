@@ -221,7 +221,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 writer.write(card.to_mse())
                 fstring = ''
                 if card.json:
-                    fstring += 'JSON:\n' + card.json + '\n'
+                    import json
+                    fstring += 'JSON:\n' + json.dumps(card.json) + '\n'
                 if card.raw:
                     fstring += 'raw:\n' + card.raw + '\n'
                 fstring += '\n'

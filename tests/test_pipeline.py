@@ -613,7 +613,7 @@ def test_html_creativity_output():
     output_existed = os.path.exists(output_txt)
 
     if not cbow_existed:
-        header = f"{1:<4}{1:<4}".encode('ascii')
+        header = f"{1} {1}\n".encode('ascii')
         word = b"test "
         vec = struct.pack('f'*1, 1.0)
         with open(cbow_bin, 'wb') as f:

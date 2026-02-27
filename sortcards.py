@@ -143,6 +143,8 @@ def sortcards(cards, verbose=False, use_summary=False, use_color=False):
             classes['battles'].append(card_str)
         elif 'planeswalker' in types:
             classes['planeswalkers'].append(card_str)
+        elif 'creature' in types:
+            classes['creatures'].append(card_str)
         elif 'land' in types:
             classes['lands'].append(card_str)
         elif 'instant' in types:
@@ -152,13 +154,7 @@ def sortcards(cards, verbose=False, use_summary=False, use_color=False):
         elif 'enchantment' in types:
             classes['enchantments'].append(card_str)
         elif 'artifact' in types:
-            # Check for artifact creature
-            if 'creature' in types:
-                classes['creatures'].append(card_str)
-            else:
-                classes['noncreature artifacts'].append(card_str)
-        elif 'creature' in types:
-            classes['creatures'].append(card_str)
+            classes['noncreature artifacts'].append(card_str)
         else:
             classes['other'].append(card_str)
 

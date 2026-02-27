@@ -23,9 +23,8 @@ def mock_cbow_files():
         # Create cbow.bin
         words = 2
         size = 3
-        # Header: 4 bytes words, 4 bytes size. Assumed to be text based on int(f.read(4)) usage
-        # e.g. "   2" and "   3"
-        header = f"{words:<4}{size:<4}".encode('ascii')
+        # Header: words and size as space-separated integers, ending with newline
+        header = f"{words} {size}\n".encode('ascii')
 
         # Word 1: "foo" + space
         w1 = b"foo "

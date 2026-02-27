@@ -59,7 +59,8 @@ def writecard(card, name, writer):
     card.name = oldname
     fstring = ''
     if card.json:
-        fstring += 'JSON:\n' + card.json + '\n'
+        import json
+        fstring += 'JSON:\n' + json.dumps(card.json) + '\n'
     if card.raw: 
         fstring += 'raw:\n' + card.raw + '\n'
     fstring += '\n'
