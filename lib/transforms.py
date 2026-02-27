@@ -30,12 +30,16 @@ unary_counter = utils.unary_counter
 
 
 def name_pass_1_sanitize(s):
-    s = s.replace('!', '')
-    s = s.replace('?', '')
-    s = s.replace('-', dash_marker)
-    s = s.replace('100,000', 'one hundred thousand')
-    s = s.replace('1,000', 'one thousand')
-    s = s.replace('1996', 'nineteen ninety-six')
+    replacements = [
+        ('!', ''),
+        ('?', ''),
+        ('-', dash_marker),
+        ('100,000', 'one hundred thousand'),
+        ('1,000', 'one thousand'),
+        ('1996', 'nineteen ninety-six'),
+    ]
+    for old, new in replacements:
+        s = s.replace(old, new)
     return s
 
 
@@ -366,49 +370,21 @@ def text_pass_5_counters(s):
 # Call this after doing the counter replacement to simplify the regexes.
 counter_rename = 'uncast'
 def text_pass_6_uncast(s):
-    # pre-checks to make sure we aren't doing anything dumb
-    # if '% counter target ' in s or '^ counter target ' in s or '& counter target ' in s:
-    #     print s + '\n'
-    # if '% counter a ' in s or '^ counter a ' in s or '& counter a ' in s:
-    #     print s + '\n'
-    # if '% counter all ' in s or '^ counter all ' in s or '& counter all ' in s:
-    #     print s + '\n'
-    # if '% counter a ' in s or '^ counter a ' in s or '& counter a ' in s:
-    #     print s + '\n'
-    # if '% counter that ' in s or '^ counter that ' in s or '& counter that ' in s:
-    #     print s + '\n'
-    # if '% counter @' in s or '^ counter @' in s or '& counter @' in s:
-    #     print s + '\n'
-    # if '% counter the ' in s or '^ counter the ' in s or '& counter the ' in s:
-    #     print s + '\n'
+    replacements = [
+        ('counter target ', counter_rename + ' target '),
+        ('counter a ', counter_rename + ' a '),
+        ('counter all ', counter_rename + ' all '),
+        ('counters a ', counter_rename + 's a '),
+        ('countered', counter_rename + 'ed'),
+        ('counter that ', counter_rename + ' that '),
+        ('counter @', counter_rename + ' @'),
+        (', counter it', ', ' + counter_rename + ' it'),
+        ('counter the ', counter_rename + ' the '),
+        ('counter up to ', counter_rename + ' up to '),
+    ]
+    for old, new in replacements:
+        s = s.replace(old, new)
 
-    # counter target
-    s = s.replace('counter target ', counter_rename + ' target ')
-    # counter a
-    s = s.replace('counter a ', counter_rename + ' a ')
-    # counter all
-    s = s.replace('counter all ', counter_rename + ' all ')
-    # counters a
-    s = s.replace('counters a ', counter_rename + 's a ')
-    # countered (this could get weird in terms of englishing the word; lets just go for hilarious)
-    s = s.replace('countered', counter_rename + 'ed')
-    # counter that
-    s = s.replace('counter that ', counter_rename + ' that ')
-    # counter @
-    s = s.replace('counter @', counter_rename + ' @')
-    # counter it (this is tricky
-    s = s.replace(', counter it', ', ' + counter_rename + ' it')
-    # counter the (it happens at least once, thanks wizards!)
-    s = s.replace('counter the ', counter_rename + ' the ')
-    # counter up to
-    s = s.replace('counter up to ', counter_rename + ' up to ')
-
-    # check if the word exists in any other context
-    # if 'counter' in (s.replace('% counter', '').replace('countertype', '')
-    #                  .replace('^ counter', '').replace('& counter', ''):
-    #     print s + '\n'
-
-    # whew! by manual inspection of a few dozen texts, it looks like this about covers it.
     return s    
     
 
