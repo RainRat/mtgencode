@@ -678,22 +678,30 @@ def text_unpass_1_choice(s, delimit = False):
 
 
 def text_unpass_2_counters(s):
-    # 1. Identify all countertype headers and extract their types
-    # these headers are added with literal newlines in text_pass_5_counters,
-    # and are expected to be processed before text_pass_9_newlines replaces them.
-    header_regex = r'countertype ' + re.escape(counter_marker) + r'[^\n]*\n'
+    # Detect countertype headers which specify the name of the counter used (e.g., "charge").
+    # We support both literal newlines (\n) and the internal newline marker (\) because
+    # encoding converts literal newlines to the marker before they reach this stage.
+    nl = utils.newline
+    header_regex = r'countertype ' + re.escape(counter_marker) + r'.*?(?:' + re.escape(nl) + r'|\n|$)'
     headers = re.findall(header_regex, s)
     
     types = []
     prefix_len = len('countertype ' + counter_marker)
     for h in headers:
-        types.append(h[prefix_len:].strip())
-        # 2. Remove the header from the string
+        # Extract the counter name and strip markers/newlines
+        counter_type = h[prefix_len:].strip().replace(nl, '').replace('\n', '')
+        types.append(counter_type)
+        # Remove the header from the rules text
         s = s.replace(h, '', 1)
         
-    # 3. Replace each counter_marker in the remaining text with the extracted types
-    for t in types:
-        s = s.replace(counter_marker, t, 1)
+    # Restore the actual counter names.
+    # If only one counter type is detected (common case), we perform a global
+    # replacement to correctly handle multiple mentions of that counter.
+    if len(types) == 1:
+        s = s.replace(counter_marker, types[0])
+    else:
+        for t in types:
+            s = s.replace(counter_marker, t, 1)
         
     return s
 
