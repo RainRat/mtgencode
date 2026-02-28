@@ -144,23 +144,15 @@ def test_text_unpass_1_choice():
 
 def test_text_unpass_2_counters():
     # "countertype % time\n... % ..." -> replace % with time, remove header
-    # But unpasses run on internal representation.
-    # However, text_pass_5_counters uses ACTUAL newlines ('\n') because it runs BEFORE text_pass_9_newlines.
-    # text_unpass_2_counters is called in format(), BEFORE text_unpass_7_newlines.
-    # Wait, `format()` calls:
-    # mtext = transforms.text_unpass_2_counters(mtext)
-    # ...
-    # mtext = transforms.text_unpass_7_newlines(mtext)
-
-    # So at the time unpass_2 runs, newlines are still `\` (internal representation).
-    # But `text_pass_5_counters` inserts `\n`?
-    # No, `text_pass_5_counters` inserts `\n`.
-    # Then `text_pass_9_newlines` converts `\n` to `\`.
-    # So the encoded text has `\` (backslash).
-
-    # So the input to unpass_2 must use `\`.
-    input_text = "countertype % time\\remove a % counter."
+    # Unpasses run on internal representation where newlines are utils.newline ('\').
+    input_text = "countertype % time" + utils.newline + "remove a % counter."
     expected = "remove a time counter."
+    assert transforms.text_unpass_2_counters(input_text) == expected
+
+def test_text_unpass_2_counters_multiple():
+    # Verify that multiple occurrences of the same counter are correctly restored.
+    input_text = "countertype % charge" + utils.newline + "put a % counter on it. remove a % counter."
+    expected = "put a charge counter on it. remove a charge counter."
     assert transforms.text_unpass_2_counters(input_text) == expected
 
 def test_text_unpass_3_uncast():

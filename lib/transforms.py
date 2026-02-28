@@ -680,20 +680,30 @@ def text_unpass_1_choice(s, delimit = False):
 def text_unpass_2_counters(s):
     # 1. Identify all countertype headers and extract their types
     # these headers are added with literal newlines in text_pass_5_counters,
-    # and are expected to be processed before text_pass_9_newlines replaces them.
-    header_regex = r'countertype ' + re.escape(counter_marker) + r'[^\n]*\n'
+    # but might also be processed after text_pass_9_newlines replaces them with utils.newline.
+    # So we support both, and also the end of the string.
+    header_regex = r'countertype ' + re.escape(counter_marker) + r'[^' + re.escape('\n') + re.escape(utils.newline) + r']*(?:\n|' + re.escape(utils.newline) + r'|$)'
     headers = re.findall(header_regex, s)
     
     types = []
     prefix_len = len('countertype ' + counter_marker)
     for h in headers:
-        types.append(h[prefix_len:].strip())
+        # Extract the type name, making sure to strip any trailing newline markers
+        t_val = h[prefix_len:].strip()
+        if t_val.endswith(utils.newline):
+            t_val = t_val[:-len(utils.newline)].strip()
+        types.append(t_val)
         # 2. Remove the header from the string
         s = s.replace(h, '', 1)
         
     # 3. Replace each counter_marker in the remaining text with the extracted types
-    for t in types:
-        s = s.replace(counter_marker, t, 1)
+    if len(types) == 1:
+        # If there's only one type of counter, replace all occurrences.
+        # This handles the case where the encoder deduplicated the headers.
+        s = s.replace(counter_marker, types[0])
+    else:
+        for t in types:
+            s = s.replace(counter_marker, t, 1)
         
     return s
 
