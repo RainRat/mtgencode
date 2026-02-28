@@ -852,7 +852,9 @@ def mtg_open_file(fname, verbose = False,
 
             # Set filtering
             if target_sets:
-                if not card.set_code or card.set_code.upper() not in target_sets:
+                # If the card has no set code (like from an encoded text file),
+                # we don't filter it out by set.
+                if card.set_code and card.set_code.upper() not in target_sets:
                     return False
 
             # Rarity filtering

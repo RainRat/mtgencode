@@ -16,6 +16,8 @@ def mean_nonan(l):
 
 def gmean_nonzero(l):
     filtered = [x for x in l if x != 0 and not math.isnan(x)]
+    if not filtered:
+        return 0.0
     return  scipy.stats.gmean(filtered)
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')

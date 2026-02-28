@@ -350,17 +350,16 @@ def text_pass_5_counters(s):
 
     s = counters_regex.sub(replace_counter, s)
 
-    # miraculously this doesn't seem to happen
-    # if len(usedcounters) > 1:
-    #     print (usedcounters)
-
     # deduplicate usedcounters while preserving order of first appearance
     unique_used = list(dict.fromkeys(usedcounters))
 
     # we haven't done newline replacement yet, so use actual newlines
-    if len(unique_used) == 1:
-        # and yeah, this line of code can blow up in all kinds of different ways
-        s = 'countertype ' + counter_marker + ' ' + unique_used[0].split()[0] + '\n' + s
+    if unique_used:
+        # prepend a countertype line for each unique counter used
+        header = ''
+        for counter in unique_used:
+             header += 'countertype ' + counter_marker + ' ' + counter.split()[0] + '\n'
+        s = header + s
 
     return s
 
@@ -449,7 +448,7 @@ def text_pass_8_equip(s):
         if s == '':
             s = equip
         else:
-            s = equip + '\n' + s
+            s = equip.strip() + '\n' + s
 
     nonmana = re.findall(r'(equip\u2014.*(\n|$))', s)
     if len(nonmana) == 1:
@@ -463,7 +462,7 @@ def text_pass_8_equip(s):
         if s == '':
             s = equip
         else:
-            s = equip + '\n' + s
+            s = equip.strip() + '\n' + s
         
     return s
 
@@ -679,17 +678,23 @@ def text_unpass_1_choice(s, delimit = False):
 
 
 def text_unpass_2_counters(s):
-    countertypes = re.findall(r'countertype ' + re.escape(counter_marker) 
-                              + r'[^' + re.escape(newline) + r']*' + re.escape(newline), s)
-    # lazier than using groups in the regex
-    countertypes += re.findall(r'countertype ' + re.escape(counter_marker) 
-                              + r'[^' + re.escape(newline) + r']*$', s)
-    if len(countertypes) > 0:
-        countertype = countertypes[0].replace('countertype ' + counter_marker, '')
-        countertype = countertype.replace(newline, '\n').strip()
-        s = s.replace(countertypes[0], '')
-        s = s.replace(counter_marker, countertype)
+    # 1. Identify all countertype headers and extract their types
+    # these headers are added with literal newlines in text_pass_5_counters,
+    # and are expected to be processed before text_pass_9_newlines replaces them.
+    header_regex = r'countertype ' + re.escape(counter_marker) + r'[^\n]*\n'
+    headers = re.findall(header_regex, s)
     
+    types = []
+    prefix_len = len('countertype ' + counter_marker)
+    for h in headers:
+        types.append(h[prefix_len:].strip())
+        # 2. Remove the header from the string
+        s = s.replace(h, '', 1)
+        
+    # 3. Replace each counter_marker in the remaining text with the extracted types
+    for t in types:
+        s = s.replace(counter_marker, t, 1)
+        
     return s
 
 

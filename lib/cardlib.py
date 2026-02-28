@@ -914,6 +914,10 @@ class Card:
         res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
         if stats:
             res += f' \u2022 {stats}'
+
+        if self.bside:
+            res += utils.bsidesep + self.bside.summary(ansi_color=ansi_color)
+
         return res
 
     def format(self, gatherer=False, for_forum=False, vdump=False, for_html=False, ansi_color=False, for_md=False):

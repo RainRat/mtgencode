@@ -36,6 +36,8 @@ def list_flatten(l):
 
 # isolated logic for multiprocessing
 def f_nearest(name, matchers, n):
+    if not matchers:
+        return []
     ratios = []
     for m in matchers:
         m.set_seq1(name)
