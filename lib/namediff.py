@@ -64,32 +64,39 @@ class Namediff:
             print('  Reading names from: ' + json_fname)
         json_srcs, _ = jdecode.mtg_open_json(json_fname, verbose)
         namecount = 0
+
+        def process_card(card, jcard):
+            nonlocal namecount
+            name = card.name
+            if name in self.names:
+                if self.verbose:
+                    print('  Duplicate name ' + name + ', ignoring.')
+            else:
+                self.names[name] = jcard['name']
+                self.cardstrings[name] = card.encode()
+                jcode = jcard.get(utils.json_field_info_code)
+                jnum = jcard.get('number', '')
+                if jcode and jnum:
+                    self.codes[name] = jcode + '/' + jnum + '.jpg'
+                else:
+                    self.codes[name] = ''
+                namecount += 1
+
+            if card.bside:
+                # For bsides in MTGJSON, they are often nested.
+                # card.bside is a Card object.
+                # We need the jcard for the bside too.
+                jbside = jcard.get(utils.json_field_bside)
+                if jbside:
+                    process_card(card.bside, jbside)
+
         for json_cardname in sorted(json_srcs.keys()):
             if len(json_srcs[json_cardname]) > 0:
                 jcards = json_srcs[json_cardname]
-
                 # just use the first one
                 idx = 0
                 card = cardlib.Card(jcards[idx])
-                name = card.name
-                jname = jcards[idx]['name']
-                jcode = jcards[idx].get(utils.json_field_info_code)
-                if 'number' in jcards[idx]:
-                    jnum = jcards[idx]['number']
-                else:
-                    jnum = ''
-                    
-                if name in self.names:
-                    if self.verbose:
-                        print('  Duplicate name ' + name + ', ignoring.')
-                else:
-                    self.names[name] = jname
-                    self.cardstrings[name] = card.encode()
-                    if jcode and jnum:
-                        self.codes[name] = jcode + '/' + jnum + '.jpg'
-                    else:
-                        self.codes[name] = ''
-                    namecount += 1
+                process_card(card, jcards[idx])
 
         if self.verbose:
             print('  Read ' + str(namecount) + ' unique cardnames')

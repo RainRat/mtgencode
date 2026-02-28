@@ -149,5 +149,48 @@ class TestNamediff(unittest.TestCase):
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
+    def test_namediff_split_cards(self):
+        test_data = {
+            "data": {
+                "TST": {
+                    "name": "Test Set",
+                    "code": "TST",
+                    "type": "core",
+                    "cards": [
+                        {
+                            "name": "Fire",
+                            "number": "1a",
+                            "types": ["Instant"],
+                            "manaCost": "{1}{R}",
+                            "text": "Fire deals 2 damage."
+                        },
+                        {
+                            "name": "Ice",
+                            "number": "1b",
+                            "types": ["Instant"],
+                            "manaCost": "{1}{U}",
+                            "text": "Tap target permanent."
+                        }
+                    ]
+                }
+            }
+        }
+
+        fd, tmp_path = tempfile.mkstemp(suffix='.json', text=True)
+        try:
+            with os.fdopen(fd, 'w') as f:
+                json.dump(test_data, f)
+
+            nd = namediff.Namediff(verbose=False, json_fname=tmp_path)
+
+            # Fire should be in names
+            self.assertIn("fire", nd.names)
+            # Ice is the b-side. It should also be in names.
+            self.assertIn("ice", nd.names)
+
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
 if __name__ == '__main__':
     unittest.main()
