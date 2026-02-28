@@ -281,6 +281,12 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Only include cards whose typeline matches a regex.')
     proc_group.add_argument('--grep-text', action='append',
                         help='Only include cards whose rules text matches a regex.')
+    proc_group.add_argument('--grep-cost', action='append',
+                        help='Only include cards whose mana cost matches a regex.')
+    proc_group.add_argument('--grep-pt', action='append',
+                        help='Only include cards whose power/toughness matches a regex.')
+    proc_group.add_argument('--grep-loyalty', action='append',
+                        help='Only include cards whose loyalty/defense matches a regex.')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
                         help='Exclude cards matching regex (matches name, type, or text). Can be used multiple times (OR logic).')
     proc_group.add_argument('--exclude-name', action='append',
@@ -289,10 +295,20 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Exclude cards whose typeline matches a regex.')
     proc_group.add_argument('--exclude-text', action='append',
                         help='Exclude cards whose rules text matches a regex.')
+    proc_group.add_argument('--exclude-cost', action='append',
+                        help='Exclude cards whose mana cost matches a regex.')
+    proc_group.add_argument('--exclude-pt', action='append',
+                        help='Exclude cards whose power/toughness matches a regex.')
+    proc_group.add_argument('--exclude-loyalty', action='append',
+                        help='Exclude cards whose loyalty/defense matches a regex.')
     proc_group.add_argument('--set', action='append',
                         help='Only include cards from these sets (e.g., MOM, MRD).')
     proc_group.add_argument('--rarity', action='append',
                         help='Only include cards of these rarities (common, uncommon, rare, mythic).')
+    proc_group.add_argument('--colors', action='append',
+                        help='Only include cards of these colors (W, U, B, R, G, C/A). Use multiple times for OR logic.')
+    proc_group.add_argument('--cmc', action='append',
+                        help='Only include cards with these CMC values.')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file. Also supports card multiplication based on counts in the decklist.')
     proc_group.add_argument('--summary', action='store_true',
@@ -340,7 +356,11 @@ Supports any encoding format supported by encode.py/decode.py.""",
                                   grep_name=args.grep_name, vgrep_name=args.exclude_name,
                                   grep_types=args.grep_type, vgrep_types=args.exclude_type,
                                   grep_text=args.grep_text, vgrep_text=args.exclude_text,
+                                  grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
+                                  grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
+                                  grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
                                   sets=args.set, rarities=args.rarity,
+                                  colors=args.colors, cmcs=args.cmc,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False,
