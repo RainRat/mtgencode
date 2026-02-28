@@ -900,15 +900,17 @@ class Card:
         stats = ''
         if self.pt:
             pt = utils.from_unary(self.pt)
-            if ansi_color: pt = utils.colorize(pt, utils.Ansi.RED)
-            stats = pt
+            stats = f'({pt})'
+            if ansi_color:
+                stats = utils.colorize(stats, utils.Ansi.RED)
         elif self.loyalty:
             loyalty = utils.from_unary(self.loyalty)
-            if ansi_color: loyalty = utils.colorize(loyalty, utils.Ansi.RED)
             if any('battle' in t.lower() for t in self.types):
                 stats = f'[[{loyalty}]]'
             else:
                 stats = f'({loyalty})'
+            if ansi_color:
+                stats = utils.colorize(stats, utils.Ansi.RED)
 
         # Construct final summary string with consistent bullet separators
         res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'

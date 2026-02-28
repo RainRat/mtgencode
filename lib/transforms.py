@@ -681,19 +681,20 @@ def text_unpass_2_counters(s):
     # 1. Identify all countertype headers and extract their types
     # these headers are added with literal newlines in text_pass_5_counters,
     # and are expected to be processed before text_pass_9_newlines replaces them.
-    header_regex = r'countertype ' + re.escape(counter_marker) + r'[^\n]*\n'
-    headers = re.findall(header_regex, s)
+    # However, sometimes they are already encoded with the internal newline marker,
+    # or they might be at the very end of the string.
     
-    types = []
-    prefix_len = len('countertype ' + counter_marker)
-    for h in headers:
-        types.append(h[prefix_len:].strip())
-        # 2. Remove the header from the string
-        s = s.replace(h, '', 1)
+    # We use a regex that matches the header and the following separator or end of string.
+    pattern = r'countertype ' + re.escape(counter_marker) + r'\s*([^\n\\' + re.escape(newline) + r']*)'
+    full_pattern = pattern + r'(?:[\n\\' + re.escape(newline) + r']|$)'
+
+    types = re.findall(full_pattern, s)
+    # Remove all headers from the string
+    s = re.sub(full_pattern, '', s)
         
     # 3. Replace each counter_marker in the remaining text with the extracted types
     for t in types:
-        s = s.replace(counter_marker, t, 1)
+        s = s.replace(counter_marker, t.strip(), 1)
         
     return s
 
