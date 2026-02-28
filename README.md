@@ -166,12 +166,20 @@ python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - so
 *   **Note:** Use a hyphen (`-`) as the filename to tell a script to read from standard input.
 
 ### Advanced Filtering
-You can filter which cards are processed using regular expressions, set codes, or rarities. These flags work across `encode.py`, `decode.py`, `sortcards.py`, and `scripts/summarize.py`.
+You can filter which cards are processed using regular expressions, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, and `scripts/summarize.py`.
 
-*   `--grep "pattern"`: Only include cards that match the regex pattern. It checks the name, rules text, and all parts of the type line (supertypes, types, and subtypes). Use multiple `--grep` flags for **AND** logic (all patterns must match).
-*   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the regex pattern. Use multiple flags for **OR** logic (matching any pattern excludes the card).
-*   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets (OR logic).
-*   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `uncommon`, `rare`, `mythic`). Supports multiple rarities (OR logic).
+*   **Global Filters:**
+    *   `--grep "pattern"`: Only include cards where the name, type line, or rules text matches the regex pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
+    *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the regex pattern. Use multiple flags for **OR** logic (matching any pattern excludes the card).
+*   **Field-Specific Filters:**
+    *   `--grep-name`, `--grep-type`, `--grep-text`: Only include cards where the specific field matches the regex.
+    *   `--exclude-name`, `--exclude-type`, `--exclude-text`: Skip cards where the specific field matches the regex.
+*   **Metadata Filters:**
+    *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets (OR logic).
+    *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports multiple rarities (OR logic).
+    *   `--deck-filter FILE` (or `--decklist-filter`): Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
+
+> **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), and `L` (Basic Land).
 
 **Examples:**
 ```bash
@@ -181,8 +189,11 @@ python3 encode.py data/AllPrintings.json --grep "Goblin" --grep "Creature"
 # Find only legendary artifacts from the MOM set
 python3 scripts/summarize.py data/AllPrintings.json --grep "Legendary" --grep "Artifact" --set MOM
 
-# Process only rare cards, excluding those with the "Infect" mechanic
-python3 encode.py data/AllPrintings.json --vgrep "Infect" --rarity rare
+# Process only rare cards, excluding those with "Infect" in their name
+python3 encode.py data/AllPrintings.json --rarity rare --exclude-name "Infect"
+
+# Encode cards from a specific decklist to create a customized training set
+python3 encode.py data/AllPrintings.json --deck-filter my_deck.txt encoded_deck.txt
 ```
 
 ---
