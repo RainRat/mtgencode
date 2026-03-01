@@ -27,7 +27,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None,
          grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
          grep_text=None, vgrep_text=None,
-         sets=None, rarities=None, shuffle=False, seed=None, decklist_file=None):
+         grep_cost=None, vgrep_cost=None, grep_pt=None, vgrep_pt=None,
+         grep_loyalty=None, vgrep_loyalty=None,
+         sets=None, rarities=None, colors=None, cmcs=None,
+         shuffle=False, seed=None, decklist_file=None):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -96,7 +99,12 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   grep_name=grep_name, vgrep_name=vgrep_name,
                                   grep_types=grep_types, vgrep_types=vgrep_types,
                                   grep_text=grep_text, vgrep_text=vgrep_text,
-                                  sets=sets, rarities=rarities, shuffle=shuffle, seed=seed, decklist_file=decklist_file)
+                                  grep_cost=grep_cost, vgrep_cost=vgrep_cost,
+                                  grep_pt=grep_pt, vgrep_pt=vgrep_pt,
+                                  grep_loyalty=grep_loyalty, vgrep_loyalty=vgrep_loyalty,
+                                  sets=sets, rarities=rarities,
+                                  colors=colors, cmcs=cmcs,
+                                  shuffle=shuffle, seed=seed, decklist_file=decklist_file)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -587,6 +595,12 @@ if __name__ == '__main__':
                         help='Only include cards whose typeline matches a regex.')
     proc_group.add_argument('--grep-text', action='append',
                         help='Only include cards whose rules text matches a regex.')
+    proc_group.add_argument('--grep-cost', action='append',
+                        help='Only include cards whose mana cost matches a regex.')
+    proc_group.add_argument('--grep-pt', action='append',
+                        help='Only include cards whose power/toughness matches a regex.')
+    proc_group.add_argument('--grep-loyalty', action='append',
+                        help='Only include cards whose loyalty/defense matches a regex.')
     proc_group.add_argument('--vgrep', '--exclude', action='append',
                         help='Exclude cards that match a regex (matches name, type, or text). Use multiple times for OR logic.')
     proc_group.add_argument('--exclude-name', action='append',
@@ -595,10 +609,20 @@ if __name__ == '__main__':
                         help='Exclude cards whose typeline matches a regex.')
     proc_group.add_argument('--exclude-text', action='append',
                         help='Exclude cards whose rules text matches a regex.')
+    proc_group.add_argument('--exclude-cost', action='append',
+                        help='Exclude cards whose mana cost matches a regex.')
+    proc_group.add_argument('--exclude-pt', action='append',
+                        help='Exclude cards whose power/toughness matches a regex.')
+    proc_group.add_argument('--exclude-loyalty', action='append',
+                        help='Exclude cards whose loyalty/defense matches a regex.')
     proc_group.add_argument('--set', action='append',
                         help='Only include cards from these sets (e.g., MOM, MRD).')
     proc_group.add_argument('--rarity', action='append',
                         help='Only include cards of these rarities (common, uncommon, rare, mythic).')
+    proc_group.add_argument('--colors', action='append',
+                        help='Only include cards of these colors (W, U, B, R, G, C/A). Use multiple times for OR logic.')
+    proc_group.add_argument('--cmc', action='append',
+                        help='Only include cards with these CMC values.')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck_filter',
                         help='Filter cards using a standard MTG decklist file. Also supports card multiplication based on counts in the decklist.')
 
@@ -622,7 +646,10 @@ if __name__ == '__main__':
          grep_name=args.grep_name, vgrep_name=args.exclude_name,
          grep_types=args.grep_type, vgrep_types=args.exclude_type,
          grep_text=args.grep_text, vgrep_text=args.exclude_text,
-         sets=args.set, rarities=args.rarity,
+         grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
+         grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
+         grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
+         sets=args.set, rarities=args.rarity, colors=args.colors, cmcs=args.cmc,
          shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter)
 
     exit(0)

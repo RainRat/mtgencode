@@ -559,7 +559,11 @@ def mtg_open_file(fname, verbose = False,
                   grep_name=None, vgrep_name=None,
                   grep_types=None, vgrep_types=None,
                   grep_text=None, vgrep_text=None,
+                  grep_cost=None, vgrep_cost=None,
+                  grep_pt=None, vgrep_pt=None,
+                  grep_loyalty=None, vgrep_loyalty=None,
                   sets=None, rarities=None,
+                  colors=None, cmcs=None,
                   shuffle=False, seed=None,
                   decklist_file=None):
 
@@ -796,7 +800,7 @@ def mtg_open_file(fname, verbose = False,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                    decklist_names=decklist_names)
 
-    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text:
+    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs:
         greps = [re.compile(p, re.IGNORECASE) for p in (grep if grep else [])]
         vgreps = [re.compile(p, re.IGNORECASE) for p in (vgrep if vgrep else [])]
         greps_name = [re.compile(p, re.IGNORECASE) for p in (grep_name if grep_name else [])]
@@ -805,6 +809,12 @@ def mtg_open_file(fname, verbose = False,
         vgreps_types = [re.compile(p, re.IGNORECASE) for p in (vgrep_types if vgrep_types else [])]
         greps_text = [re.compile(p, re.IGNORECASE) for p in (grep_text if grep_text else [])]
         vgreps_text = [re.compile(p, re.IGNORECASE) for p in (vgrep_text if vgrep_text else [])]
+        greps_cost = [re.compile(p, re.IGNORECASE) for p in (grep_cost if grep_cost else [])]
+        vgreps_cost = [re.compile(p, re.IGNORECASE) for p in (vgrep_cost if vgrep_cost else [])]
+        greps_pt = [re.compile(p, re.IGNORECASE) for p in (grep_pt if grep_pt else [])]
+        vgreps_pt = [re.compile(p, re.IGNORECASE) for p in (vgrep_pt if vgrep_pt else [])]
+        greps_loyalty = [re.compile(p, re.IGNORECASE) for p in (grep_loyalty if grep_loyalty else [])]
+        vgreps_loyalty = [re.compile(p, re.IGNORECASE) for p in (vgrep_loyalty if vgrep_loyalty else [])]
 
         target_sets = [s.upper() for s in sets] if sets else None
         target_rarities = []
@@ -816,6 +826,9 @@ def mtg_open_file(fname, verbose = False,
                     target_rarities.append(utils.json_rarity_map[r_lower])
                 else:
                     target_rarities.append(r)
+
+        target_colors = [c.upper() for c in colors] if colors else None
+        target_cmcs = [float(c) for c in cmcs] if cmcs else None
 
         def match_card(card):
             # Generic filtering (AND logic for greps, OR logic for vgreps)
@@ -850,6 +863,30 @@ def mtg_open_file(fname, verbose = False,
                 if card.search_text(pattern):
                     return False
 
+            # Cost filtering
+            for pattern in greps_cost:
+                if not card.search_cost(pattern):
+                    return False
+            for pattern in vgreps_cost:
+                if card.search_cost(pattern):
+                    return False
+
+            # P/T filtering
+            for pattern in greps_pt:
+                if not card.search_pt(pattern):
+                    return False
+            for pattern in vgreps_pt:
+                if card.search_pt(pattern):
+                    return False
+
+            # Loyalty filtering
+            for pattern in greps_loyalty:
+                if not card.search_loyalty(pattern):
+                    return False
+            for pattern in vgreps_loyalty:
+                if card.search_loyalty(pattern):
+                    return False
+
             # Set filtering
             if target_sets:
                 # If the card has no set code (like from an encoded text file),
@@ -862,6 +899,23 @@ def mtg_open_file(fname, verbose = False,
                 if not card.rarity:
                     return False
                 if card.rarity not in target_rarities and card.rarity.lower() not in target_rarities_lower:
+                    return False
+
+            # Color filtering
+            if target_colors:
+                card_colors = card.cost.colors
+                match_color = False
+                for tc in target_colors:
+                    if tc in ['A', 'C']:
+                        if not card_colors: match_color = True
+                    elif tc in card_colors:
+                        match_color = True
+                if not match_color:
+                    return False
+
+            # CMC filtering
+            if target_cmcs:
+                if card.cost.cmc not in target_cmcs:
                     return False
 
             return True

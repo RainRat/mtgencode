@@ -173,10 +173,14 @@ You can filter which cards are processed using regular expressions, set codes, r
     *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the regex pattern. Use multiple flags for **OR** logic (matching any pattern excludes the card).
 *   **Field-Specific Filters:**
     *   `--grep-name`, `--grep-type`, `--grep-text`: Only include cards where the specific field matches the regex.
+    *   `--grep-cost`, `--grep-pt`, `--grep-loyalty`: Only include cards whose mana cost, power/toughness, or loyalty matches the regex.
     *   `--exclude-name`, `--exclude-type`, `--exclude-text`: Skip cards where the specific field matches the regex.
+    *   `--exclude-cost`, `--exclude-pt`, `--exclude-loyalty`: Skip cards whose mana cost, power/toughness, or loyalty matches the regex.
 *   **Metadata Filters:**
     *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets (OR logic).
     *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports multiple rarities (OR logic).
+    *   `--colors SYMBOLS`: Only include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless. Multiple colors use OR logic.
+    *   `--cmc VALUE`: Only include cards with a specific CMC (Converted Mana Cost). Supports multiple values (OR logic).
     *   `--deck-filter FILE` (or `--decklist-filter`): Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
 
 > **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), and `L` (Basic Land).

@@ -678,23 +678,27 @@ def text_unpass_1_choice(s, delimit = False):
 
 
 def text_unpass_2_counters(s):
-    # 1. Identify all countertype headers and extract their types
-    # these headers are added with literal newlines in text_pass_5_counters,
-    # and are expected to be processed before text_pass_9_newlines replaces them.
-    header_regex = r'countertype ' + re.escape(counter_marker) + r'[^\n]*\n'
-    headers = re.findall(header_regex, s)
+    # Identify all countertype headers and extract their types.
+    # Supports literal newlines (\n), internal utils.newline markers, or the end of the string.
+    sep_pattern = r'(?:' + re.escape(utils.newline) + r'|\n|$)'
+    header_regex = r'countertype ' + re.escape(counter_marker) + r' ([^' + re.escape(utils.newline) + r'\n]+)(?:' + sep_pattern + r')'
     
+    matches = list(re.finditer(header_regex, s))
+    if not matches:
+        return s
+
     types = []
-    prefix_len = len('countertype ' + counter_marker)
-    for h in headers:
-        types.append(h[prefix_len:].strip())
-        # 2. Remove the header from the string
-        s = s.replace(h, '', 1)
+    for m in matches:
+        types.append(m.group(1).strip())
+
+    # Remove headers from back to front to avoid index shifts
+    for m in reversed(matches):
+        s = s[:m.start()] + s[m.end():]
         
-    # 3. Replace each counter_marker in the remaining text with the extracted types
+    # Replace counter markers with extracted types
     for t in types:
         s = s.replace(counter_marker, t, 1)
-        
+
     return s
 
 

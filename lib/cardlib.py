@@ -809,11 +809,21 @@ class Card:
             return True
         if self.search_text(pattern):
             return True
+        if self.search_cost(pattern):
+            return True
+        if self.search_pt(pattern):
+            return True
+        if self.search_loyalty(pattern):
+            return True
         return False
 
     def search_name(self, pattern):
         """Returns True if the pattern matches the card's name."""
-        return bool(pattern.search(self.name))
+        if pattern.search(self.name):
+            return True
+        if self.bside:
+            return self.bside.search_name(pattern)
+        return False
 
     def search_types(self, pattern):
         """Returns True if the pattern matches any of the card's types (supertypes, types, or subtypes)."""
@@ -823,11 +833,41 @@ class Card:
             return True
         if any(pattern.search(t) for t in self.subtypes):
             return True
+        if self.bside:
+            return self.bside.search_types(pattern)
         return False
 
     def search_text(self, pattern):
         """Returns True if the pattern matches the card's rules text."""
-        return bool(pattern.search(self.text.text))
+        if pattern.search(self.text.text):
+            return True
+        if self.bside:
+            return self.bside.search_text(pattern)
+        return False
+
+    def search_cost(self, pattern):
+        """Returns True if the pattern matches the card's mana cost."""
+        if pattern.search(self.cost.format()):
+            return True
+        if self.bside:
+            return self.bside.search_cost(pattern)
+        return False
+
+    def search_pt(self, pattern):
+        """Returns True if the pattern matches the card's power and toughness."""
+        if self.pt and pattern.search(utils.from_unary(self.pt)):
+            return True
+        if self.bside:
+            return self.bside.search_pt(pattern)
+        return False
+
+    def search_loyalty(self, pattern):
+        """Returns True if the pattern matches the card's loyalty or defense."""
+        if self.loyalty and pattern.search(utils.from_unary(self.loyalty)):
+            return True
+        if self.bside:
+            return self.bside.search_loyalty(pattern)
+        return False
 
     def summary(self, ansi_color=False):
         """Returns a compact, one-line summary of the card."""
