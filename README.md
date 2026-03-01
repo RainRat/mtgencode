@@ -165,6 +165,46 @@ python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - so
 ```
 *   **Note:** Use a hyphen (`-`) as the filename to tell a script to read from standard input.
 
+---
+
+## Understanding the Encoded Format
+
+When you run `encode.py`, the output is converted into a specialized text format. This format uses special markers and "unary" numbers to help AI models recognize patterns more effectively.
+
+### Special Markers
+| Marker | Meaning | Example |
+| :--- | :--- | :--- |
+| `\|` | Field separator | `\|5creature\|4legendary\|` |
+| `@` | Card Name (Self-reference) | `@ gets +1/+1` |
+| `\\` | Newline | `Flying\\Trample` |
+| `~` | Dash | `Enchantment~Aura` |
+| `=` | Bullet point | `= Choice one` |
+| `%` | Counter (Charge, +1/+1, etc.) | `Put a % counter on @` |
+| `[` `]` | Choice delimiters | `[1 = Choice A = Choice B]` |
+| `T` | Tap symbol | `{T}: Add {G}` |
+| `Q` | Untap symbol | `{Q}: Untap @` |
+
+### Unary Numbers
+To help the AI count, numbers are represented as a sequence of symbols instead of digits.
+*   **Marker (`&`)**: Indicates the start of a number.
+*   **Counter (`^`)**: Each `^` represents 1.
+*   **Examples**:
+    *   `&^` = 1
+    *   `&^^` = 2
+    *   `&^^^^^` = 5
+
+### Field Labels
+If you don't use the `--nolabel` flag, each field is prefixed with a number:
+*   `0`: Rarity
+*   `1`: Name
+*   `3`: Mana Cost
+*   `4`: Supertypes
+*   `5`: Types
+*   `6`: Subtypes
+*   *And so on (7: Loyalty, 8: P/T, 9: Rules Text).*
+
+---
+
 ### Advanced Filtering
 You can filter which cards are processed using regular expressions, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, and `scripts/summarize.py`.
 
