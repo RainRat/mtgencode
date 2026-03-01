@@ -19,7 +19,7 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
-def sortcards(cards, verbose=False, use_summary=False, use_color=False):
+def sortcards(cards, verbose=False, use_summary=False, use_color=False, fmt_ordered=cardlib.fmt_ordered_default):
     """
     Sorts a list of Card objects into various categories.
     """
@@ -92,7 +92,7 @@ def sortcards(cards, verbose=False, use_summary=False, use_color=False):
         else:
             # Use card.raw for the original string representation
             # Ensure we have a string to write out
-            card_str = card.raw if card.raw else card.encode()
+            card_str = card.raw if card.raw else card.encode(fmt_ordered=fmt_ordered)
 
         # special classes
         # Check if it's a split card (has a bside)
@@ -378,7 +378,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
         use_color = True
 
     # Progress bar is shown unless --quiet is specified
-    classes = sortcards(cards, verbose=not args.quiet, use_summary=args.summary, use_color=use_color)
+    classes = sortcards(cards, verbose=not args.quiet, use_summary=args.summary, use_color=use_color, fmt_ordered=fmt_ordered)
 
     outputter = sys.stdout
     ofile = None

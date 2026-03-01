@@ -56,14 +56,6 @@ with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
             "setCode": "CUS",
             "text": row[4],
         }
-        if row[5] != "":
-            pt = row[5].split("/")
-            if len(pt) >= 2:
-                card["power"] = pt[0]
-                card["toughness"] = pt[1]
-            else:
-                card["pt"] = row[5]
-
         # supertypes, types, subtypes
         supertypes, types = utils.split_types(row[2])
         if supertypes:
@@ -71,6 +63,19 @@ with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
         card["types"] = types
         if row[3] != "":
             card["subtypes"] = row[3].split(" ")
+
+        if row[5] != "":
+            pt = row[5].split("/")
+            if len(pt) >= 2:
+                card["power"] = pt[0]
+                card["toughness"] = pt[1]
+            else:
+                if "Planeswalker" in types:
+                    card["loyalty"] = row[5]
+                elif "Battle" in types:
+                    card["defense"] = row[5]
+                else:
+                    card["pt"] = row[5]
 
         # create "type"
         fulltypes = row[2]

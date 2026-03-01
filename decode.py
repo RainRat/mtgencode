@@ -165,7 +165,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             namestr = truename + ': ' + str(dist) + '\n'
         return namestr
 
-    def writecards(writer, for_html=False, for_md=False, for_summary=False):
+    def writecards(writer, for_html=False, for_md=False, for_summary=False, for_mse=False):
         success_count = 0
         fail_count = 0
         if for_mse:
@@ -184,7 +184,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 writer.write('<div id="' + utils.segment_ids[i] + '">')
                 for card in segments[i]:
                     try:
-                        writecard(writer, card, for_html=True)
+                        writecard(writer, card, for_html=True, for_mse=for_mse)
                         success_count += 1
                     except Exception:
                         fail_count += 1
@@ -211,7 +211,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                         divider = utils.colorize(divider, utils.Ansi.BOLD + utils.Ansi.CYAN)
                     writer.write(divider + '\n')
 
-                writecard(writer, card, for_md=for_md, for_summary=for_summary)
+                writecard(writer, card, for_md=for_md, for_summary=for_summary, for_mse=for_mse)
                 success_count += 1
                 first = False
             except Exception:
@@ -223,7 +223,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         return success_count, fail_count
 
-    def writecard(writer, card, for_html=False, for_md=False, for_summary=False):
+    def writecard(writer, card, for_html=False, for_md=False, for_summary=False, for_mse=False):
         try:
             if for_mse:
                 writer.write(card.to_mse())
@@ -343,21 +343,21 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             if verbose:
                 print('Writing text output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
-                s, f = writecards(ofile)
+                s, f = writecards(ofile, for_mse=for_mse)
                 total_success += s
                 total_fail += f
         if summary_out:
             if verbose:
                 print('Writing summary output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
-                s, f = writecards(ofile, for_summary=True)
+                s, f = writecards(ofile, for_summary=True, for_mse=for_mse)
                 total_success += s
                 total_fail += f
         if md_out:
             if verbose:
                 print('Writing markdown output to: ' + oname, file=sys.stderr)
             with open(oname, 'w', encoding='utf8') as ofile:
-                s, f = writecards(ofile, for_md=True)
+                s, f = writecards(ofile, for_md=True, for_mse=for_mse)
                 total_success += s
                 total_fail += f
         if html:
@@ -367,7 +367,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             if verbose:
                 print('Writing html output to: ' + fname, file=sys.stderr)
             with open(fname, 'w', encoding='utf8') as ofile:
-                s, f = writecards(ofile, for_html=True)
+                s, f = writecards(ofile, for_html=True, for_mse=for_mse)
                 total_success += s
                 total_fail += f
         if json_out:
@@ -436,7 +436,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
             # Write cards to the temporary 'set' file
             with open('set', 'w', encoding='utf8') as ofile:
-                s, f = writecards(ofile)
+                s, f = writecards(ofile, for_mse=for_mse)
                 total_success += s
                 total_fail += f
 
@@ -494,7 +494,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             sys.stdout.flush()
         else:
             # Correctly propagate for_html=html, for_md=md_out, for_summary=summary_out
-            s, f = writecards(sys.stdout, for_html=html, for_md=md_out, for_summary=summary_out)
+            s, f = writecards(sys.stdout, for_html=html, for_md=md_out, for_summary=summary_out, for_mse=for_mse)
             total_success += s
             total_fail += f
         sys.stdout.flush()

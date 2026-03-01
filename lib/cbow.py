@@ -44,16 +44,20 @@ def read_vector_file(fname):
         M = []
         for b in range(0,words):
             a = 0
+            word_bytes = bytearray()
             while True:
                 c = f.read(1)
                 if len(c) == 0 or c == b' ':
                     break
                 if a < max_w - 1:
-                    # Ensure we store strings
-                    char = c.decode('utf-8', errors='replace')
-                    vocab[b * max_w + a] = char
-                    if char != '\n':
-                        a += 1
+                    word_bytes.append(c[0])
+                    a += 1
+            
+            word_str = word_bytes.decode('utf-8', errors='replace')
+            for i, char in enumerate(word_str):
+                if i < max_w:
+                    vocab[b * max_w + i] = char
+            
             tmp = list(struct.unpack('f'*size,f.read(4 * size)))
             length = math.sqrt(sum([tmp[i] * tmp[i] for i in range(0,len(tmp))]))
             for i in range(0,len(tmp)):
