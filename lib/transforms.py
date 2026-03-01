@@ -695,9 +695,13 @@ def text_unpass_2_counters(s):
     for m in reversed(matches):
         s = s[:m.start()] + s[m.end():]
         
-    # Replace counter markers with extracted types
-    for t in types:
-        s = s.replace(counter_marker, t, 1)
+    # Replace counter markers with extracted types.
+    # If there is only one type, we can replace all occurrences to handle deduplicated headers.
+    if len(types) == 1:
+        s = s.replace(counter_marker, types[0])
+    else:
+        for t in types:
+            s = s.replace(counter_marker, t, 1)
 
     return s
 
