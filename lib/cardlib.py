@@ -1336,6 +1336,64 @@ class Card:
 
         return outstr
 
+    def to_markdown_row(self):
+        """Returns a Markdown table row representation of the card."""
+
+        def get_fields(card):
+            # Name
+            name = titlecase(card.name)
+
+            # Cost
+            cost = card.cost.format()
+            if cost == '_NOCOST_':
+                cost = ''
+
+            # Type
+            supertypes = [titlecase(s) for s in card.supertypes]
+            types = [titlecase(t) for t in card.types]
+            typeline = ' '.join(supertypes + types)
+            if card.subtypes:
+                typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in card.subtypes])
+
+            # Stats (P/T or Loyalty/Defense)
+            stats = ''
+            if card.pt:
+                stats = utils.from_unary(card.pt)
+            elif card.loyalty:
+                loyalty = utils.from_unary(card.loyalty)
+                if any('battle' in t.lower() for t in card.types):
+                    stats = f'[[{loyalty}]]'
+                else:
+                    stats = f'({loyalty})'
+
+            # Text
+            text = card.get_text(force_unpass=True).replace('\n', '<br>')
+
+            # Rarity
+            rarity = card.rarity
+            if rarity in utils.json_rarity_unmap:
+                rarity = utils.json_rarity_unmap[rarity]
+
+            return name, cost, typeline, stats, text, rarity
+
+        name, cost, typeline, stats, text, rarity = get_fields(self)
+
+        if self.bside:
+            b_name, b_cost, b_typeline, b_stats, b_text, b_rarity = get_fields(self.bside)
+            name = f"{name} // {b_name}"
+            cost = f"{cost} // {b_cost}"
+            typeline = f"{typeline} // {b_typeline}"
+            stats = f"{stats} // {b_stats}" if stats or b_stats else ""
+            text = f"{text}<br>---<br>{b_text}"
+            if b_rarity and b_rarity != rarity:
+                rarity = f"{rarity} // {b_rarity}"
+
+        # Escape pipe characters and ensure no actual newlines break the row
+        fields = [name, cost, typeline, stats, text, rarity]
+        fields = [f.replace('|', '\\|').replace('\n', ' ') for f in fields]
+
+        return f"| {' | '.join(fields)} |"
+
     def vectorize(self):
         """Vectorizes the card data into a string format suitable for machine learning.
 

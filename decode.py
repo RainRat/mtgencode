@@ -23,7 +23,7 @@ from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          gatherer = True, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, summary_out = False, deck_out = False, quiet=False,
+         creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, md_table_out = False, summary_out = False, deck_out = False, quiet=False,
          report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None,
          grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
          grep_text=None, vgrep_text=None,
@@ -34,7 +34,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
-    if not (html or text or for_mse or json_out or jsonl_out or csv_out or md_out or summary_out or deck_out):
+    if not (html or text or for_mse or json_out or jsonl_out or csv_out or md_out or md_table_out or summary_out or deck_out):
         if oname:
             if oname.endswith('.html'):
                 html = True
@@ -46,6 +46,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 csv_out = True
             elif oname.endswith('.md'):
                 md_out = True
+            elif oname.endswith('.mdt'):
+                md_table_out = True
             elif oname.endswith('.sum') or oname.endswith('.summary'):
                 summary_out = True
             elif oname.endswith('.mse-set'):
@@ -59,7 +61,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     # Mutually exclusive output formats are now enforced by argparse in main block,
     # but we keep this check for programmatic access safety.
-    if sum([bool(html), bool(for_mse), bool(json_out), bool(jsonl_out), bool(text), bool(csv_out), bool(md_out), bool(summary_out), bool(deck_out)]) > 1:
+    if sum([bool(html), bool(for_mse), bool(json_out), bool(jsonl_out), bool(text), bool(csv_out), bool(md_out), bool(md_table_out), bool(summary_out), bool(deck_out)]) > 1:
         # If user explicitly requested multiple formats programmatically, we warn or error.
         # However, argparse logic below ensures text defaults to True only if others are False.
         # But if someone calls main() directly with multiple True, we should respect that or fail.
@@ -165,9 +167,12 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             namestr = truename + ': ' + str(dist) + '\n'
         return namestr
 
-    def writecards(writer, for_html=False, for_md=False, for_summary=False, for_mse=False):
+    def writecards(writer, for_html=False, for_md=False, for_md_table=False, for_summary=False, for_mse=False):
         success_count = 0
         fail_count = 0
+        if for_md_table:
+            writer.write("| Name | Cost | Type | Stats | Rules Text | Rarity |\n")
+            writer.write("| :--- | :--- | :--- | :--- | :--- | :--- |\n")
         if for_mse:
             # have to prepend a massive chunk of formatting info
             writer.write(utils.mse_prepend)
@@ -211,7 +216,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                         divider = utils.colorize(divider, utils.Ansi.BOLD + utils.Ansi.CYAN)
                     writer.write(divider + '\n')
 
-                writecard(writer, card, for_md=for_md, for_summary=for_summary, for_mse=for_mse)
+                writecard(writer, card, for_md=for_md, for_md_table=for_md_table, for_summary=for_summary, for_mse=for_mse)
                 success_count += 1
                 first = False
             except Exception:
@@ -223,8 +228,11 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         return success_count, fail_count
 
-    def writecard(writer, card, for_html=False, for_md=False, for_summary=False, for_mse=False):
+    def writecard(writer, card, for_html=False, for_md=False, for_md_table=False, for_summary=False, for_mse=False):
         try:
+            if for_md_table:
+                writer.write(card.to_markdown_row() + '\n')
+                return
             if for_mse:
                 writer.write(card.to_mse())
                 fstring = ''
@@ -360,6 +368,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 s, f = writecards(ofile, for_md=True, for_mse=for_mse)
                 total_success += s
                 total_fail += f
+        if md_table_out:
+            if verbose:
+                print('Writing markdown table output to: ' + oname, file=sys.stderr)
+            with open(oname, 'w', encoding='utf8') as ofile:
+                s, f = writecards(ofile, for_md_table=True, for_mse=for_mse)
+                total_success += s
+                total_fail += f
         if html:
             fname = oname
             if not fname.endswith('.html'):
@@ -493,8 +508,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                     total_fail += 1
             sys.stdout.flush()
         else:
-            # Correctly propagate for_html=html, for_md=md_out, for_summary=summary_out
-            s, f = writecards(sys.stdout, for_html=html, for_md=md_out, for_summary=summary_out, for_mse=for_mse)
+            # Correctly propagate for_html=html, for_md=md_out, for_md_table=md_table_out, for_summary=summary_out
+            s, f = writecards(sys.stdout, for_html=html, for_md=md_out, for_md_table=md_table_out, for_summary=summary_out, for_mse=for_mse)
             total_success += s
             total_fail += f
         sys.stdout.flush()
@@ -529,6 +544,8 @@ if __name__ == '__main__':
                            help='Generate a CSV file (Auto-detected for .csv).')
     fmt_group.add_argument('--md', action='store_true',
                            help='Generate a Markdown file (Auto-detected for .md).')
+    fmt_group.add_argument('--md-table', '--mdt', action='store_true',
+                           help='Generate a Markdown table file (Auto-detected for .mdt).')
     fmt_group.add_argument('--summary', action='store_true',
                            help='Generate a compact one-line summary for each card (Auto-detected for .sum or .summary).')
     fmt_group.add_argument('--deck', '--decklist', action='store_true',
@@ -640,7 +657,7 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
-         json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, summary_out = args.summary, deck_out = args.deck, quiet=args.quiet,
+         json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, md_table_out = args.md_table, summary_out = args.summary, deck_out = args.deck, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep,
          sort=args.sort, vgrep=args.vgrep,
          grep_name=args.grep_name, vgrep_name=args.exclude_name,
