@@ -301,10 +301,11 @@ def fields_from_json(src_json, linetrans = True):
     else:
         parsed = False
 
-    if 'loyalty' in src_json:
-        fields[field_loyalty] = [(-1, utils.to_unary(str(src_json['loyalty'])))]
-    elif 'defense' in src_json:
-        fields[field_loyalty] = [(-1, utils.to_unary(str(src_json['defense'])))]
+    loyalty_val = src_json.get('loyalty')
+    if loyalty_val is None:
+        loyalty_val = src_json.get('defense')
+    if loyalty_val is not None:
+        fields[field_loyalty] = [(-1, utils.to_unary(str(loyalty_val)))]
 
     p_t = ''
     parsed_pt = True
