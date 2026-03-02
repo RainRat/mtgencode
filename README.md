@@ -188,6 +188,14 @@ When you run `encode.py`, the output is converted into a specialized text format
 To help the AI count, numbers are represented as a sequence of symbols instead of digits.
 *   **Marker (`&`)**: Indicates the start of a number.
 *   **Counter (`^`)**: Each `^` represents 1.
+*   **Limits**: Standard unary sequences are capped at 20 (`&^^^^^^^^^^^^^^^^^^^^`).
+*   **Large Numbers**: Specific large values are represented by words to save space:
+    *   25 = `twenty~five`
+    *   30 = `thirty`
+    *   40 = `forty`
+    *   50 = `fifty`
+    *   100 = `one hundred`
+    *   200 = `two hundred`
 *   **Examples**:
     *   `&^` = 1
     *   `&^^` = 2
