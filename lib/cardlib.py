@@ -711,6 +711,14 @@ class Card:
         # 9.5. Symbols unpass (called AFTER sentencecase to avoid color corruption)
         mtext = utils.from_symbols(mtext, for_forum, for_html, ansi_color=ansi_color)
 
+        if mse:
+            # Handle the +X / -X loyalty cost case where X becomes + / - during unary unpass
+            # if X was misinterpreted as 0 by Manacost/Manatext.
+            # This is a bit of a hack but ensures loyalty costs are correctly formatted for MSE.
+            mtext = re.sub(r'^\+\s*:', '+X:', mtext, flags=re.MULTILINE)
+            mtext = re.sub(r'^−\s*:', '−X:', mtext, flags=re.MULTILINE)
+            mtext = re.sub(r'^-\s*:', '-X:', mtext, flags=re.MULTILINE)
+
         # 10. Final formatting via Manatext
         newtext = Manatext('')
         newtext.text = mtext
@@ -1302,17 +1310,18 @@ class Card:
 
             # set up the loyalty cost fields using regex to find how many there are.
             i = 0
-            lcost_regex = r'([-−+−]?\d+): (.*)' # 1+ figures, might be 0.
+            lcost_regex = r'([-−+−]?[\dxX]+): (.*)' # 1+ figures or X, might be 0.
 
             abilities = []
             for line in newtext.split('\n'):
-                match = re.match(lcost_regex, line)
+                # Handle leading spaces that might be present in text_unpass_7_newlines result
+                match = re.match(r'\s*' + lcost_regex, line)
                 if match:
                     i += 1
                     outstr += '\tloyalty cost ' + str(i) + ': ' + match.group(1) + '\n'
                     abilities.append(match.group(2))
                 elif line:
-                    abilities.append(line)
+                    abilities.append(line.strip())
 
             # We need to uppercase again, because MSE won't magically capitalize for us
             # like it does after semicolons.
