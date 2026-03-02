@@ -155,6 +155,19 @@ def test_text_unpass_2_counters_multiple():
     expected = "put a charge counter on it. remove a charge counter."
     assert transforms.text_unpass_2_counters(input_text) == expected
 
+def test_text_pass_5_counters_mixed_types():
+    input_text = "put a charge counter, another charge counter, and a time counter."
+    encoded = transforms.text_pass_5_counters(input_text)
+
+    headers = [line for line in encoded.split('\n') if line.startswith('countertype')]
+    assert len(headers) == 3
+    assert headers[0] == "countertype % charge"
+    assert headers[1] == "countertype % charge"
+    assert headers[2] == "countertype % time"
+
+    decoded = transforms.text_unpass_2_counters(encoded)
+    assert decoded == input_text
+
 def test_text_unpass_3_uncast():
     # "uncast" -> "counter"
     assert transforms.text_unpass_3_uncast("uncast target.") == "counter target."

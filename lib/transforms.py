@@ -350,14 +350,16 @@ def text_pass_5_counters(s):
 
     s = counters_regex.sub(replace_counter, s)
 
-    # deduplicate usedcounters while preserving order of first appearance
-    unique_used = list(dict.fromkeys(usedcounters))
+    if usedcounters:
+        # If there's only one type of counter, we can deduplicate the headers.
+        # This keeps the output cleaner for the most common cases and is handled
+        # specially by the decoder.
+        if len(set(usedcounters)) == 1:
+            usedcounters = [usedcounters[0]]
 
-    # we haven't done newline replacement yet, so use actual newlines
-    if unique_used:
-        # prepend a countertype line for each unique counter used
+        # we haven't done newline replacement yet, so use actual newlines
         header = ''
-        for counter in unique_used:
+        for counter in usedcounters:
              header += 'countertype ' + counter_marker + ' ' + counter.split()[0] + '\n'
         s = header + s
 
