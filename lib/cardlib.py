@@ -916,11 +916,12 @@ class Card:
             }
             indicator = rarity_map.get(r.lower() if hasattr(r, 'lower') else r, r[0].upper() if r else '?')
 
+            indicator = f'[{indicator}]'
             if ansi_color:
                 color = self._get_rarity_ansi_color(r)
                 indicator = utils.colorize(indicator, color)
 
-            rarity_indicator = f'[{indicator}] '
+            rarity_indicator = f'{indicator} '
 
         # Name
         cardname = titlecase(self.name)
@@ -967,7 +968,7 @@ class Card:
             res += f' \u2022 {stats}'
 
         if self.bside:
-            res += utils.bsidesep + self.bside.summary(ansi_color=ansi_color)
+            res += ' // ' + self.bside.summary(ansi_color=ansi_color)
 
         return res
 
@@ -1082,16 +1083,18 @@ class Card:
         if gatherer:
             if self.__dict__[field_pt]:
                 pt = utils.from_unary(self.__dict__[field_pt])
-                if ansi_color: pt = utils.colorize(pt, utils.Ansi.RED)
-                outstr += ' (' + pt + ')'
+                pt_display = f'({pt})'
+                if ansi_color: pt_display = utils.colorize(pt_display, utils.Ansi.RED)
+                outstr += ' ' + pt_display
 
             if self.__dict__[field_loyalty]:
                 loyalty = utils.from_unary(self.__dict__[field_loyalty])
-                if ansi_color: loyalty = utils.colorize(loyalty, utils.Ansi.RED)
                 if 'battle' in self.types:
-                    outstr += ' [[' + loyalty + ']]'
+                    loy_display = f'[[{loyalty}]]'
                 else:
-                    outstr += ' ((' + loyalty + '))'
+                    loy_display = f'(({loyalty}))'
+                if ansi_color: loy_display = utils.colorize(loy_display, utils.Ansi.RED)
+                outstr += ' ' + loy_display
 
         if formatted_mtext:
             # Add a blank line before the rules text for better readability
@@ -1103,16 +1106,18 @@ class Card:
         if not gatherer:
             if self.__dict__[field_pt]:
                 pt = utils.from_unary(self.__dict__[field_pt])
-                if ansi_color: pt = utils.colorize(pt, utils.Ansi.RED)
-                outstr += linebreak + '(' + pt + ')'
+                pt_display = f'({pt})'
+                if ansi_color: pt_display = utils.colorize(pt_display, utils.Ansi.RED)
+                outstr += linebreak + pt_display
 
             if self.__dict__[field_loyalty]:
                 loyalty = utils.from_unary(self.__dict__[field_loyalty])
-                if ansi_color: loyalty = utils.colorize(loyalty, utils.Ansi.RED)
                 if 'battle' in self.types:
-                    outstr += linebreak + '[[' + loyalty + ']]'
+                    loy_display = f'[[{loyalty}]]'
                 else:
-                    outstr += linebreak + '((' + loyalty + '))'
+                    loy_display = f'(({loyalty}))'
+                if ansi_color: loy_display = utils.colorize(loy_display, utils.Ansi.RED)
+                outstr += linebreak + loy_display
 
         if vdump and self.__dict__[field_other]:
             outstr += linebreak
@@ -1143,7 +1148,12 @@ class Card:
 
         if self.bside:
             outstr += linebreak
-            if not for_html:
+            if not for_html and not for_forum and not for_md:
+                divider = "~~~~ (B-Side) " + "~" * 21
+                if ansi_color:
+                    divider = utils.colorize(divider, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                outstr += divider + linebreak
+            elif not for_html:
                 outstr += utils.dash_marker * 8 + linebreak
             outstr += self.bside.format(gatherer=gatherer, for_forum=for_forum and not for_html, for_html=for_html, vdump=vdump, ansi_color=ansi_color, for_md=for_md)
 

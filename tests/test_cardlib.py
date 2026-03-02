@@ -112,7 +112,7 @@ def test_card_format(sample_card_json):
     expected_name = utils.colorize("Ornithopter", utils.Ansi.BOLD + utils.Ansi.CYAN)
     expected_cost = utils.colorize("{0}", utils.Ansi.BOLD)
     expected_type = utils.colorize("Artifact Creature ~ Thopter", utils.Ansi.GREEN)
-    expected_pt = utils.colorize("0/2", utils.Ansi.RED)
+    expected_pt = utils.colorize("(0/2)", utils.Ansi.RED)
     expected_rarity = utils.colorize("uncommon", utils.Ansi.BOLD + utils.Ansi.CYAN)
 
     # Construction of default format with colors
@@ -120,7 +120,7 @@ def test_card_format(sample_card_json):
         f"{expected_name} {expected_cost}\n"
         f"{expected_type} ({expected_rarity})\n\n"
         "Flying\n"
-        f"({expected_pt})"
+        f"{expected_pt}"
     )
     assert colored_output == expected_colored_output
 
@@ -137,9 +137,9 @@ def test_card_summary(sample_card_json):
     expected_cost = utils.colorize("{0}", utils.Ansi.BOLD)
     expected_type = utils.colorize("Artifact Creature — Thopter", utils.Ansi.GREEN)
     expected_pt = utils.colorize("(0/2)", utils.Ansi.RED)
-    expected_rarity_indicator = utils.colorize("U", utils.Ansi.BOLD + utils.Ansi.CYAN)
+    expected_rarity_indicator = utils.colorize("[U]", utils.Ansi.BOLD + utils.Ansi.CYAN)
 
-    expected_colored_summary = f"[{expected_rarity_indicator}] {expected_name} {expected_cost} • {expected_type} • {expected_pt}"
+    expected_colored_summary = f"{expected_rarity_indicator} {expected_name} {expected_cost} • {expected_type} • {expected_pt}"
     assert colored_output == expected_colored_summary
 
 def test_card_summary_status_indicators():
