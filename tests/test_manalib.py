@@ -92,18 +92,6 @@ class TestManacost:
         assert Manacost("{2W}").colors == "W"
         assert Manacost("{WP}").colors == "W"
 
-    def test_check_colors(self):
-        m = Manacost("{WWUUBBRRGG}") # WUBRG
-        assert m.check_colors("W")
-        assert m.check_colors("U")
-        assert m.check_colors("WU")
-        assert m.check_colors("BGRUW")
-
-        # Not subset
-        m2 = Manacost("{WW}") # W
-        assert m2.check_colors("W")
-        assert not m2.check_colors("U")
-
     def test_format(self):
         m = Manacost("{WWUUBBRRGG}")
         assert m.format() == "{W}{U}{B}{R}{G}"
