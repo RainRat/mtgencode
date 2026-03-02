@@ -503,6 +503,21 @@ def _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
 
     return cards
 
+def _hydrate_decklist(decklist_names, verbose, linetrans,
+                       exclude_sets, exclude_types, exclude_layouts, report_fobj):
+    """
+    Attempts to resolve card names in a decklist against data/AllPrintings.json.
+    """
+    default_data = os.path.join(os.path.dirname(__file__), '../data/AllPrintings.json')
+    if os.path.exists(default_data):
+        if verbose:
+            print(f'Auto-hydrating decklist using {default_data}', file=sys.stderr)
+        json_srcs, bad_sets = mtg_open_json(default_data, verbose=False)
+        return _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                   decklist_names=decklist_names)
+    return []
+
 def _process_text_cards(txt_cards, decklist_names, verbose, report_fobj=None):
     """
     Processes a list of Card objects from encoded text, applying decklist filters/multipliers.
@@ -566,6 +581,17 @@ def mtg_open_file(fname, verbose = False,
                   colors=None, cmcs=None,
                   shuffle=False, seed=None,
                   decklist_file=None):
+    """
+    High-level entry point for loading card data from various formats.
+    Supported formats: JSON, JSONL, CSV, Magic Set Editor (.mse-set),
+    and standard MTG decklists (.txt, .deck, .dek).
+
+    Decklist support includes "auto-hydration": if a decklist is provided as
+    the primary input and data/AllPrintings.json exists, the tool will
+    automatically resolve card names into full Card objects.
+
+    Returns a list of cardlib.Card objects.
+    """
 
     cards = []
     valid = 0
@@ -719,14 +745,33 @@ def mtg_open_file(fname, verbose = False,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                    decklist_names=decklist_names)
 
-    # Encoded Text File Handling
+    # Encoded Text or Decklist File Handling
     elif fname == '-' or (not fname.endswith('.json') and not fname.endswith('.mse-set')):
         if fname == '-':
             text = sys.stdin.read()
             # Stdin Format Detection
             stripped = text.strip()
-            # 1. JSON / JSONL Detection
-            if stripped.startswith('{') or stripped.startswith('['):
+
+            # 1. Decklist Detection
+            # If it looks like a decklist (starts with a count like "4 Grizzly Bears")
+            # and isn't obviously encoded text (doesn't have field separators)
+            if re.match(r'^\d+\s+', stripped) and utils.fieldsep not in stripped:
+                if verbose:
+                    print('Detected Decklist input from stdin.', file=sys.stderr)
+                if not decklist_names:
+                    # We save to a temp file because parse_decklist expects a path
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tf:
+                        tf.write(text)
+                        tf_path = tf.name
+                    decklist_names = parse_decklist(tf_path)
+                    os.remove(tf_path)
+
+                cards = _hydrate_decklist(decklist_names, verbose, linetrans,
+                                           exclude_sets, exclude_types, exclude_layouts, report_fobj)
+
+            # 2. JSON / JSONL Detection
+            if not cards and (stripped.startswith('{') or stripped.startswith('[')):
                 try:
                     # Try regular JSON first
                     jobj = json.loads(text)
@@ -745,7 +790,7 @@ def mtg_open_file(fname, verbose = False,
                         cards = _process_json_srcs(jsonl_srcs, bad_sets, verbose, linetrans,
                                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                                    decklist_names=decklist_names)
-            # 2. CSV Detection
+            # 3. CSV Detection
             if not cards and stripped.startswith('name,'):
                 try:
                     reader = csv.DictReader(io.StringIO(text))
@@ -758,8 +803,32 @@ def mtg_open_file(fname, verbose = False,
                 except Exception:
                     pass
         else:
-            with open(fname, 'rt', encoding='utf8') as f:
-                text = f.read()
+            # Check if it's a decklist file based on extension or content
+            is_decklist = fname.endswith('.deck') or fname.endswith('.dek')
+            if not is_decklist:
+                try:
+                    with open(fname, 'rt', encoding='utf8') as f:
+                        # Check first few lines for decklist pattern
+                        for _ in range(5):
+                            line = f.readline()
+                            if not line: break
+                            if re.match(r'^\d+\s+', line.strip()):
+                                is_decklist = True
+                                break
+                except UnicodeDecodeError:
+                    pass
+
+            if is_decklist and not decklist_names:
+                if verbose:
+                    print(f'Detected {fname} as a decklist.', file=sys.stderr)
+                decklist_names = parse_decklist(fname)
+
+                cards = _hydrate_decklist(decklist_names, verbose, linetrans,
+                                           exclude_sets, exclude_types, exclude_layouts, report_fobj)
+
+            if not cards:
+                with open(fname, 'rt', encoding='utf8') as f:
+                    text = f.read()
 
         if not cards:
             if verbose:
