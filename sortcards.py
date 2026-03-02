@@ -101,7 +101,7 @@ def sortcards(cards, verbose=False, use_summary=False, use_color=False, fmt_orde
             # But the original code did a replace to visualize the split.
             # Let's check if the raw string has the separator.
             if utils.bsidesep in card_str:
-                 card_str = card_str.replace(utils.bsidesep, '|\n~~~~~~~~~~~~~~~~\n|')
+                 card_str = card_str.replace(utils.bsidesep, ' // ')
             classes['multicards'].append(card_str)
             continue
         
