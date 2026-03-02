@@ -45,7 +45,7 @@ def select_card(cards, stats, i):
 def compare_to_real(card, realcard):
     ctypes = ' '.join(sorted(card.types))
     rtypes = ' '.join(sorted(realcard.types))
-    return ctypes == rtypes and realcard.cost.check_colors(card.cost.colors)
+    return ctypes == rtypes and all(c in realcard.cost.colors for c in card.cost.colors)
 
 def writecard(card, name, writer):
     gatherer = False
