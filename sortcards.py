@@ -401,35 +401,55 @@ Supports any encoding format supported by encode.py/decode.py.""",
         elif args.color is None and sys.stderr.isatty():
             use_color = True
 
+        # Pre-calculate which headers and categories to show
+        show_items = {}
+        items_list = list(classes.items())
+        for i, (cardclass, card_list) in enumerate(items_list):
+            if card_list is None:
+                # Section header - check if any following category in this section has cards
+                has_cards = False
+                for j in range(i + 1, len(items_list)):
+                    if items_list[j][1] is None:
+                        break
+                    if items_list[j][1]:
+                        has_cards = True
+                        break
+                show_items[cardclass] = has_cards
+            else:
+                show_items[cardclass] = len(card_list) > 0
+
         # Print summary (to stderr to separate from data)
         # Summary is shown unless --quiet is specified
-        for cardclass, card_list in classes.items():
-            if card_list is None:
-                if not args.quiet:
+        if not args.quiet:
+            for cardclass, card_list in classes.items():
+                if not show_items[cardclass]:
+                    continue
+
+                if card_list is None:
                     header = cardclass
                     if use_color:
                         header = utils.colorize(header, utils.Ansi.BOLD + utils.Ansi.CYAN)
                     print(header, file=sys.stderr)
-            else:
-                if not args.quiet:
+                else:
                     name = cardclass
                     count = str(len(card_list))
                     if use_color:
-                        if len(card_list) > 0:
-                            count = utils.colorize(count, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                        count = utils.colorize(count, utils.Ansi.BOLD + utils.Ansi.GREEN)
                     print(f'  {name}: {count}', file=sys.stderr)
 
         # Write content
         for cardclass, card_list in classes.items():
+            if not show_items[cardclass]:
+                continue
+
             if card_list is None:
                 outputter.write(f'{cardclass}\n')
             else:
                 classlen = len(card_list)
-                if classlen > 0:
-                    outputter.write(f'[spoiler={cardclass}: {classlen} cards]\n')
-                    for card_str in card_list:
-                        outputter.write(f'{card_str}\n\n')
-                    outputter.write('[/spoiler]\n')
+                outputter.write(f'[spoiler={cardclass}: {classlen} cards]\n')
+                for card_str in card_list:
+                    outputter.write(f'{card_str}\n\n')
+                outputter.write('[/spoiler]\n')
 
     finally:
         if ofile:
