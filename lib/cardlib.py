@@ -567,6 +567,43 @@ class Card:
             color += utils.Ansi.RED
         return color
 
+    @property
+    def is_battle(self):
+        """Returns True if the card is a Battle."""
+        return any('battle' in t.lower() for t in self.types)
+
+    @property
+    def is_planeswalker(self):
+        """Returns True if the card is a Planeswalker."""
+        return any('planeswalker' in t.lower() for t in self.types)
+
+    def _get_pt_display(self, ansi_color=False, unary=False, vectorize=False):
+        """Returns the formatted P/T display for the card."""
+        if not self.pt:
+            return ''
+        if vectorize:
+            return ' '.join(['(' + s + ')' for s in self.pt.replace('/', '/ /').split()])
+        pt = self.pt if unary else utils.from_unary(self.pt)
+        res = f'({pt})'
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.RED)
+        return res
+
+    def _get_loyalty_display(self, ansi_color=False, double_parens=False, unary=False):
+        """Returns the formatted loyalty or defense display for the card."""
+        if not self.loyalty:
+            return ''
+        loyalty = self.loyalty if unary else utils.from_unary(self.loyalty)
+        if self.is_battle:
+            res = f'[[{loyalty}]]'
+        elif double_parens:
+            res = f'(({loyalty}))'
+        else:
+            res = f'({loyalty})'
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.RED)
+        return res
+
     # These setters are invoked via name mangling, so they have to match 
     # the field names specified above to be used. Otherwise we just
     # always fall back to the (uninteresting) default handler.
@@ -947,20 +984,9 @@ class Card:
             typeline = utils.colorize(typeline, utils.Ansi.GREEN)
 
         # P/T or Loyalty
-        stats = ''
-        if self.pt:
-            pt = utils.from_unary(self.pt)
-            stats = f'({pt})'
-            if ansi_color:
-                stats = utils.colorize(stats, utils.Ansi.RED)
-        elif self.loyalty:
-            loyalty = utils.from_unary(self.loyalty)
-            if any('battle' in t.lower() for t in self.types):
-                stats = f'[[{loyalty}]]'
-            else:
-                stats = f'({loyalty})'
-            if ansi_color:
-                stats = utils.colorize(stats, utils.Ansi.RED)
+        stats = self._get_pt_display(ansi_color=ansi_color)
+        if not stats:
+            stats = self._get_loyalty_display(ansi_color=ansi_color)
 
         # Construct final summary string with consistent bullet separators
         res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
@@ -1081,19 +1107,12 @@ class Card:
             outstr += ' (' + rarity_display.lower() + ')'
 
         if gatherer:
-            if self.__dict__[field_pt]:
-                pt = utils.from_unary(self.__dict__[field_pt])
-                pt_display = f'({pt})'
-                if ansi_color: pt_display = utils.colorize(pt_display, utils.Ansi.RED)
+            pt_display = self._get_pt_display(ansi_color=ansi_color)
+            if pt_display:
                 outstr += ' ' + pt_display
 
-            if self.__dict__[field_loyalty]:
-                loyalty = utils.from_unary(self.__dict__[field_loyalty])
-                if 'battle' in self.types:
-                    loy_display = f'[[{loyalty}]]'
-                else:
-                    loy_display = f'(({loyalty}))'
-                if ansi_color: loy_display = utils.colorize(loy_display, utils.Ansi.RED)
+            loy_display = self._get_loyalty_display(ansi_color=ansi_color, double_parens=True)
+            if loy_display:
                 outstr += ' ' + loy_display
 
         if formatted_mtext:
@@ -1104,19 +1123,12 @@ class Card:
             outstr += linebreak + formatted_mtext
 
         if not gatherer:
-            if self.__dict__[field_pt]:
-                pt = utils.from_unary(self.__dict__[field_pt])
-                pt_display = f'({pt})'
-                if ansi_color: pt_display = utils.colorize(pt_display, utils.Ansi.RED)
+            pt_display = self._get_pt_display(ansi_color=ansi_color)
+            if pt_display:
                 outstr += linebreak + pt_display
 
-            if self.__dict__[field_loyalty]:
-                loyalty = utils.from_unary(self.__dict__[field_loyalty])
-                if 'battle' in self.types:
-                    loy_display = f'[[{loyalty}]]'
-                else:
-                    loy_display = f'(({loyalty}))'
-                if ansi_color: loy_display = utils.colorize(loy_display, utils.Ansi.RED)
+            loy_display = self._get_loyalty_display(ansi_color=ansi_color, double_parens=True)
+            if loy_display:
                 outstr += linebreak + loy_display
 
         if vdump and self.__dict__[field_other]:
@@ -1378,15 +1390,11 @@ class Card:
                 typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in card.subtypes])
 
             # Stats (P/T or Loyalty/Defense)
-            stats = ''
-            if card.pt:
-                stats = utils.from_unary(card.pt)
-            elif card.loyalty:
-                loyalty = utils.from_unary(card.loyalty)
-                if any('battle' in t.lower() for t in card.types):
-                    stats = f'[[{loyalty}]]'
-                else:
-                    stats = f'({loyalty})'
+            stats = card._get_pt_display()
+            if stats:
+                stats = stats[1:-1] # Remove parentheses
+            else:
+                stats = card._get_loyalty_display()
 
             # Text
             text = card.get_text(force_unpass=True).replace('\n', '<br>')
@@ -1441,16 +1449,13 @@ class Card:
         if self.__dict__[field_subtypes]:
             outstr += ' '.join(self.__dict__[field_subtypes]) + ' '
 
-        if self.__dict__[field_pt]:
-            outstr += ' '.join(['(' + s + ')' for s in self.__dict__[
-                               field_pt].replace('/', '/ /').split()])
-            outstr += ' '
-        
-        if self.__dict__[field_loyalty]:
-            if 'battle' in self.types:
-                outstr += '[[' + self.__dict__[field_loyalty] + ']] '
-            else:
-                outstr += '((' + self.__dict__[field_loyalty] + ')) '
+        pt_display = self._get_pt_display(unary=True, vectorize=True)
+        if pt_display:
+            outstr += pt_display + ' '
+
+        loyalty_display = self._get_loyalty_display(unary=True, double_parens=True)
+        if loyalty_display:
+            outstr += loyalty_display + ' '
             
         outstr += self.__dict__[field_text].vectorize()
 
