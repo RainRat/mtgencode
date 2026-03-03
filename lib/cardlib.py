@@ -1133,6 +1133,8 @@ class Card:
             for i, (idx, value) in enumerate(self.__dict__[field_other]):
                 if for_html and i > 0:
                     outstr += '<br>\n'
+                elif for_html:
+                    outstr += '<br>'
                 elif for_md and i > 0:
                     outstr += '  \n'
                 else:

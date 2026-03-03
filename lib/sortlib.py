@@ -36,8 +36,10 @@ def sort_type(card_set):
     sorting = ["creature", "enchantment", "instant", "sorcery", "artifact", "planeswalker"]
 
     def type_priority(card):
+        # Convert card types to lowercase for case-insensitive comparison
+        card_types_lower = [t.lower() for t in card.types]
         for i, card_type in enumerate(sorting):
-            if card_type in card.types:
+            if card_type in card_types_lower:
                 return i
         return len(sorting)
 
