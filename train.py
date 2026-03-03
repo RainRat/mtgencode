@@ -7,25 +7,79 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import argparse
+import re
+import random
 from tqdm import tqdm
 
+def augment_mana(text):
+    """
+    Finds mana costs in { } and shuffles symbols separated by ^.
+    Example: {3^W^U} -> {W^3^U}
+    """
+    def shuffle_mana(match):
+        content = match.group(1)
+        symbols = content.split('^')
+        random.shuffle(symbols)
+        return '{' + '^'.join(symbols) + '}'
+    
+    return re.sub(r'\{([^{}]+)\}', shuffle_mana, text)
+
+def augment_card(card_text, randomize_fields, randomize_mana):
+    """
+    Splits card by | and shuffles fields (except the last terminal field).
+    Also shuffles mana symbols within brackets if enabled.
+    """
+    if randomize_mana:
+        card_text = augment_mana(card_text)
+    
+    if randomize_fields:
+        fields = card_text.split('|')
+        if len(fields) > 1:
+            # The last field usually contains the body text and trailing newlines
+            terminal = fields[-1]
+            shufflable = fields[:-1]
+            random.shuffle(shufflable)
+            card_text = '|'.join(shufflable + [terminal])
+            
+    return card_text
+
 class CharDataset(Dataset):
-    def __init__(self, data, seq_len):
-        self.data = data
+    def __init__(self, raw_data, seq_len, randomize_fields=False, randomize_mana=False):
         self.seq_len = seq_len
-        self.chars = sorted(list(set(data)))
+        self.randomize_fields = randomize_fields
+        self.randomize_mana = randomize_mana
+        
+        # Split by double newline to identify discrete cards
+        self.cards = [c.strip() + '\n\n' for c in raw_data.split('\n\n') if c.strip()]
+        
+        # Create consistent vocab from raw data
+        self.chars = sorted(list(set(raw_data)))
         self.char_to_idx = {char: idx for idx, char in enumerate(self.chars)}
         self.idx_to_char = {idx: char for idx, char in enumerate(self.chars)}
         self.vocab_size = len(self.chars)
+        
+        self.data_str = ""
+        self.refresh_data()
+
+    def refresh_data(self):
+        """Augments cards and reconstructs the data string for the epoch."""
+        processed_cards = []
+        for card in self.cards:
+            processed_cards.append(augment_card(card, self.randomize_fields, self.randomize_mana))
+        
+        # Shuffle the order of cards in the dataset
+        random.shuffle(processed_cards)
+        self.data_str = "".join(processed_cards)
 
     def __len__(self):
-        return len(self.data) - self.seq_len
+        return len(self.data_str) - self.seq_len
 
     def __getitem__(self, idx):
-        x = self.data[idx : idx + self.seq_len]
-        y = self.data[idx + 1 : idx + self.seq_len + 1]
-        x_idx = torch.tensor([self.char_to_idx[char] for char in x], dtype=torch.long)
-        y_idx = torch.tensor([self.char_to_idx[char] for char in y], dtype=torch.long)
+        x_str = self.data_str[idx : idx + self.seq_len]
+        y_str = self.data_str[idx + 1 : idx + self.seq_len + 1]
+        
+        x_idx = torch.tensor([self.char_to_idx.get(c, 0) for c in x_str], dtype=torch.long)
+        y_idx = torch.tensor([self.char_to_idx.get(c, 0) for c in y_str], dtype=torch.long)
         return x_idx, y_idx
 
 class CharRNN(nn.Module):
@@ -36,6 +90,20 @@ class CharRNN(nn.Module):
         self.encoder = nn.Embedding(vocab_size, hidden_size)
         self.rnn = nn.LSTM(hidden_size, hidden_size, n_layers, dropout=dropout, batch_first=True)
         self.decoder = nn.Linear(hidden_size, vocab_size)
+        
+        self._apply_forget_gate_bias()
+
+    def _apply_forget_gate_bias(self):
+        """
+        Adds 1.0 to the forget gate bias (Jozefowicz et al., 2015).
+        In PyTorch LSTM, bias is [b_ig | b_fg | b_gg | b_og].
+        """
+        for name, param in self.rnn.named_parameters():
+            if 'bias' in name:
+                n = param.size(0)
+                # Forget gate is the second quarter of the bias vector
+                start, end = n // 4, n // 2
+                param.data[start:end].fill_(1.0)
 
     def forward(self, x, hidden):
         x = self.encoder(x)
@@ -52,9 +120,9 @@ def train(args):
     print(f"Using device: {device}")
 
     with open(args.infile, 'r', encoding='utf-8') as f:
-        data = f.read()
+        raw_data = f.read()
 
-    dataset = CharDataset(data, args.seq_len)
+    dataset = CharDataset(raw_data, args.seq_len, args.randomize_fields, args.randomize_mana)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
     model = CharRNN(dataset.vocab_size, args.hidden_size, args.n_layers, args.dropout).to(device)
@@ -72,6 +140,7 @@ def train(args):
 
     model.train()
     for epoch in range(start_epoch, args.epochs):
+        dataset.refresh_data() # Re-augment for each epoch
         total_loss = 0
         pbar = tqdm(dataloader, desc=f"Epoch {epoch+1}/{args.epochs}")
         for x, y in pbar:
@@ -115,31 +184,67 @@ def sample(args):
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
 
+    # Mapping of field indices (based on | count) to CLI arguments
+    whisper_map = {
+        1: args.name,
+        2: args.supertypes,
+        3: args.types,
+        4: args.loyalty,
+        5: args.subtypes,
+        6: args.rarity,
+        7: args.powertoughness,
+        8: args.manacost,
+        9: args.bodytext_prepend,
+        10: args.bodytext_append
+    }
+
     start_text = args.start_text if args.start_text else "|"
-    x = torch.tensor([[char_to_idx[c] for c in start_text]], dtype=torch.long).to(device)
+    x = torch.tensor([[char_to_idx.get(c, 0) for c in start_text]], dtype=torch.long).to(device)
     hidden = model.init_hidden(1, device)
     
     generated = start_text
+    field_count = start_text.count('|')
     
     with torch.no_grad():
-        for _ in range(args.length):
+        i = 0
+        while i < args.length:
             output, hidden = model(x, hidden)
             
-            # Use temperature
+            # Sample next character
             p = torch.softmax(output[0, -1] / args.temp, dim=0).cpu().numpy()
             char_idx = np.random.choice(vocab_size, p=p)
-            
             char = idx_to_char[char_idx]
+            
+            # Track field count
+            if char == '|':
+                field_count += 1
+            elif char == '\n':
+                field_count = 0
+            
             generated += char
             x = torch.tensor([[char_idx]], dtype=torch.long).to(device)
-            
+            i += 1
+
+            # Whispering logic: if a field is primed, force feed it
+            if char == '|' and field_count in whisper_map and whisper_map[field_count]:
+                whisper_text = whisper_map[field_count]
+                for w_char in whisper_text:
+                    w_idx = char_to_idx.get(w_char, 0)
+                    # Feed through model to update hidden state
+                    x = torch.tensor([[w_idx]], dtype=torch.long).to(device)
+                    output, hidden = model(x, hidden)
+                    generated += w_char
+                    i += 1
+                
     print(generated)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Modern character-level RNN for MTG training.")
+    parser = argparse.ArgumentParser(description="Advanced character-level RNN for MTG training with mtg-rnn features.")
     parser.add_argument("--mode", choices=["train", "sample"], default="train")
     parser.add_argument("--infile", type=str, default="data/output.txt", help="Encoded card file for training")
     parser.add_argument("--checkpoint", type=str, default="checkpoint.pt", help="File to save/load model")
+    
+    # Training args
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--seq_len", type=int, default=100)
@@ -148,11 +253,25 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--dropout", type=float, default=0.2)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--randomize_fields", action="store_true", help="Shuffle card fields during training")
+    parser.add_argument("--randomize_mana", action="store_true", help="Shuffle mana symbols during training")
     
     # Sample args
     parser.add_argument("--length", type=int, default=1000)
     parser.add_argument("--temp", type=float, default=0.8)
     parser.add_argument("--start_text", type=str, default="|")
+    
+    # Whispering / Priming args
+    parser.add_argument("--name", type=str, help="Force specific name")
+    parser.add_argument("--supertypes", type=str, help="Force specific supertypes")
+    parser.add_argument("--types", type=str, help="Force specific types")
+    parser.add_argument("--loyalty", type=str, help="Force specific loyalty")
+    parser.add_argument("--subtypes", type=str, help="Force specific subtypes")
+    parser.add_argument("--rarity", type=str, help="Force specific rarity")
+    parser.add_argument("--powertoughness", type=str, help="Force specific P/T")
+    parser.add_argument("--manacost", type=str, help="Force specific mana cost")
+    parser.add_argument("--bodytext_prepend", type=str, help="Force start of body text")
+    parser.add_argument("--bodytext_append", type=str, help="Force end of body text")
 
     args = parser.parse_args()
     
