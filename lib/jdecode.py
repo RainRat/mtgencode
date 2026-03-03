@@ -567,6 +567,7 @@ def _process_text_cards(txt_cards, decklist_names, verbose, report_fobj=None):
 
 def mtg_open_file(fname, verbose = False,
                   linetrans = True, fmt_ordered = cardlib.fmt_ordered_default,
+                  fmt_labeled = cardlib.fmt_labeled_default,
                   exclude_sets = default_exclude_sets,
                   exclude_types = default_exclude_types,
                   exclude_layouts = default_exclude_layouts,
@@ -654,7 +655,8 @@ def mtg_open_file(fname, verbose = False,
                 if utils.fieldsep in text:
                     for card_src in text.split(utils.cardsep):
                         if card_src:
-                            card = cardlib.Card(card_src, fmt_ordered=fmt_ordered, linetrans=linetrans)
+                            card = cardlib.Card(card_src, fmt_ordered=fmt_ordered,
+                                                fmt_labeled=fmt_labeled, linetrans=linetrans)
                             skip = False
                             for cardtype in card.types:
                                 if exclude_types(cardtype):
@@ -836,7 +838,8 @@ def mtg_open_file(fname, verbose = False,
 
             for card_src in text.split(utils.cardsep):
                 if card_src:
-                    card = cardlib.Card(card_src, fmt_ordered=fmt_ordered, linetrans=linetrans)
+                    card = cardlib.Card(card_src, fmt_ordered=fmt_ordered,
+                                        fmt_labeled=fmt_labeled, linetrans=linetrans)
 
                     # Apply exclusions to cards from encoded text
                     skip = False

@@ -22,6 +22,7 @@ from cbow import CBOW
 from namediff import Namediff
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
+         nolinetrans = False, nolabel = False,
          gatherer = True, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, md_table_out = False, summary_out = False, deck_out = False, quiet=False,
          report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None,
@@ -97,7 +98,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     else:
         raise ValueError('decode.py: unknown encoding: ' + encoding)
 
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, fmt_ordered=fmt_ordered, report_file=report_file, grep=grep, vgrep=vgrep,
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
+                                  fmt_ordered=fmt_ordered, fmt_labeled=None if nolabel else cardlib.fmt_labeled_default,
+                                  report_file=report_file, grep=grep, vgrep=vgrep,
                                   grep_name=grep_name, vgrep_name=vgrep_name,
                                   grep_types=grep_types, vgrep_types=vgrep_types,
                                   grep_text=grep_text, vgrep_text=vgrep_text,
@@ -560,6 +563,10 @@ if __name__ == '__main__':
                              "'noname' (No names), 'rfields' (Random field order), "
                              "'old' (Legacy), 'norarity' (No rarity), 'vec' (Numerical vectors), "
                              "or 'custom' (User-defined).")
+    content_group.add_argument('--nolabel', action='store_true',
+                        help="Input file does not have field labels (like '|cost|' or '|text|').")
+    content_group.add_argument('--nolinetrans', action='store_true',
+                        help='Input file does not use automatic line reordering.')
 
     # Gatherer formatting is on by default.
     parser.set_defaults(gatherer=True)
@@ -655,6 +662,7 @@ if __name__ == '__main__':
         args.limit = args.sample
 
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
+         nolinetrans = args.nolinetrans, nolabel = args.nolabel,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
          json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, md_table_out = args.md_table, summary_out = args.summary, deck_out = args.deck, quiet=args.quiet,

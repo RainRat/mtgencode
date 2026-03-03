@@ -91,7 +91,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
 
 class Datamine:
     # build the global indices
-    def __init__(self, card_srcs):
+    def __init__(self, cards_input):
         # global card pools
         self.unparsed_cards = []
         self.invalid_cards = []
@@ -141,11 +141,16 @@ class Datamine:
             'by_textlen' : self.by_textlen,
         }
 
-        for card_src in card_srcs:
+        for item in cards_input:
             # the empty card is not interesting
-            if not card_src:
+            if not item:
                 continue
-            card = Card(card_src)
+
+            if isinstance(item, Card):
+                card = item
+            else:
+                card = Card(item)
+
             if card.valid:
                 self.cards += [card]
                 self.allcards += [card]
