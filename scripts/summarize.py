@@ -20,7 +20,9 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
-def main(fname, verbose = True, outliers = False, dump_all = False, grep = None, use_color = None, limit = 0, json_out = False, vgrep = None,
+def main(fname, verbose = True, outliers = False, dump_all = False,
+         nolinetrans = False, nolabel = False,
+         grep = None, use_color = None, limit = 0, json_out = False, vgrep = None,
          grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
          grep_text=None, vgrep_text=None,
          grep_cost=None, vgrep_cost=None, grep_pt=None, vgrep_pt=None,
@@ -34,7 +36,9 @@ def main(fname, verbose = True, outliers = False, dump_all = False, grep = None,
 
     # Use the robust mtg_open_file for all loading and filtering.
     # We disable default exclusions to match original summarize.py behavior.
-    cards = jdecode.mtg_open_file(fname, verbose=verbose, grep=grep, vgrep=vgrep,
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
+                                  fmt_labeled=None if nolabel else cardlib.fmt_labeled_default,
+                                  grep=grep, vgrep=vgrep,
                                   grep_name=grep_name, vgrep_name=vgrep_name,
                                   grep_types=grep_types, vgrep_types=vgrep_types,
                                   grep_text=grep_text, vgrep_text=vgrep_text,
@@ -52,14 +56,7 @@ def main(fname, verbose = True, outliers = False, dump_all = False, grep = None,
     if limit > 0:
         cards = cards[:limit]
 
-    card_srcs = []
-    for card in tqdm(cards, disable=quiet or len(cards) < 5, desc="Analyzing cards", unit="card"):
-        if card.json:
-            card_srcs.append(card.json)
-        else:
-            card_srcs.append(card.raw if card.raw else card.encode())
-
-    mine = Datamine(card_srcs)
+    mine = Datamine(cards)
 
     # Determine if we should use color
     actual_use_color = False
@@ -94,11 +91,17 @@ if __name__ == '__main__':
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input card data (JSON, JSONL, CSV, MSE, ZIP, or MTG Decklist), an encoded file, or a directory. Defaults to stdin (-).')
-                        help='Input card data (JSON, CSV, MSE, or ZIP), an encoded file, or a directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the summary output. If not provided, output prints to the console. The format is automatically detected from the file extension (.json for JSON, otherwise text).')
     io_group.add_argument('--json', action='store_true',
                         help='Output statistics in JSON format (Auto-detected for .json).')
+
+    # Group: Encoding Options
+    enc_group = parser.add_argument_group('Encoding Options')
+    enc_group.add_argument('--nolabel', action='store_true',
+                        help="Input file does not have field labels (like '|cost|' or '|text|').")
+    enc_group.add_argument('--nolinetrans', action='store_true',
+                        help='Input file does not use automatic line reordering.')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
@@ -174,7 +177,9 @@ if __name__ == '__main__':
         args.shuffle = True
         args.limit = args.sample
 
-    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all, grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep,
+    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all,
+         nolinetrans = args.nolinetrans, nolabel = args.nolabel,
+         grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep,
          grep_name=args.grep_name, vgrep_name=args.exclude_name,
          grep_types=args.grep_type, vgrep_types=args.exclude_type,
          grep_text=args.grep_text, vgrep_text=args.exclude_text,

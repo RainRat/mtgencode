@@ -240,7 +240,110 @@ def sortcards(cards, verbose=False, use_summary=False, use_color=False, fmt_orde
     return classes
 
 
-def main():
+def main(fname, oname = None, verbose = True, encoding = 'std',
+         nolinetrans = False, nolabel = False,
+         use_summary = False, use_color = None, quiet = False,
+         limit = 0, grep = None, sort = None, vgrep = None,
+         grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
+         grep_text=None, vgrep_text=None,
+         grep_cost=None, vgrep_cost=None, grep_pt=None, vgrep_pt=None,
+         grep_loyalty=None, vgrep_loyalty=None,
+         sets = None, rarities = None, colors=None, cmcs=None,
+         shuffle = False, seed = None, decklist_file = None):
+
+    # Determine format
+    fmt_ordered = cardlib.fmt_ordered_default
+    if encoding == 'named':
+        fmt_ordered = cardlib.fmt_ordered_named
+    elif encoding == 'noname':
+        fmt_ordered = cardlib.fmt_ordered_noname
+    elif encoding == 'old':
+        fmt_ordered = cardlib.fmt_ordered_old
+    elif encoding == 'norarity':
+        fmt_ordered = cardlib.fmt_ordered_norarity
+
+    # Use the robust jdecode.mtg_open_file for loading and filtering.
+    # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
+    # verbose=True enables jdecode diagnostic output (e.g. invalid cards).
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
+                                  fmt_ordered=fmt_ordered, fmt_labeled=None if nolabel else cardlib.fmt_labeled_default,
+                                  grep=grep, vgrep=vgrep,
+                                  grep_name=grep_name, vgrep_name=vgrep_name,
+                                  grep_types=grep_types, vgrep_types=vgrep_types,
+                                  grep_text=grep_text, vgrep_text=vgrep_text,
+                                  grep_cost=grep_cost, vgrep_cost=vgrep_cost,
+                                  grep_pt=grep_pt, vgrep_pt=vgrep_pt,
+                                  grep_loyalty=grep_loyalty, vgrep_loyalty=vgrep_loyalty,
+                                  sets=sets, rarities=rarities,
+                                  colors=colors, cmcs=cmcs,
+                                  exclude_sets=lambda x: False,
+                                  exclude_types=lambda x: False,
+                                  exclude_layouts=lambda x: False,
+                                  shuffle=shuffle, seed=seed,
+                                  decklist_file=decklist_file)
+
+    if limit > 0:
+        cards = cards[:limit]
+
+    # Determine if we should use color for the summary
+    actual_use_color = False
+    if use_color is True:
+        actual_use_color = True
+    elif use_color is None and sys.stderr.isatty():
+        actual_use_color = True
+
+    # Progress bar is shown unless --quiet is specified
+    classes = sortcards(cards, verbose=not quiet, use_summary=use_summary, use_color=actual_use_color, fmt_ordered=fmt_ordered)
+
+    outputter = sys.stdout
+    ofile = None
+
+    if oname:
+        if verbose:
+            print(f'Writing output to: {oname}', file=sys.stderr)
+        try:
+            ofile = open(oname, 'w', encoding='utf-8')
+            outputter = ofile
+        except Exception as e:
+            print(f"Error opening output file {oname}: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    try:
+        # Print summary (to stderr to separate from data)
+        # Summary is shown unless --quiet is specified
+        for cardclass, card_list in classes.items():
+            if card_list is None:
+                if not quiet:
+                    header = cardclass
+                    if actual_use_color:
+                        header = utils.colorize(header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                    print(header, file=sys.stderr)
+            else:
+                if not quiet:
+                    name = cardclass
+                    count = str(len(card_list))
+                    if actual_use_color:
+                        if len(card_list) > 0:
+                            count = utils.colorize(count, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                    print(f'  {name}: {count}', file=sys.stderr)
+
+        # Write content
+        for cardclass, card_list in classes.items():
+            if card_list is None:
+                outputter.write(f'{cardclass}\n')
+            else:
+                classlen = len(card_list)
+                if classlen > 0:
+                    outputter.write(f'[spoiler={cardclass}: {classlen} cards]\n')
+                    for card_str in card_list:
+                        outputter.write(f'{card_str}\n\n')
+                    outputter.write('[/spoiler]\n')
+
+    finally:
+        if ofile:
+            ofile.close()
+
+def cli():
     parser = argparse.ArgumentParser(
         description="""Sort Magic cards into groups (like color or type) and format them for sharing on forums.
 
@@ -262,6 +365,10 @@ Supports any encoding format supported by encode.py/decode.py.""",
                              "'noname' (No names), 'rfields' (Random field order), "
                              "'old' (Legacy), 'norarity' (No rarity), 'vec' (Numerical vectors), "
                              "or 'custom' (User-defined).")
+    enc_group.add_argument('--nolabel', action='store_true',
+                        help="Input file does not have field labels (like '|cost|' or '|text|').")
+    enc_group.add_argument('--nolinetrans', action='store_true',
+                        help='Input file does not use automatic line reordering.')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
@@ -348,92 +455,18 @@ Supports any encoding format supported by encode.py/decode.py.""",
         args.shuffle = True
         args.limit = args.sample
 
-    # Use the robust jdecode.mtg_open_file for loading and filtering.
-    # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
-    # verbose=True enables jdecode diagnostic output (e.g. invalid cards).
-    cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, fmt_ordered=fmt_ordered,
-                                  grep=args.grep, vgrep=args.vgrep,
-                                  grep_name=args.grep_name, vgrep_name=args.exclude_name,
-                                  grep_types=args.grep_type, vgrep_types=args.exclude_type,
-                                  grep_text=args.grep_text, vgrep_text=args.exclude_text,
-                                  grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
-                                  grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
-                                  grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
-                                  sets=args.set, rarities=args.rarity,
-                                  colors=args.colors, cmcs=args.cmc,
-                                  exclude_sets=lambda x: False,
-                                  exclude_types=lambda x: False,
-                                  exclude_layouts=lambda x: False,
-                                  shuffle=args.shuffle, seed=args.seed,
-                                  decklist_file=args.deck)
-
-    if args.limit > 0:
-        cards = cards[:args.limit]
-
-    # Determine if we should use color for the summary
-    use_color = False
-    if args.color is True:
-        use_color = True
-    elif args.color is None and sys.stderr.isatty():
-        use_color = True
-
-    # Progress bar is shown unless --quiet is specified
-    classes = sortcards(cards, verbose=not args.quiet, use_summary=args.summary, use_color=use_color, fmt_ordered=fmt_ordered)
-
-    outputter = sys.stdout
-    ofile = None
-
-    if args.outfile:
-        if args.verbose:
-            print(f'Writing output to: {args.outfile}', file=sys.stderr)
-        try:
-            ofile = open(args.outfile, 'w', encoding='utf-8')
-            outputter = ofile
-        except Exception as e:
-            print(f"Error opening output file {args.outfile}: {e}", file=sys.stderr)
-            sys.exit(1)
-
-    try:
-        # Determine if we should use color for the summary
-        use_color = False
-        if args.color is True:
-            use_color = True
-        elif args.color is None and sys.stderr.isatty():
-            use_color = True
-
-        # Print summary (to stderr to separate from data)
-        # Summary is shown unless --quiet is specified
-        for cardclass, card_list in classes.items():
-            if card_list is None:
-                if not args.quiet:
-                    header = cardclass
-                    if use_color:
-                        header = utils.colorize(header, utils.Ansi.BOLD + utils.Ansi.CYAN)
-                    print(header, file=sys.stderr)
-            else:
-                if not args.quiet:
-                    name = cardclass
-                    count = str(len(card_list))
-                    if use_color:
-                        if len(card_list) > 0:
-                            count = utils.colorize(count, utils.Ansi.BOLD + utils.Ansi.GREEN)
-                    print(f'  {name}: {count}', file=sys.stderr)
-
-        # Write content
-        for cardclass, card_list in classes.items():
-            if card_list is None:
-                outputter.write(f'{cardclass}\n')
-            else:
-                classlen = len(card_list)
-                if classlen > 0:
-                    outputter.write(f'[spoiler={cardclass}: {classlen} cards]\n')
-                    for card_str in card_list:
-                        outputter.write(f'{card_str}\n\n')
-                    outputter.write('[/spoiler]\n')
-
-    finally:
-        if ofile:
-            ofile.close()
+    main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
+         nolinetrans = args.nolinetrans, nolabel = args.nolabel,
+         use_summary = args.summary, use_color = args.color, quiet = args.quiet,
+         limit = args.limit, grep = args.grep, sort = args.sort, vgrep = args.vgrep,
+         grep_name=args.grep_name, vgrep_name=args.exclude_name,
+         grep_types=args.grep_type, vgrep_types=args.exclude_type,
+         grep_text=args.grep_text, vgrep_text=args.exclude_text,
+         grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
+         grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
+         grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
+         sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
+         shuffle = args.shuffle, seed = args.seed, decklist_file = args.deck)
 
 if __name__ == '__main__':
-    main()
+    cli()
