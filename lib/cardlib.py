@@ -507,6 +507,51 @@ class Card:
             # valid but not parsed indicates that the card was apparently empty
             self.parsed = False
 
+    @property
+    def is_artifact(self):
+        """Returns True if the card is an artifact."""
+        return 'artifact' in self.types
+
+    @property
+    def is_creature(self):
+        """Returns True if the card is a creature or a vehicle."""
+        return 'creature' in self.types or 'vehicle' in self.subtypes
+
+    @property
+    def is_planeswalker(self):
+        """Returns True if the card is a planeswalker."""
+        return 'planeswalker' in self.types
+
+    @property
+    def is_battle(self):
+        """Returns True if the card is a battle."""
+        return 'battle' in self.types
+
+    def _get_pt_display(self, ansi_color=False, include_parens=True, unary=False):
+        """Helper to format Power/Toughness for display."""
+        if not self.pt:
+            return ""
+        val = self.pt if unary else utils.from_unary(self.pt)
+        res = f"({val})" if include_parens else val
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.RED)
+        return res
+
+    def _get_loyalty_display(self, ansi_color=False, double_paren=False, include_parens=True, unary=False):
+        """Helper to format Loyalty or Defense for display."""
+        if not self.loyalty:
+            return ""
+        val = self.loyalty if unary else utils.from_unary(self.loyalty)
+        if self.is_battle:
+            res = f"[[{val}]]" if include_parens else val
+        elif include_parens:
+            res = f"(({val}))" if double_paren else f"({val})"
+        else:
+            res = val
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.RED)
+        return res
+
     def _init_defaults(self):
         # default values for all fields
         setattr(self, field_name, '')
@@ -947,20 +992,9 @@ class Card:
             typeline = utils.colorize(typeline, utils.Ansi.GREEN)
 
         # P/T or Loyalty
-        stats = ''
-        if self.pt:
-            pt = utils.from_unary(self.pt)
-            stats = f'({pt})'
-            if ansi_color:
-                stats = utils.colorize(stats, utils.Ansi.RED)
-        elif self.loyalty:
-            loyalty = utils.from_unary(self.loyalty)
-            if any('battle' in t.lower() for t in self.types):
-                stats = f'[[{loyalty}]]'
-            else:
-                stats = f'({loyalty})'
-            if ansi_color:
-                stats = utils.colorize(stats, utils.Ansi.RED)
+        stats = self._get_pt_display(ansi_color=ansi_color)
+        if not stats:
+            stats = self._get_loyalty_display(ansi_color=ansi_color)
 
         # Construct final summary string with consistent bullet separators
         res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
@@ -1081,20 +1115,13 @@ class Card:
             outstr += ' (' + rarity_display.lower() + ')'
 
         if gatherer:
-            if self.__dict__[field_pt]:
-                pt = utils.from_unary(self.__dict__[field_pt])
-                pt_display = f'({pt})'
-                if ansi_color: pt_display = utils.colorize(pt_display, utils.Ansi.RED)
-                outstr += ' ' + pt_display
+            stats = self._get_pt_display(ansi_color=ansi_color)
+            if stats:
+                outstr += ' ' + stats
 
-            if self.__dict__[field_loyalty]:
-                loyalty = utils.from_unary(self.__dict__[field_loyalty])
-                if 'battle' in self.types:
-                    loy_display = f'[[{loyalty}]]'
-                else:
-                    loy_display = f'(({loyalty}))'
-                if ansi_color: loy_display = utils.colorize(loy_display, utils.Ansi.RED)
-                outstr += ' ' + loy_display
+            stats = self._get_loyalty_display(ansi_color=ansi_color, double_paren=True)
+            if stats:
+                outstr += ' ' + stats
 
         if formatted_mtext:
             # Add a blank line before the rules text for better readability
@@ -1104,20 +1131,13 @@ class Card:
             outstr += linebreak + formatted_mtext
 
         if not gatherer:
-            if self.__dict__[field_pt]:
-                pt = utils.from_unary(self.__dict__[field_pt])
-                pt_display = f'({pt})'
-                if ansi_color: pt_display = utils.colorize(pt_display, utils.Ansi.RED)
-                outstr += linebreak + pt_display
+            stats = self._get_pt_display(ansi_color=ansi_color)
+            if stats:
+                outstr += linebreak + stats
 
-            if self.__dict__[field_loyalty]:
-                loyalty = utils.from_unary(self.__dict__[field_loyalty])
-                if 'battle' in self.types:
-                    loy_display = f'[[{loyalty}]]'
-                else:
-                    loy_display = f'(({loyalty}))'
-                if ansi_color: loy_display = utils.colorize(loy_display, utils.Ansi.RED)
-                outstr += linebreak + loy_display
+            stats = self._get_loyalty_display(ansi_color=ansi_color, double_paren=True)
+            if stats:
+                outstr += linebreak + stats
 
         if vdump and self.__dict__[field_other]:
             outstr += linebreak
@@ -1190,19 +1210,19 @@ class Card:
             d['subtypes'] = [titlecase(s) for s in self.subtypes]
 
         # Power / Toughness
-        if self.pt:
-            pt_str = utils.from_unary(self.pt)
+        pt_str = self._get_pt_display(include_parens=False)
+        if pt_str:
             if '/' in pt_str:
                 p, t = pt_str.split('/', 1)
                 d['power'] = p
                 d['toughness'] = t
             else:
-                 d['pt'] = pt_str
+                d['pt'] = pt_str
 
         # Loyalty / Defense
-        if self.loyalty:
-            loyalty_val = utils.from_unary(self.loyalty)
-            if any('battle' in t.lower() for t in self.types):
+        loyalty_val = self._get_loyalty_display(include_parens=False)
+        if loyalty_val:
+            if self.is_battle:
                 d['defense'] = loyalty_val
             else:
                 d['loyalty'] = loyalty_val
@@ -1378,15 +1398,9 @@ class Card:
                 typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in card.subtypes])
 
             # Stats (P/T or Loyalty/Defense)
-            stats = ''
-            if card.pt:
-                stats = utils.from_unary(card.pt)
-            elif card.loyalty:
-                loyalty = utils.from_unary(card.loyalty)
-                if any('battle' in t.lower() for t in card.types):
-                    stats = f'[[{loyalty}]]'
-                else:
-                    stats = f'({loyalty})'
+            stats = card._get_pt_display(include_parens=False)
+            if not stats:
+                stats = card._get_loyalty_display()
 
             # Text
             text = card.get_text(force_unpass=True).replace('\n', '<br>')
@@ -1441,16 +1455,12 @@ class Card:
         if self.__dict__[field_subtypes]:
             outstr += ' '.join(self.__dict__[field_subtypes]) + ' '
 
-        if self.__dict__[field_pt]:
-            outstr += ' '.join(['(' + s + ')' for s in self.__dict__[
-                               field_pt].replace('/', '/ /').split()])
+        if self.pt:
+            outstr += ' '.join(['(' + s + ')' for s in self.pt.replace('/', '/ /').split()])
             outstr += ' '
-        
-        if self.__dict__[field_loyalty]:
-            if 'battle' in self.types:
-                outstr += '[[' + self.__dict__[field_loyalty] + ']] '
-            else:
-                outstr += '((' + self.__dict__[field_loyalty] + ')) '
+
+        if self.loyalty:
+            outstr += self._get_loyalty_display(double_paren=True, unary=True) + ' '
             
         outstr += self.__dict__[field_text].vectorize()
 
