@@ -97,3 +97,10 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
     ```bash
     python3 decode.py encoded_output.txt decoded.txt --creativity
     ```
+
+## 4. Training (Optional)
+The `train.py` script requires [PyTorch](https://pytorch.org/) and [tqdm](https://github.com/tqdm/tqdm) for its character-level RNN implementation. These are included in the standard `requirements.txt`.
+```bash
+pip install -r requirements.txt
+```
+If you have a CUDA-compatible GPU, the training script will automatically use it for significantly faster training.

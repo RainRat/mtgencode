@@ -251,12 +251,24 @@ python3 encode.py data/AllPrintings.json --deck-filter my_deck.txt encoded_deck.
 ---
 
 ## Training a Neural Network
-*Note: This project prepares the data. You will need a separate tool to train the model.*
+This project includes a modern character-level RNN for training on encoded card data.
 
-1.  **Prepare Data:** Use `encode.py` to create a text file (e.g., `input.txt`).
-2.  **Train:** Use an AI training tool (like `mtg-rnn` or a Transformer) on your text file.
-3.  **Generate:** Use your trained model to create new text.
+1.  **Prepare Data:** Use `encode.py` to create a text file (e.g., `data/output.txt`).
+    ```bash
+    python3 encode.py data/AllPrintings.json data/output.txt
+    ```
+2.  **Train:** Use the included `train.py` script.
+    ```bash
+    python3 train.py --mode train --infile data/output.txt --epochs 10
+    ```
+3.  **Generate:** Use the same script in `sample` mode to create new card text.
+    ```bash
+    python3 train.py --mode sample --checkpoint checkpoint.pt --length 2000 > generated.txt
+    ```
 4.  **Decode:** Use `decode.py` to turn that generated text into readable cards.
+    ```bash
+    python3 decode.py generated.txt decoded.txt
+    ```
 
 ---
 
