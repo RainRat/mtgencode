@@ -226,7 +226,9 @@ def parse_decklist(fpath):
             # Match count and name
             # Optional count at start (digits followed by space or 'x' and space)
             # followed by name. Name ends before a '(' or '[' or '#' (comment).
-            match = re.match(r'^(\d+[xX]?\s+)?([^(\[\n#]+)', line)
+            # We restrict optional counts to 1-3 digits unless an 'x' suffix is present,
+            # to avoid misidentifying names starting with years (e.g. 1996 World Champion).
+            match = re.match(r'^(\d{1,3}\s+|\d+[xX]\s+)?([^(\[\n#]+)', line)
             if match:
                 count_str = match.group(1)
                 name = match.group(2).strip()
