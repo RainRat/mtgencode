@@ -240,38 +240,62 @@ def sample(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Advanced character-level RNN for MTG training with mtg-rnn features.")
-    parser.add_argument("--mode", choices=["train", "sample"], default="train")
-    parser.add_argument("--infile", type=str, default="data/output.txt", help="Encoded card file for training")
-    parser.add_argument("--checkpoint", type=str, default="checkpoint.pt", help="File to save/load model")
-    
-    # Training args
-    parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--seq_len", type=int, default=100)
-    parser.add_argument("--hidden_size", type=int, default=256)
-    parser.add_argument("--n_layers", type=int, default=2)
-    parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--dropout", type=float, default=0.2)
-    parser.add_argument("--resume", action="store_true")
-    parser.add_argument("--randomize_fields", action="store_true", help="Shuffle card fields during training")
-    parser.add_argument("--randomize_mana", action="store_true", help="Shuffle mana symbols during training")
-    
-    # Sample args
-    parser.add_argument("--length", type=int, default=1000)
-    parser.add_argument("--temp", type=float, default=0.8)
-    parser.add_argument("--start_text", type=str, default="|")
-    
-    # Whispering / Priming args
-    parser.add_argument("--name", type=str, help="Force specific name")
-    parser.add_argument("--supertypes", type=str, help="Force specific supertypes")
-    parser.add_argument("--types", type=str, help="Force specific types")
-    parser.add_argument("--loyalty", type=str, help="Force specific loyalty")
-    parser.add_argument("--subtypes", type=str, help="Force specific subtypes")
-    parser.add_argument("--rarity", type=str, help="Force specific rarity")
-    parser.add_argument("--powertoughness", type=str, help="Force specific P/T")
-    parser.add_argument("--manacost", type=str, help="Force specific mana cost")
-    parser.add_argument("--bodytext_prepend", type=str, help="Force start of body text")
-    parser.add_argument("--bodytext_append", type=str, help="Force end of body text")
+
+    # Group: General Options
+    gen_group = parser.add_argument_group('General Options')
+    gen_group.add_argument("--mode", choices=["train", "sample"], default="train",
+                        help="Operation mode: 'train' to build a model, 'sample' to generate new cards.")
+    gen_group.add_argument("--infile", type=str, default="data/output.txt",
+                        help="Path to the encoded card file for training. Default: data/output.txt")
+    gen_group.add_argument("--checkpoint", type=str, default="checkpoint.pt",
+                        help="File path to save or load the model. Default: checkpoint.pt")
+
+    # Group: Training Parameters
+    train_group = parser.add_argument_group('Training Parameters')
+    train_group.add_argument("--epochs", type=int, default=10,
+                        help="Number of training rounds. Default: 10")
+    train_group.add_argument("--batch_size", type=int, default=64,
+                        help="Number of examples processed at once. Default: 64")
+    train_group.add_argument("--seq_len", type=int, default=100,
+                        help="Length of character sequences to learn. Default: 100")
+    train_group.add_argument("--hidden_size", type=int, default=256,
+                        help="Size of the neural network's memory. Default: 256")
+    train_group.add_argument("--n_layers", type=int, default=2,
+                        help="Number of layers in the neural network. Default: 2")
+    train_group.add_argument("--lr", type=float, default=0.001,
+                        help="Learning rate (how quickly the model updates). Default: 0.001")
+    train_group.add_argument("--dropout", type=float, default=0.2,
+                        help="Rate to drop neurons to prevent over-memorizing. Default: 0.2")
+    train_group.add_argument("--resume", action="store_true",
+                        help="Continue training from the existing checkpoint.")
+    train_group.add_argument("--randomize_fields", action="store_true",
+                        help="Shuffle the order of card fields during training to help the AI generalize.")
+    train_group.add_argument("--randomize_mana", action="store_true",
+                        help="Shuffle mana symbols within costs during training.")
+
+    # Group: Generation Options
+    sample_group = parser.add_argument_group('Generation Options')
+    sample_group.add_argument("--length", type=int, default=1000,
+                        help="Number of characters to generate. Default: 1000")
+    sample_group.add_argument("--temp", type=float, default=0.8,
+                        help="Randomness/creativity level. Higher is more creative; lower is more focused. Default: 0.8")
+    sample_group.add_argument("--start_text", type=str, default="|",
+                        help="The text to start generation with. Default: '|'")
+
+    # Group: Priming (Forcing Attributes)
+    prime_group = parser.add_argument_group('Priming (Forcing Attributes)',
+                                          'These options force specific fields to contain the provided text. '
+                                          'Note: These depend on the legacy encoding format (-e old).')
+    prime_group.add_argument("--name", type=str, help="Force a specific card name.")
+    prime_group.add_argument("--supertypes", type=str, help="Force specific supertypes (e.g., 'Legendary').")
+    prime_group.add_argument("--types", type=str, help="Force specific card types (e.g., 'Creature').")
+    prime_group.add_argument("--loyalty", type=str, help="Force a specific starting loyalty or defense.")
+    prime_group.add_argument("--subtypes", type=str, help="Force specific subtypes (e.g., 'Elf Warrior').")
+    prime_group.add_argument("--rarity", type=str, help="Force a specific rarity marker.")
+    prime_group.add_argument("--powertoughness", type=str, help="Force a specific Power/Toughness (e.g., '&^^/&^^').")
+    prime_group.add_argument("--manacost", type=str, help="Force a specific mana cost (e.g., '{WW}').")
+    prime_group.add_argument("--bodytext_prepend", type=str, help="Force the start of the rules text.")
+    prime_group.add_argument("--bodytext_append", type=str, help="Force text to appear at the end of the rules text.")
 
     args = parser.parse_args()
     
