@@ -82,6 +82,23 @@ fieldnames = [
     field_text,
 ]
 
+# Use shorthand: C, U, R, M, S, L
+RARITY_MAP = {
+    'common': 'C',
+    'uncommon': 'U',
+    'rare': 'R',
+    'mythic rare': 'M',
+    'mythic': 'M',
+    'special': 'S',
+    'basic land': 'L',
+    utils.rarity_common_marker: 'C',
+    utils.rarity_uncommon_marker: 'U',
+    utils.rarity_rare_marker: 'R',
+    utils.rarity_mythic_marker: 'M',
+    utils.rarity_special_marker: 'S',
+    utils.rarity_basic_land_marker: 'L',
+}
+
 # legacy
 fmt_ordered_old = [
     field_name,
@@ -105,19 +122,6 @@ fmt_ordered_norarity = [
     field_text,
 ]
 
-# standard
-fmt_ordered_default = [
-    field_types,
-    field_supertypes,
-    field_subtypes,
-    field_loyalty,
-    field_pt,
-    field_text,
-    field_cost,
-    field_rarity,
-    field_name,
-]
-
 # minor variations
 fmt_ordered_noname = [
     field_types,
@@ -129,17 +133,9 @@ fmt_ordered_noname = [
     field_cost,
     field_rarity,
 ]
-fmt_ordered_named = [
-    field_name,
-    field_types,
-    field_supertypes,
-    field_subtypes,
-    field_loyalty,
-    field_pt,
-    field_text,
-    field_cost,
-    field_rarity,
-]
+# standard
+fmt_ordered_default = fmt_ordered_noname + [field_name]
+fmt_ordered_named = [field_name] + fmt_ordered_noname
 
 fmt_labeled_default = {
     field_name : field_label_name,
@@ -943,23 +939,7 @@ class Card:
             if r in utils.json_rarity_unmap:
                 r = utils.json_rarity_unmap[r]
 
-            # Use shorthand: C, U, R, M, S, L
-            rarity_map = {
-                'common': 'C',
-                'uncommon': 'U',
-                'rare': 'R',
-                'mythic rare': 'M',
-                'mythic': 'M',
-                'special': 'S',
-                'basic land': 'L',
-                utils.rarity_common_marker: 'C',
-                utils.rarity_uncommon_marker: 'U',
-                utils.rarity_rare_marker: 'R',
-                utils.rarity_mythic_marker: 'M',
-                utils.rarity_special_marker: 'S',
-                utils.rarity_basic_land_marker: 'L',
-            }
-            indicator = rarity_map.get(r.lower() if hasattr(r, 'lower') else r, r[0].upper() if r else '?')
+            indicator = RARITY_MAP.get(r.lower() if hasattr(r, 'lower') else r, r[0].upper() if r else '?')
 
             indicator = f'[{indicator}]'
             if ansi_color:
