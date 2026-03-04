@@ -130,7 +130,7 @@ def train(args):
     criterion = nn.CrossEntropyLoss()
 
     if args.resume and os.path.exists(args.checkpoint):
-        checkpoint = torch.load(args.checkpoint, map_location=device)
+        checkpoint = torch.load(args.checkpoint, map_location=device, weights_only=False)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         start_epoch = checkpoint['epoch']
@@ -172,7 +172,7 @@ def train(args):
 
 def sample(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    checkpoint = torch.load(args.checkpoint, map_location=device)
+    checkpoint = torch.load(args.checkpoint, map_location=device, weights_only=False)
     
     chars = checkpoint['vocab']
     char_to_idx = checkpoint['char_to_idx']

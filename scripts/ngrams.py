@@ -6,7 +6,24 @@ import pickle
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 import jdecode
-from nltk import model
+from nltk.lm.preprocessing import padded_everygram_pipeline
+from nltk.lm import MLE
+from nltk.util import ngrams as nltk_ngrams
+
+class NgramModelWrapper:
+    def __init__(self, n, lang):
+        self.n = n
+        train, vocab = padded_everygram_pipeline(n, lang)
+        self.lm = MLE(n)
+        self.lm.fit(train, vocab)
+    
+    def perplexity(self, text):
+        # text is a list of strings
+        # Ngram model perplexity expects a list of ngrams
+        ngs = list(nltk_ngrams(text, self.n))
+        if not ngs:
+            return 0.0
+        return self.lm.perplexity(ngs)
 
 def update_ngrams(lines, gramdict, grams):
     for line in lines:
@@ -51,9 +68,7 @@ def build_ngram_model(cards, n, separate_lines=True, verbose=False):
     lang = extract_language(cards, separate_lines=separate_lines)
     if verbose:
         print(('found ' + str(len(lang)) + ' sentences'))
-    lm = model.NgramModel(n, lang, pad_left=True, pad_right=True)
-    if verbose:
-        print(lm)
+    lm = NgramModelWrapper(n, lang)
     return lm
 
 def main(fname, oname, gmin = 2, gmax = 8, nltk = False, sep = False, verbose = False):
