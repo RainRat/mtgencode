@@ -63,14 +63,82 @@ def mtg_open_csv(fname, verbose = False):
         reader = csv.DictReader(f)
         return mtg_open_csv_reader(reader, verbose)
 
+def _normalize_scryfall_card(card):
+    """
+    Normalizes a Scryfall card object to match the MTGJSON format used internally.
+    """
+    if not (isinstance(card, dict) and card.get('object') in ['card', 'card_face']):
+        return card
+
+    # Top-level field mapping
+    if 'mana_cost' in card: card['manaCost'] = card['mana_cost']
+    if 'oracle_text' in card: card['text'] = card['oracle_text']
+    if 'type_line' in card:
+        card['type'] = card['type_line']
+        # Scryfall doesn't provide split supertypes/types/subtypes arrays
+        # so we parse them from the type_line.
+        s, t, sub = utils.parse_type_line(card['type_line'])
+        if s: card['supertypes'] = s
+        if t: card['types'] = t
+        if sub: card['subtypes'] = sub
+    if 'set' in card: card['setCode'] = card['set'].upper()
+    if 'collector_number' in card: card['number'] = card['collector_number']
+
+    # Handle multi-faced cards (Splits, Transforms, Adventures, etc.)
+    if 'card_faces' in card:
+        faces = card['card_faces']
+        if len(faces) >= 1:
+            # Populate main card fields from the first face
+            f1 = faces[0]
+            if 'name' in f1: card['name'] = f1['name']
+            if 'mana_cost' in f1: card['manaCost'] = f1['mana_cost']
+            if 'oracle_text' in f1: card['text'] = f1['oracle_text']
+            if 'type_line' in f1:
+                card['type'] = f1['type_line']
+                s, t, sub = utils.parse_type_line(f1['type_line'])
+                if s: card['supertypes'] = s
+                if t: card['types'] = t
+                if sub: card['subtypes'] = sub
+            if 'power' in f1: card['power'] = f1['power']
+            if 'toughness' in f1: card['toughness'] = f1['toughness']
+            if 'loyalty' in f1: card['loyalty'] = f1['loyalty']
+            if 'defense' in f1: card['defense'] = f1['defense']
+
+        if len(faces) >= 2:
+            # Map the second face to the 'bside' field.
+            # This follows the linking logic used for double-faced/split cards.
+            f2 = faces[1]
+            bside = {
+                'name': f2.get('name', ''),
+                'manaCost': f2.get('mana_cost', ''),
+                'text': f2.get('oracle_text', ''),
+                'rarity': card.get('rarity', ''),
+            }
+            if 'type_line' in f2:
+                bside['type'] = f2['type_line']
+                s, t, sub = utils.parse_type_line(f2['type_line'])
+                if s: bside['supertypes'] = s
+                if t: bside['types'] = t
+                if sub: bside['subtypes'] = sub
+            if 'power' in f2: bside['power'] = f2['power']
+            if 'toughness' in f2: bside['toughness'] = f2['toughness']
+            if 'loyalty' in f2: bside['loyalty'] = f2['loyalty']
+            if 'defense' in f2: bside['defense'] = f2['defense']
+
+            card[utils.json_field_bside] = bside
+
+    return card
+
+
 def mtg_open_json_obj(jobj, verbose = False):
     """
     Processes a JSON object containing card data.
 
     Supported formats:
     1. MTGJSON v4/v5 format (dictionary with a 'data' key).
-    2. A list of card objects.
-    3. A single card object (detected if it's a dict without a 'data' key).
+    2. Scryfall Bulk Data (list of card objects).
+    3. Scryfall API Search Results (dict with "object": "list" and "data": [...]).
+    4. A single card object (detected if it's a dict without a 'data' key).
 
     Returns:
         tuple: (allcards, bad_sets)
@@ -81,7 +149,13 @@ def mtg_open_json_obj(jobj, verbose = False):
     is_mtgjson_format = isinstance(jobj, dict)
     if is_mtgjson_format:
         if 'data' in jobj:
-            jobj = jobj['data']
+            if isinstance(jobj['data'], list):
+                # Scryfall list format
+                jobj = jobj['data']
+                is_mtgjson_format = False
+            else:
+                # MTGJSON format
+                jobj = jobj['data']
         else:
             # Assume it is a single card object
             is_mtgjson_format = False
@@ -131,6 +205,7 @@ def mtg_open_json_obj(jobj, verbose = False):
                     bsides[uid] = card
     else: # It is a list of cards
         for card in jobj:
+            card = _normalize_scryfall_card(card)
             cardname = card['name'].lower()
             if cardname in allcards:
                 allcards[cardname] += [card]
@@ -172,7 +247,9 @@ def mtg_open_jsonl_content(text, verbose = False):
         line = line.strip()
         if line:
             try:
-                cards.append(json.loads(line))
+                card = json.loads(line)
+                card = _normalize_scryfall_card(card)
+                cards.append(card)
             except json.JSONDecodeError:
                 continue
     if cards:

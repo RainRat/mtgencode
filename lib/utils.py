@@ -625,6 +625,27 @@ def split_types(full_type):
     return supertypes, types
 
 
+def parse_type_line(type_line):
+    """
+    Splits a full type line string into supertypes, types, and subtypes.
+    Handles various dash characters used as separators.
+    """
+    if not type_line:
+        return [], [], []
+
+    # Modern MTG and Scryfall use \u2014 (em-dash) to separate types from subtypes.
+    # We are lenient and handle en-dash and hyphen as well.
+    parts = re.split(r' [\u2014\u2013-] ', type_line)
+
+    front = parts[0]
+    subtypes = []
+    if len(parts) > 1:
+        subtypes = parts[1].split()
+
+    supertypes, types = split_types(front)
+    return supertypes, types, subtypes
+
+
 class Ansi:
     RESET = '\033[0m'
     BOLD = '\033[1m'
