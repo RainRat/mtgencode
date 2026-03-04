@@ -10,6 +10,7 @@ libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 
 import utils
+import cardlib
 import jdecode
 import cardlib
 from datalib import Datamine

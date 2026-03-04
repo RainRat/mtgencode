@@ -11,6 +11,7 @@ sys.path.append(libdir)
 import cardlib
 import utils
 import jdecode
+import sortlib
 
 # Try to import tqdm for progress bars
 try:
@@ -282,6 +283,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   shuffle=shuffle, seed=seed,
                                   decklist_file=decklist_file)
 
+    if sort:
+        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
+
     if limit > 0:
         cards = cards[:limit]
 
@@ -309,32 +313,45 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             sys.exit(1)
 
     try:
-        # Print summary (to stderr to separate from data)
-        # Summary is shown unless --quiet is specified
-        for cardclass, card_list in classes.items():
-            if card_list is None:
-                if not quiet:
-                    header = cardclass
-                    if actual_use_color:
-                        header = utils.colorize(header, utils.Ansi.BOLD + utils.Ansi.CYAN)
-                    print(header, file=sys.stderr)
-            else:
-                if not quiet:
-                    name = cardclass
-                    count = str(len(card_list))
-                    if actual_use_color:
-                        if len(card_list) > 0:
-                            count = utils.colorize(count, utils.Ansi.BOLD + utils.Ansi.GREEN)
-                    print(f'  {name}: {count}', file=sys.stderr)
+        # Re-organize reporting to suppress empty sections/categories
+        # This implementation uses a "look-ahead" to only print headers if they contain cards.
 
-        # Write content
-        for cardclass, card_list in classes.items():
-            if card_list is None:
-                outputter.write(f'{cardclass}\n')
+        # Step 1: Group categories by their headers
+        sections = OrderedDict()
+        current_header = "General:"
+        sections[current_header] = []
+        for key, value in classes.items():
+            if value is None:
+                current_header = key
+                sections[current_header] = []
             else:
-                classlen = len(card_list)
-                if classlen > 0:
-                    outputter.write(f'[spoiler={cardclass}: {classlen} cards]\n')
+                sections[current_header].append((key, value))
+
+        # Print summary (to stderr) and write content (to outputter)
+        for header, categories in sections.items():
+            # Check if any category in this section has cards
+            non_empty_categories = [(cat, cards) for cat, cards in categories if cards]
+
+            if non_empty_categories:
+                # Print Header
+                if not quiet:
+                    display_header = header
+                    if actual_use_color:
+                        display_header = utils.colorize(display_header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                    print(display_header, file=sys.stderr)
+                outputter.write(f'{header}\n')
+
+                for name, card_list in non_empty_categories:
+                    # Summary line
+                    if not quiet:
+                        count_str = str(len(card_list))
+                        if actual_use_color:
+                            count_str = utils.colorize(count_str, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                        print(f'  {name}: {count_str}', file=sys.stderr)
+
+                    # Content block
+                    classlen = len(card_list)
+                    outputter.write(f'[spoiler={name}: {classlen} cards]\n')
                     for card_str in card_list:
                         outputter.write(f'{card_str}\n\n')
                     outputter.write('[/spoiler]\n')
@@ -374,6 +391,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
+                        help='Sort cards by a specific criterion.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Randomize the order of cards before sorting.')
     proc_group.add_argument('--seed', type=int,
