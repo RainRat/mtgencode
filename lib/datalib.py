@@ -69,20 +69,33 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
     if vsize:
         keys = keys[:vsize]
 
-    rows = []
+    header_row = ['  Category', 'Count', 'Percent', 'Distribution']
+    if use_color:
+        header_row = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header_row]
+
+    rows = [header_row]
     for k in keys:
         count = len(index[k])
         percent = (count / total * 100) if total > 0 else 0
 
         display_key = key_formatter(k) if key_formatter else str(k)
 
+        # apply content-aware coloring
+        if use_color:
+            if 'rarity' in title.lower():
+                display_key = utils.colorize(display_key, utils.Ansi.get_rarity_color(k))
+            elif 'color' in title.lower() and not 'number' in title.lower():
+                display_key = utils.colorize(display_key, utils.Ansi.get_color_color(k))
+
         # Bar chart
         bar_width = 10
         filled = int(round(percent / 100 * bar_width))
         bar = '[' + '#' * filled + ' ' * (bar_width - filled) + ']'
+        if use_color:
+            bar = utils.colorize(bar, utils.Ansi.BOLD + utils.Ansi.GREEN)
 
         rows.append([
-            display_key,
+            '  ' + display_key,
             color_count(count, use_color),
             f"{percent:5.1f}%",
             bar
@@ -289,9 +302,14 @@ class Datamine:
 
         print(color_line('OUTLIER ANALYSIS', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print(color_line('Overview of indices:', use_color))
-        rows = [['Index Name', 'Keys', 'Total Members']]
+
+        header_row = ['  Index Name', 'Keys', 'Total Members']
+        if use_color:
+            header_row = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header_row]
+
+        rows = [header_row]
         for index in self.indices:
-            rows += [[index, color_count(len(self.indices[index]), use_color),
+            rows += [['  ' + index, color_count(len(self.indices[index]), use_color),
                       color_count(sum(len(v) for v in self.indices[index].values()), use_color)]]
         printrows(padrows(rows))
         print()
