@@ -214,16 +214,16 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number:
 ---
 
 ### Advanced Filtering
-You can filter which cards are processed using regular expressions, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, and `scripts/summarize.py`.
+You can filter which cards are processed using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, and `scripts/summarize.py`.
 
 *   **Global Filters:**
-    *   `--grep "pattern"`: Only include cards where the name, type line, or rules text matches the regex pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
-    *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the regex pattern. Use multiple flags for **OR** logic (matching any pattern excludes the card).
+    *   `--grep "pattern"`: Only include cards where the name, type line, or rules text matches the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
+    *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the search pattern. Use multiple flags for **OR** logic (matching any pattern excludes the card).
 *   **Field-Specific Filters:**
-    *   `--grep-name`, `--grep-type`, `--grep-text`: Only include cards where the specific field matches the regex.
-    *   `--grep-cost`, `--grep-pt`, `--grep-loyalty`: Only include cards whose mana cost, power/toughness, or loyalty matches the regex.
-    *   `--exclude-name`, `--exclude-type`, `--exclude-text`: Skip cards where the specific field matches the regex.
-    *   `--exclude-cost`, `--exclude-pt`, `--exclude-loyalty`: Skip cards whose mana cost, power/toughness, or loyalty matches the regex.
+    *   `--grep-name`, `--grep-type`, `--grep-text`: Only include cards where the specific field matches the search pattern.
+    *   `--grep-cost`, `--grep-pt`, `--grep-loyalty`: Only include cards whose mana cost, power/toughness, or loyalty matches the search pattern.
+    *   `--exclude-name`, `--exclude-type`, `--exclude-text`: Skip cards where the specific field matches the search pattern.
+    *   `--exclude-cost`, `--exclude-pt`, `--exclude-loyalty`: Skip cards whose mana cost, power/toughness, or loyalty matches the search pattern.
 *   **Metadata Filters:**
     *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets (OR logic).
     *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports multiple rarities (OR logic).
