@@ -571,42 +571,21 @@ class Card:
 
     def _get_ansi_color(self):
         """Returns the ANSI color code for the card based on its colors and types."""
-        color = utils.Ansi.BOLD
         card_colors = self.cost.colors
         if len(card_colors) > 1:
-            color += utils.Ansi.YELLOW  # Multicolored
+            return utils.Ansi.get_color_color('WUBRG')
         elif len(card_colors) == 1:
-            c = card_colors[0]
-            if c == 'W':
-                color += utils.Ansi.WHITE
-            elif c == 'U':
-                color += utils.Ansi.CYAN
-            elif c == 'B':
-                color += utils.Ansi.MAGENTA
-            elif c == 'R':
-                color += utils.Ansi.RED
-            elif c == 'G':
-                color += utils.Ansi.GREEN
+            return utils.Ansi.get_color_color(card_colors[0])
         else:
             # Colorless / Artifacts
             # Lands are typically just BOLD, non-land colorless are CYAN
             if 'land' not in [t.lower() for t in self.types]:
-                color += utils.Ansi.CYAN
-        return color
+                return utils.Ansi.get_color_color('A')
+            return utils.Ansi.BOLD
 
     def _get_rarity_ansi_color(self, rarity):
         """Returns the ANSI color code for a given rarity string or marker."""
-        if not rarity:
-            return utils.Ansi.BOLD
-        r_lower = rarity.lower() if hasattr(rarity, 'lower') else rarity
-        color = utils.Ansi.BOLD
-        if r_lower == 'uncommon' or rarity == utils.rarity_uncommon_marker:
-            color += utils.Ansi.CYAN
-        elif r_lower == 'rare' or rarity == utils.rarity_rare_marker:
-            color += utils.Ansi.YELLOW
-        elif r_lower in ['mythic rare', 'mythic'] or rarity == utils.rarity_mythic_marker:
-            color += utils.Ansi.RED
-        return color
+        return utils.Ansi.get_rarity_color(rarity)
 
     # These setters are invoked via name mangling, so they have to match 
     # the field names specified above to be used. Otherwise we just

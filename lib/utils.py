@@ -465,22 +465,14 @@ def mana_untranslate(manastr, for_forum = False, for_html = False, ansi_color = 
         # Individual symbol color mapping
         if not ansi_color:
             return None
+        # get_color_color always returns BOLD, so we strip it if we want the non-bold version
+        # but actually mana symbols look better bolded in summaries.
+        # However, the previous code used non-bold for primary colors.
+        # Let's see. Original W was Ansi.WHITE.
         sym_upper = sym.upper()
-        if sym_upper in ['W']:
-            return Ansi.WHITE
-        if sym_upper in ['U']:
-            return Ansi.CYAN
-        if sym_upper in ['B']:
-            return Ansi.MAGENTA
-        if sym_upper in ['R']:
-            return Ansi.RED
-        if sym_upper in ['G']:
-            return Ansi.GREEN
-        if any(c in sym_upper for c in 'WUBRG'):
-            # Hybrid or Phyrexian with colors
-            return Ansi.BOLD + Ansi.YELLOW
-        # Colorless, X, S, E, etc.
-        return Ansi.BOLD
+        if len(sym_upper) == 1 and sym_upper in 'WUBRG':
+            return getattr(Ansi, {'W':'WHITE', 'U':'CYAN', 'B':'MAGENTA', 'R':'RED', 'G':'GREEN'}[sym_upper])
+        return Ansi.get_color_color(sym)
 
     idx = 0
     while idx < len(inner):
@@ -657,6 +649,42 @@ class Ansi:
     CYAN = '\033[96m'
     WHITE = '\033[97m'
     UNDERLINE = '\033[4m'
+
+    @staticmethod
+    def get_rarity_color(rarity):
+        """Returns the ANSI color code for a given rarity string or marker."""
+        if not rarity:
+            return Ansi.BOLD
+        r_lower = rarity.lower() if hasattr(rarity, 'lower') else rarity
+        if r_lower in ['uncommon', rarity_uncommon_marker]:
+            return Ansi.BOLD + Ansi.CYAN
+        if r_lower in ['rare', rarity_rare_marker]:
+            return Ansi.BOLD + Ansi.YELLOW
+        if r_lower in ['mythic rare', 'mythic', rarity_mythic_marker]:
+            return Ansi.BOLD + Ansi.RED
+        return Ansi.BOLD
+
+    @staticmethod
+    def get_color_color(color_sym):
+        """Returns the ANSI color code for a given color symbol or name."""
+        if not color_sym:
+            return Ansi.BOLD
+        c = color_sym.upper()
+        if c == 'W':
+            return Ansi.BOLD + Ansi.WHITE
+        if c == 'U':
+            return Ansi.BOLD + Ansi.CYAN
+        if c == 'B':
+            return Ansi.BOLD + Ansi.MAGENTA
+        if c == 'R':
+            return Ansi.BOLD + Ansi.RED
+        if c == 'G':
+            return Ansi.BOLD + Ansi.GREEN
+        if c == 'A' or 'COLORLESS' in c or 'LAND' in c:
+            return Ansi.BOLD + Ansi.CYAN # Standard for colorless/artifacts in this project
+        if any(char in c for char in 'WUBRG'):
+            return Ansi.BOLD + Ansi.YELLOW # Multicolored/Hybrid/Phyrexian
+        return Ansi.BOLD
 
 def colorize(text, color_code):
     if not text:
