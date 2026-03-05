@@ -86,7 +86,7 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Show statistics and details about a Magic: The Gathering card dataset.")
+    parser = argparse.ArgumentParser(description="Show statistics, mechanical profiling, and details about a Magic: The Gathering card dataset.")
     
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
