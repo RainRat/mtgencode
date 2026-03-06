@@ -2,8 +2,7 @@
 import re
 import random
 
-# These could probably use a little love... They tend to hardcode in lots
-# of things very specific to the mtgjson format.
+# These transformations are tailored to the MTGJSON format and handle its specific text conventions.
 
 import utils
 
@@ -60,8 +59,7 @@ def text_pass_1_strip_rt(s):
 
 
 def text_pass_2_cardname(s, name):
-    # Here are some fun edge cases, thanks to jml34 on the forum for 
-    # pointing them out.
+    # Handle specific card names that overlap with common game actions or keywords.
     if name == 'sacrifice':
         s = s.replace(name, this_marker, 1)
         return s
@@ -99,7 +97,7 @@ def text_pass_2_cardname(s, name):
     for override in overrides:
         s = s.replace(override, this_marker)
 
-    # stupid planeswalker abilities
+    # Standardize self-references in older card text (e.g., replacing masculine pronouns with the self-reference marker).
     s = s.replace('to him.', 'to ' + this_marker + '.')
     s = s.replace('to him this', 'to ' + this_marker + ' this')
     s = s.replace('to himself', 'to itself')
@@ -151,7 +149,7 @@ def text_pass_4b_x(s):
     s = s.replace('x target', x_marker + ' target')
     s = s.replace('si' + x_marker + ' target', 'six target')
     s = s.replace('avara' + x_marker, 'avarax')
-    # there's also some stupid ice age card that wants -x/-y
+    # Handle legacy formatting cases, such as cards from older sets like Ice Age that use unusual P/T or stat modifiers.
     s = s.replace('/~', '/-')
     return s
 
@@ -201,7 +199,7 @@ def text_pass_4c_abilitywords(s):
     return abilitywords_regex.sub('', s)
 
 
-# so, big fat old dictionary time!!!!!!!!!
+# A comprehensive list of Magic: The Gathering counter types used for rules text tokenization.
 allcounters = [
     'time counter',
     'devotion counter',
@@ -327,7 +325,7 @@ allcounters = [
     'descent counter',
     'task counter',
 ]
-# oh god some of the counter names are suffixes of others...
+# Ensure that longer counter names are matched before shorter, overlapping ones.
 shortcounters = [
     'age counter',
     'net counter',
@@ -339,8 +337,7 @@ all_counters_combined = sorted(allcounters + shortcounters, key=len, reverse=Tru
 counters_regex = re.compile(r'\b(' + '|'.join(map(re.escape, all_counters_combined)) + r')')
 
 # Call this before replacing newlines.
-# This one ends up being really bad because of the confusion
-# with 'counter target spell or ability'.
+# Differentiate between the 'counter' action (neutralizing a spell) and 'counter' objects (markers).
 def text_pass_5_counters(s):
     usedcounters = []
     
