@@ -86,10 +86,16 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
                 display_key = utils.colorize(display_key, utils.Ansi.get_rarity_color(k))
             elif 'color' in title.lower() and not 'number' in title.lower():
                 display_key = utils.colorize(display_key, utils.Ansi.get_color_color(k))
+            elif 'mana costs' in title.lower():
+                display_key = utils.from_mana(k, ansi_color=True)
+            elif 'p/t' in title.lower() or 'loyalty' in title.lower():
+                display_key = utils.colorize(display_key, utils.Ansi.RED)
 
         # Bar chart
         bar_width = 10
         filled = int(round(percent / 100 * bar_width))
+        if filled == 0 and percent > 0:
+            filled = 1
         bar = '[' + '#' * filled + ' ' * (bar_width - filled) + ']'
         if use_color:
             bar = utils.colorize(bar, utils.Ansi.BOLD + utils.Ansi.GREEN)
@@ -289,17 +295,28 @@ class Datamine:
               color_count(len(self.invalid_cards), use_color, utils.Ansi.BOLD + utils.Ansi.RED) + ' invalid cards.')
         print(color_count(len(self.allcards), use_color) + ' cards parsed, ' +
               color_count(len(self.unparsed_cards), use_color, utils.Ansi.BOLD + utils.Ansi.RED) + ' failed to parse')
+        print(f"{len(self.by_name)} unique card names")
         print()
 
-        print(color_line(str(len(self.by_name)) + ' unique card names', use_color))
-        print()
-
+        # Section: Colors & Mana
+        print(color_line('COLORS & MANA', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print(color_line(str(len(self.by_color_inclusive)) + ' represented colors (including colorless as \'A\'), '
                + str(len(self.by_color)) + ' combinations', use_color))
         _print_breakdown('Breakdown by color:', self.by_color_inclusive, len(self.allcards), use_color)
         _print_breakdown('Breakdown by number of colors:', self.by_color_count, len(self.allcards), use_color)
         print()
 
+        print(color_line(str(len(self.by_cmc)) + ' different CMCs, ' +
+              str(len(self.by_cost)) + ' unique mana costs', use_color))
+        print('Average CMC: {:.2f}'.format(self.avg_cmc))
+        _print_breakdown('Breakdown by CMC:', self.by_cmc, len(self.allcards), use_color,
+                         vsize=vsize, reverse=False, sort_key=lambda x: float(x))
+        _print_breakdown('Popular mana costs:', self.by_cost, len(self.allcards), use_color,
+                         vsize=vsize, sort_key=lambda x: len(self.by_cost[x]), key_formatter=utils.from_mana)
+        print()
+
+        # Section: Card Types
+        print(color_line('CARD TYPES', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print(color_line(str(len(self.by_type_inclusive)) + ' unique card types, ' +
               str(len(self.by_type)) + ' combinations', use_color))
         _print_breakdown('Breakdown by type:', self.by_type_inclusive, len(self.allcards), use_color,
@@ -320,15 +337,8 @@ class Datamine:
                          vsize=vsize, sort_key=lambda x: len(self.by_supertype_inclusive[x]))
         print()
 
-        print(color_line(str(len(self.by_cmc)) + ' different CMCs, ' +
-              str(len(self.by_cost)) + ' unique mana costs', use_color))
-        print('Average CMC: {:.2f}'.format(self.avg_cmc))
-        _print_breakdown('Breakdown by CMC:', self.by_cmc, len(self.allcards), use_color,
-                         vsize=vsize, reverse=False, sort_key=lambda x: float(x))
-        _print_breakdown('Popular mana costs:', self.by_cost, len(self.allcards), use_color,
-                         vsize=vsize, sort_key=lambda x: len(self.by_cost[x]), key_formatter=utils.from_mana)
-        print()
-
+        # Section: Stats & Rarity
+        print(color_line('STATS & RARITY', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print(color_line(str(len(self.by_rarity)) + ' represented rarities', use_color))
         _print_breakdown('Breakdown by rarity:', self.by_rarity, len(self.allcards), use_color)
         print()
@@ -342,10 +352,13 @@ class Datamine:
                          vsize=vsize, sort_key=lambda x: len(self.by_pt[x]), key_formatter=utils.from_unary)
         print()
 
-        _print_breakdown('Loyalty values:', self.by_loyalty, len(self.allcards), use_color,
-                         vsize=vsize, sort_key=lambda x: len(self.by_loyalty[x]), key_formatter=utils.from_unary)
-        print()
+        if self.by_loyalty:
+            _print_breakdown('Loyalty values:', self.by_loyalty, len(self.allcards), use_color,
+                             vsize=vsize, sort_key=lambda x: len(self.by_loyalty[x]), key_formatter=utils.from_unary)
+            print()
 
+        # Section: Content & Mechanics
+        print(color_line('CONTENT & MECHANICS', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         if len(self.by_textlen) > 0 and len(self.by_textlines) > 0:
             print(color_line('Card text ranges from ' + str(min(self.by_textlen)) + ' to '
                    + str(max(self.by_textlen)) + ' characters in length', use_color))
