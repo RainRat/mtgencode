@@ -20,7 +20,7 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
-def sortcards(cards, verbose=False, use_summary=False, use_color=False, fmt_ordered=cardlib.fmt_ordered_default):
+def sortcards(cards, verbose=False, use_summary=False, use_markdown=False, use_color=False, fmt_ordered=cardlib.fmt_ordered_default):
     """
     Sorts a list of Card objects into various categories.
     """
@@ -90,6 +90,8 @@ def sortcards(cards, verbose=False, use_summary=False, use_color=False, fmt_orde
         # Determine the string representation to use
         if use_summary:
             card_str = card.summary(ansi_color=use_color)
+        elif use_markdown:
+            card_str = card.format(for_md=True)
         else:
             # Use card.raw for the original string representation
             # Ensure we have a string to write out
@@ -243,7 +245,7 @@ def sortcards(cards, verbose=False, use_summary=False, use_color=False, fmt_orde
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, nolabel = False,
-         use_summary = False, use_color = None, quiet = False,
+         use_summary = False, use_markdown = False, use_color = None, quiet = False,
          limit = 0, grep = None, sort = None, vgrep = None,
          grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
          grep_text=None, vgrep_text=None,
@@ -262,6 +264,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         fmt_ordered = cardlib.fmt_ordered_old
     elif encoding == 'norarity':
         fmt_ordered = cardlib.fmt_ordered_norarity
+
+    # Auto-detect markdown format from extension
+    if not use_markdown and oname and oname.endswith('.md'):
+        use_markdown = True
 
     # Use the robust jdecode.mtg_open_file for loading and filtering.
     # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
@@ -297,7 +303,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         actual_use_color = True
 
     # Progress bar is shown unless --quiet is specified
-    classes = sortcards(cards, verbose=not quiet, use_summary=use_summary, use_color=actual_use_color, fmt_ordered=fmt_ordered)
+    classes = sortcards(cards, verbose=not quiet, use_summary=use_summary, use_markdown=use_markdown, use_color=actual_use_color, fmt_ordered=fmt_ordered)
 
     outputter = sys.stdout
     ofile = None
@@ -351,10 +357,18 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
                     # Content block
                     classlen = len(card_list)
-                    outputter.write(f'[spoiler={name}: {classlen} cards]\n')
+                    if use_markdown:
+                        outputter.write(f'<details><summary>{name}: {classlen} cards</summary>\n\n')
+                    else:
+                        outputter.write(f'[spoiler={name}: {classlen} cards]\n')
+
                     for card_str in card_list:
                         outputter.write(f'{card_str}\n\n')
-                    outputter.write('[/spoiler]\n')
+
+                    if use_markdown:
+                        outputter.write('</details>\n\n')
+                    else:
+                        outputter.write('[/spoiler]\n')
 
     finally:
         if ofile:
@@ -439,6 +453,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
     proc_group.add_argument('--summary', action='store_true',
                         help='Output compact card summaries instead of full encoded text.')
+    proc_group.add_argument('--md', '--markdown', action='store_true',
+                        help='Output in Markdown format with collapsible sections (Auto-detected for .md).')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -476,7 +492,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
 
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, nolabel = args.nolabel,
-         use_summary = args.summary, use_color = args.color, quiet = args.quiet,
+         use_summary = args.summary, use_markdown = args.md, use_color = args.color, quiet = args.quiet,
          limit = args.limit, grep = args.grep, sort = args.sort, vgrep = args.vgrep,
          grep_name=args.grep_name, vgrep_name=args.exclude_name,
          grep_types=args.grep_type, vgrep_types=args.exclude_type,
