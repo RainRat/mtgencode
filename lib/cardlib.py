@@ -583,10 +583,6 @@ class Card:
                 return utils.Ansi.get_color_color('A')
             return utils.Ansi.BOLD
 
-    def _get_rarity_ansi_color(self, rarity):
-        """Returns the ANSI color code for a given rarity string or marker."""
-        return utils.Ansi.get_rarity_color(rarity)
-
     # These setters are invoked via name mangling, so they have to match 
     # the field names specified above to be used. Otherwise we just
     # always fall back to the (uninteresting) default handler.
@@ -922,7 +918,7 @@ class Card:
 
             indicator = f'[{indicator}]'
             if ansi_color:
-                color = self._get_rarity_ansi_color(r)
+                color = utils.Ansi.get_rarity_color(r)
                 indicator = utils.colorize(indicator, color)
 
             rarity_indicator = f'{indicator} '
@@ -1032,7 +1028,7 @@ class Card:
 
         rarity_display = rarity
         if ansi_color and rarity:
-            color = self._get_rarity_ansi_color(rarity)
+            color = utils.Ansi.get_rarity_color(rarity)
             rarity_display = utils.colorize(rarity, color)
 
         if rarity and gatherer:
