@@ -214,11 +214,7 @@ class Datamine:
 
                 inc(self.by_loyalty, card.loyalty, [card])
 
-                # normalize rarity
-                rarity = card.rarity
-                if rarity in utils.json_rarity_unmap:
-                    rarity = utils.json_rarity_unmap[rarity]
-                inc(self.by_rarity, rarity, [card])
+                inc(self.by_rarity, card.rarity_name, [card])
 
                 inc(self.by_textlines, len(card.text_lines), [card])
                 inc(self.by_textlen, len(card.text.encode()), [card])

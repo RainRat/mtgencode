@@ -523,6 +523,15 @@ class Card:
         """Returns True if the card is a battle."""
         return 'battle' in self.types
 
+    @property
+    def rarity_name(self):
+        """Returns the human-readable rarity name (e.g., 'rare' for 'A')."""
+        if not self.rarity:
+            return ''
+        if self.rarity in utils.json_rarity_unmap:
+            return utils.json_rarity_unmap[self.rarity]
+        return self.rarity
+
     def _get_pt_display(self, ansi_color=False, include_parens=True, unary=False):
         """Helper to format Power/Toughness for display."""
         if not self.pt:
@@ -910,10 +919,7 @@ class Card:
         # Rarity indicator
         rarity_indicator = ''
         if self.rarity:
-            r = self.rarity
-            if r in utils.json_rarity_unmap:
-                r = utils.json_rarity_unmap[r]
-
+            r = self.rarity_name
             indicator = RARITY_MAP.get(r.lower() if hasattr(r, 'lower') else r, r[0].upper() if r else '?')
 
             indicator = f'[{indicator}]'
@@ -1002,9 +1008,7 @@ class Card:
             cardname = utils.colorize(cardname, color)
 
         coststr = self.__dict__[field_cost].format(for_forum=for_forum, for_html=for_html, ansi_color=ansi_color)
-        rarity = self.__dict__[field_rarity]
-        if rarity in utils.json_rarity_unmap:
-            rarity = utils.json_rarity_unmap[rarity]
+        rarity = self.rarity_name
 
         formatted_mtext = self.get_text(gatherer=gatherer, for_forum=for_forum,
                                         for_html=for_html, ansi_color=ansi_color)
@@ -1153,10 +1157,7 @@ class Card:
 
         # Rarity
         if self.rarity:
-            rarity = self.rarity
-            if rarity in utils.json_rarity_unmap:
-                rarity = utils.json_rarity_unmap[rarity]
-            d['rarity'] = rarity
+            d['rarity'] = self.rarity_name
 
         # Types
         d['supertypes'] = [titlecase(s) for s in self.supertypes]
@@ -1217,12 +1218,8 @@ class Card:
         cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
         outstr += '\tname: ' + cardname + '\n'
 
-        if self.__dict__[field_rarity]:
-            if self.__dict__[field_rarity] in utils.json_rarity_unmap:
-                rarity = utils.json_rarity_unmap[self.__dict__[field_rarity]]
-            else:
-                rarity = self.__dict__[field_rarity]
-            outstr += '\trarity: ' + rarity.lower() + '\n'
+        if self.rarity:
+            outstr += '\trarity: ' + self.rarity_name.lower() + '\n'
 
         if not self.__dict__[field_cost].none:            
             outstr += ('\tcasting cost: ' 
@@ -1259,12 +1256,8 @@ class Card:
                 self.bside.__dict__[field_name]))
 
             outstr += '\tname 2: ' + cardname2 + '\n'
-            if self.bside.__dict__[field_rarity]:
-                if self.bside.__dict__[field_rarity] in utils.json_rarity_unmap:
-                    rarity2 = utils.json_rarity_unmap[self.bside.__dict__[field_rarity]]
-                else:
-                    rarity2 = self.bside.__dict__[field_rarity]
-                outstr += '\trarity 2: ' + rarity2.lower() + '\n'
+            if self.bside.rarity:
+                outstr += '\trarity 2: ' + self.bside.rarity_name.lower() + '\n'
 
             if not self.bside.__dict__[field_cost].none:            
                 outstr += ('\tcasting cost 2: ' 
@@ -1361,9 +1354,7 @@ class Card:
             text = card.get_text(force_unpass=True).replace('\n', '<br>')
 
             # Rarity
-            rarity = card.rarity
-            if rarity in utils.json_rarity_unmap:
-                rarity = utils.json_rarity_unmap[rarity]
+            rarity = card.rarity_name
 
             return name, cost, typeline, stats, text, rarity
 
