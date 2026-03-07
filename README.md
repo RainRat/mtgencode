@@ -13,7 +13,7 @@ This project helps you turn Magic: The Gathering card data into a format that AI
 You can run this project using Docker (easier) or install it directly on your computer.
 
 ### Option 1: Docker (Recommended)
-This method handles all dependencies for you.
+This method installs all dependencies automatically.
 
 *   **Linux/macOS:** Run `./docker-interactive.sh`
 *   **Windows:** Run `./docker-interactive.bat`
@@ -50,7 +50,7 @@ If you prefer to run it directly on your machine:
 ## Quick Start Guide
 
 ### 0. Verify Installation
-Ensure everything is set up correctly by running this quick test. It encodes a sample card and then decodes it back into readable text:
+Verify your installation by running this quick test. This command encodes a sample card and then decodes it back into readable text:
 
 ```bash
 python3 encode.py testdata/uthros.json | python3 decode.py
@@ -64,7 +64,7 @@ After downloading, set up your data folder:
 2.  Place your downloaded JSON file inside the `data` folder.
 
 ### 2. Encode Cards (JSON to Text)
-Convert the JSON data into a simple text format for AI training.
+Convert JSON data into a simple text format for AI training.
 
 ```bash
 # Basic encoding
@@ -108,10 +108,10 @@ Customization options for formatting data:
 *   `--nolabel`: Removes field labels (e.g., `|cost|`, `|text|`) from the output.
 *   `--nolinetrans`: Disables the automatic reordering and normalization of card text lines.
 *   `-r`, `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
-*   `-s`, `--stable`: Preserve the original order of cards from the input (shuffling is enabled by default).
+*   `-s`, `--stable`: Preserve the original order of cards from the input (the tool shuffles cards by default).
 *   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc` before encoding. Automatically enables `--stable`.
 *   `--limit N`: Only process the first N cards.
-*   `--sample N`: Shorthand for `--limit N`. Cards are shuffled by default unless `--stable` is used.
+*   `--sample N`: Shorthand for `--limit N`. The tool shuffles cards by default unless you use `--stable`.
 *   `--report-unparsed FILE`: Save the raw JSON of cards that failed to parse into a separate file.
 
 ### `decode.py` (Viewing Results)
@@ -127,7 +127,7 @@ Options for formatting the output:
 *   `--md`: Creates a Markdown document.
 *   `--summary`: Creates a compact one-line summary for each card.
 *   `--color` / `--no-color`: Manually enable or disable ANSI color output in your terminal.
-*   `--shuffle`: Randomizes the order of cards (shuffling is off by default for decoding).
+*   `--shuffle`: Randomizes the order of cards (the tool does not shuffle cards by default for decoding).
 *   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc`.
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
@@ -143,7 +143,7 @@ Options for formatting the output:
 > ```
 
 **Automatic Format Detection:**
-The tool automatically selects the format based on the file extension of your output file:
+The tool detects the format automatically based on the file extension of your output file:
 *   `.html` -> Webpage
 *   `.json` -> JSON data
 *   `.jsonl` -> JSON Lines data
@@ -214,7 +214,7 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number:
 ---
 
 ### Advanced Filtering
-You can filter which cards are processed using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, and `scripts/summarize.py`.
+Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, and `scripts/summarize.py`.
 
 *   **Global Filters:**
     *   `--grep "pattern"`: Only include cards where the name, type line, or rules text matches the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
@@ -251,7 +251,7 @@ python3 encode.py data/AllPrintings.json --deck-filter my_deck.txt encoded_deck.
 ---
 
 ## Training a Neural Network
-This project includes a modern character-level RNN for training on encoded card data.
+Train on encoded card data using the included character-level RNN.
 
 1.  **Prepare Data:** Use `encode.py` to create a text file (e.g., `data/output.txt`).
     ```bash
@@ -274,7 +274,7 @@ This project includes a modern character-level RNN for training on encoded card 
 
 ## Utility Scripts
 
-We provide extra tools in the `scripts/` folder to help you manage your data.
+Use the extra tools in the `scripts/` folder to manage your data.
 
 ### `sortcards.py`
 Organizes cards into categories (like Color or Card Type) and wraps them in `[spoiler]` tags. This is useful for posting cards on forums. It works with any card data (JSON, CSV, etc.) or encoded text.
