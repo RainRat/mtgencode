@@ -659,6 +659,7 @@ def mtg_open_file(fname, verbose = False,
                   grep_loyalty=None, vgrep_loyalty=None,
                   sets=None, rarities=None,
                   colors=None, cmcs=None,
+                  pows=None, tous=None, loys=None,
                   shuffle=False, seed=None,
                   decklist_file=None):
     """
@@ -951,7 +952,7 @@ def mtg_open_file(fname, verbose = False,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                    decklist_names=decklist_names)
 
-    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs:
+    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys:
         greps = [re.compile(p, re.IGNORECASE) for p in (grep if grep else [])]
         vgreps = [re.compile(p, re.IGNORECASE) for p in (vgrep if vgrep else [])]
         greps_name = [re.compile(p, re.IGNORECASE) for p in (grep_name if grep_name else [])]
@@ -979,7 +980,12 @@ def mtg_open_file(fname, verbose = False,
                     target_rarities.append(r)
 
         target_colors = [c.upper() for c in colors] if colors else None
-        target_cmcs = [float(c) for c in cmcs] if cmcs else None
+
+        # Initialize NumericFilters
+        cmc_filters = [utils.NumericFilter(f) for f in cmcs] if cmcs else []
+        pow_filters = [utils.NumericFilter(f) for f in pows] if pows else []
+        tou_filters = [utils.NumericFilter(f) for f in tous] if tous else []
+        loy_filters = [utils.NumericFilter(f) for f in loys] if loys else []
 
         def match_card(card):
             # Generic filtering (AND logic for greps, OR logic for vgreps)
@@ -1065,8 +1071,43 @@ def mtg_open_file(fname, verbose = False,
                     return False
 
             # CMC filtering
-            if target_cmcs:
-                if card.cost.cmc not in target_cmcs:
+            if cmc_filters:
+                match_cmc = False
+                for f in cmc_filters:
+                    if f.evaluate(card.cost.cmc):
+                        match_cmc = True
+                        break
+                if not match_cmc:
+                    return False
+
+            # Power filtering
+            if pow_filters:
+                match_pow = False
+                for f in pow_filters:
+                    if f.evaluate(card.pt_p):
+                        match_pow = True
+                        break
+                if not match_pow:
+                    return False
+
+            # Toughness filtering
+            if tou_filters:
+                match_tou = False
+                for f in tou_filters:
+                    if f.evaluate(card.pt_t):
+                        match_tou = True
+                        break
+                if not match_tou:
+                    return False
+
+            # Loyalty filtering
+            if loy_filters:
+                match_loy = False
+                for f in loy_filters:
+                    if f.evaluate(card.loyalty):
+                        match_loy = True
+                        break
+                if not match_loy:
                     return False
 
             return True
