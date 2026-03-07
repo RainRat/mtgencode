@@ -31,6 +31,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          grep_cost=None, vgrep_cost=None, grep_pt=None, vgrep_pt=None,
          grep_loyalty=None, vgrep_loyalty=None,
          sets=None, rarities=None, colors=None, cmcs=None,
+         pows=None, tous=None, loys=None,
          shuffle=False, seed=None, decklist_file=None):
 
     # Set default format to text if no specific output format is selected.
@@ -109,6 +110,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   grep_loyalty=grep_loyalty, vgrep_loyalty=vgrep_loyalty,
                                   sets=sets, rarities=rarities,
                                   colors=colors, cmcs=cmcs,
+                                  pows=pows, tous=tous, loys=loys,
                                   shuffle=shuffle, seed=seed, decklist_file=decklist_file)
 
     if sort:
@@ -646,7 +648,13 @@ if __name__ == '__main__':
     proc_group.add_argument('--colors', action='append',
                         help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple colors (OR logic).")
     proc_group.add_argument('--cmc', action='append',
-                        help='Only include cards with specific CMC (Converted Mana Cost) values. Supports multiple values (OR logic).')
+                        help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
+    proc_group.add_argument('--pow', '--power', action='append', dest='pow',
+                        help='Only include cards with specific Power values. Supports inequalities and ranges.')
+    proc_group.add_argument('--tou', '--toughness', action='append', dest='tou',
+                        help='Only include cards with specific Toughness values. Supports inequalities and ranges.')
+    proc_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
+                        help='Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck_filter',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
 
@@ -675,6 +683,7 @@ if __name__ == '__main__':
          grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
          grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
          sets=args.set, rarities=args.rarity, colors=args.colors, cmcs=args.cmc,
+         pows=args.pow, tous=args.tou, loys=args.loy,
          shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter)
 
     exit(0)

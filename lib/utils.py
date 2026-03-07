@@ -734,3 +734,81 @@ def print_operation_summary(op_name, success_count, fail_count, quiet=False):
         print(success_str, file=sys.stderr)
         print(fail_str, file=sys.stderr)
         print(footer, file=sys.stderr)
+
+
+class NumericFilter:
+    """
+    Parses and evaluates numerical filters.
+    Supports:
+    - Exact values: "5", "2.5"
+    - Inequalities: ">5", "<3", ">=2", "<=10", "!=0", "==4"
+    - Ranges: "2-4", "0.5-1.5"
+    """
+    def __init__(self, filter_str):
+        self.filter_str = filter_str.strip()
+        self.mode = None # 'exact', 'inequality', 'range'
+        self.op = None   # '>', '<', '>=', '<=', '!=', '=='
+        self.val = None
+        self.val2 = None # for range
+        self._parse()
+
+    def _parse(self):
+        s = self.filter_str
+        # Check for range
+        range_match = re.match(r'^([-+]?\d*\.?\d+)\s*-\s*([-+]?\d*\.?\d+)$', s)
+        if range_match:
+            self.mode = 'range'
+            self.val = float(range_match.group(1))
+            self.val2 = float(range_match.group(2))
+            return
+
+        # Check for inequalities
+        ineq_match = re.match(r'^([><=!]=|[><])\s*([-+]?\d*\.?\d+)$', s)
+        if ineq_match:
+            self.mode = 'inequality'
+            self.op = ineq_match.group(1)
+            self.val = float(ineq_match.group(2))
+            return
+
+        # Fallback to exact match (optionally with ==)
+        exact_match = re.match(r'^(?:==\s*)?([-+]?\d*\.?\d+)$', s)
+        if exact_match:
+            self.mode = 'exact'
+            self.val = float(exact_match.group(1))
+            return
+
+        raise ValueError(f"Invalid numerical filter: {s}")
+
+    def evaluate(self, value):
+        """
+        Evaluates the filter against a numeric value.
+        If value is a string, it attempts to convert it to a float.
+        """
+        if value is None:
+            return False
+
+        try:
+            if isinstance(value, str):
+                # Handle unary or decimal strings
+                if value.startswith(unary_marker):
+                    val = float(from_unary_single(value))
+                else:
+                    val = float(value)
+            else:
+                val = float(value)
+        except (ValueError, TypeError):
+            return False
+
+        if self.mode == 'exact':
+            return val == self.val
+        if self.mode == 'range':
+            return self.val <= val <= self.val2
+        if self.mode == 'inequality':
+            if self.op == '>': return val > self.val
+            if self.op == '<': return val < self.val
+            if self.op == '>=': return val >= self.val
+            if self.op == '<=': return val <= self.val
+            if self.op == '!=': return val != self.val
+            if self.op == '==': return val == self.val
+
+        return False
