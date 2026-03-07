@@ -21,7 +21,7 @@ def padrows(l):
         for i, field in enumerate(ll):
             s = str(field)
             pad = ' ' * (lens[i] - utils.visible_len(s))
-            padded[-1] += (s + pad + ' ')
+            padded[-1] += (s + pad + '  ')
     return padded
 def printrows(l):
     for row in l:
@@ -58,7 +58,8 @@ def color_line(text, use_color, color_code=utils.Ansi.BOLD + utils.Ansi.CYAN):
 def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, reverse=True, key_formatter=None):
     if not index:
         return
-    print(color_line(title, use_color))
+    print()
+    print('  ' + color_line(title, use_color))
 
     if sort_key:
         keys = sorted(index.keys(), key=sort_key, reverse=reverse)
@@ -69,7 +70,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
     if vsize:
         keys = keys[:vsize]
 
-    header_row = ['  Category', 'Count', 'Percent', 'Distribution']
+    header_row = ['    Category', 'Count', 'Percent', 'Distribution']
     if use_color:
         header_row = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header_row]
 
@@ -101,7 +102,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
             bar = utils.colorize(bar, utils.Ansi.BOLD + utils.Ansi.GREEN)
 
         rows.append([
-            '  ' + display_key,
+            '    ' + display_key,
             color_count(count, use_color),
             f"{percent:5.1f}%",
             bar
@@ -291,7 +292,7 @@ class Datamine:
               color_count(len(self.invalid_cards), use_color, utils.Ansi.BOLD + utils.Ansi.RED) + ' invalid cards.')
         print(color_count(len(self.allcards), use_color) + ' cards parsed, ' +
               color_count(len(self.unparsed_cards), use_color, utils.Ansi.BOLD + utils.Ansi.RED) + ' failed to parse')
-        print(f"{len(self.by_name)} unique card names")
+        print(color_count(len(self.by_name), use_color) + " unique card names")
         print()
 
         # Section: Colors & Mana
@@ -304,7 +305,10 @@ class Datamine:
 
         print(color_line(str(len(self.by_cmc)) + ' different CMCs, ' +
               str(len(self.by_cost)) + ' unique mana costs', use_color))
-        print('Average CMC: {:.2f}'.format(self.avg_cmc))
+        avg_cmc_str = 'Average CMC: {:.2f}'.format(self.avg_cmc)
+        if use_color:
+            avg_cmc_str = utils.colorize(avg_cmc_str, utils.Ansi.BOLD + utils.Ansi.GREEN)
+        print(avg_cmc_str)
         _print_breakdown('Breakdown by CMC:', self.by_cmc, len(self.allcards), use_color,
                          vsize=vsize, reverse=False, sort_key=lambda x: float(x))
         _print_breakdown('Popular mana costs:', self.by_cost, len(self.allcards), use_color,
@@ -343,7 +347,10 @@ class Datamine:
         if len(self.by_power) > 0 and len(self.by_toughness) > 0:
             print(('Largest power: ' + str(max(map(utils.from_unary_single, self.by_power))) +
                    ', largest toughness: ' + str(max(map(utils.from_unary_single, self.by_toughness)))))
-            print(f'Average power: {self.avg_power:.2f}, Average toughness: {self.avg_toughness:.2f}')
+            avg_pt_str = f'Average power: {self.avg_power:.2f}, Average toughness: {self.avg_toughness:.2f}'
+            if use_color:
+                avg_pt_str = utils.colorize(avg_pt_str, utils.Ansi.BOLD + utils.Ansi.GREEN)
+            print(avg_pt_str)
         _print_breakdown('Popular p/t values:', self.by_pt, len(self.allcards), use_color,
                          vsize=vsize, sort_key=lambda x: len(self.by_pt[x]), key_formatter=utils.from_unary)
         print()
@@ -381,7 +388,7 @@ class Datamine:
 
         rows = [header_row]
         for index in self.indices:
-            rows += [['  ' + index, color_count(len(self.indices[index]), use_color),
+            rows += [['    ' + index, color_count(len(self.indices[index]), use_color),
                       color_count(sum(len(v) for v in self.indices[index].values()), use_color)]]
         printrows(padrows(rows))
         print()
