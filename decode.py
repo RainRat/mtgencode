@@ -3,6 +3,8 @@ import sys
 import os
 import zipfile
 import shutil
+import random
+import copy
 # tqdm is imported inside main/helpers or at top level if we want it global
 try:
     from tqdm import tqdm
@@ -32,7 +34,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          grep_loyalty=None, vgrep_loyalty=None,
          sets=None, rarities=None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
-         shuffle=False, seed=None, decklist_file=None):
+         shuffle=False, seed=None, decklist_file=None, booster=0):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -113,6 +115,57 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   pows=pows, tous=tous, loys=loys,
                                   shuffle=shuffle, seed=seed, decklist_file=decklist_file)
 
+    if booster > 0:
+        if seed is not None:
+            random.seed(seed)
+
+        # Group by rarity using markers from utils
+        commons = [c for c in cards if c.rarity == utils.rarity_common_marker]
+        uncommons = [c for c in cards if c.rarity == utils.rarity_uncommon_marker]
+        rares = [c for c in cards if c.rarity in [utils.rarity_rare_marker, utils.rarity_mythic_marker]]
+        lands = [c for c in cards if c.rarity == utils.rarity_basic_land_marker]
+
+        # Fallback to all cards if a category is empty to avoid crashing
+        # but try to be smart about lands
+        if not commons:
+            if verbose: print("Warning: No commons found for booster generation, using all available cards.", file=sys.stderr)
+            commons = cards
+        if not uncommons:
+            if verbose: print("Warning: No uncommons found for booster generation, using all available cards.", file=sys.stderr)
+            uncommons = cards
+        if not rares:
+            if verbose: print("Warning: No rares/mythics found for booster generation, using all available cards.", file=sys.stderr)
+            rares = cards
+        if not lands:
+            # Try to find lands by type if no basic land rarity marker
+            lands = [c for c in cards if 'land' in [t.lower() for t in c.types]]
+            if not lands:
+                if verbose: print("Warning: No lands found for booster generation, using all available cards.", file=sys.stderr)
+                lands = cards
+
+        new_cards = []
+        for p in range(booster):
+            pack = []
+            # Standard distribution: 10 Commons, 3 Uncommons, 1 Rare/Mythic, 1 Land
+            # Use random.sample to avoid duplicates within each rarity slot in a single pack
+            pack.extend(random.sample(commons, min(len(commons), 10)))
+            pack.extend(random.sample(uncommons, min(len(uncommons), 3)))
+            pack.extend(random.sample(rares, min(len(rares), 1)))
+            pack.extend(random.sample(lands, min(len(lands), 1)))
+
+            # Tag cards with pack info for headers
+            for c in pack:
+                # We need a copy because the same card might appear in multiple packs
+                # and we want them to have distinct pack_id tags if we were to use them.
+                # However, for simplicity and performance, we'll just tag them.
+                # If the same object is in multiple packs, the last tag wins.
+                # To fix this, we'll use copies.
+                c_copy = copy.copy(c)
+                c_copy.pack_id = p + 1
+                new_cards.append(c_copy)
+
+        cards = new_cards
+
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
 
@@ -176,14 +229,38 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         success_count = 0
         fail_count = 0
         if for_md_table:
-            writer.write("| Name | Cost | Type | Stats | Rules Text | Rarity |\n")
-            writer.write("| :--- | :--- | :--- | :--- | :--- | :--- |\n")
+            if booster > 0:
+                writer.write("| Pack | Name | Cost | Type | Stats | Rules Text | Rarity |\n")
+                writer.write("| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
+            else:
+                writer.write("| Name | Cost | Type | Stats | Rules Text | Rarity |\n")
+                writer.write("| :--- | :--- | :--- | :--- | :--- | :--- |\n")
         if for_mse:
             # have to prepend a massive chunk of formatting info
             writer.write(utils.mse_prepend)
         elif for_html:
             # have to prepend html info
             writer.write(utils.html_prepend)
+
+            # Handle boosters in HTML
+            if booster > 0 and not sort:
+                current_pack = 0
+                for card in cards:
+                    if hasattr(card, 'pack_id') and card.pack_id != current_pack:
+                        if current_pack > 0:
+                            writer.write('</div><hr>')
+                        current_pack = card.pack_id
+                        writer.write(f'<h2 style="clear:both;">Pack {current_pack}</h2><div id="pack_{current_pack}">')
+                    try:
+                        writecard(writer, card, for_html=True, for_mse=for_mse)
+                        success_count += 1
+                    except Exception:
+                        fail_count += 1
+                if current_pack > 0:
+                    writer.write('</div><hr>')
+                writer.write(utils.html_append)
+                return success_count, fail_count
+
             # separate the write function to allow for writing smaller chunks of cards at a time
             segments = sortlib.sort_colors(cards, quiet=quiet)
             for i in range(len(segments)):
@@ -205,8 +282,31 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         first = True
         total = len(cards)
+        current_pack = 0
         for i, card in enumerate(tqdm(cards, disable=quiet or total < 5, desc="Decoding")):
             try:
+                # Pack header for non-HTML/non-MSE formats
+                if booster > 0 and not sort and hasattr(card, 'pack_id') and card.pack_id != current_pack:
+                    current_pack = card.pack_id
+                    header = f"== Pack {current_pack} =="
+                    if for_md:
+                        header = f"## {header}"
+
+                    use_color = False
+                    if not for_html and not for_mse and not for_md:
+                        if color_arg is True:
+                            use_color = True
+                        elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
+                            use_color = True
+
+                    if use_color:
+                        header = utils.colorize(header, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
+
+                    if not first:
+                        writer.write('\n')
+                    writer.write(header + '\n\n')
+                    first = True # Reset first to avoid divider before first card in pack
+
                 if not first and not (for_html or for_md or for_mse or for_summary):
                     # Add a divider between cards for console output
                     use_color = False
@@ -236,7 +336,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     def writecard(writer, card, for_html=False, for_md=False, for_md_table=False, for_summary=False, for_mse=False):
         try:
             if for_md_table:
-                writer.write(card.to_markdown_row() + '\n')
+                row = card.to_markdown_row()
+                if hasattr(card, 'pack_id'):
+                    row = f"| {card.pack_id} {row[1:]}"
+                writer.write(row + '\n')
                 return
             if for_mse:
                 writer.write(card.to_mse())
@@ -398,7 +501,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 json_cards = []
                 for card in cards:
                     try:
-                        json_cards.append(card.to_dict())
+                        d = card.to_dict()
+                        if hasattr(card, 'pack_id'):
+                            d['pack_id'] = card.pack_id
+                        json_cards.append(d)
                         total_success += 1
                     except Exception:
                         total_fail += 1
@@ -410,7 +516,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             with open(oname, 'w', encoding='utf8') as ofile:
                 for card in cards:
                     try:
-                        ofile.write(json.dumps(card.to_dict()) + '\n')
+                        d = card.to_dict()
+                        if hasattr(card, 'pack_id'):
+                            d['pack_id'] = card.pack_id
+                        ofile.write(json.dumps(d) + '\n')
                         total_success += 1
                     except Exception:
                         total_fail += 1
@@ -420,13 +529,14 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             with open(oname, 'w', encoding='utf8', newline='') as ofile:
                 # write_csv_output doesn't easily return counts, so we do it manually or assume cards
                 import csv
-                fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
+                fieldnames = ['pack_id', 'name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
                 csv_writer = csv.DictWriter(ofile, fieldnames=fieldnames)
                 csv_writer.writeheader()
                 for card in cards:
                     try:
                         d = card.to_dict()
                         row = {
+                            'pack_id': getattr(card, 'pack_id', ''),
                             'name': d.get('name', ''),
                             'mana_cost': d.get('manaCost', ''),
                             'type': ' '.join(d.get('supertypes', []) + d.get('types', [])),
@@ -474,7 +584,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             json_cards = []
             for card in cards:
                 try:
-                    json_cards.append(card.to_dict())
+                    d = card.to_dict()
+                    if hasattr(card, 'pack_id'):
+                        d['pack_id'] = card.pack_id
+                    json_cards.append(d)
                     total_success += 1
                 except Exception:
                     total_fail += 1
@@ -483,20 +596,24 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             import json
             for card in cards:
                 try:
-                    sys.stdout.write(json.dumps(card.to_dict()) + '\n')
+                    d = card.to_dict()
+                    if hasattr(card, 'pack_id'):
+                        d['pack_id'] = card.pack_id
+                    sys.stdout.write(json.dumps(d) + '\n')
                     total_success += 1
                 except Exception:
                     total_fail += 1
             sys.stdout.flush()
         elif csv_out:
             import csv
-            fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
+            fieldnames = ['pack_id', 'name', 'mana_cost', 'type', 'subtypes', 'text', 'power', 'toughness', 'loyalty', 'rarity']
             csv_writer = csv.DictWriter(sys.stdout, fieldnames=fieldnames)
             csv_writer.writeheader()
             for card in cards:
                 try:
                     d = card.to_dict()
                     row = {
+                        'pack_id': getattr(card, 'pack_id', ''),
                         'name': d.get('name', ''),
                         'mana_cost': d.get('manaCost', ''),
                         'type': ' '.join(d.get('supertypes', []) + d.get('types', [])),
@@ -657,6 +774,8 @@ if __name__ == '__main__':
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck_filter',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
+    proc_group.add_argument('--booster', type=int, default=0,
+                        help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
 
     args = parser.parse_args()
 
@@ -684,6 +803,6 @@ if __name__ == '__main__':
          grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
          sets=args.set, rarities=args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
-         shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter)
+         shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter, booster=args.booster)
 
     exit(0)
