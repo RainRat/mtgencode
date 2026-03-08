@@ -131,6 +131,7 @@ Options for formatting the output:
 *   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc`.
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+*   `--booster N`: Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land.
 *   `--report-failed FILE`: Save the text of cards that failed to parse or validate into a separate file.
 
 > **Important:** If you used a specific encoding (like `named`) when running `encode.py`, you **must** use that same encoding flag when running `decode.py`.
