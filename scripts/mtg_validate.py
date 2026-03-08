@@ -80,7 +80,7 @@ def check_pt(card):
 
 def check_lands(card):
     if 'land' in card.types:
-        return card.cost.format() == '_NOCOST_'
+        return card.cost.format() == ''
     else:
         return None
 

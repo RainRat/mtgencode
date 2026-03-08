@@ -102,7 +102,7 @@ class Manacost:
 
     def format(self, for_forum = False, for_html = False, ansi_color = False):
         if self.none:
-            return '_NOCOST_'
+            return ''
         
         else:
             s = utils.mana_untranslate(utils.mana_open_delimiter + ''.join(self.sequence)

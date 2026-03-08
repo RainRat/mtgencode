@@ -109,7 +109,7 @@ class TestManacost:
         assert colored == expected
 
         # None
-        assert Manacost("").format() == "_NOCOST_"
+        assert Manacost("").format() == ""
 
     def test_encode(self):
         m = Manacost("{WWUUBBRRGG}")
