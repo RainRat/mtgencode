@@ -169,37 +169,43 @@ python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - so
 
 ## Understanding the Encoded Format
 
-When you run `encode.py`, the output is converted into a specialized text format. This format uses special markers and "unary" numbers to help AI models recognize patterns more effectively.
+When you run `encode.py`, the cards are converted into a specialized text format. This format uses symbols and "unary" numbers to help the AI learn card patterns more easily. AI models often find regular card text confusing, so we simplify it into a language they can better understand.
 
 ### Special Markers
-| Marker | Meaning | Example |
+| Symbol | Description | Example |
 | :--- | :--- | :--- |
-| `\|` | Field separator | `\|5creature\|4legendary\|` |
-| `@` | Card Name (Self-reference) | `@ gets +1/+1` |
-| `\\` | Newline | `Flying\\Trample` |
-| `~` | Dash | `Enchantment~Aura` |
-| `=` | Bullet point | `= Choice one` |
-| `%` | Counter (Charge, +1/+1, etc.) | `Put a % counter on @` |
-| `[` `]` | Choice delimiters | `[1 = Choice A = Choice B]` |
-| `T` | Tap symbol | `{T}: Add {G}` |
-| `Q` | Untap symbol | `{Q}: Untap @` |
+| `\|` | Separates different parts of the card (like Name, Cost, or Type). | `\|5creature\|4legendary\|` |
+| `@` | Stands for the name of the card itself. | `@ gets +&^/+&^` |
+| `\\` | Indicates a new line of text. | `Flying\\Trample` |
+| `~` | Used instead of a dash. | `Enchantment~Aura` |
+| `=` | Separates different options in a list or choice. | `[= Option A = Option B]` |
+| `%` | Represents a counter (like a +1/+1 or Charge counter). | `Put a % counter on @` |
+| `[` `]` | Groups together multiple choices or options. | `[&^ = Option A = Option B]` |
+| `{ }` | Mana symbols are always doubled (like `{WW}`) to help the AI. | `{GG}` |
+| `T` | The Tap symbol. | `T: Add {GG}` |
+| `Q` | The Untap symbol. | `Q: Untap @` |
 
 ### Unary Numbers
-To help the AI count, numbers are represented as a sequence of symbols instead of digits.
-*   **Marker (`&`)**: Indicates the start of a number.
-*   **Counter (`^`)**: Each `^` represents 1.
-*   **Limits**: Standard unary sequences are capped at 20 (`&^^^^^^^^^^^^^^^^^^^^`).
-*   **Large Numbers**: Specific large values are represented by words to save space:
+To help the AI learn how to count, numbers are written as a sequence of symbols instead of digits.
+*   **The Start (`&`)**: This symbol marks the beginning of a number.
+*   **The Count (`^`)**: Each `^` symbol represents 1.
+*   **Zero (`&`)**: A start marker by itself represents zero.
+*   **Limit**: Standard counts only go up to 20 (`&^^^^^^^^^^^^^^^^^^^^`).
+*   **Large Numbers**: Specific large values are written as words to keep the text short:
     *   25 = `twenty~five`
     *   30 = `thirty`
     *   40 = `forty`
     *   50 = `fifty`
     *   100 = `one hundred`
     *   200 = `two hundred`
-*   **Examples**:
-    *   `&^` = 1
-    *   `&^^` = 2
-    *   `&^^^^^` = 5
+
+**Examples**:
+| Number | Encoded |
+| :--- | :--- |
+| 0 | `&` |
+| 1 | `&^` |
+| 2 | `&^^` |
+| 5 | `&^^^^^` |
 
 ### Field Labels
 If you don't use the `--nolabel` flag, each field is prefixed with a number:
