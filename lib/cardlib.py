@@ -937,9 +937,7 @@ class Card:
 
         # Cost
         coststr = self.cost.format(ansi_color=ansi_color)
-        if coststr == '_NOCOST_':
-            coststr = ''
-        else:
+        if coststr:
             coststr = f' {coststr}'
 
         # Type Line
@@ -1022,7 +1020,7 @@ class Card:
         else:
             outstr += cardname
 
-        if vdump or not coststr == '_NOCOST_':
+        if vdump or coststr:
             outstr += ' ' + coststr
 
         if for_html and for_forum:
@@ -1335,8 +1333,6 @@ class Card:
 
             # Cost
             cost = card.cost.format()
-            if cost == '_NOCOST_':
-                cost = ''
 
             # Type
             supertypes = [titlecase(s) for s in card.supertypes]
