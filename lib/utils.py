@@ -550,7 +550,7 @@ def from_mana(s, for_forum=False, for_html=False, ansi_color=False):
     
 # Translation could also be accomplished using the datamine.Manacost object's
 # display methods, but these direct string transformations are retained for
-# quick scripting and convenience (and used under the hood by that class to
+# quick scripting and convenience (and are used internally by that class to
 # do its formatting).
 
 # more convenience features for formatting tap / untap symbols

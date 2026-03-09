@@ -3,7 +3,7 @@
 This project helps you turn Magic: The Gathering card data into a format that AI models can understand. It can also turn AI-generated text back into readable cards or card images.
 
 **Main features:**
-*   **Prepare Data:** Convert official card data for training AI models (like RNNs or Transformers).
+*   **Prepare Data:** Convert official card data for training AI models.
 *   **View Results:** Decode AI output into readable cards, spreadsheets, or [Magic Set Editor](http://magicseteditor.boards.net) files.
 
 ---
@@ -103,7 +103,7 @@ Customization options for formatting data:
 *   `-e rfields`: Randomizes the order of fields (like cost, types, text) for each card.
 *   `-e old`: Legacy encoding format.
 *   `-e norarity`: Standard format but without rarity labels.
-*   `-e vec`: Numerical format for vector-based models.
+*   `-e vec`: Numerical format for mathematical models.
 *   `-e custom`: Use your own user-defined formatting rules (see `lib/cardlib.py`).
 *   `--nolabel`: Removes field labels (e.g., `|cost|`, `|text|`) from the output.
 *   `--nolinetrans`: Disables the automatic reordering and normalization of card text lines.
@@ -257,22 +257,22 @@ python3 encode.py data/AllPrintings.json --deck-filter my_deck.txt encoded_deck.
 
 ---
 
-## Training a Neural Network
-Train on encoded card data using the included character-level RNN.
+## Training your own AI Model
+Use your encoded card data to train a neural network that can design its own Magic cards.
 
-1.  **Prepare Data:** Use `encode.py` to create a text file (e.g., `data/output.txt`).
+1.  **Prepare the Data:** Create a text file of encoded cards.
     ```bash
     python3 encode.py data/AllPrintings.json data/output.txt
     ```
-2.  **Train:** Use the included `train.py` script.
+2.  **Train the Model:** Run the training script.
     ```bash
     python3 train.py --mode train --infile data/output.txt --epochs 10
     ```
-3.  **Generate:** Use the same script in `sample` mode to create new card text.
+3.  **Generate New Cards:** Use your trained model to create new card text.
     ```bash
     python3 train.py --mode sample --checkpoint checkpoint.pt --length 2000 > generated.txt
     ```
-4.  **Decode:** Use `decode.py` to turn that generated text into readable cards.
+4.  **View the Results:** Turn the generated text back into readable cards.
     ```bash
     python3 decode.py generated.txt decoded.txt
     ```

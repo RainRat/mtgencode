@@ -225,12 +225,12 @@ def sample(args):
             x = torch.tensor([[char_idx]], dtype=torch.long).to(device)
             i += 1
 
-            # Whispering logic: if a field is primed, force feed it
+            # Forcing attribute logic: if a field is set, insert the text
             if char == '|' and field_count in whisper_map and whisper_map[field_count]:
                 whisper_text = whisper_map[field_count]
                 for w_char in whisper_text:
                     w_idx = char_to_idx.get(w_char, 0)
-                    # Feed through model to update hidden state
+                    # Update the model with the forced text to keep it on track
                     x = torch.tensor([[w_idx]], dtype=torch.long).to(device)
                     output, hidden = model(x, hidden)
                     generated += w_char
@@ -239,7 +239,7 @@ def sample(args):
     print(generated)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Advanced character-level RNN for MTG training with mtg-rnn features.")
+    parser = argparse.ArgumentParser(description="Train a neural network to design Magic: The Gathering cards.")
 
     # Group: General Options
     gen_group = parser.add_argument_group('General Options')
@@ -282,9 +282,9 @@ if __name__ == "__main__":
     sample_group.add_argument("--start_text", type=str, default="|",
                         help="The text to start generation with. Default: '|'")
 
-    # Group: Priming (Forcing Attributes)
-    prime_group = parser.add_argument_group('Priming (Forcing Attributes)',
-                                          'These options force specific fields to contain the provided text. '
+    # Group: Forcing Card Attributes
+    prime_group = parser.add_argument_group('Forcing Card Attributes',
+                                          'These options force specific fields to contain your chosen text. '
                                           'Note: These depend on the legacy encoding format (-e old).')
     prime_group.add_argument("--name", type=str, help="Force a specific card name.")
     prime_group.add_argument("--supertypes", type=str, help="Force specific supertypes (e.g., 'Legendary').")
