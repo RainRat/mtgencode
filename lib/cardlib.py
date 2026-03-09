@@ -524,6 +524,69 @@ class Card:
         return 'battle' in self.types
 
     @property
+    def mechanics(self):
+        """Returns a set of mechanical features and keyword abilities identified on the card."""
+        text_raw = self.text.text.lower()
+        text_enc = self.text.encode().lower()
+        cost_enc = self.cost.encode()
+
+        m = set()
+
+        # 1. Structural / Complex Mechanics
+        if ':' in text_raw:
+            m.add('Activated')
+
+        # Triggered: check start of lines
+        for mt in self.text_lines:
+            line = mt.text.lower().strip()
+            if line.startswith('when') or line.startswith('whenever') or line.startswith('at '):
+                m.add('Triggered')
+                break
+
+        if 'enters the battlefield' in text_raw or 'enters,' in text_raw or 'enters.' in text_raw:
+            m.add('ETB Effect')
+
+        if utils.choice_open_delimiter in text_enc or utils.choice_close_delimiter in text_enc or '=' in text_enc:
+            m.add('Modal/Choice')
+
+        if 'X' in cost_enc or 'x' in text_raw:
+            m.add('X-Cost/Effect')
+
+        if 'kick' in text_raw:
+            m.add('Kicker')
+
+        if 'uncast' in text_raw:
+            m.add('Uncast')
+
+        if 'equipment' in [t.lower() for t in self.subtypes] or 'equip' in text_raw:
+            m.add('Equipment')
+
+        if 'level up' in text_raw or 'level &' in text_enc:
+            m.add('Leveler')
+
+        if '%' in text_enc or '#' in text_enc or 'counter' in text_raw:
+            m.add('Counters')
+
+        # 2. Common Keyword Abilities
+        keywords = [
+            'flying', 'trample', 'lifelink', 'haste', 'deathtouch',
+            'vigilance', 'ward', 'prowess', 'menace', 'reach',
+            'flash', 'indestructible', 'scry', 'draw a card',
+            'mill', 'exile', 'token', 'discard', 'cycling'
+        ]
+
+        for kw in keywords:
+            # Use word boundaries for keywords to avoid partial matches
+            if re.search(r'\b' + re.escape(kw) + r'\b', text_raw):
+                m.add(kw.title())
+
+        # Recursive profiling for split/double-faced cards
+        if self.bside:
+            m.update(self.bside.mechanics)
+
+        return m
+
+    @property
     def rarity_name(self):
         """Returns the human-readable rarity name (e.g., 'rare' for 'A')."""
         if not self.rarity:

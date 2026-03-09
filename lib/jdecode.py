@@ -660,6 +660,7 @@ def mtg_open_file(fname, verbose = False,
                   sets=None, rarities=None,
                   colors=None, cmcs=None,
                   pows=None, tous=None, loys=None,
+                  mechanics=None,
                   shuffle=False, seed=None,
                   decklist_file=None):
     """
@@ -952,7 +953,7 @@ def mtg_open_file(fname, verbose = False,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                    decklist_names=decklist_names)
 
-    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys:
+    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics:
         greps = [re.compile(p, re.IGNORECASE) for p in (grep if grep else [])]
         vgreps = [re.compile(p, re.IGNORECASE) for p in (vgrep if vgrep else [])]
         greps_name = [re.compile(p, re.IGNORECASE) for p in (grep_name if grep_name else [])]
@@ -980,6 +981,7 @@ def mtg_open_file(fname, verbose = False,
                     target_rarities.append(r)
 
         target_colors = [c.upper() for c in colors] if colors else None
+        target_mechanics = [m.lower() for m in mechanics] if mechanics else None
 
         # Initialize NumericFilters
         cmc_filters = [utils.NumericFilter(f) for f in cmcs] if cmcs else []
@@ -1108,6 +1110,17 @@ def mtg_open_file(fname, verbose = False,
                         match_loy = True
                         break
                 if not match_loy:
+                    return False
+
+            # Mechanic filtering
+            if target_mechanics:
+                card_mechanics = [m.lower() for m in card.mechanics]
+                match_mechanic = False
+                for tm in target_mechanics:
+                    if tm in card_mechanics:
+                        match_mechanic = True
+                        break
+                if not match_mechanic:
                     return False
 
             return True

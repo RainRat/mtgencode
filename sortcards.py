@@ -253,6 +253,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          grep_loyalty=None, vgrep_loyalty=None,
          sets = None, rarities = None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
+         mechanics=None,
          shuffle = False, seed = None, decklist_file = None):
 
     # Determine format
@@ -285,6 +286,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   sets=sets, rarities=rarities,
                                   colors=colors, cmcs=cmcs,
                                   pows=pows, tous=tous, loys=loys,
+                                  mechanics=mechanics,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False,
@@ -457,6 +459,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Only include cards with specific Toughness values. Supports inequalities and ranges.')
     proc_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.')
+    proc_group.add_argument('--mechanic', action='append',
+                        help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
     proc_group.add_argument('--summary', action='store_true',
@@ -510,6 +514,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
          grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
          sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
+         mechanics=args.mechanic,
          shuffle = args.shuffle, seed = args.seed, decklist_file = args.deck)
 
 if __name__ == '__main__':

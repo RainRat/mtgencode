@@ -34,6 +34,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          grep_loyalty=None, vgrep_loyalty=None,
          sets=None, rarities=None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
+         mechanics=None,
          shuffle=False, seed=None, decklist_file=None, booster=0):
 
     # Set default format to text if no specific output format is selected.
@@ -113,6 +114,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   sets=sets, rarities=rarities,
                                   colors=colors, cmcs=cmcs,
                                   pows=pows, tous=tous, loys=loys,
+                                  mechanics=mechanics,
                                   shuffle=shuffle, seed=seed, decklist_file=decklist_file)
 
     if booster > 0:
@@ -772,6 +774,8 @@ if __name__ == '__main__':
                         help='Only include cards with specific Toughness values. Supports inequalities and ranges.')
     proc_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.')
+    proc_group.add_argument('--mechanic', action='append',
+                        help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck_filter',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
     proc_group.add_argument('--booster', type=int, default=0,
@@ -803,6 +807,7 @@ if __name__ == '__main__':
          grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
          sets=args.set, rarities=args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
+         mechanics=args.mechanic,
          shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter, booster=args.booster)
 
     exit(0)
