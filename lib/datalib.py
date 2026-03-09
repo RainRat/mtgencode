@@ -221,8 +221,9 @@ class Datamine:
                 inc(self.by_textlines, len(card.text_lines), [card])
                 inc(self.by_textlen, len(card.text.encode()), [card])
 
-                # Mechanical profiling
-                self._profile_mechanics(card)
+                # Mechanical profiling using Card.mechanics
+                for m in card.mechanics:
+                    inc(self.by_mechanic, m, [card])
 
         self.avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
 
@@ -231,59 +232,6 @@ class Datamine:
         t_vals = [utils.from_unary_single(c.pt_t) for c in self.cards if c.pt_t is not None]
         self.avg_power = sum(p_vals) / len(p_vals) if p_vals else 0
         self.avg_toughness = sum(t_vals) / len(t_vals) if t_vals else 0
-
-    def _profile_mechanics(self, card):
-        """Internal helper to identify and index mechanical features of a card."""
-
-        def check_card_face(c):
-            text_raw = c.text.text.lower()
-            text_enc = c.text.encode().lower()
-            cost_enc = c.cost.encode()
-
-            mechanics = set()
-
-            # 1. Structural mechanics
-            if ':' in text_raw:
-                mechanics.add('Activated')
-
-            # Triggered: check start of lines
-            for mt in c.text_lines:
-                line = mt.text.lower().strip()
-                if line.startswith('when') or line.startswith('whenever') or line.startswith('at '):
-                    mechanics.add('Triggered')
-                    break
-
-            if 'enters the battlefield' in text_raw:
-                mechanics.add('ETB Effect')
-
-            if utils.choice_open_delimiter in text_enc or utils.choice_close_delimiter in text_enc:
-                mechanics.add('Modal/Choice')
-
-            if 'X' in cost_enc or 'x' in text_raw:
-                mechanics.add('X-Cost/Effect')
-
-            # 2. Common Keyword Abilities
-            keywords = [
-                'flying', 'trample', 'lifelink', 'haste', 'deathtouch',
-                'vigilance', 'ward', 'prowess', 'menace', 'reach',
-                'flash', 'indestructible', 'scry', 'draw a card',
-                'mill', 'exile', 'token', 'discard'
-            ]
-
-            for kw in keywords:
-                # Use word boundaries for keywords to avoid partial matches
-                if re.search(r'\b' + re.escape(kw) + r'\b', text_raw):
-                    mechanics.add(kw.title())
-
-            return mechanics
-
-        # Recursive profiling for split/double-faced cards
-        all_mechanics = check_card_face(card)
-        if card.bside:
-            all_mechanics.update(check_card_face(card.bside))
-
-        for m in all_mechanics:
-            inc(self.by_mechanic, m, [card])
 
     # summarize the indices
     def summarize(self, hsize = 10, vsize = 10, cmcsize = 20, use_color = False):
