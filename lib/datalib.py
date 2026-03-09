@@ -71,7 +71,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
     if vsize:
         keys = keys[:vsize]
 
-    header_row = ['    Category', 'Count', 'Percent', 'Distribution']
+    header_row = ['Category', 'Count', 'Percent', 'Distribution']
     if use_color:
         header_row = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header_row]
 
@@ -83,15 +83,19 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
         display_key = key_formatter(k) if key_formatter else str(k)
 
         # apply content-aware coloring
+        display_color = None
         if use_color:
             if 'rarity' in title.lower():
-                display_key = utils.colorize(display_key, utils.Ansi.get_rarity_color(k))
+                display_color = utils.Ansi.get_rarity_color(k)
+                display_key = utils.colorize(display_key, display_color)
             elif 'color' in title.lower() and not 'number' in title.lower():
-                display_key = utils.colorize(display_key, utils.Ansi.get_color_color(k))
+                display_color = utils.Ansi.get_color_color(k)
+                display_key = utils.colorize(display_key, display_color)
             elif 'mana costs' in title.lower():
                 display_key = utils.from_mana(k, ansi_color=True)
             elif 'p/t' in title.lower() or 'loyalty' in title.lower():
-                display_key = utils.colorize(display_key, utils.Ansi.RED)
+                display_color = utils.Ansi.RED
+                display_key = utils.colorize(display_key, display_color)
 
         # Bar chart
         bar_width = 10
@@ -100,7 +104,8 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
             filled = 1
         bar = '[' + '#' * filled + ' ' * (bar_width - filled) + ']'
         if use_color:
-            bar = utils.colorize(bar, utils.Ansi.BOLD + utils.Ansi.GREEN)
+            bar_color = display_color if display_color else (utils.Ansi.BOLD + utils.Ansi.GREEN)
+            bar = utils.colorize(bar, bar_color)
 
         rows.append([
             display_key,
