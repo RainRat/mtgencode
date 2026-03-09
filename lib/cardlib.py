@@ -1283,7 +1283,7 @@ class Card:
                 outstr += '\trule text 2:\n\t\t' + newtext2 + '\n'
 
         # Need to do Special Things if it's a planeswalker.
-        elif "planeswalker" in str(self.__dict__[field_types]):
+        elif self.is_planeswalker:
             outstr += '\tstylesheet: m15-planeswalker\n'
 
             # set up the loyalty cost fields using regex to find how many there are.
