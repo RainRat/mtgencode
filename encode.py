@@ -168,7 +168,7 @@ if __name__ == '__main__':
                         help='Seed for the random number generator (Default: 1371367).')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --limit N). Shuffling is enabled unless --stable is used.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
                         help='Sort cards by a specific criterion (enables --stable).')
     proc_group.add_argument('--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
