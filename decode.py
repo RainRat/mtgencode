@@ -288,7 +288,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         for i, card in enumerate(tqdm(cards, disable=quiet or total < 5, desc="Decoding")):
             try:
                 # Pack header for non-HTML/non-MSE formats
-                if booster > 0 and not sort and hasattr(card, 'pack_id') and card.pack_id != current_pack:
+                if booster > 0 and not sort and not (for_mse or for_md_table) and hasattr(card, 'pack_id') and card.pack_id != current_pack:
                     current_pack = card.pack_id
                     header = f"== Pack {current_pack} =="
                     if for_md:
@@ -309,7 +309,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                     writer.write(header + '\n\n')
                     first = True # Reset first to avoid divider before first card in pack
 
-                if not first and not (for_html or for_md or for_mse or for_summary):
+                if not first and not (for_html or for_md or for_mse or for_summary or for_md_table):
                     # Add a divider between cards for console output
                     use_color = False
                     if color_arg is True:
