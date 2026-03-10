@@ -656,11 +656,11 @@ class Ansi:
         if not rarity:
             return Ansi.BOLD
         r_lower = rarity.lower() if hasattr(rarity, 'lower') else rarity
-        if r_lower in ['uncommon', rarity_uncommon_marker]:
+        if r_lower == 'uncommon' or rarity == rarity_uncommon_marker:
             return Ansi.BOLD + Ansi.CYAN
-        if r_lower in ['rare', rarity_rare_marker]:
+        if r_lower == 'rare' or rarity == rarity_rare_marker:
             return Ansi.BOLD + Ansi.YELLOW
-        if r_lower in ['mythic rare', 'mythic', rarity_mythic_marker]:
+        if r_lower in ['mythic rare', 'mythic'] or rarity == rarity_mythic_marker:
             return Ansi.BOLD + Ansi.RED
         return Ansi.BOLD
 
