@@ -235,7 +235,10 @@ Filter which cards the tool processes using search patterns, set codes, rarities
     *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets (OR logic).
     *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports multiple rarities (OR logic).
     *   `--colors SYMBOLS`: Only include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless. Multiple colors use OR logic.
-    *   `--cmc VALUE`: Only include cards with a specific CMC (Converted Mana Cost). Supports multiple values (OR logic).
+    *   `--cmc VALUE`: Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., `>3`, `<=2`), ranges (e.g., `1-4`), and multiple values (OR logic).
+    *   `--pow VALUE` (or `--power`): Only include cards with specific Power values. Supports inequalities and ranges.
+    *   `--tou VALUE` (or `--toughness`): Only include cards with specific Toughness values. Supports inequalities and ranges.
+    *   `--loy VALUE` (or `--loyalty`, `--defense`): Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.
     *   `--mechanic NAME`: Only include cards with specific mechanical features or keyword abilities (e.g., `Flying`, `Activated`, `ETB Effect`). Supports multiple mechanics (OR logic).
     *   `--deck-filter FILE` (or `--decklist-filter`): Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
 
@@ -254,6 +257,9 @@ python3 encode.py data/AllPrintings.json --rarity rare --exclude-name "Infect"
 
 # Encode cards from a specific decklist to create a customized training set
 python3 encode.py data/AllPrintings.json --deck-filter my_deck.txt encoded_deck.txt
+
+# Find all creatures with power 5 or greater
+python3 scripts/summarize.py data/AllPrintings.json --pow ">=5"
 ```
 
 ---
