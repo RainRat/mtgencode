@@ -5,7 +5,7 @@ import random
 
 import utils
 
-COLOR_STRIP_CHARS = {'2', 'P', 'S', 'X', 'C'}
+COLOR_STRIP_CHARS = {'2', 'P', 'S', 'X', 'C', 'E'}
 
 class Manacost:
     '''mana cost representation with data'''
