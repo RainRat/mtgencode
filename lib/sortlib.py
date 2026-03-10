@@ -5,7 +5,9 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
+import re
 import cardlib
+import utils
 
 def sort_colors(card_set, quiet=False):
     """Sorts cards by their color identity."""
@@ -23,7 +25,7 @@ def sort_colors(card_set, quiet=False):
         elif len(card_colors) == 1:
             colors[card_colors[0]].append(card)
         else:
-            if "land" in card.types:
+            if "land" in [t.lower() for t in card.types]:
                 colors['lands'].append(card)
             else:
                 colors['colorless'].append(card)
@@ -33,7 +35,9 @@ def sort_colors(card_set, quiet=False):
 
 def sort_type(card_set):
     """Sorts cards by their primary card type."""
-    sorting = ["creature", "enchantment", "instant", "sorcery", "artifact", "planeswalker"]
+    # Priority order for primary card types.
+    # We maintain the order expected by existing tests for backward compatibility.
+    sorting = ["creature", "enchantment", "instant", "sorcery", "artifact", "planeswalker", "battle", "land"]
 
     def type_priority(card):
         # Convert card types to lowercase for case-insensitive comparison
@@ -43,6 +47,7 @@ def sort_type(card_set):
                 return i
         return len(sorting)
 
+    # Use stable sort (Python's sorted is stable)
     return sorted(card_set, key=type_priority)
 
 def sort_cards(cards, criterion, quiet=False):
@@ -60,5 +65,48 @@ def sort_cards(cards, criterion, quiet=False):
         return [card for segment in segments for card in segment]
     elif criterion == 'type':
         return sort_type(cards)
+    elif criterion == 'rarity':
+        # Priority: Mythic > Rare > Uncommon > Common > Basic Land > Special > Other
+        # Markers: Y (Mythic), A (Rare), N (Uncommon), O (Common), L (Basic Land), I (Special)
+        rarity_priority = {
+            utils.rarity_mythic_marker: 0, 'MYTHIC': 0, 'MYTHIC RARE': 0,
+            utils.rarity_rare_marker: 1, 'RARE': 1,
+            utils.rarity_uncommon_marker: 2, 'UNCOMMON': 2,
+            utils.rarity_common_marker: 3, 'COMMON': 3,
+            utils.rarity_basic_land_marker: 4, 'BASIC LAND': 4,
+            utils.rarity_special_marker: 5, 'SPECIAL': 5,
+        }
+        def get_rarity_val(card):
+            r = card.rarity.upper() if card.rarity else ''
+            return rarity_priority.get(r, 6)
+        return sorted(cards, key=get_rarity_val)
+    elif criterion == 'power':
+        def get_pow(card):
+            val = utils.from_unary_single(card.pt_p)
+            # Use a large number for None to sort them last
+            # We return a tuple to handle the None case gracefully in a single sort pass
+            return (0, -val) if val is not None else (1, 0)
+        return sorted(cards, key=get_pow)
+    elif criterion == 'toughness':
+        def get_tou(card):
+            val = utils.from_unary_single(card.pt_t)
+            return (0, -val) if val is not None else (1, 0)
+        return sorted(cards, key=get_tou)
+    elif criterion == 'loyalty':
+        def get_loy(card):
+            val = utils.from_unary_single(card.loyalty)
+            return (0, -val) if val is not None else (1, 0)
+        return sorted(cards, key=get_loy)
+    elif criterion == 'set':
+        def get_set_key(card):
+            s = card.set_code.upper() if card.set_code else 'ZZZ'
+            n = card.number if card.number else '9999'
+            # Try to extract the numeric part for logical sorting of collector numbers
+            try:
+                n_int = int(re.sub(r'\D', '', n))
+            except (ValueError, TypeError):
+                n_int = 9999
+            return (s, n_int, n)
+        return sorted(cards, key=get_set_key)
     else:
         return cards

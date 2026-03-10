@@ -409,7 +409,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Randomize the order of cards before sorting.')

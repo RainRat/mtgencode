@@ -722,7 +722,7 @@ if __name__ == '__main__':
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('-d', '--dump', action='store_true',
                         help='Show detailed debug information for cards that were not processed correctly.')
