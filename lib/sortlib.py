@@ -82,18 +82,23 @@ def sort_cards(cards, criterion, quiet=False):
         return sorted(cards, key=get_rarity_val)
     elif criterion == 'power':
         def get_pow(card):
+            if card.pt_p is None:
+                return (1, 0)
             val = utils.from_unary_single(card.pt_p)
-            # Use a large number for None to sort them last
-            # We return a tuple to handle the None case gracefully in a single sort pass
             return (0, -val) if val is not None else (1, 0)
         return sorted(cards, key=get_pow)
     elif criterion == 'toughness':
         def get_tou(card):
+            if card.pt_t is None:
+                return (1, 0)
             val = utils.from_unary_single(card.pt_t)
             return (0, -val) if val is not None else (1, 0)
         return sorted(cards, key=get_tou)
     elif criterion == 'loyalty':
         def get_loy(card):
+            # Card.loyalty defaults to an empty string when missing
+            if card.loyalty is None or card.loyalty == '':
+                return (1, 0)
             val = utils.from_unary_single(card.loyalty)
             return (0, -val) if val is not None else (1, 0)
         return sorted(cards, key=get_loy)
