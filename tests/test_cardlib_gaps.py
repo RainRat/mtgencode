@@ -150,7 +150,7 @@ def test_card_fields_from_format_multiple():
 
 def test_card_constructor_unknown_field():
     # Trigger line 500
-    with pytest.raises(ValueError, match="unknown field for Card"):
+    with pytest.raises(ValueError, match="Unknown field for Card object"):
         Card("Test", fmt_ordered=["unknown_field"])
 
 def test_card_set_loyalty_multiple():
