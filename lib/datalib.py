@@ -146,18 +146,22 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
 
         for i, group in enumerate('WUBRGAM'):
             percent = percents[i]
-            val = f"{percent:4.0f}%" if percent > 0 else "  - "
-            if percent > 0 and percent == max_p and max_p > 0:
-                # Highlight dominant color
+            if percent > 0:
+                val_str = f"{percent:4.0f}%"
                 if use_color:
                     color = utils.Ansi.get_color_color(group)
-                    # already bold from get_color_color, add underline to really make it pop
-                    val = utils.colorize(val, color + utils.Ansi.UNDERLINE)
+                    if percent == max_p and max_p > 0:
+                        # Highlight dominant color with underline
+                        # Only colorize the non-space part to avoid underlined leading spaces
+                        non_space = val_str.lstrip()
+                        spaces = val_str[:len(val_str)-len(non_space)]
+                        val = spaces + utils.colorize(non_space, color + utils.Ansi.UNDERLINE)
+                    else:
+                        val = utils.colorize(val_str, color)
                 else:
-                    val = utils.colorize(val, utils.Ansi.BOLD)
-            elif use_color and percent > 0:
-                color = utils.Ansi.get_color_color(group)
-                val = utils.colorize(val, color)
+                    val = val_str
+            else:
+                val = "  - "
             row.append(val)
         rows.append(row)
 
