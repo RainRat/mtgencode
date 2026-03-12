@@ -115,6 +115,38 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
         ])
     printrows(padrows(rows), indent=4)
 
+def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=None):
+    if not all_mechanics:
+        return
+    print()
+    print('  ' + color_line('Mechanical Color Pie (Frequency %):', use_color))
+
+    header = ['Mechanic', 'W', 'U', 'B', 'R', 'G', 'A', 'M']
+    if use_color:
+        header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+
+    rows = [header]
+    # Sort mechanics by total frequency
+    sorted_mechanics = sorted(all_mechanics.keys(), key=lambda m: len(all_mechanics[m]), reverse=True)
+    if vsize:
+        sorted_mechanics = sorted_mechanics[:vsize]
+
+    for m in sorted_mechanics:
+        row = [m]
+        for group in 'WUBRGAM':
+            total = pie_groups[group]
+            count = pie_mechanics[group].get(m, 0)
+            percent = (count / total * 100) if total > 0 else 0
+
+            val = f"{percent:4.0f}%" if percent > 0 else "  - "
+            if use_color and percent > 0:
+                color = utils.Ansi.get_color_color(group)
+                val = utils.colorize(val, color)
+            row.append(val)
+        rows.append(row)
+
+    printrows(padrows(rows), indent=4)
+
 class Datamine:
     # build the global indices
     def __init__(self, cards_input):
@@ -123,7 +155,11 @@ class Datamine:
         self.invalid_cards = []
         self.cards = []
         self.allcards = []
-        
+
+        # color pie indices
+        self.pie_groups = {c: 0 for c in 'WUBRGAM'}
+        self.pie_mechanics = {c: {} for c in 'WUBRGAM'}
+
         # global indices
         self.by_name = {}
         self.by_type = {}
@@ -227,8 +263,17 @@ class Datamine:
                 inc(self.by_textlen, len(card.text.encode()), [card])
 
                 # Mechanical profiling using Card.mechanics
+                # Categorize for Color Pie analysis
+                group = 'A'
+                if len(card.cost.colors) > 1:
+                    group = 'M'
+                elif len(card.cost.colors) == 1:
+                    group = card.cost.colors[0]
+
+                self.pie_groups[group] += 1
                 for m in card.mechanics:
                     inc(self.by_mechanic, m, [card])
+                    self.pie_mechanics[group][m] = self.pie_mechanics[group].get(m, 0) + 1
 
         self.avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
 
@@ -328,6 +373,7 @@ class Datamine:
         print('  ' + color_line(str(len(self.by_mechanic)) + ' distinct mechanical features identified', use_color))
         _print_breakdown('Mechanical Breakdown:', self.by_mechanic, len(self.allcards), use_color,
                          vsize=vsize, sort_key=lambda x: len(self.by_mechanic[x]))
+        _print_color_pie(self.pie_groups, self.pie_mechanics, self.by_mechanic, use_color, vsize=vsize)
         print()
 
     # describe outliers in the indices
@@ -480,6 +526,11 @@ class Datamine:
         }
         for name, index in self.indices.items():
             result['indices'][name] = {str(k): len(v) for k, v in index.items()}
+
+        result['color_pie'] = {
+            'groups': self.pie_groups,
+            'mechanics': self.pie_mechanics
+        }
 
         if self.by_textlen:
             result['stats'] = {
