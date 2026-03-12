@@ -50,6 +50,13 @@ def sort_type(card_set):
     # Use stable sort (Python's sorted is stable)
     return sorted(card_set, key=type_priority)
 
+def _get_numeric_sort_key(val):
+    """Helper to generate a sort key for optional numeric fields (P/T, Loyalty)."""
+    if val is None or val == '':
+        return (1, 0)
+    num = utils.from_unary_single(val)
+    return (0, -num) if num is not None else (1, 0)
+
 def sort_cards(cards, criterion, quiet=False):
     """Sorts a list of cards based on the specified criterion."""
     if not criterion:
@@ -81,27 +88,11 @@ def sort_cards(cards, criterion, quiet=False):
             return rarity_priority.get(r, 6)
         return sorted(cards, key=get_rarity_val)
     elif criterion == 'power':
-        def get_pow(card):
-            if card.pt_p is None:
-                return (1, 0)
-            val = utils.from_unary_single(card.pt_p)
-            return (0, -val) if val is not None else (1, 0)
-        return sorted(cards, key=get_pow)
+        return sorted(cards, key=lambda c: _get_numeric_sort_key(c.pt_p))
     elif criterion == 'toughness':
-        def get_tou(card):
-            if card.pt_t is None:
-                return (1, 0)
-            val = utils.from_unary_single(card.pt_t)
-            return (0, -val) if val is not None else (1, 0)
-        return sorted(cards, key=get_tou)
+        return sorted(cards, key=lambda c: _get_numeric_sort_key(c.pt_t))
     elif criterion == 'loyalty':
-        def get_loy(card):
-            # Card.loyalty defaults to an empty string when missing
-            if card.loyalty is None or card.loyalty == '':
-                return (1, 0)
-            val = utils.from_unary_single(card.loyalty)
-            return (0, -val) if val is not None else (1, 0)
-        return sorted(cards, key=get_loy)
+        return sorted(cards, key=lambda c: _get_numeric_sort_key(c.loyalty))
     elif criterion == 'set':
         def get_set_key(card):
             s = card.set_code.upper() if card.set_code else 'ZZZ'
