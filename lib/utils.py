@@ -604,13 +604,17 @@ unletters_regex = r"[^abcdefghijklmnopqrstuvwxyz']"
 
 # MTG Constants
 known_supertypes = {'Legendary', 'Basic', 'Snow', 'World', 'Ongoing'}
+_known_supertypes_lower = {s.lower(): s for s in known_supertypes}
 
 def split_types(full_type):
     """Splits a type line string into supertypes and types."""
     supertypes = []
     types = []
+
     for t in full_type.split():
-        if t in known_supertypes:
+        t_lower = t.lower()
+        if t_lower in _known_supertypes_lower:
+            # Preserve original casing but identify as supertype
             supertypes.append(t)
         else:
             types.append(t)
@@ -632,7 +636,8 @@ def parse_type_line(type_line):
     front = parts[0]
     subtypes = []
     if len(parts) > 1:
-        subtypes = parts[1].split()
+        for part in parts[1:]:
+            subtypes.extend(part.split())
 
     supertypes, types = split_types(front)
     return supertypes, types, subtypes
