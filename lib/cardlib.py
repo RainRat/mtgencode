@@ -549,7 +549,7 @@ class Card:
         if utils.choice_open_delimiter in text_enc or utils.choice_close_delimiter in text_enc or '=' in text_enc:
             m.add('Modal/Choice')
 
-        if 'X' in cost_enc or 'x' in text_raw:
+        if 'X' in cost_enc or re.search(r'\bx+\b', text_enc):
             m.add('X-Cost/Effect')
 
         if 'kick' in text_raw:
