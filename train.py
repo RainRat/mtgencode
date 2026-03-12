@@ -244,7 +244,7 @@ if __name__ == "__main__":
     # Group: General Options
     gen_group = parser.add_argument_group('General Options')
     gen_group.add_argument("--mode", choices=["train", "sample"], default="train",
-                        help="Operation mode: 'train' to build a model, 'sample' to generate new cards.")
+                        help="Choose 'train' to teach the AI using your data, or 'sample' to create new cards.")
     gen_group.add_argument("--infile", type=str, default="data/output.txt",
                         help="Path to the encoded card file for training. Default: data/output.txt")
     gen_group.add_argument("--checkpoint", type=str, default="checkpoint.pt",
@@ -253,23 +253,23 @@ if __name__ == "__main__":
     # Group: Training Parameters
     train_group = parser.add_argument_group('Training Parameters')
     train_group.add_argument("--epochs", type=int, default=10,
-                        help="Number of training rounds. Default: 10")
+                        help="How many times the AI processes the entire dataset. Default: 10")
     train_group.add_argument("--batch_size", type=int, default=64,
-                        help="Number of examples processed at once. Default: 64")
+                        help="Number of card fragments processed at once. Default: 64")
     train_group.add_argument("--seq_len", type=int, default=100,
-                        help="Length of character sequences to learn. Default: 100")
+                        help="Number of characters the AI remembers when predicting the next one. Default: 100")
     train_group.add_argument("--hidden_size", type=int, default=256,
-                        help="Size of the neural network's memory. Default: 256")
+                        help="The size of the AI's internal memory. Default: 256")
     train_group.add_argument("--n_layers", type=int, default=2,
-                        help="Number of layers in the neural network. Default: 2")
+                        help="The number of processing layers in the AI model. Default: 2")
     train_group.add_argument("--lr", type=float, default=0.001,
-                        help="Learning rate (how quickly the model updates). Default: 0.001")
+                        help="How quickly the AI updates its knowledge. Default: 0.001")
     train_group.add_argument("--dropout", type=float, default=0.2,
-                        help="Rate to drop neurons to prevent over-memorizing. Default: 0.2")
+                        help="The percentage of information ignored during training to prevent memorization. Default: 0.2")
     train_group.add_argument("--resume", action="store_true",
                         help="Continue training from the existing checkpoint.")
     train_group.add_argument("--randomize_fields", action="store_true",
-                        help="Shuffle the order of card fields during training to help the AI generalize.")
+                        help="Randomly reorder card parts (like cost and types) during training. This helps the AI learn better.")
     train_group.add_argument("--randomize_mana", action="store_true",
                         help="Shuffle mana symbols within costs during training.")
 
@@ -278,7 +278,7 @@ if __name__ == "__main__":
     sample_group.add_argument("--length", type=int, default=1000,
                         help="Number of characters to generate. Default: 1000")
     sample_group.add_argument("--temp", type=float, default=0.8,
-                        help="Randomness/creativity level. Higher is more creative; lower is more focused. Default: 0.8")
+                        help="Controls AI creativity. Higher values result in more unusual cards; lower values make it more predictable. Default: 0.8")
     sample_group.add_argument("--start_text", type=str, default="|",
                         help="The text to start generation with. Default: '|'")
 
