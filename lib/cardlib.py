@@ -12,7 +12,7 @@ import nltk.data
 from titlecase import titlecase
 
 sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-# This could me made smarter - MSE will capitalize for us after :,
+# This could be made smarter - MSE will capitalize for us after :,
 # but we still need to capitalize the first english component of an activation
 # cost that starts with symbols, such as {2U}, *R*emove a +1/+1 counter from @: etc.
 def cap(s):
@@ -211,7 +211,7 @@ def fields_check_valid(fields):
 # So, {fieldname : [(idx, value), (idx, value)...].
 # Usually we want these lists to be length 1, but you never know.
 
-# Of course to make things nice and simple, that dict is the third element
+# The dictionary is the third element of the returned tuple
 # of a triple that reports parsing success and valid success as its 
 # first two elements.
 
@@ -482,7 +482,7 @@ class Card:
             self.parsed = p_success
             self.valid = v_success
             self.fields = parsed_fields
-        # amusingly enough, both encodings allow infinitely deep nesting of bsides...
+        # Both encoding methods support recursive nesting of b-sides.
 
         # Automatically assign field values based on their names.
         if self.fields:
@@ -497,7 +497,7 @@ class Card:
                 # limitation; if we just used the default handler for the else case,
                 # we could set arbitrarily named fields.
                 else:
-                    raise ValueError('python name mangling failure: unknown field for Card(): ' 
+                    raise ValueError('Unknown field for Card object: '
                                      + field)
         else:
             # valid but not parsed indicates that the card was apparently empty
@@ -802,7 +802,7 @@ class Card:
         if mse:
             # Handle the +X / -X loyalty cost case where X becomes + / - during unary unpass
             # if X was misinterpreted as 0 by Manacost/Manatext.
-            # This is a bit of a hack but ensures loyalty costs are correctly formatted for MSE.
+            # Ensures loyalty costs are correctly formatted for Magic Set Editor.
             mtext = re.sub(r'^\+\s*:', '+X:', mtext, flags=re.MULTILINE)
             mtext = re.sub(r'^−\s*:', '−X:', mtext, flags=re.MULTILINE)
             mtext = re.sub(r'^-\s*:', '-X:', mtext, flags=re.MULTILINE)
@@ -1345,7 +1345,7 @@ class Card:
                 newtext2 = newtext2.replace('\n', '\n\t\t')
                 outstr += '\trule text 2:\n\t\t' + newtext2 + '\n'
 
-        # Need to do Special Things if it's a planeswalker.
+        # Apply specific formatting for planeswalker cards.
         elif self.is_planeswalker:
             outstr += '\tstylesheet: m15-planeswalker\n'
 
@@ -1366,7 +1366,7 @@ class Card:
 
             # We need to uppercase again, because MSE won't magically capitalize for us
             # like it does after semicolons.
-            # Abusing passes like this is terrible, should really fix sentencecase.
+            # Re-apply line formatting and sentence casing for consistency.
             newtext = '\n'.join(abilities)
             newtext = transforms.text_pass_9_newlines(newtext)
             newtext = sentencecase(newtext)
@@ -1382,7 +1382,7 @@ class Card:
             newtext = newtext.replace('\n','\n\t\t')
             outstr += '\trule text:\n\t\t' + newtext + '\n'
 
-        # now append all the other useless fields that the setfile expects.
+        # Append the remaining metadata fields required by the set file.
         outstr += '\thas styling: false\n\ttime created:2015-07-20 22:53:07\n\ttime modified:2015-07-20 22:53:08\n\textra data:\n\timage:\n\tcard code text:\n\tcopyright:\n\timage 2:\n\tcopyright 2:\n\tnotes:'
 
         return outstr
