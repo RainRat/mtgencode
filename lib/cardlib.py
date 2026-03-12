@@ -524,6 +524,26 @@ class Card:
         return 'battle' in self.types
 
     @property
+    def is_land(self):
+        """Returns True if the card is a land."""
+        return 'land' in self.types
+
+    @property
+    def is_enchantment(self):
+        """Returns True if the card is an enchantment."""
+        return 'enchantment' in self.types
+
+    @property
+    def is_instant(self):
+        """Returns True if the card is an instant."""
+        return 'instant' in self.types
+
+    @property
+    def is_sorcery(self):
+        """Returns True if the card is a sorcery."""
+        return 'sorcery' in self.types
+
+    @property
     def mechanics(self):
         """Returns a set of mechanical features and keyword abilities identified on the card."""
         text_raw = self.text.text.lower()

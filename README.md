@@ -346,10 +346,15 @@ python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --r
 
 # Split a JSON file into multiple parts
 python3 scripts/splitcards.py data/AllPrintings.json --outputs part1.json part2.json --ratios 0.5 0.5 -f json
+
+# Create a filtered training set (Red and Black cards only)
+python3 scripts/splitcards.py data/AllPrintings.json --outputs rb_train.txt rb_val.txt --ratios 0.9 0.1 --colors RB
 ```
 *   **Options:**
     *   `-f`, `--format`: Output format (`text`, `json`, `jsonl`, `csv`). Default is `text`.
+    *   `--encoding`: Choose the text encoding format (e.g., `std`, `named`, `vec`).
     *   `--shuffle` / `--no-shuffle`: Whether to randomize the order of cards before splitting (Enabled by default).
+    *   Supports all filtering and sorting flags from `encode.py` (e.g., `--limit`, `--sort`, `--grep`, `--colors`, `--cmc`, `--mechanic`).
 
 ---
 
