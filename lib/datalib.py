@@ -5,7 +5,7 @@ from cardlib import Card
 
 # Format a list of rows of data into nice columns.
 # Note that it's the columns that are nice, not this code.
-def padrows(l):
+def padrows(l, aligns=None):
     # get length for each field
     lens = []
     for ll in l:
@@ -21,7 +21,10 @@ def padrows(l):
         for i, field in enumerate(ll):
             s = str(field)
             pad = ' ' * (lens[i] - utils.visible_len(s))
-            padded[-1] += (s + pad + '  ')
+            if aligns and i < len(aligns) and aligns[i] == 'r':
+                padded[-1] += (pad + s + '  ')
+            else:
+                padded[-1] += (s + pad + '  ')
     return padded
 def printrows(l, indent=0):
     pad = ' ' * indent
@@ -102,7 +105,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
         filled = int(round(percent / 100 * bar_width))
         if filled == 0 and percent > 0:
             filled = 1
-        bar = '[' + '#' * filled + ' ' * (bar_width - filled) + ']'
+        bar = '[' + '█' * filled + ' ' * (bar_width - filled) + ']'
         if use_color:
             bar_color = display_color if display_color else (utils.Ansi.BOLD + utils.Ansi.GREEN)
             bar = utils.colorize(bar, bar_color)
@@ -113,7 +116,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
             f"{percent:5.1f}%",
             bar
         ])
-    printrows(padrows(rows), indent=4)
+    printrows(padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=4)
 
 def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=None):
     if not all_mechanics:
@@ -133,19 +136,36 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
 
     for m in sorted_mechanics:
         row = [m]
+        percents = []
         for group in 'WUBRGAM':
             total = pie_groups[group]
             count = pie_mechanics[group].get(m, 0)
-            percent = (count / total * 100) if total > 0 else 0
+            percents.append((count / total * 100) if total > 0 else 0)
 
-            val = f"{percent:4.0f}%" if percent > 0 else "  - "
-            if use_color and percent > 0:
-                color = utils.Ansi.get_color_color(group)
-                val = utils.colorize(val, color)
+        max_p = max(percents) if percents else 0
+
+        for i, group in enumerate('WUBRGAM'):
+            percent = percents[i]
+            if percent > 0:
+                val_str = f"{percent:4.0f}%"
+                if use_color:
+                    color = utils.Ansi.get_color_color(group)
+                    if percent == max_p and max_p > 0:
+                        # Highlight dominant color with underline
+                        # Only colorize the non-space part to avoid underlined leading spaces
+                        non_space = val_str.lstrip()
+                        spaces = val_str[:len(val_str)-len(non_space)]
+                        val = spaces + utils.colorize(non_space, color + utils.Ansi.UNDERLINE)
+                    else:
+                        val = utils.colorize(val_str, color)
+                else:
+                    val = val_str
+            else:
+                val = "  - "
             row.append(val)
         rows.append(row)
 
-    printrows(padrows(rows), indent=4)
+    printrows(padrows(rows, aligns=['l', 'r', 'r', 'r', 'r', 'r', 'r', 'r']), indent=4)
 
 class Datamine:
     # build the global indices
