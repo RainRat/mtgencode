@@ -817,3 +817,17 @@ class NumericFilter:
             if self.op == '==': return val == self.val
 
         return False
+
+
+def get_scryfall_url(set_code, number):
+    """Returns the Scryfall URL for a card given its set code and collector number."""
+    if not set_code or not number:
+        return None
+    return f"https://scryfall.com/card/{set_code.lower()}/{number}"
+
+
+def get_scryfall_image_url(set_code, number, version='normal'):
+    """Returns the Scryfall API image URL for a card."""
+    if not set_code or not number:
+        return None
+    return f"https://api.scryfall.com/cards/{set_code.lower()}/{number}?format=image&version={version}"
