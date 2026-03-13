@@ -84,6 +84,20 @@ def test_numeric_filter_evaluation():
     assert not nf.evaluate("star")
     assert not nf.evaluate("*")
 
+def test_numeric_filter_unary_exceptions():
+    # Test unary exceptions from config.py
+    # 30 -> "thirty"
+    # 25 -> "twenty~five" (using dash_marker ~)
+    nf_30 = utils.NumericFilter("30")
+    assert nf_30.evaluate("thirty")
+
+    nf_25 = utils.NumericFilter("25")
+    assert nf_25.evaluate("twenty~five")
+
+    nf_range = utils.NumericFilter("20-40")
+    assert nf_range.evaluate("thirty")
+    assert nf_range.evaluate("twenty~five")
+
 def test_jdecode_numeric_filtering():
     # Mock cards for testing
     # Card 1: 1/1, CMC 1, Loyalty None

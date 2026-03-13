@@ -794,11 +794,8 @@ class NumericFilter:
 
         try:
             if isinstance(value, str):
-                # Handle unary or decimal strings
-                if value.startswith(unary_marker):
-                    val = float(from_unary_single(value))
-                else:
-                    val = float(value)
+                # Handle unary, decimal strings, and exceptions
+                val = float(from_unary_single(value))
             else:
                 val = float(value)
         except (ValueError, TypeError):
