@@ -212,14 +212,21 @@ To help the AI learn how to count, numbers are written as a sequence of symbols 
 | 5 | `&^^^^^` |
 
 ### Field Labels
-If you don't use the `--nolabel` flag, each field is prefixed with a number:
-*   `0`: Rarity
-*   `1`: Name
-*   `3`: Mana Cost
-*   `4`: Supertypes
-*   `5`: Types
-*   `6`: Subtypes
-*   *And so on (7: Loyalty, 8: P/T, 9: Rules Text).*
+If you don't use the `--nolabel` flag, each field is prefixed with a number for easier identification:
+
+| Label | Card Part |
+| :--- | :--- |
+| `0` | Rarity |
+| `1` | Name |
+| `3` | Mana Cost |
+| `4` | Supertypes |
+| `5` | Types |
+| `6` | Subtypes |
+| `7` | Loyalty / Defense |
+| `8` | Power / Toughness |
+| `9` | Rules Text |
+
+> **Note:** The label `2` is skipped to avoid confusion with mana symbols (like `{2/B}`).
 
 ---
 
