@@ -150,7 +150,7 @@ def from_unary(s):
 def from_unary_single(s):
     """Converts a single unary string (possibly with exceptions) back to a numerical value."""
     if not s:
-        return 0
+        return None
     if s in _unary_exceptions_inv:
         return _unary_exceptions_inv[s]
     try:
@@ -159,7 +159,7 @@ def from_unary_single(s):
             return float(res)
         return int(res)
     except (ValueError, TypeError):
-        return 0
+        return None
 
 # mana syntax
 mana_open_delimiter = '{'
@@ -795,7 +795,10 @@ class NumericFilter:
         try:
             if isinstance(value, str):
                 # Handle unary, decimal strings, and exceptions
-                val = float(from_unary_single(value))
+                extracted = from_unary_single(value)
+                if extracted is None:
+                    return False
+                val = float(extracted)
             else:
                 val = float(value)
         except (ValueError, TypeError):

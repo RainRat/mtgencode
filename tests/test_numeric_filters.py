@@ -83,6 +83,15 @@ def test_numeric_filter_evaluation():
     assert not nf.evaluate(None)
     assert not nf.evaluate("star")
     assert not nf.evaluate("*")
+    assert not nf.evaluate("")
+
+    # Verify that '0' filter doesn't match unparseable strings (regression test)
+    nf_zero = utils.NumericFilter("0")
+    assert not nf_zero.evaluate("star")
+    assert not nf_zero.evaluate("*")
+    assert not nf_zero.evaluate("")
+    assert nf_zero.evaluate("0")
+    assert nf_zero.evaluate("&")
 
 def test_numeric_filter_unary_exceptions():
     # Test unary exceptions from config.py

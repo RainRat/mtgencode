@@ -342,8 +342,8 @@ class Datamine:
         self.avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
 
         # Calculate average P/T
-        p_vals = [utils.from_unary_single(c.pt_p) for c in self.cards if c.pt_p is not None]
-        t_vals = [utils.from_unary_single(c.pt_t) for c in self.cards if c.pt_t is not None]
+        p_vals = [v for v in [utils.from_unary_single(c.pt_p) for c in self.cards] if v is not None]
+        t_vals = [v for v in [utils.from_unary_single(c.pt_t) for c in self.cards] if v is not None]
         self.avg_power = sum(p_vals) / len(p_vals) if p_vals else 0
         self.avg_toughness = sum(t_vals) / len(t_vals) if t_vals else 0
 
@@ -407,9 +407,11 @@ class Datamine:
         print()
 
         print('  ' + color_line(str(len(self.by_pt)) + ' unique p/t combinations', use_color))
-        if len(self.by_power) > 0 and len(self.by_toughness) > 0:
-            print('  ' + ('Largest power: ' + str(max(map(utils.from_unary_single, self.by_power))) +
-                   ', largest toughness: ' + str(max(map(utils.from_unary_single, self.by_toughness)))))
+        p_vals_all = [v for v in map(utils.from_unary_single, self.by_power) if v is not None]
+        t_vals_all = [v for v in map(utils.from_unary_single, self.by_toughness) if v is not None]
+        if p_vals_all and t_vals_all:
+            print('  ' + ('Largest power: ' + str(max(p_vals_all)) +
+                   ', largest toughness: ' + str(max(t_vals_all))))
             avg_pt_str = f'Average power: {self.avg_power:.2f}, Average toughness: {self.avg_toughness:.2f}'
             if use_color:
                 avg_pt_str = utils.colorize(avg_pt_str, utils.Ansi.BOLD + utils.Ansi.GREEN)
@@ -528,16 +530,18 @@ class Datamine:
             print('  No cards indexed by cmc?')
         print()
 
-        if len(self.by_power) > 0:
-            lpower = sorted(self.by_power,
+        p_keys = [k for k in self.by_power if utils.from_unary_single(k) is not None]
+        if p_keys:
+            lpower = sorted(p_keys,
                             key=utils.from_unary_single,
                             reverse=True)[0]
             print('  ' + color_line('Largest creature power: ' + utils.from_unary(lpower), use_color))
             print('\n    ' + plimit(self.by_power[lpower][0].encode()).replace('\n', '\n    ') + '\n')
         else:
             print('  No cards indexed by power?')
-        if len(self.by_toughness) > 0:
-            ltoughness = sorted(self.by_toughness,
+        t_keys = [k for k in self.by_toughness if utils.from_unary_single(k) is not None]
+        if t_keys:
+            ltoughness = sorted(t_keys,
                                 key=utils.from_unary_single,
                                 reverse=True)[0]
             print('  ' + color_line('Largest creature toughness: ' +
