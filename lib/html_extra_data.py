@@ -1,54 +1,78 @@
 box_width = 350
-id_lables = ["white", "blue", "black", "red", "green", "multi", "colorless", "lands"]
-html_prepend = """<!DOCTYPE html>
+
+# Information used for dynamic color-based navigation in HTML output
+# Mapping: internal_id -> {label, bg_color, text_color}
+COLOR_INFO = {
+    "white":      {"label": "White Cards",          "bg": "yellow",          "fg": "black"},
+    "blue":       {"label": "Blue Cards",           "bg": "blue",            "fg": "white"},
+    "black":      {"label": "Black Cards",          "bg": "black",           "fg": "white"},
+    "red":        {"label": "Red Cards",            "bg": "red",             "fg": "white"},
+    "green":      {"label": "Green Cards",          "bg": "lawngreen",       "fg": "black"},
+    "multi":      {"label": "Multi-colored Cards",  "bg": "gold",            "fg": "black"},
+    "colorless":  {"label": "Colorless Cards",      "bg": "lightgrey",       "fg": "black"},
+    "lands":      {"label": "Lands Cards",          "bg": "darkgoldenrod",   "fg": "black"},
+}
+
+# Legacy list for backward compatibility (with typo fix)
+id_labels = list(COLOR_INFO.keys())
+id_lables = id_labels
+
+# Kept for backward compatibility but should be avoided in new code
+html_prepend = "" # placeholder to be populated below
+
+html_header = """<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="utf-8">
+    <title>MTG AI Generated Cards</title>
     <style>
-	    ul {
+	    ul#nav-bar {
 		    list-style-type: none;
-		    margin: 0;
+		    margin: 0 0 20px 0;
 		    padding: 0;
 		    overflow: hidden;
+            background-color: #333;
+            border-radius: 4px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
 		}
 
-		li {
+		ul#nav-bar li {
 		    float: left;
 		}
 
-		li a {
+		ul#nav-bar li a {
 		    display: block;
-		    color: white;
 		    text-align: center;
 		    padding: 14px 16px;
 		    text-decoration: none;
+            font-weight: bold;
 		}
+
+        ul#nav-bar li a:hover {
+            opacity: 0.8;
+        }
+
 	    .card-text {
 	        display: inline-block;
 	        width: 350px;
-	        margin: 2px;
-	        padding: 3px;
+	        margin: 5px;
+	        padding: 10px;
 	        border: 3px solid #000000;
+            background-color: white;
+            vertical-align: top;
+            border-radius: 8px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
 	    }
-	    #red > div{
-	    	border-color:red;
-	    }
-	    #blue > div{
-	    	border-color:blue;
-	    }
-	    #green > div{
-	    	border-color:lawngreen;
-	    }
-	    #white > div{
-	    	border-color:yellow;
-	    }
-	    #multi > div{
-	    	border-color:gold;
-	    }
-	    #colorless > div{
-	    	border-color:lightgrey;
-	    }
-	    #lands > div{
-	    	border-color:darkgoldenrod;
-	    }
+	    #red > div { border-color: red; }
+	    #blue > div { border-color: blue; }
+	    #black > div { border-color: black; }
+	    #green > div { border-color: lawngreen; }
+	    #white > div { border-color: #e2e210; }
+	    #multi > div { border-color: gold; }
+	    #colorless > div { border-color: lightgrey; }
+	    #lands > div { border-color: darkgoldenrod; }
 
 	    div.hover_img {
 	    	position: relative;
@@ -62,6 +86,8 @@ html_prepend = """<!DOCTYPE html>
 	    	position: absolute;
 	        display: none;
 	        z-index: 99;
+            left: 20px;
+            top: 20px;
 	    }
 	    .hover_img:hover span {
 	    	display:inline-block;
@@ -71,12 +97,35 @@ html_prepend = """<!DOCTYPE html>
 	    	padding: 10px;
 	        width:250px;
 	        background:#FFFF99;
+            border: 1px solid #ccc;
+            border-radius: 4px;
 	    }
 	    
 	    .hover_img img {
 	    	height: 445px;
 	    	width: 312px;
+            border-radius: 14px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
 	    }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: #ccc;
+            margin: 20px 0;
+        }
+
+        h2 {
+            font-family: serif;
+            color: #444;
+        }
+
+        .back-to-top {
+            float: right;
+            font-size: 0.8em;
+            color: #666;
+            text-decoration: none;
+        }
     </style>
     <style type="text/css">
     
@@ -490,16 +539,19 @@ html_prepend = """<!DOCTYPE html>
 	    }
     </style>
 </head>
-<body>
-	<ul id="top">
-			<li style="background-color:yellow;"><a href="#white" style="color:black">White Cards</a></li>
-			<li style="background-color:blue;"><a href="#blue">Blue Cards</a></li>
-			<li style="background-color:black;"><a href="#black">Black Cards</a></li>
-			<li style="background-color:red;"><a href="#red">Red Cards</a></li>
-			<li style="background-color:green;"><a href="#green">Green Cards</a></li>
-			<li style="background-color:gold;"><a href="#multi" style="color:black">Multi-colored Cards</a></li>
-			<li style="background-color:lightgrey;"><a href="#colorless" style="color:black">Colorless Cards</a></li>
-			<li style="background-color:darkgoldenrod;"><a href="#lands" style="color:black">Lands Cards</a></li>
-	</ul>
-	<hr>
+<body id="top">
+"""
+
+html_prepend = html_header + """
+    <ul id="nav-bar">
+        <li style="background-color:yellow;"><a href="#white" style="color:black">White Cards</a></li>
+        <li style="background-color:blue;"><a href="#blue" style="color:white">Blue Cards</a></li>
+        <li style="background-color:black;"><a href="#black" style="color:white">Black Cards</a></li>
+        <li style="background-color:red;"><a href="#red" style="color:white">Red Cards</a></li>
+        <li style="background-color:green;"><a href="#green" style="color:black">Green Cards</a></li>
+        <li style="background-color:gold;"><a href="#multi" style="color:black">Multi-colored Cards</a></li>
+        <li style="background-color:lightgrey;"><a href="#colorless" style="color:black">Colorless Cards</a></li>
+        <li style="background-color:darkgoldenrod;"><a href="#lands" style="color:black">Lands Cards</a></li>
+    </ul>
+    <hr>
 """
