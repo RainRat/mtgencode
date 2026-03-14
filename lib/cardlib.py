@@ -5,6 +5,7 @@ import sys
 
 import utils
 import transforms
+from xml.sax.saxutils import escape
 from manalib import Manacost, Manatext
 import textwrap
 import nltk.data
@@ -1503,4 +1504,68 @@ class Card:
             outstr = '_ASIDE_ ' + outstr + '\n\n_BSIDE_ ' + self.bside.vectorize()
 
         return outstr
+
+    def to_cockatrice_xml(self):
+        """Returns a Cockatrice XML <card> block representation of the card."""
+
+        def get_fields(card):
+            name = titlecase(card.name)
+            mana_cost = card.cost.format().replace('{', '').replace('}', '')
+
+            supertypes = [titlecase(s) for s in card.supertypes]
+            types = [titlecase(t) for t in card.types]
+            typeline = ' '.join(supertypes + types)
+            if card.subtypes:
+                typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in card.subtypes])
+
+            # Cockatrice <color> is the color letters
+            color = ''.join(card.cost.colors)
+
+            text = card.get_text(force_unpass=True)
+
+            pt = ""
+            if card.pt:
+                pt = utils.from_unary(card.pt)
+            elif card.loyalty:
+                pt = utils.from_unary(card.loyalty)
+
+            return name, mana_cost, typeline, color, text, pt
+
+        name, cost, typeline, color, text, pt = get_fields(self)
+
+        if self.bside:
+            b_name, b_cost, b_typeline, b_color, b_text, b_pt = get_fields(self.bside)
+            name = f"{name} // {b_name}"
+            # Combined typeline and text for splits
+            typeline = f"{typeline} // {b_typeline}"
+            text = f"{text}\n\n---\n\n{b_text}"
+            # Combined colors
+            color = "".join(sorted(list(set(color + b_color))))
+
+        # Determine tablerow
+        # 0: Land, 1: Other, 2: Creature, 3: Spells
+        tablerow = 1
+        types_lower = [t.lower() for t in self.types]
+        if 'land' in types_lower:
+            tablerow = 0
+        elif 'creature' in types_lower:
+            tablerow = 2
+        elif 'instant' in types_lower or 'sorcery' in types_lower:
+            tablerow = 3
+
+        xml_out = f"    <card>\n"
+        xml_out += f"      <name>{escape(name)}</name>\n"
+        if self.set_code:
+            xml_out += f"      <set>{escape(self.set_code.upper())}</set>\n"
+        xml_out += f"      <color>{escape(color)}</color>\n"
+        if cost:
+            xml_out += f"      <manacost>{escape(cost)}</manacost>\n"
+        xml_out += f"      <type>{escape(typeline)}</type>\n"
+        if pt:
+            xml_out += f"      <pt>{escape(pt)}</pt>\n"
+        xml_out += f"      <tablerow>{tablerow}</tablerow>\n"
+        xml_out += f"      <text>{escape(text)}</text>\n"
+        xml_out += f"    </card>"
+
+        return xml_out
             

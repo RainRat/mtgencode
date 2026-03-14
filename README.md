@@ -122,6 +122,7 @@ Options for formatting the output:
 *   `--raw`: Shows raw text without special formatting.
 *   `--html`: Creates a webpage with card images.
 *   `--deck`: Creates a standard MTG decklist.
+*   `--xml`: Creates a Cockatrice-compatible XML card database.
 *   `--mse`: Creates a file for Magic Set Editor.
 *   `--json`: Creates a structured JSON file.
 *   `--jsonl`: Creates a JSON Lines file (one card per line).
@@ -155,6 +156,7 @@ The tool detects the format automatically based on the file extension of your ou
 *   `.mdt`  -> Markdown table
 *   `.sum`, `.summary` -> One-line summary
 *   `.deck`, `.dek` -> MTG Decklist
+*   `.xml` -> Cockatrice XML database
 *   `.mse-set` -> Magic Set Editor file
 
 ### Using Pipes
