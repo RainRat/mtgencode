@@ -66,18 +66,12 @@ def test_padrows():
     data = [['A', 'BB'], ['CCC', 'D']]
     padded = padrows(data)
     # lens: col1=3, col2=2
-    # Row 1: 'A' -> 'A  ' (3 chars), 'BB' -> 'BB ' (2 chars + 1 space padding in loop?)
-    # Let's verify exact output
-    # padrows implementation:
-    # lens gets max length for each column.
-    # padded: val + ' ' * (len - len(s)) + ' '
-    # col 1 max len 3. 'A' -> 'A' + '  ' + ' ' = 'A   '
-    # col 2 max len 2. 'BB' -> 'BB' + '' + ' ' = 'BB '
-    # Row 1 expected: 'A   BB '
+    # Row 1: 'A' pads to 'A  ' (3 chars), then '  ' separator, then 'BB' (2 chars)
+    # Total: 'A    BB' (7 chars)
 
     assert len(padded) == 2
-    assert padded[0].strip() == 'A    BB'
-    assert padded[1].strip() == 'CCC  D'
+    assert padded[0] == 'A    BB'
+    assert padded[1] == 'CCC  D'
 
 def test_padrows_with_color():
     color_text = utils.colorize("1", utils.Ansi.BOLD + utils.Ansi.GREEN)
@@ -88,18 +82,19 @@ def test_padrows_with_color():
     ]
     padded = padrows(data)
 
-    # Column 0: Index(5), A(1), LongIndexName(13) -> lens[0] = 13
-    # Column 1: Count(5), color_text(visible 1), 10(2) -> lens[1] = 5
+    # Column 0: Index(5), A(1), LongIndexName(13) -> widths[0] = 13
+    # Column 1: Count(5), color_text(visible 1), 10(2) -> widths[1] = 5
 
-    # Row 0: 'Index' + 8 spaces + 2 spaces + 'Count' + 0 spaces + 2 spaces = 22 chars
-    # Row 1: 'A' + 12 spaces + 2 spaces + color_text + 4 spaces + 2 spaces = 22 chars (visible)
-    # Row 2: 'LongIndexName' + 0 spaces + 2 spaces + '10' + 3 spaces + 2 spaces = 22 chars
+    # With .rstrip() on the final row:
+    # Row 0: 'Index' + 8 spaces + 2 spaces (sep) + 'Count' = 13 + 2 + 5 = 20 visible chars
+    # Row 1: 'A' + 12 spaces + 2 spaces (sep) + color_text = 13 + 2 + 1 = 16 visible chars
+    # Row 2: 'LongIndexName' + 0 spaces + 2 spaces (sep) + '10' = 13 + 2 + 2 = 17 visible chars
 
-    assert utils.visible_len(padded[0]) == 13 + 2 + 5 + 2
-    assert utils.visible_len(padded[1]) == 13 + 2 + 5 + 2
-    assert utils.visible_len(padded[2]) == 13 + 2 + 5 + 2
+    assert utils.visible_len(padded[0]) == 20
+    assert utils.visible_len(padded[1]) == 16
+    assert utils.visible_len(padded[2]) == 17
 
-    # Check that they start at the same position
+    # Check that column 1 starts at the same position (13 + 2 = 15)
     assert padded[0].find('Count') == 15
     assert padded[1].find(color_text) == 15
     assert padded[2].find('10') == 15

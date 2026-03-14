@@ -5,27 +5,43 @@ from cardlib import Card
 
 # Format a list of rows of data into nice columns.
 # Note that it's the columns that are nice, not this code.
-def padrows(l, aligns=None):
-    # get length for each field
-    lens = []
-    for ll in l:
-        for i, field in enumerate(ll):
-            if i < len(lens):
-                lens[i] = max(utils.visible_len(str(field)), lens[i])
+def padrows(rows, aligns=None):
+    """
+    Formats a list of data rows into aligned columns.
+    Ensures that the last column does not have trailing spaces.
+    """
+    if not rows:
+        return []
+
+    # Get maximum visible length for each column
+    col_widths = []
+    for row in rows:
+        for i, cell in enumerate(row):
+            length = utils.visible_len(str(cell))
+            if i < len(col_widths):
+                col_widths[i] = max(col_widths[i], length)
             else:
-                lens += [utils.visible_len(str(field))]
-    # now pad out to that length
-    padded = []
-    for ll in l:
-        padded += ['']
-        for i, field in enumerate(ll):
-            s = str(field)
-            pad = ' ' * (lens[i] - utils.visible_len(s))
+                col_widths.append(length)
+
+    # Pad each cell and join rows
+    padded_rows = []
+    for row in rows:
+        padded_cells = []
+        for i, cell in enumerate(row):
+            s = str(cell)
+            pad = ' ' * (col_widths[i] - utils.visible_len(s))
+
             if aligns and i < len(aligns) and aligns[i] == 'r':
-                padded[-1] += (pad + s + '  ')
+                cell_str = pad + s
             else:
-                padded[-1] += (s + pad + '  ')
-    return padded
+                cell_str = s + pad
+
+            padded_cells.append(cell_str)
+
+        # Join cells with 2 spaces
+        padded_rows.append('  '.join(padded_cells).rstrip())
+
+    return padded_rows
 def printrows(l, indent=0):
     pad = ' ' * indent
     for row in l:
@@ -74,7 +90,35 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
     if vsize:
         keys = keys[:vsize]
 
-    header_row = ['Category', 'Count', 'Percent', 'Distribution']
+    # Determine a context-aware header for the first column
+    cat_header = 'Category'
+    t_lower = title.lower()
+    if 'color' in t_lower:
+        cat_header = 'Colors' if 'number' in t_lower else 'Color'
+    elif 'cmc' in t_lower:
+        cat_header = 'CMC'
+    elif 'mana costs' in t_lower:
+        cat_header = 'Cost'
+    elif 'subtype' in t_lower:
+        cat_header = 'Subtype'
+    elif 'supertype' in t_lower:
+        cat_header = 'Supertype'
+    elif 'type' in t_lower:
+        cat_header = 'Type'
+    elif 'combination' in t_lower:
+        cat_header = 'Combination'
+    elif 'rarity' in t_lower:
+        cat_header = 'Rarity'
+    elif 'p/t' in t_lower:
+        cat_header = 'P/T'
+    elif 'loyalty' in t_lower:
+        cat_header = 'Loyalty'
+    elif 'line count' in t_lower:
+        cat_header = 'Lines'
+    elif 'mechanic' in t_lower:
+        cat_header = 'Mechanic'
+
+    header_row = [cat_header, 'Count', 'Percent', 'Distribution']
     if use_color:
         header_row = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header_row]
 
