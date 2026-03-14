@@ -340,15 +340,15 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         current_pack = 0
         for i, card in enumerate(tqdm(cards, disable=quiet or total < 5, desc="Decoding")):
             try:
-                # Pack header for non-HTML/non-MSE formats
-                if booster > 0 and not sort and not (for_mse or for_md_table) and hasattr(card, 'pack_id') and card.pack_id != current_pack:
+                # Pack header for non-HTML/non-MSE/non-XML formats
+                if booster > 0 and not sort and not (for_mse or for_md_table or for_xml) and hasattr(card, 'pack_id') and card.pack_id != current_pack:
                     current_pack = card.pack_id
                     header = f"== Pack {current_pack} =="
                     if for_md:
                         header = f"## {header}"
 
                     use_color = False
-                    if not for_html and not for_mse and not for_md:
+                    if not for_html and not for_mse and not for_md and not for_xml:
                         if color_arg is True:
                             use_color = True
                         elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
@@ -362,7 +362,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                     writer.write(header + '\n\n')
                     first = True # Reset first to avoid divider before first card in pack
 
-                if not first and not (for_html or for_md or for_mse or for_summary or for_md_table):
+                if not first and not (for_html or for_md or for_mse or for_summary or for_md_table or for_xml):
                     # Add a divider between cards for console output
                     use_color = False
                     if color_arg is True:
