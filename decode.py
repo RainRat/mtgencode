@@ -193,32 +193,28 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         truename = nd.names[cardname]
         code = nd.codes[cardname]
         namestr = ''
-        if for_html:
-            if code:
-                # Transform legacy magiccards.info code (set/number.jpg) to Scryfall API URL
-                # Expected format: "set/number.jpg"
-                try:
-                    set_code, number_jpg = code.split('/')
-                    number = number_jpg.replace('.jpg', '')
-                    image_url = 'https://api.scryfall.com/cards/' + set_code + '/' + number + '?format=image&version=normal'
-                except ValueError:
-                    # In case code format is different than expected
-                    image_url = 'http://magiccards.info/scans/en/' + code
 
-                namestr = ('<div class="hover_img"><a href="#">' + truename
+        # Parse legacy code format "set/number.jpg"
+        set_code, number = None, None
+        if code and '/' in code:
+            try:
+                set_code, number_jpg = code.split('/')
+                number = number_jpg.replace('.jpg', '')
+            except ValueError:
+                pass
+
+        if for_html:
+            image_url = utils.get_scryfall_image_url(set_code, number)
+            if image_url:
+                namestr = (f'<div class="hover_img"><a href="#">{truename}'
                            + '<span><img style="background: url(' + image_url
                            + ');" alt=""/></span></a>' + ': ' + str(dist) + '\n</div>\n')
             else:
                 namestr = '<div>' + truename + ': ' + str(dist) + '</div>'
         elif for_md:
-            if code:
-                try:
-                    set_code, number_jpg = code.split('/')
-                    number = number_jpg.replace('.jpg', '')
-                    scryfall_url = f'https://scryfall.com/card/{set_code}/{number}'
-                    namestr = f"* [{truename}]({scryfall_url}): {dist:.3f}\n"
-                except ValueError:
-                    namestr = f"* {truename}: {dist:.3f}\n"
+            scry_url = utils.get_scryfall_url(set_code, number)
+            if scry_url:
+                namestr = f"* [{truename}]({scry_url}): {dist:.3f}\n"
             else:
                 namestr = f"* {truename}: {dist:.3f}\n"
         elif for_forum:
@@ -250,16 +246,17 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 for card in cards:
                     if hasattr(card, 'pack_id') and card.pack_id != current_pack:
                         if current_pack > 0:
-                            writer.write('</div><hr>')
+                            writer.write('</div><hr style="clear:both;">')
                         current_pack = card.pack_id
-                        writer.write(f'<h2 style="clear:both;">Pack {current_pack}</h2><div id="pack_{current_pack}">')
+                        writer.write(f'<h2 style="clear:both; padding-top: 20px;">Pack {current_pack}</h2>'
+                                     + f'<div id="pack_{current_pack}" style="overflow: auto;">')
                     try:
                         writecard(writer, card, for_html=True, for_mse=for_mse)
                         success_count += 1
                     except Exception:
                         fail_count += 1
                 if current_pack > 0:
-                    writer.write('</div><hr>')
+                    writer.write('</div><hr style="clear:both;">')
                 writer.write(utils.html_append)
                 return success_count, fail_count
 

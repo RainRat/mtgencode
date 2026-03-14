@@ -1095,11 +1095,21 @@ class Card:
                                         for_html=for_html, ansi_color=ansi_color)
 
         if for_html:
-            outstr += '<b>' + cardname + '</b>'
+            image_url = utils.get_scryfall_image_url(getattr(self, 'set_code', None), getattr(self, 'number', None))
+            if image_url:
+                outstr += (f'<div class="hover_img"><a href="#"><b>{cardname}</b>'
+                           + '<span><img style="background: url(' + image_url
+                           + ');" alt=""/></span></a></div>')
+            else:
+                outstr += '<b>' + cardname + '</b>'
         elif for_forum:
             outstr += '[b]' + cardname + '[/b]'
         elif for_md:
-            outstr += '**' + cardname + '**'
+            scry_url = utils.get_scryfall_url(getattr(self, 'set_code', None), getattr(self, 'number', None))
+            if scry_url:
+                outstr += f"[**{cardname}**]({scry_url})"
+            else:
+                outstr += '**' + cardname + '**'
         else:
             outstr += cardname
 
