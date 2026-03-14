@@ -83,6 +83,12 @@ def test_numeric_filter_evaluation():
     assert not nf.evaluate(None)
     assert not nf.evaluate("star")
     assert not nf.evaluate("*")
+    assert not nf.evaluate("")
+
+    # Regression test for empty power/loyalty matching 0
+    nf_zero = utils.NumericFilter("0")
+    assert not nf_zero.evaluate(None)
+    assert not nf_zero.evaluate("")
 
 def test_numeric_filter_unary_exceptions():
     # Test unary exceptions from config.py
