@@ -57,7 +57,9 @@ python3 encode.py testdata/uthros.json | python3 decode.py
 ```
 
 ### 1. Get the Card Data
-Download the latest card data from [MTGJSON](https://mtgjson.com/downloads/all-files/). We recommend **AllPrintings.json**, but you can use smaller files (like **Standard.json**) for faster testing.
+Download the latest card data from one of these reliable sources:
+*   **[MTGJSON](https://mtgjson.com/downloads/all-files/):** We recommend **AllPrintings.json**, but you can use smaller files (like **Standard.json**) for faster testing.
+*   **[Scryfall](https://scryfall.com/docs/api/bulk-data):** Download the **Oracle Cards** bulk data file for the most up-to-date card text and rulings.
 
 After downloading, set up your data folder:
 1.  Create a folder named `data` in this project.
@@ -74,7 +76,7 @@ python3 encode.py data/AllPrintings.json encoded_output.txt --verbose
 *   **Output:** `encoded_output.txt` (A text file with one card per entry).
 
 ### 3. Decode Cards (Text to Readable)
-Convert encoded text back into a readable format. You can see the results in your terminal or save them to a file.
+Convert AI-generated text back into a readable format. You can see the results in your terminal or save them to a file. While primarily used for AI output, this tool also supports other card data formats (JSON, CSV, etc.) for easy conversion.
 
 ```bash
 # View decoded cards in your terminal
@@ -150,6 +152,7 @@ The tool detects the format automatically based on the file extension of your ou
 *   `.jsonl` -> JSON Lines data
 *   `.csv`  -> Spreadsheet
 *   `.md`   -> Markdown document
+*   `.mdt`  -> Markdown table
 *   `.sum`, `.summary` -> One-line summary
 *   `.deck`, `.dek` -> MTG Decklist
 *   `.mse-set` -> Magic Set Editor file
@@ -175,14 +178,14 @@ When you run `encode.py`, the cards are converted into a specialized text format
 ### Special Markers
 | Symbol | Description | Example |
 | :--- | :--- | :--- |
-| `\|` | Separates different parts of the card (like Name, Cost, or Type). | `\|5creature\|4legendary\|` |
-| `@` | Stands for the name of the card itself. | `@ gets +&^/+&^` |
-| `\\` | Indicates a new line of text. | `Flying\\Trample` |
-| `~` | Used instead of a dash. | `Enchantment~Aura` |
-| `=` | Separates different options in a list or choice. | `[= Option A = Option B]` |
+| `\|` | Separates card parts (like Name, Cost, or Type). | `\|5creature\|4legendary\|` |
+| `@` | Represents the card's own name. | `@ gets +&^/+&^` |
+| `\\` | Indicates a new line of rules text. | `Flying\\Trample` |
+| `~` | Replaces a dash (e.g., in type lines). | `Enchantment~Aura` |
+| `=` | Separates options in a choice or modal ability. | `[= Option A = Option B]` |
 | `%` | Represents a counter (like a +1/+1 or Charge counter). | `Put a % counter on @` |
-| `[` `]` | Groups together multiple choices or options. | `[&^ = Option A = Option B]` |
-| `{ }` | Mana symbols are always doubled (like `{WW}`) to help the AI. | `{GG}` |
+| `[` `]` | Groups multiple choices or options together. | `[&^ = Option A = Option B]` |
+| `{ }` | Mana symbols (symbols are doubled, e.g., `{WW}`). | `{GG}` |
 | `T` | The Tap symbol. | `T: Add {GG}` |
 | `Q` | The Untap symbol. | `Q: Untap @` |
 
@@ -302,7 +305,7 @@ python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "El
 *   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, `--grep`, and `--vgrep`.
 
 ### `summarize.py`
-Shows statistics about your card data, such as the distribution of card types and colors. You can use it on original JSON files or your encoded output:
+Shows statistics about your card data, such as the distribution of card types and colors. It works with any card data (JSON, CSV, encoded text, etc.).
 ```bash
 # View statistics for the entire official dataset
 python3 scripts/summarize.py data/AllPrintings.json
