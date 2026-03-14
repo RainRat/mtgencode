@@ -226,6 +226,16 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     def writecards(writer, for_html=False, for_md=False, for_md_table=False, for_summary=False, for_mse=False):
         success_count = 0
         fail_count = 0
+
+        def get_nav_bar(groups):
+            if not groups or len(groups) <= 1:
+                return ""
+            nav = '<ul id="nav-bar">\n'
+            for gid, label, bg, fg in groups:
+                nav += f'    <li style="background-color:{bg};"><a href="#{gid}" style="color:{fg}">{label}</a></li>\n'
+            nav += '</ul>\n<hr>\n'
+            return nav
+
         if for_md_table:
             if booster > 0:
                 writer.write("| Pack | Name | Cost | Type | Stats | Rules Text | Rarity |\n")
@@ -237,19 +247,25 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             # have to prepend a massive chunk of formatting info
             writer.write(utils.mse_prepend)
         elif for_html:
-            # have to prepend html info
-            writer.write(utils.html_prepend)
-
             # Handle boosters in HTML
             if booster > 0 and not sort:
+                # Pre-calculate pack groups for navigation
+                pack_ids = sorted(list(set(getattr(c, 'pack_id', 0) for c in cards)))
+                pack_ids = [pid for pid in pack_ids if pid > 0]
+                nav_groups = [(f"pack_{pid}", f"Pack {pid}", "#333", "white") for pid in pack_ids]
+
+                writer.write(utils.html_header)
+                writer.write(get_nav_bar(nav_groups))
+
                 current_pack = 0
                 for card in cards:
                     if hasattr(card, 'pack_id') and card.pack_id != current_pack:
                         if current_pack > 0:
                             writer.write('</div><hr style="clear:both;">')
                         current_pack = card.pack_id
-                        writer.write(f'<h2 style="clear:both; padding-top: 20px;">Pack {current_pack}</h2>'
-                                     + f'<div id="pack_{current_pack}" style="overflow: auto;">')
+                        writer.write(f'<h2 id="pack_{current_pack}" style="clear:both; padding-top: 20px;">'
+                                     + f'Pack {current_pack}<a href="#top" class="back-to-top">back to top</a></h2>'
+                                     + f'<div style="overflow: auto;">')
                     try:
                         writecard(writer, card, for_html=True, for_mse=for_mse)
                         success_count += 1
@@ -262,19 +278,36 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
             # separate the write function to allow for writing smaller chunks of cards at a time
             segments = sortlib.sort_colors(cards, quiet=quiet)
+
+            # Pre-calculate color groups for navigation
+            nav_groups = []
+            for i, segment in enumerate(segments):
+                if segment:
+                    sid = utils.segment_ids[i]
+                    info = utils.color_info.get(sid, {"label": sid.title(), "bg": "#333", "fg": "white"})
+                    nav_groups.append((sid, info['label'], info['bg'], info['fg']))
+
+            writer.write(utils.html_header)
+            writer.write(get_nav_bar(nav_groups))
+
             for i in range(len(segments)):
+                if not segments[i]:
+                    continue
+                sid = utils.segment_ids[i]
+                info = utils.color_info.get(sid, {"label": sid.title()})
                 # sort color by type
                 segments[i] = sortlib.sort_type(segments[i])
-                # this allows card boxes to be colored for each color
-                # for coloring of each box separately cardlib.Card.format() must change non-minimally
-                writer.write('<div id="' + utils.segment_ids[i] + '">')
+
+                writer.write(f'<h2 id="{sid}" style="clear:both; padding-top: 10px;">{info["label"]}'
+                             + f'<a href="#top" class="back-to-top">back to top</a></h2>')
+                writer.write('<div>')
                 for card in segments[i]:
                     try:
                         writecard(writer, card, for_html=True, for_mse=for_mse)
                         success_count += 1
                     except Exception:
                         fail_count += 1
-                writer.write("</div><hr>")
+                writer.write("</div><hr style='clear:both;'>")
             # closing the html file
             writer.write(utils.html_append)
             return success_count, fail_count
