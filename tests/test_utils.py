@@ -402,3 +402,27 @@ def test_mana_translate_unary_branches():
     # Hit lines 432-435 in mana_translate
     res = utils.to_mana("{&^}")
     assert res == "{^}" # &^ is unary 1, becomes encoded ^
+
+# --- Rarity Colorization ---
+
+def test_get_rarity_color_names():
+    assert utils.Ansi.get_rarity_color('uncommon') == utils.Ansi.BOLD + utils.Ansi.CYAN
+    assert utils.Ansi.get_rarity_color('rare') == utils.Ansi.BOLD + utils.Ansi.YELLOW
+    assert utils.Ansi.get_rarity_color('mythic') == utils.Ansi.BOLD + utils.Ansi.RED
+    assert utils.Ansi.get_rarity_color('mythic rare') == utils.Ansi.BOLD + utils.Ansi.RED
+    assert utils.Ansi.get_rarity_color('common') == utils.Ansi.BOLD
+    assert utils.Ansi.get_rarity_color('special') == utils.Ansi.BOLD + utils.Ansi.MAGENTA
+    assert utils.Ansi.get_rarity_color('basic land') == utils.Ansi.BOLD
+
+def test_get_rarity_color_markers():
+    assert utils.Ansi.get_rarity_color(utils.rarity_uncommon_marker) == utils.Ansi.BOLD + utils.Ansi.CYAN
+    assert utils.Ansi.get_rarity_color(utils.rarity_rare_marker) == utils.Ansi.BOLD + utils.Ansi.YELLOW
+    assert utils.Ansi.get_rarity_color(utils.rarity_mythic_marker) == utils.Ansi.BOLD + utils.Ansi.RED
+    assert utils.Ansi.get_rarity_color(utils.rarity_common_marker) == utils.Ansi.BOLD
+    assert utils.Ansi.get_rarity_color(utils.rarity_special_marker) == utils.Ansi.BOLD + utils.Ansi.MAGENTA
+    assert utils.Ansi.get_rarity_color(utils.rarity_basic_land_marker) == utils.Ansi.BOLD
+
+def test_get_rarity_color_edge_cases():
+    assert utils.Ansi.get_rarity_color(None) == utils.Ansi.BOLD
+    assert utils.Ansi.get_rarity_color('') == utils.Ansi.BOLD
+    assert utils.Ansi.get_rarity_color('unknown') == utils.Ansi.BOLD
