@@ -544,6 +544,15 @@ class Card:
         """Returns True if the card is a sorcery."""
         return 'sorcery' in self.types
 
+    def get_type_line(self, separator='\u2014'):
+        """Returns a formatted type line string (e.g., 'Legendary Creature — Human Warrior')."""
+        supertypes = [titlecase(s) for s in self.__dict__[field_supertypes]]
+        types = [titlecase(t) for t in self.__dict__[field_types]]
+        res = ' '.join(supertypes + types)
+        if self.__dict__[field_subtypes]:
+            res += f' {separator} ' + ' '.join([titlecase(s) for s in self.__dict__[field_subtypes]])
+        return res
+
     @property
     def mechanics(self):
         """Returns a set of mechanical features and keyword abilities identified on the card."""
@@ -1025,12 +1034,7 @@ class Card:
             coststr = f' {coststr}'
 
         # Type Line
-        supertypes = [titlecase(s) for s in self.supertypes]
-        types = [titlecase(t) for t in self.types]
-        typeline = ' '.join(supertypes + types)
-        if self.subtypes:
-            typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in self.subtypes])
-
+        typeline = self.get_type_line()
         if ansi_color:
             typeline = utils.colorize(typeline, utils.Ansi.GREEN)
 
@@ -1144,18 +1148,12 @@ class Card:
             if vdump and len(basetypes) < 1:
                 basetypes = ['_NOTYPE_']
             typeline += ' '.join(list(map(str.capitalize, self.__dict__[field_supertypes])) + basetypes)
-        else:
-            supertypes = [titlecase(s) for s in self.__dict__[field_supertypes]]
-            types = [titlecase(t) for t in self.__dict__[field_types]]
-            typeline += ' '.join(supertypes + types)
-
-        if self.__dict__[field_subtypes]:
-            if gatherer:
+            if self.__dict__[field_subtypes]:
                 typeline += ' \u2014'
-            else:
-                typeline += (' ' + utils.dash_marker)
-            for subtype in self.__dict__[field_subtypes]:
-                typeline += ' ' + titlecase(subtype)
+                for subtype in self.__dict__[field_subtypes]:
+                    typeline += ' ' + titlecase(subtype)
+        else:
+            typeline = self.get_type_line(separator=utils.dash_marker)
 
         if ansi_color:
             typeline = utils.colorize(typeline, utils.Ansi.GREEN)
@@ -1429,11 +1427,7 @@ class Card:
             cost = card.cost.format()
 
             # Type
-            supertypes = [titlecase(s) for s in card.supertypes]
-            types = [titlecase(t) for t in card.types]
-            typeline = ' '.join(supertypes + types)
-            if card.subtypes:
-                typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in card.subtypes])
+            typeline = card.get_type_line()
 
             # Stats (P/T or Loyalty/Defense)
             stats = card._get_pt_display(include_parens=False)
@@ -1512,11 +1506,7 @@ class Card:
             name = titlecase(card.name)
             mana_cost = card.cost.format().replace('{', '').replace('}', '')
 
-            supertypes = [titlecase(s) for s in card.supertypes]
-            types = [titlecase(t) for t in card.types]
-            typeline = ' '.join(supertypes + types)
-            if card.subtypes:
-                typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in card.subtypes])
+            typeline = card.get_type_line()
 
             # Cockatrice <color> is the color letters
             color = ''.join(card.cost.colors)
