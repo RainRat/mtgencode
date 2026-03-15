@@ -213,8 +213,9 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
 
 class Datamine:
     # build the global indices
-    def __init__(self, cards_input):
+    def __init__(self, cards_input, search_stats=None):
         # global card pools
+        self.search_stats = search_stats
         self.unparsed_cards = []
         self.invalid_cards = []
         self.cards = []
@@ -349,6 +350,36 @@ class Datamine:
 
     # summarize the indices
     def summarize(self, hsize = 10, vsize = 10, cmcsize = 20, use_color = False):
+
+        if self.search_stats:
+            print(color_line('SEARCH STATISTICS', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+
+            total = self.search_stats.get('matched', 0) + self.search_stats.get('filtered', 0)
+            matched = self.search_stats.get('matched', 0)
+            filtered = self.search_stats.get('filtered', 0)
+
+            rows = []
+
+            for label, count in [('Matched', matched), ('Filtered Out', filtered)]:
+                percent = (count / total * 100) if total > 0 else 0
+                bar_width = 10
+                filled = int(round(percent / 100 * bar_width))
+                if filled == 0 and percent > 0:
+                    filled = 1
+                bar = '[' + '█' * filled + ' ' * (bar_width - filled) + ']'
+                if use_color:
+                    color = utils.Ansi.BOLD + utils.Ansi.GREEN if label == 'Matched' else utils.Ansi.BOLD + utils.Ansi.RED
+                    bar = utils.colorize(bar, color)
+
+                rows.append([
+                    label,
+                    color_count(count, use_color),
+                    f"{percent:5.1f}%",
+                    bar
+                ])
+
+            printrows(padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=4)
+            print()
 
         print(color_line('DATASET SUMMARY', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print('  ' + color_count(len(self.cards), use_color) + ' valid cards, ' +
@@ -582,6 +613,7 @@ class Datamine:
     def to_dict(self):
         """Returns a dictionary representation of the collected statistics."""
         result = {
+            'search_stats': self.search_stats,
             'counts': {
                 'valid': len(self.cards),
                 'invalid': len(self.invalid_cards),
