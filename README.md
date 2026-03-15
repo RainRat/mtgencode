@@ -120,6 +120,7 @@ Customization options for formatting data:
 Options for formatting the output:
 *   `-g`, `--gatherer`: Formats text like the official Gatherer website (Default). This applies modern wording and capitalization.
 *   `--raw`: Shows raw text without special formatting.
+*   `--table`: Creates a formatted table for terminal view.
 *   `--html`: Creates a webpage with card images.
 *   `--deck`: Creates a standard MTG decklist.
 *   `--xml`: Creates a Cockatrice-compatible XML card database.
@@ -156,6 +157,7 @@ The tool detects the format automatically based on the file extension of your ou
 *   `.mdt`  -> Markdown table
 *   `.sum`, `.summary` -> One-line summary
 *   `.deck`, `.dek` -> MTG Decklist
+*   `.tbl`, `.table` -> Formatted table
 *   `.xml` -> Cockatrice XML database
 *   `.mse-set` -> Magic Set Editor file
 

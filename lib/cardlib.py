@@ -1466,6 +1466,55 @@ class Card:
 
         return f"| {' | '.join(fields)} |"
 
+    def to_table_row(self, ansi_color=False):
+        """Returns a list of strings representing the card's fields for a terminal table."""
+
+        def get_fields(card):
+            # Name
+            name = titlecase(card.name)
+            if ansi_color:
+                name = utils.colorize(name, card._get_ansi_color())
+
+            # Cost
+            cost = card.cost.format(ansi_color=ansi_color)
+
+            # Type
+            supertypes = [titlecase(s) for s in card.supertypes]
+            types = [titlecase(t) for t in card.types]
+            typeline = ' '.join(supertypes + types)
+            if card.subtypes:
+                typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in card.subtypes])
+            if ansi_color:
+                typeline = utils.colorize(typeline, utils.Ansi.GREEN)
+
+            # Stats (P/T or Loyalty/Defense)
+            stats = card._get_pt_display(ansi_color=ansi_color, include_parens=False)
+            if not stats:
+                stats = card._get_loyalty_display(ansi_color=ansi_color, include_parens=False)
+
+            # Rarity
+            rarity = card.rarity_name
+            if ansi_color and rarity:
+                rarity = utils.colorize(rarity, utils.Ansi.get_rarity_color(rarity))
+
+            return name, cost, typeline, stats, rarity
+
+        name, cost, typeline, stats, rarity = get_fields(self)
+
+        if self.bside:
+            b_name, b_cost, b_typeline, b_stats, b_rarity = get_fields(self.bside)
+            name = f"{name} // {b_name}"
+            cost = f"{cost} // {b_cost}"
+            typeline = f"{typeline} // {b_typeline}"
+            if stats and b_stats:
+                stats = f"{stats} // {b_stats}"
+            else:
+                stats = stats or b_stats
+            if b_rarity and b_rarity != rarity:
+                rarity = f"{rarity} // {b_rarity}"
+
+        return [name, cost, typeline, stats, rarity]
+
     def vectorize(self):
         """Vectorizes the card data into a string format suitable for machine learning.
 
