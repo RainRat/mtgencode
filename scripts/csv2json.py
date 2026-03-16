@@ -25,7 +25,7 @@ CSV Format:
   3. Types & Supertypes (e.g., "Legendary Creature")
   4. Subtypes (e.g., "Elf Warrior")
   5. Rules Text (e.g., "Target creature gets +3/+3 until end of turn.")
-  6. P/T (e.g., "3/3")
+  6. P/T, Loyalty, or Defense (e.g., "3/3" for creatures, "5" for Planeswalkers)
   7. Rarity (e.g., "C", "U", "R", "M")
 
   The first row (header) is ignored if the first column is exactly "name".

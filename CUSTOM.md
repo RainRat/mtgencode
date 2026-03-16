@@ -23,8 +23,16 @@ We provide two scripts in the `scripts/` directory to help you:
 
 ### Step 1: Create a Spreadsheet
 Create a CSV file with your custom cards. You can start with this [Google Sheet template](https://docs.google.com/spreadsheets/d/1bYqDoRc6tD6uEchANzDUFZp0xaL4GTgFa4iadXcXRRQ/edit#gid=0).
+
 1.  Open the link.
-2.  Add your cards following the format (Name, Mana Cost, Type, Subtypes, Text, P/T, Rarity).
+2.  Add your cards following the format:
+    *   **Name**: Card title.
+    *   **Mana Cost**: Use brackets for symbols (e.g., `{1}{W}{B}`).
+    *   **Type**: Supertypes and Types (e.g., `Legendary Creature`).
+    *   **Subtypes**: (e.g., `Elf Warrior`).
+    *   **Text**: Rules text. Use `\n` for new lines.
+    *   **P/T, Loyalty, or Defense**: Use `3/3` for creatures, or a single number for Planeswalker loyalty or Battle defense.
+    *   **Rarity**: Use shorthands: `C` (Common), `U` (Uncommon), `R` (Rare), `M` (Mythic).
 3.  Click **File -> Download -> Comma Separated Values (.csv)**.
 4.  Save it as `custom.csv`.
 
