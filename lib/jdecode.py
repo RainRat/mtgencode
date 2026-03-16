@@ -662,7 +662,8 @@ def mtg_open_file(fname, verbose = False,
                   pows=None, tous=None, loys=None,
                   mechanics=None,
                   shuffle=False, seed=None,
-                  decklist_file=None):
+                  decklist_file=None,
+                  stats=None):
     """
     High-level entry point for loading card data from various formats.
     Supported formats: JSON, JSONL, CSV, Magic Set Editor (.mse-set),
@@ -1124,7 +1125,19 @@ def mtg_open_file(fname, verbose = False,
                     return False
 
             return True
-        cards = [c for c in cards if match_card(c)]
+
+        matched_cards = []
+        filtered_count = 0
+        for c in cards:
+            if match_card(c):
+                matched_cards.append(c)
+            else:
+                filtered_count += 1
+
+        cards = matched_cards
+        if stats is not None:
+            stats['matched'] = len(cards)
+            stats['filtered'] = filtered_count
 
     if shuffle:
         if seed is not None:

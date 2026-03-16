@@ -39,6 +39,7 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
 
     # Use the robust mtg_open_file for all loading and filtering.
     # We disable default exclusions to match original summarize.py behavior.
+    search_stats = {}
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
                                   fmt_labeled=None if nolabel else cardlib.fmt_labeled_default,
                                   grep=grep, vgrep=vgrep,
@@ -56,12 +57,13 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False,
                                   shuffle=shuffle, seed=seed,
-                                  decklist_file=decklist_file)
+                                  decklist_file=decklist_file,
+                                  stats=search_stats)
 
     if limit > 0:
         cards = cards[:limit]
 
-    mine = Datamine(cards)
+    mine = Datamine(cards, search_stats=search_stats)
 
     # Determine if we should use color
     actual_use_color = False
