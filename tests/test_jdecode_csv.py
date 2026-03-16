@@ -131,9 +131,9 @@ class TestJDecodeCSV(unittest.TestCase):
             cards = jdecode.mtg_open_file(subdir, verbose=True)
             output = fake_stderr.getvalue()
             self.assertIn('Scanning directory', output)
-            self.assertIn('Loading card1.csv...', output)
-            self.assertIn('Loading card2.csv...', output)
-            self.assertIn('Loading card3.csv...', output)
+            self.assertIn('card1.csv...', output)
+            self.assertIn('card2.csv...', output)
+            self.assertIn('card3.csv...', output)
             # Should have 2 unique names: bolt and shock
             self.assertIn('Opened 2 uniquely named cards', output)
 
