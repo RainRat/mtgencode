@@ -26,7 +26,7 @@ from namediff import Namediff
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, nolabel = False,
          gatherer = True, for_forum = False, for_mse = False,
-         creativity = False, vdump = False, html = False, text = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, md_table_out = False, summary_out = False, deck_out = False, xml_out = False, quiet=False,
+         creativity = False, vdump = False, html = False, text = False, table_out = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, md_table_out = False, summary_out = False, deck_out = False, xml_out = False, quiet=False,
          report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None,
          grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
          grep_text=None, vgrep_text=None,
@@ -39,7 +39,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
-    if not (html or text or for_mse or json_out or jsonl_out or csv_out or md_out or md_table_out or summary_out or deck_out or xml_out):
+    if not (html or text or table_out or for_mse or json_out or jsonl_out or csv_out or md_out or md_table_out or summary_out or deck_out or xml_out):
         if oname:
             if oname.endswith('.html'):
                 html = True
@@ -55,6 +55,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 md_table_out = True
             elif oname.endswith('.sum') or oname.endswith('.summary'):
                 summary_out = True
+            elif oname.endswith('.tbl') or oname.endswith('.table'):
+                table_out = True
             elif oname.endswith('.mse-set'):
                 for_mse = True
             elif oname.endswith('.deck') or oname.endswith('.dek'):
@@ -68,12 +70,12 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     # Mutually exclusive output formats are now enforced by argparse in main block,
     # but we keep this check for programmatic access safety.
-    if sum([bool(html), bool(for_mse), bool(json_out), bool(jsonl_out), bool(text), bool(csv_out), bool(md_out), bool(md_table_out), bool(summary_out), bool(deck_out), bool(xml_out)]) > 1:
+    if sum([bool(html), bool(table_out), bool(for_mse), bool(json_out), bool(jsonl_out), bool(text), bool(csv_out), bool(md_out), bool(md_table_out), bool(summary_out), bool(deck_out), bool(xml_out)]) > 1:
         # If user explicitly requested multiple formats programmatically, we warn or error.
         # However, argparse logic below ensures text defaults to True only if others are False.
         # But if someone calls main() directly with multiple True, we should respect that or fail.
         # The original code errored on >1 format.
-        print('ERROR - decode.py - incompatible output formats (choose one of --html, --mse, --json, --text)', file=sys.stderr)
+        print('ERROR - decode.py - incompatible output formats (choose one of --html, --mse, --json, --text, --table)', file=sys.stderr)
         sys.exit(1)
 
     if for_mse:
@@ -225,7 +227,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             namestr = truename + ': ' + str(dist) + '\n'
         return namestr
 
-    def writecards(writer, for_html=False, for_md=False, for_md_table=False, for_summary=False, for_mse=False, for_xml=False):
+    def writecards(writer, for_html=False, for_md=False, for_table=False, for_md_table=False, for_summary=False, for_mse=False, for_xml=False):
         success_count = 0
         fail_count = 0
 
@@ -333,6 +335,31 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 writer.write("</div><hr style='clear:both;'>")
             # closing the html file
             writer.write(utils.html_append)
+            return success_count, fail_count
+
+        if for_table:
+            import datalib
+            use_color = False
+            if color_arg is True:
+                use_color = True
+            elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
+                use_color = True
+
+            rows = []
+            header = ["Name", "Cost", "Type", "Stats", "Rarity"]
+            if use_color:
+                header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+            rows.append(header)
+
+            for card in tqdm(cards, disable=quiet or len(cards) < 5, desc="Decoding"):
+                try:
+                    rows.append(card.to_table_row(ansi_color=use_color))
+                    success_count += 1
+                except Exception:
+                    fail_count += 1
+
+            for row in datalib.padrows(rows, aligns=['l', 'l', 'l', 'l', 'l']):
+                writer.write(row + '\n')
             return success_count, fail_count
 
         first = True
@@ -561,6 +588,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 s, f = writecards(ofile, for_html=True, for_mse=for_mse)
                 total_success += s
                 total_fail += f
+        if table_out:
+            if verbose:
+                print('Writing table output to: ' + oname, file=sys.stderr)
+            with open(oname, 'w', encoding='utf8') as ofile:
+                s, f = writecards(ofile, for_table=True)
+                total_success += s
+                total_fail += f
         if json_out:
             import json
             if verbose:
@@ -698,8 +732,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                     total_fail += 1
             sys.stdout.flush()
         else:
-            # Correctly propagate for_html=html, for_md=md_out, for_md_table=md_table_out, for_summary=summary_out, for_xml=xml_out
-            s, f = writecards(sys.stdout, for_html=html, for_md=md_out, for_md_table=md_table_out, for_summary=summary_out, for_mse=for_mse, for_xml=xml_out)
+            # Correctly propagate for_html=html, for_table=table_out, for_md=md_out, for_md_table=md_table_out, for_summary=summary_out, for_xml=xml_out
+            s, f = writecards(sys.stdout, for_html=html, for_table=table_out, for_md=md_out, for_md_table=md_table_out, for_summary=summary_out, for_mse=for_mse, for_xml=xml_out)
             total_success += s
             total_fail += f
         sys.stdout.flush()
@@ -724,6 +758,8 @@ if __name__ == '__main__':
     fmt_group = fmt_group_title.add_mutually_exclusive_group()
     fmt_group.add_argument('--text', action='store_true',
                            help='Force plain text output (Default unless detected from extension).')
+    fmt_group.add_argument('--table', action='store_true',
+                           help='Generate a formatted table for terminal view (Auto-detected for .tbl or .table).')
     fmt_group.add_argument('--html', action='store_true',
                            help='Generate a nicely formatted HTML file (Auto-detected for .html).')
     fmt_group.add_argument('--json', action='store_true',
@@ -863,7 +899,7 @@ if __name__ == '__main__':
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, nolabel = args.nolabel,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
-         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text,
+         creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, table_out = args.table,
          json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, md_table_out = args.md_table, summary_out = args.summary, deck_out = args.deck, xml_out = args.xml, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep,
          sort=args.sort, vgrep=args.vgrep,
