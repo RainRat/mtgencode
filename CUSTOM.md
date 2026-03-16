@@ -17,11 +17,18 @@ To get the best results, follow these tips:
 
 ## How to Add Custom Cards
 
-We provide two scripts in the `scripts/` directory to help you:
-*   `scripts/csv2json.py`: Converts a spreadsheet of cards into JSON format.
+We provide several scripts in the `scripts/` directory to help you:
+*   `scripts/json2csv.py`: Exports existing cards to a CSV format for easy editing.
+*   `scripts/csv2json.py`: Converts your edited spreadsheet back into JSON format.
 *   `scripts/combinejson.py`: Merges your custom JSON with the official card data.
 
-### Step 1: Create a Spreadsheet
+### Step 0: (Optional) Export Existing Cards
+If you want to use existing cards as a starting point, use `json2csv.py`.
+```bash
+python3 scripts/json2csv.py data/AllPrintings.json my_base.csv --set MOM
+```
+
+### Step 1: Create or Edit a Spreadsheet
 Create a CSV file with your custom cards. You can start with this [Google Sheet template](https://docs.google.com/spreadsheets/d/1bYqDoRc6tD6uEchANzDUFZp0xaL4GTgFa4iadXcXRRQ/edit#gid=0).
 1.  Open the link.
 2.  Add your cards following the format (Name, Mana Cost, Type, Subtypes, Text, P/T, Rarity).

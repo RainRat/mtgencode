@@ -765,20 +765,21 @@ def mtg_open_file(fname, verbose = False,
                                 aggregated_srcs[key] = val
                         txt_cards.extend(t_cards)
         else:
-            files = sorted([f for f in os.listdir(fname) if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt')])
-            for f in files:
-                if verbose:
-                    print(f"Loading {f}...", file=sys.stderr)
-                full_path = os.path.join(fname, f)
-                # For directories, we don't read content here but let the helper do it
-                srcs, bad, t_cards = process_file_content(full_path, None, False)
-                aggregated_bad_sets.update(bad)
-                for key, val in srcs.items():
-                    if key in aggregated_srcs:
-                        aggregated_srcs[key].extend(val)
-                    else:
-                        aggregated_srcs[key] = val
-                txt_cards.extend(t_cards)
+            for root, dirs, filenames in os.walk(fname):
+                for f in sorted(filenames):
+                    if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt'):
+                        full_path = os.path.join(root, f)
+                        if verbose:
+                            print(f"Loading {full_path}...", file=sys.stderr)
+                        # For directories, we don't read content here but let the helper do it
+                        srcs, bad, t_cards = process_file_content(full_path, None, False)
+                        aggregated_bad_sets.update(bad)
+                        for key, val in srcs.items():
+                            if key in aggregated_srcs:
+                                aggregated_srcs[key].extend(val)
+                            else:
+                                aggregated_srcs[key] = val
+                        txt_cards.extend(t_cards)
 
         if verbose:
              if aggregated_srcs:
