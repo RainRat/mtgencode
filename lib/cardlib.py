@@ -1473,11 +1473,7 @@ class Card:
             cost = card.cost.format(ansi_color=ansi_color)
 
             # Type
-            supertypes = [titlecase(s) for s in card.supertypes]
-            types = [titlecase(t) for t in card.types]
-            typeline = ' '.join(supertypes + types)
-            if card.subtypes:
-                typeline += f' \u2014 ' + ' '.join([titlecase(s) for s in card.subtypes])
+            typeline = card.get_type_line()
             if ansi_color:
                 typeline = utils.colorize(typeline, utils.Ansi.GREEN)
 
