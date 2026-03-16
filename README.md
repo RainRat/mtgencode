@@ -184,7 +184,7 @@ When you run `encode.py`, the cards are converted into a specialized text format
 | `@` | Represents the card's own name. | `@ gets +&^/+&^` |
 | `\\` | Indicates a new line of rules text. | `Flying\\Trample` |
 | `~` | Replaces a dash (e.g., in type lines). | `Enchantment~Aura` |
-| `=` | Separates options in a choice or modal ability. | `[= Option A = Option B]` |
+| `=` | Separates options in a choice or modal ability. | `[&^ = Option A = Option B]` |
 | `%` | Represents a counter (like a +1/+1 or Charge counter). | `Put a % counter on @` |
 | `[` `]` | Groups multiple choices or options together. | `[&^ = Option A = Option B]` |
 | `{ }` | Mana symbols (symbols are doubled, e.g., `{WW}`). | `{GG}` |
@@ -213,20 +213,32 @@ To help the AI learn how to count, numbers are written as a sequence of symbols 
 | 2 | `&^^` |
 | 5 | `&^^^^^` |
 
+### Rarity Markers
+Rarity is encoded using a single-letter marker. These markers are often the second letter of the rarity name (to avoid collision with mana symbols like `C` for Colorless).
+
+| Marker | Rarity | Mnemonic |
+| :--- | :--- | :--- |
+| `O` | Common | c**O**mmon |
+| `N` | Uncommon | u**N**common |
+| `A` | Rare | r**A**re |
+| `Y` | Mythic | m**Y**thic |
+| `I` | Special | spec**I**al |
+| `L` | Basic Land | **L**and |
+
 ### Field Labels
 If you don't use the `--nolabel` flag, each field is prefixed with a number for easier identification:
 
-| Label | Card Part |
-| :--- | :--- |
-| `0` | Rarity |
-| `1` | Name |
-| `3` | Mana Cost |
-| `4` | Supertypes |
-| `5` | Types |
-| `6` | Subtypes |
-| `7` | Loyalty / Defense |
-| `8` | Power / Toughness |
-| `9` | Rules Text |
+| Label | Card Part | Example |
+| :--- | :--- | :--- |
+| `0` | Rarity | `0O` (Common) |
+| `1` | Name | `1grizzly bears` |
+| `3` | Mana Cost | `3{GG}` |
+| `4` | Supertypes | `4legendary` |
+| `5` | Types | `5creature` |
+| `6` | Subtypes | `6elf warrior` |
+| `7` | Loyalty / Defense | `7&^^^` (3) |
+| `8` | Power / Toughness | `8&^^/&^^` (2/2) |
+| `9` | Rules Text | `9flying` |
 
 > **Note:** The label `2` is skipped to avoid confusion with mana symbols (like `{2/B}`).
 
