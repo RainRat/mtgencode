@@ -347,18 +347,29 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
             rows = []
             header = ["Name", "Cost", "Type", "Stats", "Rarity"]
+            if booster > 0:
+                header.insert(0, "Pack")
             if use_color:
                 header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
             rows.append(header)
 
             for card in tqdm(cards, disable=quiet or len(cards) < 5, desc="Decoding"):
                 try:
-                    rows.append(card.to_table_row(ansi_color=use_color))
+                    row = card.to_table_row(ansi_color=use_color)
+                    if booster > 0:
+                        pack_id = str(getattr(card, 'pack_id', '?'))
+                        if use_color:
+                            pack_id = utils.colorize(pack_id, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
+                        row.insert(0, pack_id)
+                    rows.append(row)
                     success_count += 1
                 except Exception:
                     fail_count += 1
 
-            for row in datalib.padrows(rows, aligns=['l', 'l', 'l', 'l', 'l']):
+            aligns = ['l'] * len(header)
+            if booster > 0:
+                aligns[0] = 'r'
+            for row in datalib.padrows(rows, aligns=aligns):
                 writer.write(row + '\n')
             return success_count, fail_count
 
