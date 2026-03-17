@@ -693,8 +693,9 @@ class Ansi:
             return Ansi.BOLD + Ansi.GREEN
         if c == 'A' or 'COLORLESS' in c or 'LAND' in c:
             return Ansi.BOLD + Ansi.CYAN # Standard for colorless/artifacts in this project
-        if any(char in c for char in 'WUBRG'):
-            return Ansi.BOLD + Ansi.YELLOW # Multicolored/Hybrid/Phyrexian
+        # Multicolored/Hybrid/Phyrexian: check for 'M' marker or mixed mana characters
+        if c == 'M' or (len(c) > 1 and all(char in 'WUBRG2PSXCE/' for char in c) and any(char in 'WUBRG' for char in c)):
+            return Ansi.BOLD + Ansi.YELLOW
         return Ansi.BOLD
 
 def colorize(text, color_code):

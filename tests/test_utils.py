@@ -426,3 +426,32 @@ def test_get_rarity_color_edge_cases():
     assert utils.Ansi.get_rarity_color(None) == utils.Ansi.BOLD
     assert utils.Ansi.get_rarity_color('') == utils.Ansi.BOLD
     assert utils.Ansi.get_rarity_color('unknown') == utils.Ansi.BOLD
+
+def test_get_color_color_regression():
+    # Test individual colors
+    assert utils.Ansi.get_color_color('W') == utils.Ansi.BOLD + utils.Ansi.WHITE
+    assert utils.Ansi.get_color_color('U') == utils.Ansi.BOLD + utils.Ansi.CYAN
+    assert utils.Ansi.get_color_color('B') == utils.Ansi.BOLD + utils.Ansi.MAGENTA
+    assert utils.Ansi.get_color_color('R') == utils.Ansi.BOLD + utils.Ansi.RED
+    assert utils.Ansi.get_color_color('G') == utils.Ansi.BOLD + utils.Ansi.GREEN
+
+    # Test colorless/artifact/land
+    assert utils.Ansi.get_color_color('A') == utils.Ansi.BOLD + utils.Ansi.CYAN
+    assert utils.Ansi.get_color_color('COLORLESS') == utils.Ansi.BOLD + utils.Ansi.CYAN
+    assert utils.Ansi.get_color_color('LAND') == utils.Ansi.BOLD + utils.Ansi.CYAN
+
+    # Test multicolored / M marker
+    assert utils.Ansi.get_color_color('M') == utils.Ansi.BOLD + utils.Ansi.YELLOW
+    assert utils.Ansi.get_color_color('WU') == utils.Ansi.BOLD + utils.Ansi.YELLOW
+    assert utils.Ansi.get_color_color('W/U') == utils.Ansi.BOLD + utils.Ansi.YELLOW
+    assert utils.Ansi.get_color_color('2W') == utils.Ansi.BOLD + utils.Ansi.YELLOW
+
+    # Test avoiding false positives (the bug)
+    assert utils.Ansi.get_color_color('UNKNOWN') == utils.Ansi.BOLD
+    assert utils.Ansi.get_color_color('GLITCH') == utils.Ansi.BOLD
+    assert utils.Ansi.get_color_color('POWER') == utils.Ansi.BOLD
+    assert utils.Ansi.get_color_color('TOUGHNESS') == utils.Ansi.BOLD
+
+    # Edge cases
+    assert utils.Ansi.get_color_color(None) == utils.Ansi.BOLD
+    assert utils.Ansi.get_color_color('') == utils.Ansi.BOLD
