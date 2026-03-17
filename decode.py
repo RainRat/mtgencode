@@ -817,16 +817,8 @@ if __name__ == '__main__':
     content_group.add_argument('-f', '--forum', action='store_true',
                         help='Use pretty formatting for mana symbols (compatible with MTG Salvation forums).')
 
-    # Color options
-    # We use a mutual exclusive group to allow --color and --no-color
-    color_group = content_group.add_mutually_exclusive_group()
-    color_group.add_argument('--color', action='store_true', default=None,
-                        help='Force enable ANSI color output (useful for piping to less -R).')
-    color_group.add_argument('--no-color', action='store_false', dest='color',
-                        help='Disable ANSI color output.')
-
-    # Group: Processing & Debugging
-    proc_group = parser.add_argument_group('Processing & Debugging')
+    # Group: Data Processing
+    proc_group = parser.add_argument_group('Data Processing')
     proc_group.add_argument('-c', '--creativity', action='store_true',
                         help="Calculate how unique these cards are compared to real Magic cards (requires Word2Vec).")
     proc_group.add_argument('-n', '--limit', type=int, default=0,
@@ -839,62 +831,76 @@ if __name__ == '__main__':
                         help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
     proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
                         help='Sort cards by a specific criterion.')
-    proc_group.add_argument('-d', '--dump', action='store_true',
-                        help='Show detailed debug information for cards that were not processed correctly.')
-    proc_group.add_argument('-v', '--verbose', action='store_true',
-                        help='Enable detailed status messages.')
-    proc_group.add_argument('-q', '--quiet', action='store_true',
-                        help='Suppress the progress bar.')
-    proc_group.add_argument('--report-failed',
-                        help='File path to save the text of cards that failed to parse or validate (useful for debugging).')
-    proc_group.add_argument('--grep', action='append',
-                        help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
-    proc_group.add_argument('--grep-name', action='append',
-                        help='Only include cards whose name matches a search pattern.')
-    proc_group.add_argument('--grep-type', action='append',
-                        help='Only include cards whose typeline matches a search pattern.')
-    proc_group.add_argument('--grep-text', action='append',
-                        help='Only include cards whose rules text matches a search pattern.')
-    proc_group.add_argument('--grep-cost', action='append',
-                        help='Only include cards whose mana cost matches a search pattern.')
-    proc_group.add_argument('--grep-pt', action='append',
-                        help='Only include cards whose power/toughness matches a search pattern.')
-    proc_group.add_argument('--grep-loyalty', action='append',
-                        help='Only include cards whose loyalty/defense matches a search pattern.')
-    proc_group.add_argument('--vgrep', '--exclude', action='append',
-                        help='Exclude cards matching a search pattern (checks name, type, and text). Use multiple times for OR logic.')
-    proc_group.add_argument('--exclude-name', action='append',
-                        help='Exclude cards whose name matches a search pattern.')
-    proc_group.add_argument('--exclude-type', action='append',
-                        help='Exclude cards whose typeline matches a search pattern.')
-    proc_group.add_argument('--exclude-text', action='append',
-                        help='Exclude cards whose rules text matches a search pattern.')
-    proc_group.add_argument('--exclude-cost', action='append',
-                        help='Exclude cards whose mana cost matches a search pattern.')
-    proc_group.add_argument('--exclude-pt', action='append',
-                        help='Exclude cards whose power/toughness matches a search pattern.')
-    proc_group.add_argument('--exclude-loyalty', action='append',
-                        help='Exclude cards whose loyalty/defense matches a search pattern.')
-    proc_group.add_argument('--set', action='append',
-                        help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
-    proc_group.add_argument('--rarity', action='append',
-                        help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple rarities (OR logic).")
-    proc_group.add_argument('--colors', action='append',
-                        help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple colors (OR logic).")
-    proc_group.add_argument('--cmc', action='append',
-                        help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
-    proc_group.add_argument('--pow', '--power', action='append', dest='pow',
-                        help='Only include cards with specific Power values. Supports inequalities and ranges.')
-    proc_group.add_argument('--tou', '--toughness', action='append', dest='tou',
-                        help='Only include cards with specific Toughness values. Supports inequalities and ranges.')
-    proc_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
-                        help='Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.')
-    proc_group.add_argument('--mechanic', action='append',
-                        help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
-    proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck_filter',
-                        help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
     proc_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
+
+    # Group: Filtering Options
+    filter_group = parser.add_argument_group('Filtering Options')
+    filter_group.add_argument('--grep', action='append',
+                        help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
+    filter_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a search pattern.')
+    filter_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a search pattern.')
+    filter_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a search pattern.')
+    filter_group.add_argument('--grep-cost', action='append',
+                        help='Only include cards whose mana cost matches a search pattern.')
+    filter_group.add_argument('--grep-pt', action='append',
+                        help='Only include cards whose power/toughness matches a search pattern.')
+    filter_group.add_argument('--grep-loyalty', action='append',
+                        help='Only include cards whose loyalty/defense matches a search pattern.')
+    filter_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Exclude cards matching a search pattern (checks name, type, and text). Use multiple times for OR logic.')
+    filter_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a search pattern.')
+    filter_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a search pattern.')
+    filter_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a search pattern.')
+    filter_group.add_argument('--exclude-cost', action='append',
+                        help='Exclude cards whose mana cost matches a search pattern.')
+    filter_group.add_argument('--exclude-pt', action='append',
+                        help='Exclude cards whose power/toughness matches a search pattern.')
+    filter_group.add_argument('--exclude-loyalty', action='append',
+                        help='Exclude cards whose loyalty/defense matches a search pattern.')
+    filter_group.add_argument('--set', action='append',
+                        help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
+    filter_group.add_argument('--rarity', action='append',
+                        help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple rarities (OR logic).")
+    filter_group.add_argument('--colors', action='append',
+                        help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple colors (OR logic).")
+    filter_group.add_argument('--cmc', action='append',
+                        help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
+    filter_group.add_argument('--pow', '--power', action='append', dest='pow',
+                        help='Only include cards with specific Power values. Supports inequalities and ranges.')
+    filter_group.add_argument('--tou', '--toughness', action='append', dest='tou',
+                        help='Only include cards with specific Toughness values. Supports inequalities and ranges.')
+    filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
+                        help='Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.')
+    filter_group.add_argument('--mechanic', action='append',
+                        help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
+    filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck_filter',
+                        help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
+
+    # Group: Logging & Debugging
+    debug_group = parser.add_argument_group('Logging & Debugging')
+    debug_group.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable detailed status messages.')
+    debug_group.add_argument('-q', '--quiet', action='store_true',
+                        help='Suppress the progress bar.')
+    debug_group.add_argument('-d', '--dump', action='store_true',
+                        help='Show detailed debug information for cards that were not processed correctly.')
+    debug_group.add_argument('--report-failed',
+                        help='File path to save the text of cards that failed to parse or validate (useful for debugging).')
+
+    # Color options
+    # We use a mutual exclusive group to allow --color and --no-color
+    color_group = debug_group.add_mutually_exclusive_group()
+    color_group.add_argument('--color', action='store_true', default=None,
+                        help='Force enable ANSI color output (useful for piping to less -R).')
+    color_group.add_argument('--no-color', action='store_false', dest='color',
+                        help='Disable ANSI color output.')
 
     args = parser.parse_args()
 
