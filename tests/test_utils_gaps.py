@@ -37,8 +37,19 @@ def test_get_color_color_colorless_indicators():
 
 def test_get_color_color_multi_and_hybrid():
     Ansi = utils.Ansi
+    assert Ansi.get_color_color('M') == Ansi.BOLD + Ansi.YELLOW
     assert Ansi.get_color_color('WU') == Ansi.BOLD + Ansi.YELLOW
     assert Ansi.get_color_color('WUBRG') == Ansi.BOLD + Ansi.YELLOW
+    assert Ansi.get_color_color('2/W') == Ansi.BOLD + Ansi.YELLOW
+    assert Ansi.get_color_color('G/W/P') == Ansi.BOLD + Ansi.YELLOW
+
+def test_get_color_color_false_positives():
+    Ansi = utils.Ansi
+    # Should NOT be yellow
+    assert Ansi.get_color_color('GLITCH') == Ansi.BOLD
+    assert Ansi.get_color_color('UNKNOWN') == Ansi.BOLD
+    assert Ansi.get_color_color('SWAMP') == Ansi.BOLD
+    assert Ansi.get_color_color('MOUNTAIN') == Ansi.BOLD
 
 def test_get_color_color_edge_cases():
     Ansi = utils.Ansi
