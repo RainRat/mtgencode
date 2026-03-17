@@ -111,9 +111,11 @@ Customization options for formatting data:
 *   `--nolinetrans`: Disables the automatic reordering and normalization of card text lines.
 *   `-r`, `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
 *   `-s`, `--stable`: Preserve the original order of cards from the input (the tool shuffles cards by default).
-*   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc` before encoding. Automatically enables `--stable`.
+*   `--sort`: Sorts cards by `name`, `color`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, or `set` before encoding. Automatically enables `--stable`.
+*   `--seed N`: Seed for the random number generator (Default: 1371367).
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Shorthand for `--limit N`. The tool shuffles cards by default unless you use `--stable`.
+*   `-q`, `--quiet`: Suppress the progress bar and status messages.
 *   `--report-unparsed FILE`: Save the raw JSON of cards that failed to parse into a separate file.
 
 ### `decode.py` (Viewing Results)
@@ -129,12 +131,18 @@ Options for formatting the output:
 *   `--jsonl`: Creates a JSON Lines file (one card per line).
 *   `--csv`: Creates a spreadsheet file.
 *   `--md`: Creates a Markdown document.
+*   `--md-table`: Creates a Markdown table.
 *   `--summary`: Creates a compact one-line summary for each card.
+*   `--deck`: Creates a standard MTG decklist.
+*   `--xml`: Creates a Cockatrice-compatible XML card database.
+*   `--mse`: Creates a file for Magic Set Editor.
 *   `--color` / `--no-color`: Manually enable or disable ANSI color output in your terminal.
 *   `--shuffle`: Randomizes the order of cards (the tool does not shuffle cards by default for decoding).
-*   `--sort`: Sorts cards by `name`, `color`, `type`, or `cmc`.
+*   `--sort`: Sorts cards by `name`, `color`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, or `set`.
+*   `--seed N`: Seed for the random number generator.
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+*   `-q`, `--quiet`: Suppress the progress bar and status messages.
 *   `--booster N`: Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land.
 *   `--report-failed FILE`: Save the text of cards that failed to parse or validate into a separate file.
 
@@ -325,7 +333,10 @@ python3 sortcards.py data/AllPrintings.json sorted_output.txt
 # Sort encoded cards with filters and sampling
 python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "Elf"
 ```
-*   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, `--grep`, and `--vgrep`.
+*   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, and all **Advanced Filtering** flags.
+*   `--summary`: Output compact card summaries instead of full text.
+*   `--md`: Output in Markdown format with collapsible sections.
+*   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `summarize.py`
 Shows statistics about your card data, such as the distribution of card types and colors. It works with any card data (JSON, CSV, encoded text, etc.).
@@ -346,7 +357,8 @@ python3 scripts/summarize.py encoded_output.txt summary.json
     *   `-x`, `--outliers`: Show extra details and unusual cards.
     *   `-a`, `--all`: Show all information, including dumping invalid cards.
     *   `--json`: Force JSON output.
-    *   Supports filtering flags: `--limit`, `--sample`, `--grep`, `--vgrep`.
+    *   `--color` / `--no-color`: Enable or disable ANSI color output.
+    *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--cmc`, `--mechanic`).
 
 ### `csv2json.py` & `combinejson.py`
 Used for integrating custom cards into your dataset. See [CUSTOM.md](CUSTOM.md) for a full guide.
@@ -378,6 +390,8 @@ python3 scripts/splitcards.py data/AllPrintings.json --outputs rb_train.txt rb_v
 ```
 *   **Options:**
     *   `-f`, `--format`: Output format (`text`, `json`, `jsonl`, `csv`). Default is `text`.
+    *   `-v`, `--verbose`: Enable detailed status messages.
+    *   `-q`, `--quiet`: Suppress the progress bar.
     *   `--encoding`: Choose the text encoding format (e.g., `std`, `named`, `vec`).
     *   `--shuffle` / `--no-shuffle`: Whether to randomize the order of cards before splitting (Enabled by default).
     *   Supports all filtering and sorting flags from `encode.py` (e.g., `--limit`, `--sort`, `--grep`, `--colors`, `--cmc`, `--mechanic`).
