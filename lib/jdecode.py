@@ -6,6 +6,7 @@ import csv
 import zipfile
 import random
 import io
+import xml.etree.ElementTree as ET
 
 import utils
 import cardlib
@@ -230,6 +231,30 @@ def mtg_open_json_obj(jobj, verbose = False):
 
     return allcards, bad_sets
 
+def _format_mana_json(s):
+    """
+    Converts a mana cost string (e.g. 2UU or {2}{U}{U}) into the format
+    expected by the internal JSON parser ({2}{U}{U}).
+    """
+    if not s: return ""
+    if s.startswith('{') and s.endswith('}'):
+        # If it's already in braces, we assume it's mostly correct,
+        # but if it's a single set of braces with multiple symbols like {2UU},
+        # we might want to split them.
+        # However, MTGJSON format {2}{U}{U} is already handled.
+        # Let's just be safe and use the same logic if there are no inner braces.
+        if s.count('{') == 1:
+            s = s[1:-1]
+        else:
+            return s
+
+    # Improved regex to handle hybrid costs like W/U, 2/W, W/U/B, and W/P
+    tokens = re.findall(r'(?:[a-zA-Z0-9]/)+[a-zA-Z0-9]|\d+|[a-zA-Z]', s)
+    res = ""
+    for t in tokens:
+        res += "{" + t.upper() + "}"
+    return res
+
 def mtg_open_json(fname, verbose = False):
     """
     Reads a JSON file containing card data.
@@ -237,6 +262,103 @@ def mtg_open_json(fname, verbose = False):
     with open(fname, 'r', encoding='utf8') as f:
         jobj = json.load(f)
     return mtg_open_json_obj(jobj, verbose)
+
+def mtg_open_xml_content(text, verbose = False):
+    """
+    Processes Cockatrice XML content.
+    """
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError:
+        return {}, set()
+
+    allcards = {}
+    bad_sets = set()
+
+    # Cockatrice XML structure:
+    # <cockatrice_carddatabase>
+    #   <cards>
+    #     <card>
+    #       <name>...</name>
+    #       <manacost>...</manacost>
+    #       <type>...</type>
+    #       <pt>...</pt>
+    #       <text>...</text>
+    #     </card>
+    #   </cards>
+    # </cockatrice_carddatabase>
+
+    cards_node = root.find('cards')
+    if cards_node is None:
+        # Some older or alternative formats might have <card> directly under root
+        cards_node = root
+
+    for card_node in cards_node.findall('card'):
+        name = card_node.findtext('name', '')
+        if not name:
+            continue
+
+        card_dict = {
+            'name': name,
+            'manaCost': _format_mana_json(card_node.findtext('manacost', '')),
+            'text': card_node.findtext('text', ''),
+            'rarity': card_node.findtext('rarity', ''),
+            'setCode': card_node.findtext('set', ''),
+            'number': card_node.findtext('number', ''),
+        }
+
+        # Handle type line
+        full_type = card_node.findtext('type', '')
+        if full_type:
+            card_dict['type'] = full_type
+            s, t, sub = utils.parse_type_line(full_type)
+            if s: card_dict['supertypes'] = s
+            if t: card_dict['types'] = t
+            if sub: card_dict['subtypes'] = sub
+
+        # Handle P/T and Loyalty/Defense
+        pt = card_node.findtext('pt', '')
+        if pt:
+            if '/' in pt:
+                # Creature or Vehicle
+                p, t = pt.split('/', 1)
+                card_dict['power'] = p.strip()
+                card_dict['toughness'] = t.strip()
+            elif 'Planeswalker' in full_type or 'Battle' in full_type:
+                # Loyalty or Defense
+                if 'Battle' in full_type:
+                    card_dict['defense'] = pt.strip()
+                else:
+                    card_dict['loyalty'] = pt.strip()
+            else:
+                # Ambiguous, but we'll try to guess
+                try:
+                    int(pt.strip())
+                    if 'Creature' in full_type:
+                        card_dict['power'] = pt.strip()
+                    else:
+                        card_dict['loyalty'] = pt.strip()
+                except ValueError:
+                    card_dict['pt'] = pt
+
+        cardname = name.lower()
+        if cardname in allcards:
+            allcards[cardname].append(card_dict)
+        else:
+            allcards[cardname] = [card_dict]
+
+    if verbose:
+        print('Opened ' + str(len(allcards)) + ' uniquely named cards from XML.', file=sys.stderr)
+
+    return allcards, bad_sets
+
+def mtg_open_xml(fname, verbose = False):
+    """
+    Reads a Cockatrice XML file containing card data.
+    """
+    with open(fname, 'r', encoding='utf8') as f:
+        text = f.read()
+    return mtg_open_xml_content(text, verbose)
 
 def mtg_open_jsonl_content(text, verbose = False):
     """
@@ -385,21 +507,12 @@ def mtg_open_mse_content(content, verbose=False):
     if current_card:
         allcards_raw.append(current_card)
 
-    def mse_mana_to_json(s):
-        if not s: return ""
-        # Improved regex to handle hybrid costs like W/U, 2/W, W/U/B, and W/P
-        tokens = re.findall(r'(?:[a-zA-Z0-9]/)+[a-zA-Z0-9]|\d+|[a-zA-Z]', s)
-        res = ""
-        for t in tokens:
-            res += "{" + t.upper() + "}"
-        return res
-
     allcards = {}
     for c in allcards_raw:
         # Main side
         d = {
             'name': c.get('name', ''),
-            'manaCost': mse_mana_to_json(c.get('casting cost', '')),
+            'manaCost': _format_mana_json(c.get('casting cost', '')),
             'rarity': c.get('rarity', '').capitalize(),
             'text': c.get('rule text', ''),
         }
@@ -441,7 +554,7 @@ def mtg_open_mse_content(content, verbose=False):
         if 'name 2' in c:
             b = {
                 'name': c.get('name 2', ''),
-                'manaCost': mse_mana_to_json(c.get('casting cost 2', '')),
+                'manaCost': _format_mana_json(c.get('casting cost 2', '')),
                 'rarity': c.get('rarity 2', d['rarity']).capitalize(),
                 'text': c.get('rule text 2', ''),
             }
@@ -710,7 +823,7 @@ def mtg_open_file(fname, verbose = False,
             srcs, bad = {}, set()
             t_cards = []
 
-            if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set'):
+            if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.xml'):
                 if f.endswith('.mse-set'):
                     # Nested ZIP handling
                     with zipfile.ZipFile(io.BytesIO(content if is_zip else open(f, 'rb').read()), 'r') as nested_zf:
@@ -729,6 +842,8 @@ def mtg_open_file(fname, verbose = False,
                         pass
                 elif f.endswith('.jsonl'):
                     srcs, bad = mtg_open_jsonl_content(content if is_zip else open(f, 'r', encoding='utf8').read(), verbose=False)
+                elif f.endswith('.xml'):
+                    srcs, bad = mtg_open_xml_content(content if is_zip else open(f, 'r', encoding='utf8').read(), verbose=False)
                 else: # .csv
                     reader = csv.DictReader(io.StringIO(content if is_zip else open(f, 'r', encoding='utf8').read()))
                     srcs, bad = mtg_open_csv_reader(reader, verbose=False)
@@ -750,7 +865,7 @@ def mtg_open_file(fname, verbose = False,
 
         if is_zip:
             with zipfile.ZipFile(fname, 'r') as zf:
-                files = sorted([f for f in zf.namelist() if not f.endswith('/') and (f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt'))])
+                files = sorted([f for f in zf.namelist() if not f.endswith('/') and (f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt') or f.endswith('.xml'))])
                 for f in files:
                     if verbose:
                         print(f"  Loading {f} from ZIP...", file=sys.stderr)
@@ -767,7 +882,7 @@ def mtg_open_file(fname, verbose = False,
         else:
             for root, dirs, filenames in os.walk(fname):
                 for f in sorted(filenames):
-                    if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt'):
+                    if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt') or f.endswith('.xml'):
                         full_path = os.path.join(root, f)
                         if verbose:
                             print(f"Loading {full_path}...", file=sys.stderr)
@@ -820,6 +935,16 @@ def mtg_open_file(fname, verbose = False,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                    decklist_names=decklist_names)
 
+    # Single XML File Handling
+    elif fname.endswith('.xml'):
+        if verbose:
+            print('This looks like an xml file: ' + fname, file=sys.stderr)
+        xml_srcs, bad_sets = mtg_open_xml(fname, verbose)
+
+        cards = _process_json_srcs(xml_srcs, bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                   decklist_names=decklist_names)
+
     # Single MSE File Handling
     elif fname.endswith('.mse-set'):
         if verbose:
@@ -855,7 +980,7 @@ def mtg_open_file(fname, verbose = False,
                 cards = _hydrate_decklist(decklist_names, verbose, linetrans,
                                            exclude_sets, exclude_types, exclude_layouts, report_fobj)
 
-            # 2. JSON / JSONL Detection
+            # 2. JSON / JSONL / XML Detection
             if not cards and (stripped.startswith('{') or stripped.startswith('[')):
                 try:
                     # Try regular JSON first
@@ -875,6 +1000,15 @@ def mtg_open_file(fname, verbose = False,
                         cards = _process_json_srcs(jsonl_srcs, bad_sets, verbose, linetrans,
                                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                                    decklist_names=decklist_names)
+            if not cards and stripped.startswith('<'):
+                # Try XML
+                xml_srcs, bad_sets = mtg_open_xml_content(text, verbose)
+                if xml_srcs:
+                    if verbose:
+                        print('Detected XML input from stdin.', file=sys.stderr)
+                    cards = _process_json_srcs(xml_srcs, bad_sets, verbose, linetrans,
+                                               exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                               decklist_names=decklist_names)
             # 3. CSV Detection
             if not cards and stripped.startswith('name,'):
                 try:

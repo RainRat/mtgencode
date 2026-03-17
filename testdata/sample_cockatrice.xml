@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cockatrice_carddatabase version="4">
+  <cards>
+    <card>
+      <name>Grizzly Bears</name>
+      <manacost>1G</manacost>
+      <type>Creature — Bear</type>
+      <pt>2/2</pt>
+      <text></text>
+      <rarity>Common</rarity>
+    </card>
+    <card>
+      <name>Jace, the Mind Sculptor</name>
+      <manacost>2UU</manacost>
+      <type>Legendary Planeswalker — Jace</type>
+      <pt>3</pt>
+      <text>[+2]: Look at the top card of target player's library. You may put that card on the bottom of that player's library.
+[0]: Draw three cards, then put two cards from your hand on top of your library in any order.
+[-1]: Return target creature to its owner's hand.
+[-12]: Exile all cards from target player's library, then that player shuffles their hand into their library.</text>
+      <rarity>Mythic</rarity>
+    </card>
+    <card>
+      <name>Invasion of Alara</name>
+      <manacost>WUBRG</manacost>
+      <type>Battle — Siege</type>
+      <pt>7</pt>
+      <text>(As a Siege enters, choose an opponent to protect it. You and others can attack it. When it's defeated, exile it, then cast it transformed.)
+When Invasion of Alara enters the battlefield, exile cards from the top of your library until you exile two nonland cards with mana value 4 or less. You may cast one of them without paying its mana cost. Put the other into your hand and the rest on the bottom of your library in a random order.</text>
+      <rarity>Rare</rarity>
+    </card>
+  </cards>
+</cockatrice_carddatabase>

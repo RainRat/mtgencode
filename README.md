@@ -82,6 +82,9 @@ Convert AI-generated text back into a readable format. You can see the results i
 # View decoded cards in your terminal
 python3 decode.py encoded_output.txt
 
+# Convert a Cockatrice XML database to encoded text
+python3 encode.py my_database.xml encoded_output.txt
+
 # Save to a file (the format is detected from the file extension)
 python3 decode.py encoded_output.txt my_cards.html
 ```
@@ -117,7 +120,8 @@ Customization options for formatting data:
 *   `--report-unparsed FILE`: Save the raw JSON of cards that failed to parse into a separate file.
 
 ### `decode.py` (Viewing Results)
-Options for formatting the output:
+Options for formatting the output. While primarily used for AI output, this tool also supports other card data formats (**JSON, XML, CSV, etc.**) for easy conversion.
+
 *   `-g`, `--gatherer`: Formats text like the official Gatherer website (Default). This applies modern wording and capitalization.
 *   `--raw`: Shows raw text without special formatting.
 *   `--table`: Creates a formatted table for terminal view.
@@ -391,6 +395,11 @@ python3 scripts/splitcards.py data/AllPrintings.json --outputs rb_train.txt rb_v
 *   **Format Mismatch:** If you used a specific encoding flag (like `-e named`) with `encode.py`, you **must** use the same flag with `decode.py`.
 *   **Missing Symbols:** If card symbols (like mana) show as squares, you need to install the Magic fonts. See [DEPENDENCIES.md](DEPENDENCIES.md) for help.
 *   **Parsing Errors:** Some cards in older JSON formats may not parse correctly. Use the `--report-unparsed` (for `encode.py`) or `--report-failed` (for `decode.py`) flags to identify them.
+
+**Example for importing a Cockatrice XML database:**
+```bash
+python3 scripts/summarize.py my_custom_set.xml
+```
 
 ---
 
