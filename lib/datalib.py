@@ -211,6 +211,48 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
 
     printrows(padrows(rows, aligns=['l', 'r', 'r', 'r', 'r', 'r', 'r', 'r']), indent=4)
 
+def _print_mechanical_stats(mechanical_stats, use_color, vsize=None):
+    if not mechanical_stats:
+        return
+    print()
+    print('  ' + color_line('Mechanical Budget Analysis (Averages):', use_color))
+
+    header = ['Mechanic', 'Count', 'CMC', 'P/T']
+    if use_color:
+        header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+
+    rows = [header]
+    # Sort by frequency
+    sorted_mechanics = sorted(mechanical_stats.keys(), key=lambda m: mechanical_stats[m]['count'], reverse=True)
+    if vsize:
+        sorted_mechanics = sorted_mechanics[:vsize]
+
+    for m in sorted_mechanics:
+        stats = mechanical_stats[m]
+
+        pt_str = "-"
+        if stats['avg_power'] is not None and stats['avg_toughness'] is not None:
+            pt_str = f"{stats['avg_power']:.1f}/{stats['avg_toughness']:.1f}"
+        elif stats['avg_power'] is not None:
+             pt_str = f"{stats['avg_power']:.1f}/?"
+        elif stats['avg_toughness'] is not None:
+             pt_str = f"?/{stats['avg_toughness']:.1f}"
+
+        row = [
+            m,
+            color_count(stats['count'], use_color),
+            f"{stats['avg_cmc']:.2f}",
+            pt_str
+        ]
+
+        if use_color:
+            # Maybe colorize P/T red like in Card.format()
+            row[3] = utils.colorize(row[3], utils.Ansi.RED) if pt_str != "-" else row[3]
+
+        rows.append(row)
+
+    printrows(padrows(rows, aligns=['l', 'r', 'r', 'r']), indent=4)
+
 class Datamine:
     # build the global indices
     def __init__(self, cards_input, search_stats=None):
@@ -348,6 +390,18 @@ class Datamine:
         self.avg_power = sum(p_vals) / len(p_vals) if p_vals else 0
         self.avg_toughness = sum(t_vals) / len(t_vals) if t_vals else 0
 
+        # Calculate Design Budget / Mechanical Statistics
+        self.mechanical_stats = {}
+        for m, m_cards in self.by_mechanic.items():
+            m_p_vals = [v for v in map(utils.from_unary_single, (c.pt_p for c in m_cards)) if v is not None]
+            m_t_vals = [v for v in map(utils.from_unary_single, (c.pt_t for c in m_cards)) if v is not None]
+            self.mechanical_stats[m] = {
+                'count': len(m_cards),
+                'avg_cmc': sum(c.cost.cmc for c in m_cards) / len(m_cards),
+                'avg_power': sum(m_p_vals) / len(m_p_vals) if m_p_vals else None,
+                'avg_toughness': sum(m_t_vals) / len(m_t_vals) if m_t_vals else None
+            }
+
     # summarize the indices
     def summarize(self, hsize = 10, vsize = 10, cmcsize = 20, use_color = False):
 
@@ -470,6 +524,7 @@ class Datamine:
         print('  ' + color_line(str(len(self.by_mechanic)) + ' distinct mechanical features identified', use_color))
         _print_breakdown('Mechanical Breakdown:', self.by_mechanic, len(self.allcards), use_color,
                          vsize=vsize, sort_key=lambda x: len(self.by_mechanic[x]))
+        _print_mechanical_stats(self.mechanical_stats, use_color, vsize=vsize)
         _print_color_pie(self.pie_groups, self.pie_mechanics, self.by_mechanic, use_color, vsize=vsize)
         print()
 
@@ -629,6 +684,8 @@ class Datamine:
             'groups': self.pie_groups,
             'mechanics': self.pie_mechanics
         }
+
+        result['mechanical_stats'] = self.mechanical_stats
 
         if self.by_textlen:
             result['stats'] = {
