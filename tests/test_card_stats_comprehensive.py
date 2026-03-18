@@ -112,10 +112,10 @@ def test_stat_display_to_markdown_row(creature_json, planeswalker_json, battle_j
     assert "| 2/2 |" in creature.to_markdown_row()
 
     pw = Card(planeswalker_json)
-    assert "| (3) |" in pw.to_markdown_row()
+    assert "| 3 |" in pw.to_markdown_row()
 
     battle = Card(battle_json)
-    assert "| [[3]] |" in battle.to_markdown_row()
+    assert "| 3 |" in battle.to_markdown_row()
 
 def test_stat_display_vectorize(creature_json, planeswalker_json, battle_json):
     creature = Card(creature_json)

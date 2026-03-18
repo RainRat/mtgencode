@@ -553,6 +553,38 @@ class Card:
             res += f' {separator} ' + ' '.join([titlecase(s) for s in self.__dict__[field_subtypes]])
         return res
 
+    def _get_display_data(self, ansi_color=False, include_text=False):
+        """Helper to get standardized display fields for the card."""
+        # Name
+        name = titlecase(self.name)
+        if ansi_color:
+            name = utils.colorize(name, self._get_ansi_color())
+
+        # Cost
+        cost = self.cost.format(ansi_color=ansi_color)
+
+        # Type
+        typeline = self.get_type_line()
+        if ansi_color:
+            typeline = utils.colorize(typeline, utils.Ansi.GREEN)
+
+        # Stats (P/T or Loyalty/Defense)
+        stats = self._get_pt_display(ansi_color=ansi_color, include_parens=False)
+        if not stats:
+            stats = self._get_loyalty_display(ansi_color=ansi_color, include_parens=False)
+
+        # Text
+        text = ""
+        if include_text:
+            text = self.get_text(force_unpass=True).replace('\n', '<br>')
+
+        # Rarity
+        rarity = self.rarity_name
+        if ansi_color and rarity:
+            rarity = utils.colorize(rarity, utils.Ansi.get_rarity_color(rarity))
+
+        return name, cost, typeline, stats, text, rarity
+
     @property
     def mechanics(self):
         """Returns a set of mechanical features and keyword abilities identified on the card."""
@@ -1418,38 +1450,14 @@ class Card:
 
     def to_markdown_row(self):
         """Returns a Markdown table row representation of the card."""
-
-        def get_fields(card):
-            # Name
-            name = titlecase(card.name)
-
-            # Cost
-            cost = card.cost.format()
-
-            # Type
-            typeline = card.get_type_line()
-
-            # Stats (P/T or Loyalty/Defense)
-            stats = card._get_pt_display(include_parens=False)
-            if not stats:
-                stats = card._get_loyalty_display()
-
-            # Text
-            text = card.get_text(force_unpass=True).replace('\n', '<br>')
-
-            # Rarity
-            rarity = card.rarity_name
-
-            return name, cost, typeline, stats, text, rarity
-
-        name, cost, typeline, stats, text, rarity = get_fields(self)
+        name, cost, typeline, stats, text, rarity = self._get_display_data(include_text=True)
 
         if self.bside:
-            b_name, b_cost, b_typeline, b_stats, b_text, b_rarity = get_fields(self.bside)
+            b_name, b_cost, b_typeline, b_stats, b_text, b_rarity = self.bside._get_display_data(include_text=True)
             name = f"{name} // {b_name}"
             cost = f"{cost} // {b_cost}"
             typeline = f"{typeline} // {b_typeline}"
-            stats = f"{stats} // {b_stats}" if stats or b_stats else ""
+            stats = f"{stats} // {b_stats}" if stats and b_stats else (stats or b_stats)
             text = f"{text}<br>---<br>{b_text}"
             if b_rarity and b_rarity != rarity:
                 rarity = f"{rarity} // {b_rarity}"
@@ -1462,44 +1470,14 @@ class Card:
 
     def to_table_row(self, ansi_color=False):
         """Returns a list of strings representing the card's fields for a terminal table."""
-
-        def get_fields(card):
-            # Name
-            name = titlecase(card.name)
-            if ansi_color:
-                name = utils.colorize(name, card._get_ansi_color())
-
-            # Cost
-            cost = card.cost.format(ansi_color=ansi_color)
-
-            # Type
-            typeline = card.get_type_line()
-            if ansi_color:
-                typeline = utils.colorize(typeline, utils.Ansi.GREEN)
-
-            # Stats (P/T or Loyalty/Defense)
-            stats = card._get_pt_display(ansi_color=ansi_color, include_parens=False)
-            if not stats:
-                stats = card._get_loyalty_display(ansi_color=ansi_color, include_parens=False)
-
-            # Rarity
-            rarity = card.rarity_name
-            if ansi_color and rarity:
-                rarity = utils.colorize(rarity, utils.Ansi.get_rarity_color(rarity))
-
-            return name, cost, typeline, stats, rarity
-
-        name, cost, typeline, stats, rarity = get_fields(self)
+        name, cost, typeline, stats, _, rarity = self._get_display_data(ansi_color=ansi_color)
 
         if self.bside:
-            b_name, b_cost, b_typeline, b_stats, b_rarity = get_fields(self.bside)
+            b_name, b_cost, b_typeline, b_stats, _, b_rarity = self.bside._get_display_data(ansi_color=ansi_color)
             name = f"{name} // {b_name}"
             cost = f"{cost} // {b_cost}"
             typeline = f"{typeline} // {b_typeline}"
-            if stats and b_stats:
-                stats = f"{stats} // {b_stats}"
-            else:
-                stats = stats or b_stats
+            stats = f"{stats} // {b_stats}" if stats and b_stats else (stats or b_stats)
             if b_rarity and b_rarity != rarity:
                 rarity = f"{rarity} // {b_rarity}"
 
