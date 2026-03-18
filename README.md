@@ -137,9 +137,6 @@ Options for formatting the output. While primarily used for AI output, this tool
 *   `--md`: Creates a Markdown document.
 *   `--md-table`: Creates a Markdown table.
 *   `--summary`: Creates a compact one-line summary for each card.
-*   `--deck`: Creates a standard MTG decklist.
-*   `--xml`: Creates a Cockatrice-compatible XML card database.
-*   `--mse`: Creates a file for Magic Set Editor.
 *   `--color` / `--no-color`: Manually enable or disable ANSI color output in your terminal.
 *   `--shuffle`: Randomizes the order of cards (the tool does not shuffle cards by default for decoding).
 *   `--sort`: Sorts cards by `name`, `color`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, or `set`.
