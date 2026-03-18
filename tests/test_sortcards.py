@@ -1,5 +1,5 @@
 import unittest
-from cardlib import Card, fmt_ordered_old
+from cardlib import Card
 import sortcards
 
 class TestSortCards(unittest.TestCase):

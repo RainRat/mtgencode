@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim

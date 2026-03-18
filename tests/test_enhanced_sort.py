@@ -1,7 +1,5 @@
-import pytest
 from lib import cardlib
 from lib import sortlib
-from lib import utils
 
 def test_sort_rarity():
     # Card objects store rarity markers ('Y', 'A', 'N', 'O', etc.) internally

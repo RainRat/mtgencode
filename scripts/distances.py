@@ -4,7 +4,6 @@ import os
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
-import utils
 import jdecode
 from namediff import Namediff
 from cbow import CBOW

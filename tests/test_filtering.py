@@ -3,11 +3,10 @@ import os
 import sys
 import unittest
 import tempfile
-import pytest
 
 # Ensure lib is in path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from lib import jdecode, cardlib
+from lib import jdecode
 
 class TestBadSetsFiltering(unittest.TestCase):
     def test_funny_set_filtering(self):

@@ -1,9 +1,6 @@
-import pytest
 import os
 import sys
-import tempfile
 import json
-from unittest.mock import patch
 from io import StringIO
 import zipfile
 
@@ -12,8 +9,6 @@ libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 
 import jdecode
-import utils
-import cardlib
 
 def test_parse_decklist_non_existent():
     # Covers: if not os.path.exists(fpath): return name_counts

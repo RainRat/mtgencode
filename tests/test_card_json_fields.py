@@ -1,4 +1,3 @@
-import pytest
 from lib.cardlib import fields_from_json, field_loyalty, field_pt, field_subtypes, field_rarity, field_types, field_name
 from lib import utils
 

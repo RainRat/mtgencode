@@ -1,5 +1,3 @@
-import pytest
-import random
 from lib.cardlib import Card
 from lib import utils
 

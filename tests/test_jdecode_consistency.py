@@ -13,8 +13,6 @@ if libdir not in sys.path:
     sys.path.append(libdir)
 
 import jdecode
-import utils
-import cardlib
 
 class TestJDecodeConsistency(unittest.TestCase):
     def setUp(self):

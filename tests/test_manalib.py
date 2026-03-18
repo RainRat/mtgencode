@@ -1,4 +1,3 @@
-import pytest
 from lib.manalib import Manacost, Manatext
 from lib import utils
 

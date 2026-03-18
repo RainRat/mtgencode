@@ -6,7 +6,7 @@ import json
 
 # Ensure lib is in path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from lib import jdecode, cardlib
+from lib import jdecode
 
 @pytest.fixture
 def sample_cards_file():

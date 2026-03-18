@@ -1,7 +1,5 @@
-import pytest
 import os
 import sys
-import json
 from io import StringIO
 
 # Add lib to path

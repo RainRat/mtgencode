@@ -6,7 +6,6 @@ except ImportError:
         return iterable
 
 import re
-import cardlib
 import utils
 
 def sort_colors(card_set, quiet=False):

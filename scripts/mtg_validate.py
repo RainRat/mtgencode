@@ -26,7 +26,7 @@ if os.path.isdir(gramdir):
             gramdicts[grams] = d
 
 def rare_grams(card, thresh = 2, grams = 2):
-    if not grams in gramdicts:
+    if grams not in gramdicts:
         return None
     rares = 0
     gramdict = gramdicts[grams]
@@ -42,7 +42,7 @@ def rare_grams(card, thresh = 2, grams = 2):
 
 def list_only(l, items):
     for e in l:
-        if not e in items:
+        if e not in items:
             return False
     return True
 
@@ -386,7 +386,7 @@ def process_props(cards, dump = False, uncovered = False):
         for prop in props:
             (total, good, bad) = values[prop]
             this_prop = props[prop](card)
-            if not this_prop is None:
+            if this_prop is not None:
                 total += 1
                 if not prop == 'types':
                     any_prop = True

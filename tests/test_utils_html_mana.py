@@ -1,4 +1,3 @@
-import pytest
 from lib import utils
 
 def test_from_mana_html_simple():

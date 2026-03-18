@@ -1,7 +1,3 @@
-import pytest
-import io
-import os
-import sys
 from lib import jdecode, cardlib, utils
 
 def test_mtg_open_file_counts(tmp_path, capsys):

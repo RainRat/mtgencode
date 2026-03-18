@@ -1,6 +1,4 @@
-import pytest
-from lib.cardlib import Card, fields_from_format, field_name, field_text, field_types
-import lib.utils as utils
+from lib.cardlib import Card, fields_from_format, field_name, field_text
 
 def test_fields_from_format_labeled_start():
     # '1' is the label for name.

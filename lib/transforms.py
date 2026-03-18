@@ -490,7 +490,7 @@ def text_pass_11_linetrans(s):
         line = line.strip()
         if line == '':
             continue
-        if not '.' in line:
+        if '.' not in line:
             # because this is inconsistent
             line = line.replace(',', ';')
             line = line.replace('; where', ', where') # Thromok the Insatiable
@@ -506,7 +506,7 @@ def text_pass_11_linetrans(s):
                     postlines += [subline]
                 else:
                     keylines += [subline]
-        elif '\u2014' in line and not ' \u2014 ' in line:
+        elif '\u2014' in line and ' \u2014 ' not in line:
             if 'equip' in line or 'enchant' in line:
                 prelines += [line]
             elif 'countertype' in line or 'kicker' in line:
@@ -550,7 +550,7 @@ def separate_lines(text):
     lines = text.split(utils.newline)
     # we've already done linetrans once, so some of the irregularities have been simplified
     for line in lines:
-        if not '.' in line:
+        if '.' not in line:
             if any(line.startswith(s) for s in preline_search):
                 prelines.append(line)
             elif any(line.startswith(s) for s in postline_search):

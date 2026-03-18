@@ -1,7 +1,5 @@
 import pytest
-import re
-from lib.cardlib import Card, field_name, field_types, field_pt, field_text, field_other, field_loyalty
-import lib.utils as utils
+from lib.cardlib import Card, field_other
 
 def test_card_summary_bside():
     card_json = {

@@ -1,4 +1,3 @@
-import pytest
 from lib.cardlib import Card
 
 def test_planeswalker_x_loyalty_to_mse():

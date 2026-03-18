@@ -1,5 +1,4 @@
 import pytest
-import sys
 import io
 from unittest.mock import patch
 from lib import utils
@@ -254,7 +253,7 @@ def test_colorize_empty():
 def test_colorize_combined():
     text = "Bold Red"
     color = utils.Ansi.BOLD + utils.Ansi.RED
-    expected = f"\033[1m\033[91mBold Red\033[0m"
+    expected = "\033[1m\033[91mBold Red\033[0m"
     assert utils.colorize(text, color) == expected
 
 def test_visible_len():

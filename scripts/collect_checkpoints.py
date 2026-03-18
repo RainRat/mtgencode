@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import sys
 import os
 import shutil
 
@@ -18,7 +17,7 @@ def identify_checkpoints(basedir, ident):
             continue
         if not (path[:13] == 'lm_lstm_epoch' and path[-4:] == '.txt'):
             continue
-        if not ident in path:
+        if ident not in path:
             continue
         # attempt super hacky parsing
         inner = path[13:-4]

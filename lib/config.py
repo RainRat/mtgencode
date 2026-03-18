@@ -1,4 +1,3 @@
-import re
 
 # Utilities for handling unicode, unary numbers, mana costs, and special symbols.
 # For convenience we redefine everything from utils so that it can all be accessed

@@ -2,7 +2,6 @@ import json
 import os
 import subprocess
 import tempfile
-import pytest
 
 def test_csv2json_escaping():
     csv_content = 'name,manaCost,types,subtypes,text,pt,rarity\n"""Giant"" Growth","{1}","Creature","Soldier","He said ""Hello"".\\nNew line.","2/2","C"\n'

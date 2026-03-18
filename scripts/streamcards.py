@@ -77,7 +77,6 @@ libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 import utils
 import jdecode
-import transforms
 
 def main(args):
     fds = args.fds

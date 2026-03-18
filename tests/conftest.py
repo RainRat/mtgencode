@@ -1,6 +1,5 @@
 import sys
 import os
-import pytest
 
 # Add both project root and lib directory to sys.path
 rootdir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -10,4 +9,3 @@ if rootdir not in sys.path:
 if libdir not in sys.path:
     sys.path.append(libdir)
 
-from lib.cardlib import Card

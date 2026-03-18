@@ -2,13 +2,11 @@
 import pytest
 import sys
 import os
-import io
 
 # Ensure lib is in path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 
 from datalib import Datamine
-import utils
 
 # Sample Data Fixture
 @pytest.fixture

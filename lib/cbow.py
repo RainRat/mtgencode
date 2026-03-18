@@ -2,9 +2,6 @@
 # many, many other things wrote the original version of this code.
 # I have merely ported it to fit my needs.
 
-import re
-import sys
-import subprocess
 import os
 import struct
 import math
@@ -12,7 +9,6 @@ import multiprocessing
 
 import utils
 import cardlib
-import transforms
 import namediff
 
 libdir = os.path.dirname(os.path.realpath(__file__))

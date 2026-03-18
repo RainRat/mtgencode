@@ -1,4 +1,3 @@
-import pytest
 from lib.cardlib import sentencecase
 from lib import utils
 

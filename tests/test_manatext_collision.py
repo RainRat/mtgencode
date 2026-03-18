@@ -1,6 +1,4 @@
-import pytest
 from lib.manalib import Manatext
-from lib import utils
 
 def test_manatext_placeholder_collision():
     # utils.reserved_mana_marker is '$'

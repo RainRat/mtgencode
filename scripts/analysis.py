@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 import os
-import re
 from collections import OrderedDict
 
 # scipy is kinda necessary
@@ -70,7 +69,7 @@ def get_statistics(fname, lm = None, sep = False, verbose=False):
                                    ('vloss', cp_vloss),
                                    ('temp', cp_temp),
                                    ('ident', cp_ident)])
-    except Exception as e:
+    except Exception:
         pass
 
     # validate
@@ -113,7 +112,7 @@ def get_statistics(fname, lm = None, sep = False, verbose=False):
         stats['dists'] = dists
         
     # n-grams
-    if not lm is None:
+    if lm is not None:
         ngram = OrderedDict([('perp', []), ('perp_per', []), 
                              ('perp_max', []), ('perp_per_max', [])])
         for card in cards:

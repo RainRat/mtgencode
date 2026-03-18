@@ -1,4 +1,3 @@
-import re
 
 import utils
 from cardlib import Card
@@ -145,7 +144,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
             if 'rarity' in title.lower():
                 display_color = utils.Ansi.get_rarity_color(k)
                 display_key = utils.colorize(display_key, display_color)
-            elif 'color' in title.lower() and not 'number' in title.lower():
+            elif 'color' in title.lower() and 'number' not in title.lower():
                 display_color = utils.Ansi.get_color_color(k)
                 display_key = utils.colorize(display_key, display_color)
             elif 'mana costs' in title.lower():

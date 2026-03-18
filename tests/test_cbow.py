@@ -9,7 +9,6 @@ import numpy as np
 # Adjust path to import lib
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 
-import cbow
 from cbow import CBOW, read_vector_file, makevector, cosine_similarity
 from cardlib import Card
 

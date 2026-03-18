@@ -1,6 +1,4 @@
-import pytest
 from lib.cardlib import Card
-from lib import utils
 
 def test_to_dict_basic_creature():
     card_json = {

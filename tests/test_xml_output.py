@@ -1,13 +1,10 @@
 import sys
 import os
 import pytest
-import io
-import re
 
 libdir = os.path.join(os.getcwd(), 'lib')
 sys.path.append(libdir)
 import cardlib
-import utils
 import decode
 
 def test_card_to_cockatrice_xml():

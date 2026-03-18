@@ -2,7 +2,6 @@ import os
 import tempfile
 import utils
 from jdecode import mtg_open_file
-import cardlib
 
 def test_mtg_open_file_report_failed_encoded():
     # Construct a card using a known valid encoding that is guaranteed to parse.

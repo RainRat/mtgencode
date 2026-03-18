@@ -313,7 +313,7 @@ mana_symall = mana_syms + mana_symalt
 
 # alt symbol conversion
 def mana_alt(sym):
-    if not sym in mana_symall:
+    if sym not in mana_symall:
         raise ValueError('invalid mana symbol for mana_alt(): ' + repr(sym))
     if len(sym) < 2:
         return sym
@@ -322,7 +322,7 @@ def mana_alt(sym):
 
 # produce intended neural net output format
 def mana_sym_to_encoding(sym):
-    if not sym in mana_symall:
+    if sym not in mana_symall:
         raise ValueError('invalid mana symbol for mana_sym_to_encoding(): ' + repr(sym))
     if len(sym) < 2:
         return sym * 2
@@ -331,7 +331,7 @@ def mana_sym_to_encoding(sym):
 
 # produce json formatting used in mtgjson
 def mana_sym_to_json(sym):
-    if not sym in mana_symall:
+    if sym not in mana_symall:
         raise ValueError('invalid mana symbol for mana_sym_to_json(): ' + repr(sym))
     return (mana_json_open_delimiter +
             mana_json_hybrid_delimiter.join(sym) +
@@ -340,7 +340,7 @@ def mana_sym_to_json(sym):
 # produce pretty formatting that renders on mtgsalvation forum
 # converts individual symbols; surrounding [mana][/mana] tags are added elsewhere
 def mana_sym_to_forum(sym):
-    if not sym in mana_symall:
+    if sym not in mana_symall:
         raise ValueError('invalid mana symbol for mana_sym_to_forum(): ' + repr(sym))
     if sym in mana_symalt:
         sym = mana_alt(sym)
@@ -367,14 +367,14 @@ mana_symall_jdecode = {mana_sym_to_json(sym) : sym for sym in mana_symall}
 
 # going straight from json to encoding and vice versa
 def mana_encode_direct(jsym):
-    if not jsym in mana_symall_jdecode:
+    if jsym not in mana_symall_jdecode:
         raise ValueError('json string not found in decode table for mana_encode_direct(): '
                          + repr(jsym))
     else:
         return mana_symall_encode[mana_symall_jdecode[jsym]]
 
 def mana_decode_direct(sym):
-    if not sym in mana_symall_decode:
+    if sym not in mana_symall_decode:
         raise ValueError('mana symbol not found in decode table for mana_decode_direct(): '
                          + repr(sym))
     else:
@@ -382,7 +382,7 @@ def mana_decode_direct(sym):
 
 # hacked in support for mtgsalvation forum
 def mana_decode_direct_forum(sym):
-    if not sym in mana_symall_decode:
+    if sym not in mana_symall_decode:
         raise ValueError('mana symbol not found in decode table for mana_decode_direct_forum(): '
                          + repr(sym))
     else:

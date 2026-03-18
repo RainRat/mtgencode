@@ -1,7 +1,5 @@
 import json
-import os
 import subprocess
-import pytest
 from lib import jdecode
 
 def test_jsonl_write_read(tmp_path):

@@ -1,4 +1,3 @@
-import pytest
 import os
 import sys
 
@@ -7,8 +6,6 @@ libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 
 import jdecode
-import cardlib
-import utils
 
 def test_mtg_open_xml_content_basic():
     xml_text = """<?xml version="1.0" encoding="UTF-8"?>

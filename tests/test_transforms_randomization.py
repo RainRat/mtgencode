@@ -1,5 +1,4 @@
 import unittest
-import random
 from lib import transforms
 from lib import utils
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import sys
 import os
 import subprocess
 import random
@@ -45,7 +44,7 @@ def find_best_cp(cpdir):
         fullpath = os.path.join(cpdir, path)
         if os.path.isfile(fullpath):
             extracted = extract_cp_name(path)
-            if not extracted is None:
+            if extracted is not None:
                 (epoch, vloss) = extracted
                 if best is None or vloss < best:
                     best = vloss
@@ -56,7 +55,7 @@ def process_dir(cpdir, temp, count, seed = None, ident = 'output', verbose = Fal
     if verbose:
         print(('processing ' + cpdir))
     best_cp = find_best_cp(cpdir)
-    if not best_cp is None:
+    if best_cp is not None:
         sample(best_cp, temp, count, seed=seed, ident=ident)
     for path in os.listdir(cpdir):
         fullpath = os.path.join(cpdir, path)

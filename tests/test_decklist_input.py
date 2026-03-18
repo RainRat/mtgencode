@@ -1,7 +1,6 @@
 import pytest
 import os
 import sys
-import tempfile
 
 # Add lib to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')

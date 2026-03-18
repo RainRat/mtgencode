@@ -2,7 +2,6 @@
 import sys
 import os
 import zipfile
-import shutil
 import random
 import copy
 # tqdm is imported inside main/helpers or at top level if we want it global
@@ -290,7 +289,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                         current_pack = card.pack_id
                         writer.write(f'<h2 id="pack_{current_pack}" style="clear:both; padding-top: 20px;">'
                                      + f'Pack {current_pack}<a href="#top" class="back-to-top">back to top</a></h2>'
-                                     + f'<div style="overflow: auto;">')
+                                     + '<div style="overflow: auto;">')
                     try:
                         writecard(writer, card, for_html=True, for_mse=for_mse)
                         success_count += 1
@@ -324,7 +323,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 segments[i] = sortlib.sort_type(segments[i])
 
                 writer.write(f'<h2 id="{sid}" style="clear:both; padding-top: 10px;">{info["label"]}'
-                             + f'<a href="#top" class="back-to-top">back to top</a></h2>')
+                             + '<a href="#top" class="back-to-top">back to top</a></h2>')
                 writer.write('<div>')
                 for card in segments[i]:
                     try:

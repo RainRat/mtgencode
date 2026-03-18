@@ -1,4 +1,3 @@
-import pytest
 from lib import cardlib
 from lib import sortlib
 

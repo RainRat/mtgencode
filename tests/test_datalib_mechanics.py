@@ -7,7 +7,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 from cardlib import Card
 from datalib import Datamine
-import utils
 
 class TestDatalibMechanics(unittest.TestCase):
     def test_basic_keyword_profiling(self):

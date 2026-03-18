@@ -1,4 +1,3 @@
-import pytest
 from lib import transforms, utils
 
 def test_unpass_choice_one_or_more_collision():
@@ -85,7 +84,7 @@ def test_text_pass_8_equip_nonmana():
 
 def test_text_pass_11_linetrans_dash_no_spaces():
     # Covers lib/transforms.py:536-541
-    text = f"equip\u2014creature.\nkicker\u2014{{R}}.\nflying\u2014haste."
+    text = "equip\u2014creature.\nkicker\u2014{R}.\nflying\u2014haste."
     # We need to replace \n with newline marker
     text = text.replace('\n', utils.newline)
     res = transforms.text_pass_11_linetrans(text)

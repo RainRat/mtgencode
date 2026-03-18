@@ -4,8 +4,6 @@ import os
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib')
 sys.path.append(libdir)
-import re
-import random
 import utils
 import jdecode
 import cardlib

@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 import sys
 import os
-import re
 import json
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 import utils
 import jdecode
-import cardlib
 import transforms
 
 def check_lines(fname):
@@ -103,7 +101,7 @@ def check_vocab(fname):
         if card.bside:
             words += card.bside.text.vectorize().split()
         for word in words:
-            if not word in vocab:
+            if word not in vocab:
                 vocab[word] = 1
             else:
                 vocab[word] += 1

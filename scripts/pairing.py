@@ -118,7 +118,7 @@ def main(fname, oname, n=20, verbose=False):
         print(perp_max)
         print('----')
 
-    if not oname is None:
+    if oname is not None:
         with open(oname, 'wt', encoding='utf8') as ofile:
             ofile.write(utils.mse_prepend)
             for (i, card, realcard, dist) in final:

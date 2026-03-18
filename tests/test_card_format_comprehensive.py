@@ -1,4 +1,3 @@
-import pytest
 from lib.cardlib import Card
 from lib import utils
 
@@ -134,7 +133,7 @@ def test_vdump_and_other():
     # 2: Instant (supertypes) -> wait, supertypes is empty normally.
     # Actually, it depends on the format.
 
-    from lib.cardlib import field_name, field_supertypes, field_types, field_cost, field_other
+    from lib.cardlib import field_name, field_types, field_cost, field_other
     custom_fmt = [field_name, field_types, field_cost]
     card = Card(encoded, fmt_ordered=custom_fmt)
 

@@ -1,6 +1,4 @@
-import pytest
-import re
-from lib import transforms, utils, config
+from lib import transforms, utils
 
 # Tests for text_pass_1_strip_rt
 def test_text_pass_1_strip_rt_simple():

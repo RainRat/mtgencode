@@ -10,7 +10,7 @@ from io import StringIO
 
 # Ensure lib is in path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from lib import jdecode, utils, cardlib
+from lib import jdecode, utils
 
 class TestJDecodeFormats(unittest.TestCase):
     def setUp(self):

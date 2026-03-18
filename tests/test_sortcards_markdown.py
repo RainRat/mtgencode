@@ -1,4 +1,3 @@
-import pytest
 import os
 import sys
 
@@ -8,7 +7,6 @@ sys.path.append(libdir)
 
 import sortcards
 import cardlib
-import utils
 
 def test_markdown_output_format(tmp_path):
     # Test that Markdown output uses <details> and <summary> tags

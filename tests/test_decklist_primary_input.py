@@ -1,14 +1,13 @@
-import json
 import os
 import sys
 import unittest
 import tempfile
 import io
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 
 # Ensure lib is in path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../lib'))
-import jdecode, utils, cardlib
+import jdecode
 
 class TestDecklistPrimaryInput(unittest.TestCase):
     def setUp(self):

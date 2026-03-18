@@ -1,4 +1,3 @@
-import pytest
 from lib.cardlib import Card
 from lib import utils
 

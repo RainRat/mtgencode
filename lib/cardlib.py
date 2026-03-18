@@ -7,7 +7,6 @@ import utils
 import transforms
 from xml.sax.saxutils import escape
 from manalib import Manacost, Manatext
-import textwrap
 import nltk.data
 
 from titlecase import titlecase
@@ -153,9 +152,9 @@ fmt_labeled_default = {
 # Verify that the card's fields are consistent (e.g., creatures must have power and toughness).
 def fields_check_valid(fields):
     # all cards must have a name and a type
-    if not field_name in fields:
+    if field_name not in fields:
         return False
-    if not field_types in fields:
+    if field_types not in fields:
         return False
 
     iscreature = False
@@ -184,7 +183,7 @@ def fields_check_valid(fields):
 
     # P/T requirements
     if iscreature:
-        if not field_pt in fields:
+        if field_pt not in fields:
             return False
     # Station cards can become creatures, so they are allowed to NOT have P/T.
     # We also allow them to HAVE P/T if they want.
@@ -196,7 +195,7 @@ def fields_check_valid(fields):
 
     # Loyalty / Defense requirements
     if isplaneswalker or isbattle:
-        if not field_loyalty in fields:
+        if field_loyalty not in fields:
             return False
     else:
         if field_loyalty in fields:
@@ -1566,7 +1565,7 @@ class Card:
         elif 'instant' in types_lower or 'sorcery' in types_lower:
             tablerow = 3
 
-        xml_out = f"    <card>\n"
+        xml_out = "    <card>\n"
         xml_out += f"      <name>{escape(name)}</name>\n"
         if self.set_code:
             xml_out += f"      <set>{escape(self.set_code.upper())}</set>\n"
@@ -1578,7 +1577,7 @@ class Card:
             xml_out += f"      <pt>{escape(pt)}</pt>\n"
         xml_out += f"      <tablerow>{tablerow}</tablerow>\n"
         xml_out += f"      <text>{escape(text)}</text>\n"
-        xml_out += f"    </card>"
+        xml_out += "    </card>"
 
         return xml_out
             
