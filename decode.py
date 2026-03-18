@@ -368,7 +368,18 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
             aligns = ['l'] * len(header)
             if booster > 0:
-                aligns[0] = 'r'
+                aligns[0] = 'r' # Right-align Pack column
+
+            # Right-align Stats column (index 3, or 4 if booster)
+            stats_idx = 4 if booster > 0 else 3
+            if stats_idx < len(aligns):
+                aligns[stats_idx] = 'r'
+
+            # Insert a separator row of dashes
+            col_widths = datalib.get_col_widths(rows)
+            separator = ['-' * w for w in col_widths]
+            rows.insert(1, separator)
+
             for row in datalib.padrows(rows, aligns=aligns):
                 writer.write(row + '\n')
             return success_count, fail_count

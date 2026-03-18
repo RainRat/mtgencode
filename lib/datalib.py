@@ -3,6 +3,23 @@ import re
 import utils
 from cardlib import Card
 
+def get_col_widths(rows):
+    """
+    Returns a list of maximum visible lengths for each column in the provided rows.
+    """
+    if not rows:
+        return []
+
+    col_widths = []
+    for row in rows:
+        for i, cell in enumerate(row):
+            length = utils.visible_len(str(cell))
+            if i < len(col_widths):
+                col_widths[i] = max(col_widths[i], length)
+            else:
+                col_widths.append(length)
+    return col_widths
+
 # Format a list of rows of data into nice columns.
 # Note that it's the columns that are nice, not this code.
 def padrows(rows, aligns=None):
@@ -14,14 +31,7 @@ def padrows(rows, aligns=None):
         return []
 
     # Get maximum visible length for each column
-    col_widths = []
-    for row in rows:
-        for i, cell in enumerate(row):
-            length = utils.visible_len(str(cell))
-            if i < len(col_widths):
-                col_widths[i] = max(col_widths[i], length)
-            else:
-                col_widths.append(length)
+    col_widths = get_col_widths(rows)
 
     # Pad each cell and join rows
     padded_rows = []
