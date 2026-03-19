@@ -59,3 +59,58 @@ def test_get_scryfall_urls_missing_metadata():
     assert utils.get_scryfall_url('lea', None) is None
     assert utils.get_scryfall_image_url(None, '1') is None
     assert utils.get_scryfall_image_url('lea', None) is None
+
+def test_from_symbols_ansi_color():
+    t = config.tap_marker
+    res = utils.from_symbols(t, ansi_color=True)
+    # colorize(res, Ansi.BOLD + Ansi.YELLOW) -> \033[1m\033[93m{T}\033[0m
+    assert "\033[1m\033[93m{T}\033[0m" == res
+
+def test_from_symbols_no_ansi_color():
+    t = config.tap_marker
+    res = utils.from_symbols(t, ansi_color=False)
+    assert "{T}" == res
+
+def test_numeric_filter_evaluation_operators():
+    # !=
+    nf_not_zero = utils.NumericFilter("!= 0")
+    assert nf_not_zero.evaluate(5)
+    assert not nf_not_zero.evaluate(0)
+
+    # ==
+    nf_equal_four = utils.NumericFilter("== 4")
+    assert nf_equal_four.evaluate(4)
+    assert not nf_equal_four.evaluate(3)
+
+def test_numeric_filter_evaluation_invalid_types():
+    nf = utils.NumericFilter("5")
+    # Trigger except (ValueError, TypeError)
+    # float([]) or float({}) should raise TypeError
+    assert not nf.evaluate([])
+    assert not nf.evaluate({})
+
+def test_from_mana_ansi_color():
+    # Primary color
+    # {WW} -> colorized {W}
+    res = utils.from_mana("{WW}", ansi_color=True)
+    # get_sym_color('W') -> \033[97m (Ansi.WHITE, NOT bolded)
+    assert "\033[97m{W}\033[0m" == res
+
+    # Hybrid/Multi color
+    # {WU} -> colorized {W/U}
+    res = utils.from_mana("{WU}", ansi_color=True)
+    # get_sym_color('WU') -> get_color_color('WU') -> BOLD + YELLOW -> \033[1m\033[93m
+    assert "\033[1m\033[93m{W/U}\033[0m" == res
+
+def test_from_mana_no_ansi_color():
+    res = utils.from_mana("{WW}", ansi_color=False)
+    assert "{W}" == res
+
+    res = utils.from_mana("{WU}", ansi_color=False)
+    assert "{W/U}" == res
+
+def test_numeric_filter_evaluation_null_mode():
+    nf = utils.NumericFilter("5")
+    # Manually set mode to something invalid to attempt hitting the end of evaluate()
+    nf.mode = 'INVALID'
+    assert nf.evaluate(5) is False

@@ -465,8 +465,6 @@ def mana_untranslate(manastr, for_forum = False, for_html = False, ansi_color = 
 
     def get_sym_color(sym):
         # Individual symbol color mapping
-        if not ansi_color:
-            return None
         # get_color_color always returns BOLD, so we strip it if we want the non-bold version
         # but actually mana symbols look better bolded in summaries.
         # However, the previous code used non-bold for primary colors.
