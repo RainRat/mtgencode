@@ -552,8 +552,8 @@ class Card:
             res += f' {separator} ' + ' '.join([titlecase(s) for s in self.__dict__[field_subtypes]])
         return res
 
-    def _get_display_data(self, ansi_color=False, include_text=False):
-        """Helper to get standardized display fields for the card."""
+    def _get_single_face_display_data(self, ansi_color=False, include_text=False):
+        """Helper to get standardized display fields for a single face of the card."""
         # Name
         name = titlecase(self.name)
         if ansi_color:
@@ -581,6 +581,25 @@ class Card:
         rarity = self.rarity_name
         if ansi_color and rarity:
             rarity = utils.colorize(rarity, utils.Ansi.get_rarity_color(rarity))
+
+        return name, cost, typeline, stats, text, rarity
+
+    def _get_display_data(self, ansi_color=False, include_text=False):
+        """Helper to get standardized display fields for the card, merging b-side data if present."""
+        name, cost, typeline, stats, text, rarity = self._get_single_face_display_data(ansi_color=ansi_color,
+                                                                                      include_text=include_text)
+
+        if self.bside:
+            b_name, b_cost, b_typeline, b_stats, b_text, b_rarity = self.bside._get_single_face_display_data(ansi_color=ansi_color,
+                                                                                                            include_text=include_text)
+            name = f"{name} // {b_name}"
+            cost = f"{cost} // {b_cost}"
+            typeline = f"{typeline} // {b_typeline}"
+            stats = f"{stats} // {b_stats}" if stats and b_stats else (stats or b_stats)
+            if include_text:
+                text = f"{text}<br>---<br>{b_text}"
+            if b_rarity and b_rarity != rarity:
+                rarity = f"{rarity} // {b_rarity}"
 
         return name, cost, typeline, stats, text, rarity
 
@@ -1451,16 +1470,6 @@ class Card:
         """Returns a Markdown table row representation of the card."""
         name, cost, typeline, stats, text, rarity = self._get_display_data(include_text=True)
 
-        if self.bside:
-            b_name, b_cost, b_typeline, b_stats, b_text, b_rarity = self.bside._get_display_data(include_text=True)
-            name = f"{name} // {b_name}"
-            cost = f"{cost} // {b_cost}"
-            typeline = f"{typeline} // {b_typeline}"
-            stats = f"{stats} // {b_stats}" if stats and b_stats else (stats or b_stats)
-            text = f"{text}<br>---<br>{b_text}"
-            if b_rarity and b_rarity != rarity:
-                rarity = f"{rarity} // {b_rarity}"
-
         # Escape pipe characters and ensure no actual newlines break the row
         fields = [name, cost, typeline, stats, text, rarity]
         fields = [f.replace('|', '\\|').replace('\n', ' ') for f in fields]
@@ -1470,15 +1479,6 @@ class Card:
     def to_table_row(self, ansi_color=False):
         """Returns a list of strings representing the card's fields for a terminal table."""
         name, cost, typeline, stats, _, rarity = self._get_display_data(ansi_color=ansi_color)
-
-        if self.bside:
-            b_name, b_cost, b_typeline, b_stats, _, b_rarity = self.bside._get_display_data(ansi_color=ansi_color)
-            name = f"{name} // {b_name}"
-            cost = f"{cost} // {b_cost}"
-            typeline = f"{typeline} // {b_typeline}"
-            stats = f"{stats} // {b_stats}" if stats and b_stats else (stats or b_stats)
-            if b_rarity and b_rarity != rarity:
-                rarity = f"{rarity} // {b_rarity}"
 
         return [name, cost, typeline, stats, rarity]
 
