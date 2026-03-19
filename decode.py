@@ -779,11 +779,11 @@ if __name__ == '__main__':
     fmt_group = fmt_group_title.add_mutually_exclusive_group()
     fmt_group.add_argument('--text', action='store_true',
                            help='Force plain text output (Default unless detected from extension).')
-    fmt_group.add_argument('--table', action='store_true',
+    fmt_group.add_argument('-t', '--table', action='store_true',
                            help='Generate a formatted table for terminal view (Auto-detected for .tbl or .table).')
     fmt_group.add_argument('--html', action='store_true',
                            help='Generate a nicely formatted HTML file (Auto-detected for .html).')
-    fmt_group.add_argument('--json', action='store_true',
+    fmt_group.add_argument('-j', '--json', action='store_true',
                            help='Generate a structured JSON file (Auto-detected for .json).')
     fmt_group.add_argument('--jsonl', action='store_true',
                            help='Generate a JSON Lines file (one card object per line). Auto-detected for .jsonl.')
@@ -793,7 +793,7 @@ if __name__ == '__main__':
                            help='Generate a Markdown file (Auto-detected for .md).')
     fmt_group.add_argument('--md-table', '--mdt', action='store_true',
                            help='Generate a Markdown table file (Auto-detected for .mdt).')
-    fmt_group.add_argument('--summary', action='store_true',
+    fmt_group.add_argument('-S', '--summary', action='store_true',
                            help='Generate a compact one-line summary for each card (Auto-detected for .sum or .summary).')
     fmt_group.add_argument('--deck', '--decklist', action='store_true',
                            help='Generate a standard MTG decklist (Auto-detected for .deck or .dek).')

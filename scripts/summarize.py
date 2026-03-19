@@ -99,7 +99,7 @@ if __name__ == '__main__':
                         help='Input card data (MTGJSON or Scryfall JSON, JSONL, CSV, MSE, XML, ZIP, or MTG Decklist), an encoded file, or a directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the summary output. If not provided, output prints to the console. The format is automatically detected from the file extension (.json for JSON, otherwise text).')
-    io_group.add_argument('--json', action='store_true',
+    io_group.add_argument('-j', '--json', action='store_true',
                         help='Output statistics in JSON format (Auto-detected for .json).')
 
     # Group: Encoding Options

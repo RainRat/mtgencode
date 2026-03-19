@@ -463,7 +463,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
-    proc_group.add_argument('--summary', action='store_true',
+    proc_group.add_argument('-S', '--summary', action='store_true',
                         help='Output compact card summaries instead of full encoded text.')
     proc_group.add_argument('--md', '--markdown', action='store_true',
                         help='Output in Markdown format with collapsible sections (Auto-detected for .md).')
