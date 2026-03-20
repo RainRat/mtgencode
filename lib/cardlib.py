@@ -630,16 +630,19 @@ class Card:
 
         # 2. Common Keyword Abilities
         keywords = [
-            'flying', 'trample', 'lifelink', 'haste', 'deathtouch',
-            'vigilance', 'ward', 'prowess', 'menace', 'reach',
-            'flash', 'indestructible', 'scry', 'draw a card',
-            'mill', 'exile', 'token', 'discard', 'cycling'
+            ('flying', 'Flying'), ('trample', 'Trample'), ('lifelink', 'Lifelink'),
+            ('haste', 'Haste'), ('deathtouch', 'Deathtouch'), ('vigilance', 'Vigilance'),
+            ('ward', 'Ward'), ('prowess', 'Prowess'), ('menace', 'Menace'),
+            ('reach', 'Reach'), ('flash', 'Flash'), ('indestructible', 'Indestructible'),
+            ('scry', 'Scry'), ('draw a card', 'Draw A Card'), ('mill', 'Mill'),
+            ('exile', 'Exile'), (r'tokens?', 'Token'), ('discard', 'Discard'),
+            ('cycling', 'Cycling')
         ]
 
-        for kw in keywords:
+        for pattern, label in keywords:
             # Use word boundaries for keywords to avoid partial matches
-            if re.search(r'\b' + re.escape(kw) + r'\b', text_raw):
-                m.add(kw.title())
+            if re.search(r'\b' + pattern + r'\b', text_raw):
+                m.add(label)
 
         # Recursive profiling for split/double-faced cards
         if self.bside:
