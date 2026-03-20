@@ -254,7 +254,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          sets = None, rarities = None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
          mechanics=None,
-         shuffle = False, seed = None, decklist_file = None):
+         shuffle = False, seed = None, decklist_file = None,
+         booster = 0):
 
     # Determine format
     fmt_ordered = cardlib.fmt_ordered_default
@@ -291,7 +292,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False,
                                   shuffle=shuffle, seed=seed,
-                                  decklist_file=decklist_file)
+                                  decklist_file=decklist_file,
+                                  booster=booster)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -409,7 +411,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Randomize the order of cards before sorting.')
@@ -463,6 +465,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
+    proc_group.add_argument('--booster', type=int, default=0,
+                        help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
     proc_group.add_argument('--summary', action='store_true',
                         help='Output compact card summaries instead of full encoded text.')
     proc_group.add_argument('--md', '--markdown', action='store_true',
@@ -515,7 +519,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
          sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
-         shuffle = args.shuffle, seed = args.seed, decklist_file = args.deck)
+         shuffle = args.shuffle, seed = args.seed, decklist_file = args.deck,
+         booster = args.booster)
 
 if __name__ == '__main__':
     cli()

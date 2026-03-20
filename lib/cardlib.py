@@ -1314,6 +1314,9 @@ class Card:
         if self.number:
             d['number'] = self.number
 
+        if hasattr(self, 'pack_id'):
+            d['pack_id'] = self.pack_id
+
         # B-Side (Recursive)
         if self.bside:
             d['bside'] = self.bside.to_dict()

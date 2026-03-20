@@ -3,7 +3,6 @@ import sys
 import os
 import zipfile
 import random
-import copy
 # tqdm is imported inside main/helpers or at top level if we want it global
 try:
     from tqdm import tqdm
@@ -118,58 +117,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   colors=colors, cmcs=cmcs,
                                   pows=pows, tous=tous, loys=loys,
                                   mechanics=mechanics,
-                                  shuffle=shuffle, seed=seed, decklist_file=decklist_file)
-
-    if booster > 0:
-        if seed is not None:
-            random.seed(seed)
-
-        # Group by rarity using markers from utils
-        commons = [c for c in cards if c.rarity == utils.rarity_common_marker]
-        uncommons = [c for c in cards if c.rarity == utils.rarity_uncommon_marker]
-        rares = [c for c in cards if c.rarity in [utils.rarity_rare_marker, utils.rarity_mythic_marker]]
-        lands = [c for c in cards if c.rarity == utils.rarity_basic_land_marker]
-
-        # Fallback to all cards if a category is empty to avoid crashing
-        # but try to be smart about lands
-        if not commons:
-            if verbose: print("Warning: No commons found for booster generation, using all available cards.", file=sys.stderr)
-            commons = cards
-        if not uncommons:
-            if verbose: print("Warning: No uncommons found for booster generation, using all available cards.", file=sys.stderr)
-            uncommons = cards
-        if not rares:
-            if verbose: print("Warning: No rares/mythics found for booster generation, using all available cards.", file=sys.stderr)
-            rares = cards
-        if not lands:
-            # Try to find lands by type if no basic land rarity marker
-            lands = [c for c in cards if 'land' in [t.lower() for t in c.types]]
-            if not lands:
-                if verbose: print("Warning: No lands found for booster generation, using all available cards.", file=sys.stderr)
-                lands = cards
-
-        new_cards = []
-        for p in range(booster):
-            pack = []
-            # Standard distribution: 10 Commons, 3 Uncommons, 1 Rare/Mythic, 1 Land
-            # Use random.sample to avoid duplicates within each rarity slot in a single pack
-            pack.extend(random.sample(commons, min(len(commons), 10)))
-            pack.extend(random.sample(uncommons, min(len(uncommons), 3)))
-            pack.extend(random.sample(rares, min(len(rares), 1)))
-            pack.extend(random.sample(lands, min(len(lands), 1)))
-
-            # Tag cards with pack info for headers
-            for c in pack:
-                # We need a copy because the same card might appear in multiple packs
-                # and we want them to have distinct pack_id tags if we were to use them.
-                # However, for simplicity and performance, we'll just tag them.
-                # If the same object is in multiple packs, the last tag wins.
-                # To fix this, we'll use copies.
-                c_copy = copy.copy(c)
-                c_copy.pack_id = p + 1
-                new_cards.append(c_copy)
-
-        cards = new_cards
+                                  shuffle=shuffle, seed=seed, decklist_file=decklist_file,
+                                  booster=booster)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -839,7 +788,7 @@ if __name__ == '__main__':
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')

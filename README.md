@@ -334,7 +334,7 @@ python3 sortcards.py data/AllPrintings.json sorted_output.txt
 # Sort encoded cards with filters and sampling
 python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "Elf"
 ```
-*   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, and all **Advanced Filtering** flags.
+*   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, `--booster`, and all **Advanced Filtering** flags.
 *   `--summary`: Output compact card summaries instead of full text.
 *   `--md`: Output in Markdown format with collapsible sections.
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
@@ -359,7 +359,7 @@ python3 scripts/summarize.py encoded_output.txt summary.json
     *   `-a`, `--all`: Show all information, including dumping invalid cards.
     *   `--json`: Force JSON output.
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
-    *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--cmc`, `--mechanic`).
+    *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--booster`, `--cmc`, `--mechanic`).
 
 ### `csv2json.py` & `combinejson.py`
 Used for integrating custom cards into your dataset. See [CUSTOM.md](CUSTOM.md) for a full guide.
@@ -395,7 +395,7 @@ python3 scripts/splitcards.py data/AllPrintings.json --outputs rb_train.txt rb_v
     *   `-q`, `--quiet`: Suppress the progress bar.
     *   `--encoding`: Choose the text encoding format (e.g., `std`, `named`, `vec`).
     *   `--shuffle` / `--no-shuffle`: Whether to randomize the order of cards before splitting (Enabled by default).
-    *   Supports all filtering and sorting flags from `encode.py` (e.g., `--limit`, `--sort`, `--grep`, `--colors`, `--cmc`, `--mechanic`).
+    *   Supports all filtering and sorting flags from `encode.py` (e.g., `--limit`, `--sample`, `--booster`, `--sort`, `--grep`, `--colors`, `--cmc`, `--mechanic`).
 
 ---
 

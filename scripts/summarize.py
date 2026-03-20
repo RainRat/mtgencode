@@ -30,7 +30,8 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
          sets = None, rarities = None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
          mechanics=None,
-         shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None):
+         shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None,
+         booster = 0, sort = None):
 
     # Set default format to JSON if no specific output format is selected and outfile is .json
     if not json_out and oname and oname.endswith('.json'):
@@ -57,7 +58,11 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
                                   exclude_layouts=lambda x: False,
                                   shuffle=shuffle, seed=seed,
                                   decklist_file=decklist_file,
-                                  stats=search_stats)
+                                  stats=search_stats,
+                                  booster=booster)
+
+    if sort:
+        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
 
     if limit > 0:
         cards = cards[:limit]
@@ -123,6 +128,8 @@ if __name__ == '__main__':
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
+                        help='Sort cards by a specific criterion.')
     proc_group.add_argument('--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
     proc_group.add_argument('--grep-name', action='append',
@@ -169,6 +176,8 @@ if __name__ == '__main__':
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
+    proc_group.add_argument('--booster', type=int, default=0,
+                        help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
     
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -203,5 +212,6 @@ if __name__ == '__main__':
          sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
-         shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck)
+         shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck,
+         booster = args.booster, sort = args.sort)
     exit(0)
