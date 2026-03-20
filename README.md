@@ -361,6 +361,19 @@ python3 scripts/summarize.py encoded_output.txt summary.json
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
     *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--cmc`, `--mechanic`).
 
+### `mtg_validate.py`
+Validates card data for rule and formatting consistency (e.g., checking creature stats or land costs). It works with both encoded card files and raw JSON data.
+```bash
+# Basic validation
+python3 scripts/mtg_validate.py encoded_output.txt
+
+# Print details for invalid cards
+python3 scripts/mtg_validate.py data/AllPrintings.json --dump
+```
+*   **Options:**
+    *   `-d`, `--dump`: Print full details for cards that failed validation.
+    *   `-v`, `--verbose`: Enable detailed status messages.
+
 ### `csv2json.py` & `combinejson.py`
 Used for integrating custom cards into your dataset. See [CUSTOM.md](CUSTOM.md) for a full guide.
 ```bash
