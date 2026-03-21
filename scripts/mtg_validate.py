@@ -2,6 +2,7 @@
 import sys
 import os
 import re
+import argparse
 from collections import OrderedDict
 from contextlib import redirect_stdout
 
@@ -9,6 +10,14 @@ libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 import utils
 import jdecode
+import cardlib
+
+# Try to import tqdm for progress bars
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(iterable, **kwargs):
+        return iterable
 
 datadir = os.path.realpath(os.path.join(libdir, '../data'))
 gramdir = os.path.join(datadir, 'ngrams')
@@ -48,6 +57,8 @@ def list_only(l, items):
     return True
 
 def pct(x, total):
+    if total == 0:
+        return '(0.0%)'
     pctstr = 100.0 * float(x) / float(total)
     return '(' + str(pctstr)[:5] + '%)'
 
@@ -373,14 +384,14 @@ props = OrderedDict([
     ('triggered', check_triggered),
 ])
 
-def process_props(cards, dump = False, uncovered = False):
+def process_props(cards, dump = False, uncovered = False, quiet = False):
     total_all = 0
     total_good = 0
     total_bad = 0
     total_uncovered = 0
     values = OrderedDict([(k, (0,0,0)) for k in props])
 
-    for card in cards:
+    for card in tqdm(cards, disable=quiet or len(cards) < 5, desc="Validating"):
         total_all += 1
         overall = True
         any_prop = False
@@ -417,12 +428,48 @@ def process_props(cards, dump = False, uncovered = False):
     return ((total_all, total_good, total_bad, total_uncovered),
             values)
 
-def main(fname, oname = None, verbose = False, dump = False):
-    # may need to set special arguments here
-    cards = jdecode.mtg_open_file(fname, verbose=verbose)
-    
+def main(fname, oname = None, verbose = False, dump = False,
+         nolinetrans = False, nolabel = False,
+         grep = None, vgrep = None,
+         grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
+         grep_text=None, vgrep_text=None,
+         grep_cost=None, vgrep_cost=None, grep_pt=None, vgrep_pt=None,
+         grep_loyalty=None, vgrep_loyalty=None,
+         sets = None, rarities = None, colors=None, cmcs=None,
+         pows=None, tous=None, loys=None,
+         mechanics=None,
+         shuffle = False, seed = None, quiet = False, decklist_file = None,
+         booster = 0, sort = None, limit = 0):
+
+    # Use the robust mtg_open_file for all loading and filtering.
+    cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
+                                  fmt_labeled=None if nolabel else cardlib.fmt_labeled_default,
+                                  grep=grep, vgrep=vgrep,
+                                  grep_name=grep_name, vgrep_name=vgrep_name,
+                                  grep_types=grep_types, vgrep_types=vgrep_types,
+                                  grep_text=grep_text, vgrep_text=vgrep_text,
+                                  grep_cost=grep_cost, vgrep_cost=vgrep_cost,
+                                  grep_pt=grep_pt, vgrep_pt=vgrep_pt,
+                                  grep_loyalty=grep_loyalty, vgrep_loyalty=vgrep_loyalty,
+                                  sets=sets, rarities=rarities,
+                                  colors=colors, cmcs=cmcs,
+                                  pows=pows, tous=tous, loys=loys,
+                                  mechanics=mechanics,
+                                  shuffle=shuffle, seed=seed,
+                                  decklist_file=decklist_file,
+                                  booster=booster)
+
+    if sort:
+        import sortlib
+        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
+
+    if limit > 0:
+        cards = cards[:limit]
+
     output_f = sys.stdout
     if oname:
+        if verbose:
+            print(f'Writing validation report to: {oname}', file=sys.stderr)
         output_f = open(oname, 'w', encoding='utf8')
 
     do_grams = False
@@ -463,10 +510,10 @@ def main(fname, oname = None, verbose = False, dump = False):
                 print('99% - ' + str(pct99))
 
         else:
-            ((total_all, total_good, total_bad, total_uncovered),
-             values) = process_props(cards, dump=dump)
-
             with redirect_stdout(output_f):
+                ((total_all, total_good, total_bad, total_uncovered),
+                 values) = process_props(cards, dump=dump, quiet=quiet)
+
                 # summary
                 print('-- overall --')
                 print(('  total     : ' + str(total_all)))
@@ -480,33 +527,129 @@ def main(fname, oname = None, verbose = False, dump = False):
                 # breakdown
                 for prop in props:
                     (total, good, bad) = values[prop]
-                    print((prop + ':'))
-                    print(('  total: ' + str(total) + ' ' + pct(total, total_all)))
-                    print(('  good : ' + str(good) + ' ' + pct(good, total_all)))
-                    print(('  bad  : ' + str(bad) + ' ' + pct(bad, total_all)))
+                    if total > 0:
+                        print((prop + ':'))
+                        print(('  total: ' + str(total) + ' ' + pct(total, total_all)))
+                        print(('  good : ' + str(good) + ' ' + pct(good, total_all)))
+                        print(('  bad  : ' + str(bad) + ' ' + pct(bad, total_all)))
     finally:
         if oname:
             output_f.close()
 
 
 if __name__ == '__main__':
-    
-    import argparse
     parser = argparse.ArgumentParser(
         description="Check Magic: The Gathering card data for rule and formatting consistency. "
                     "This script verifies that cards follow standard patterns, such as "
                     "ensuring creatures have power and toughness, and lands have no mana cost."
     )
     
-    parser.add_argument('infile',
-                        help='Input card data (JSON, CSV, XML, encoded text, or directory) to validate.')
-    parser.add_argument('outfile', nargs='?', default=None,
+    # Group: Input / Output
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('infile', nargs='?', default='-',
+                        help='Input card data (JSON, CSV, XML, encoded text, or directory) to validate. Defaults to stdin (-).')
+    io_group.add_argument('outfile', nargs='?', default=None,
                         help='Optional path to save the validation report. If not provided, the report prints to the console.')
-    parser.add_argument('-v', '--verbose', action='store_true', 
-                        help='Enable detailed status messages.')
-    parser.add_argument('-d', '--dump', action='store_true', 
+
+    # Group: Encoding Options
+    enc_group = parser.add_argument_group('Encoding Options')
+    enc_group.add_argument('--nolabel', action='store_true',
+                        help="Input file does not have field labels (like '|cost|' or '|text|').")
+    enc_group.add_argument('--nolinetrans', action='store_true',
+                        help='Input file does not use automatic line reordering.')
+
+    # Group: Processing Options
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-d', '--dump', action='store_true',
                         help='Show the text of cards that failed validation (useful for debugging).')
+    proc_group.add_argument('-n', '--limit', type=int, default=0,
+                        help='Only process the first N cards.')
+    proc_group.add_argument('--shuffle', action='store_true',
+                        help='Randomize the order of cards before validating.')
+    proc_group.add_argument('--seed', type=int,
+                        help='Seed for the random number generator.')
+    proc_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random cards (shorthand for --shuffle --limit N).')
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
+                        help='Sort cards by a specific criterion.')
+    proc_group.add_argument('--booster', type=int, default=0,
+                        help='Simulate opening N booster packs.')
+
+    # Group: Filtering Options
+    filter_group = parser.add_argument_group('Filtering Options')
+    filter_group.add_argument('--grep', action='append',
+                        help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
+    filter_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a search pattern.')
+    filter_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a search pattern.')
+    filter_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a search pattern.')
+    filter_group.add_argument('--grep-cost', action='append',
+                        help='Only include cards whose mana cost matches a search pattern.')
+    filter_group.add_argument('--grep-pt', action='append',
+                        help='Only include cards whose power/toughness matches a search pattern.')
+    filter_group.add_argument('--grep-loyalty', action='append',
+                        help='Only include cards whose loyalty/defense matches a search pattern.')
+    filter_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Exclude cards matching a search pattern (checks name, type, and text). Use multiple times for OR logic.')
+    filter_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a search pattern.')
+    filter_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a search pattern.')
+    filter_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a search pattern.')
+    filter_group.add_argument('--exclude-cost', action='append',
+                        help='Exclude cards whose mana cost matches a search pattern.')
+    filter_group.add_argument('--exclude-pt', action='append',
+                        help='Exclude cards whose power/toughness matches a search pattern.')
+    filter_group.add_argument('--exclude-loyalty', action='append',
+                        help='Exclude cards whose loyalty/defense matches a search pattern.')
+    filter_group.add_argument('--set', action='append',
+                        help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
+    filter_group.add_argument('--rarity', action='append',
+                        help="Only include cards of specific rarities. Supports full names or shorthands (O, N, A, Y, I, L). Supports multiple rarities.")
+    filter_group.add_argument('--colors', action='append',
+                        help="Only include cards of specific colors (W, U, B, R, G, C/A). Supports multiple colors.")
+    filter_group.add_argument('--cmc', action='append',
+                        help='Only include cards with specific CMC values. Supports inequalities and ranges.')
+    filter_group.add_argument('--pow', '--power', action='append', dest='pow',
+                        help='Only include cards with specific Power values. Supports inequalities and ranges.')
+    filter_group.add_argument('--tou', '--toughness', action='append', dest='tou',
+                        help='Only include cards with specific Toughness values. Supports inequalities and ranges.')
+    filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
+                        help='Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.')
+    filter_group.add_argument('--mechanic', action='append',
+                        help='Only include cards with specific mechanical features or keyword abilities. Supports multiple values.')
+    filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
+                        help='Filter cards using a standard MTG decklist file.')
+
+    # Group: Logging & Debugging
+    debug_group = parser.add_argument_group('Logging & Debugging')
+    debug_group.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable detailed status messages.')
+    debug_group.add_argument('-q', '--quiet', action='store_true',
+                        help='Suppress the progress bar.')
 
     args = parser.parse_args()
-    main(args.infile, args.outfile, verbose=args.verbose, dump=args.dump)
+
+    # Handle --sample
+    if args.sample > 0:
+        args.shuffle = True
+        args.limit = args.sample
+
+    main(args.infile, args.outfile, verbose = args.verbose, dump = args.dump,
+         nolinetrans = args.nolinetrans, nolabel = args.nolabel,
+         grep = args.grep, vgrep = args.vgrep,
+         grep_name=args.grep_name, vgrep_name=args.exclude_name,
+         grep_types=args.grep_type, vgrep_types=args.exclude_type,
+         grep_text=args.grep_text, vgrep_text=args.exclude_text,
+         grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
+         grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
+         grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
+         sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
+         pows=args.pow, tous=args.tou, loys=args.loy,
+         mechanics=args.mechanic,
+         shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, decklist_file = args.deck,
+         booster = args.booster, sort = args.sort, limit = args.limit)
     exit(0)
