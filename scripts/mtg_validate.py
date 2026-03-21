@@ -3,6 +3,7 @@ import sys
 import os
 import re
 from collections import OrderedDict
+from contextlib import redirect_stdout
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
@@ -420,79 +421,92 @@ def main(fname, oname = None, verbose = False, dump = False):
     # may need to set special arguments here
     cards = jdecode.mtg_open_file(fname, verbose=verbose)
     
+    output_f = sys.stdout
+    if oname:
+        output_f = open(oname, 'w', encoding='utf8')
+
     do_grams = False
 
-    if do_grams:
-        rg = {}
-        for card in cards:
-            g = rare_grams(card, thresh=2, grams=2)
-            if len(card.text_words) > 0:
-                g = int(1.0 + (float(g) * 100.0 / float(len(card.text_words))))
-            if g in rg:
-                rg[g] += 1
-            else:
-                rg[g] = 1
-            if g >= 60:
-                print(g)
-                print(card.format())
+    try:
+        if do_grams:
+            with redirect_stdout(output_f):
+                rg = {}
+                for card in cards:
+                    g = rare_grams(card, thresh=2, grams=2)
+                    if len(card.text_words) > 0:
+                        g = int(1.0 + (float(g) * 100.0 / float(len(card.text_words))))
+                    if g in rg:
+                        rg[g] += 1
+                    else:
+                        rg[g] = 1
+                    if g >= 60:
+                        print(g)
+                        print(card.format())
 
-        tot = 0
-        vmax = sum(rg.values())
-        pct90 = None
-        pct95 = None
-        pct99 = None
-        for i in sorted(rg):
-            print(str(i) + ' rare ngrams: ' + str(rg[i]))
-            tot += rg[i]
-            if pct90 is None and tot >= vmax * 0.90:
-                pct90 = i
-            if pct95 is None and tot >= vmax * 0.95:
-                pct95 = i
-            if pct99 is None and tot >= vmax * 0.99:
-                pct99 = i
+                tot = 0
+                vmax = sum(rg.values())
+                pct90 = None
+                pct95 = None
+                pct99 = None
+                for i in sorted(rg):
+                    print(str(i) + ' rare ngrams: ' + str(rg[i]))
+                    tot += rg[i]
+                    if pct90 is None and tot >= vmax * 0.90:
+                        pct90 = i
+                    if pct95 is None and tot >= vmax * 0.95:
+                        pct95 = i
+                    if pct99 is None and tot >= vmax * 0.99:
+                        pct99 = i
 
-        print('90% - ' + str(pct90))
-        print('95% - ' + str(pct95))
-        print('99% - ' + str(pct99))
+                print('90% - ' + str(pct90))
+                print('95% - ' + str(pct95))
+                print('99% - ' + str(pct99))
 
-    else:
-        ((total_all, total_good, total_bad, total_uncovered), 
-         values) = process_props(cards, dump=dump)
+        else:
+            ((total_all, total_good, total_bad, total_uncovered),
+             values) = process_props(cards, dump=dump)
 
-        # summary
-        print('-- overall --')
-        print(('  total     : ' + str(total_all)))
-        print(('  good      : ' + str(total_good) +
-               ' ' + pct(total_good, total_all)))
-        print(('  bad       : ' + str(total_bad) + ' ' + pct(total_bad, total_all)))
-        print(('  uncovered : ' + str(total_uncovered) +
-               ' ' + pct(total_uncovered, total_all)))
-        print('----')
+            with redirect_stdout(output_f):
+                # summary
+                print('-- overall --')
+                print(('  total     : ' + str(total_all)))
+                print(('  good      : ' + str(total_good) +
+                       ' ' + pct(total_good, total_all)))
+                print(('  bad       : ' + str(total_bad) + ' ' + pct(total_bad, total_all)))
+                print(('  uncovered : ' + str(total_uncovered) +
+                       ' ' + pct(total_uncovered, total_all)))
+                print('----')
 
-        # breakdown
-        for prop in props:
-            (total, good, bad) = values[prop]
-            print((prop + ':'))
-            print(('  total: ' + str(total) + ' ' + pct(total, total_all)))
-            print(('  good : ' + str(good) + ' ' + pct(good, total_all)))
-            print(('  bad  : ' + str(bad) + ' ' + pct(bad, total_all)))
+                # breakdown
+                for prop in props:
+                    (total, good, bad) = values[prop]
+                    print((prop + ':'))
+                    print(('  total: ' + str(total) + ' ' + pct(total, total_all)))
+                    print(('  good : ' + str(good) + ' ' + pct(good, total_all)))
+                    print(('  bad  : ' + str(bad) + ' ' + pct(bad, total_all)))
+    finally:
+        if oname:
+            output_f.close()
 
 
 if __name__ == '__main__':
     
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Check Magic: The Gathering card data for rule and formatting consistency. "
+                    "This script verifies that cards follow standard patterns, such as "
+                    "ensuring creatures have power and toughness, and lands have no mana cost."
+    )
     
-    parser.add_argument('infile', #nargs='?'. default=None,
-                        help='encoded card file or json corpus to process')
+    parser.add_argument('infile',
+                        help='Input card data (JSON, CSV, XML, encoded text, or directory) to validate.')
     parser.add_argument('outfile', nargs='?', default=None,
-                        help='name of output file, will be overwritten')
+                        help='Optional path to save the validation report. If not provided, the report prints to the console.')
     parser.add_argument('-v', '--verbose', action='store_true', 
-                        help='verbose output')
+                        help='Enable detailed status messages.')
     parser.add_argument('-d', '--dump', action='store_true', 
-                        help='print invalid cards')
+                        help='Show the text of cards that failed validation (useful for debugging).')
 
     args = parser.parse_args()
     main(args.infile, args.outfile, verbose=args.verbose, dump=args.dump)
     exit(0)
- 

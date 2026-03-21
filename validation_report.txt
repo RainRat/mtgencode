@@ -1,0 +1,74 @@
+-- overall --
+  total     : 1
+  good      : 1 (100.0%)
+  bad       : 0 (0.0%)
+  uncovered : 0 (0.0%)
+----
+types:
+  total: 1 (100.0%)
+  good : 1 (100.0%)
+  bad  : 0 (0.0%)
+pt:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+lands:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+X:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+kicker:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+counters:
+  total: 1 (100.0%)
+  good : 1 (100.0%)
+  bad  : 0 (0.0%)
+choices:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+quotes:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+auras:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+equipment:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+vehicles:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+planeswalkers:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+levelup:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+chosen:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+shuffle:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+activated:
+  total: 0 (0.0%)
+  good : 0 (0.0%)
+  bad  : 0 (0.0%)
+triggered:
+  total: 1 (100.0%)
+  good : 1 (100.0%)
+  bad  : 0 (0.0%)
