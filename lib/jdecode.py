@@ -65,6 +65,24 @@ def mtg_open_csv(fname, verbose = False):
         reader = csv.DictReader(f)
         return mtg_open_csv_reader(reader, verbose)
 
+def _map_scryfall_face(face, d):
+    """
+    Maps Scryfall-specific fields from a card or face object to the
+    internal MTGJSON-style dictionary.
+    """
+    if 'name' in face: d['name'] = face['name']
+    if 'mana_cost' in face: d['manaCost'] = face['mana_cost']
+    if 'oracle_text' in face: d['text'] = face['oracle_text']
+    if 'type_line' in face:
+        d['type'] = face['type_line']
+        s, t, sub = utils.parse_type_line(face['type_line'])
+        if s: d['supertypes'] = s
+        if t: d['types'] = t
+        if sub: d['subtypes'] = sub
+    for field in ['power', 'toughness', 'loyalty', 'defense']:
+        if field in face:
+            d[field] = face[field]
+
 def _normalize_scryfall_card(card):
     """
     Normalizes a Scryfall card object to match the MTGJSON format used internally.
@@ -73,16 +91,7 @@ def _normalize_scryfall_card(card):
         return card
 
     # Top-level field mapping
-    if 'mana_cost' in card: card['manaCost'] = card['mana_cost']
-    if 'oracle_text' in card: card['text'] = card['oracle_text']
-    if 'type_line' in card:
-        card['type'] = card['type_line']
-        # Scryfall doesn't provide split supertypes/types/subtypes arrays
-        # so we parse them from the type_line.
-        s, t, sub = utils.parse_type_line(card['type_line'])
-        if s: card['supertypes'] = s
-        if t: card['types'] = t
-        if sub: card['subtypes'] = sub
+    _map_scryfall_face(card, card)
     if 'set' in card: card['setCode'] = card['set'].upper()
     if 'collector_number' in card: card['number'] = card['collector_number']
 
@@ -91,42 +100,13 @@ def _normalize_scryfall_card(card):
         faces = card['card_faces']
         if len(faces) >= 1:
             # Populate main card fields from the first face
-            f1 = faces[0]
-            if 'name' in f1: card['name'] = f1['name']
-            if 'mana_cost' in f1: card['manaCost'] = f1['mana_cost']
-            if 'oracle_text' in f1: card['text'] = f1['oracle_text']
-            if 'type_line' in f1:
-                card['type'] = f1['type_line']
-                s, t, sub = utils.parse_type_line(f1['type_line'])
-                if s: card['supertypes'] = s
-                if t: card['types'] = t
-                if sub: card['subtypes'] = sub
-            if 'power' in f1: card['power'] = f1['power']
-            if 'toughness' in f1: card['toughness'] = f1['toughness']
-            if 'loyalty' in f1: card['loyalty'] = f1['loyalty']
-            if 'defense' in f1: card['defense'] = f1['defense']
+            _map_scryfall_face(faces[0], card)
 
         if len(faces) >= 2:
             # Map the second face to the 'bside' field.
             # This follows the linking logic used for double-faced/split cards.
-            f2 = faces[1]
-            bside = {
-                'name': f2.get('name', ''),
-                'manaCost': f2.get('mana_cost', ''),
-                'text': f2.get('oracle_text', ''),
-                'rarity': card.get('rarity', ''),
-            }
-            if 'type_line' in f2:
-                bside['type'] = f2['type_line']
-                s, t, sub = utils.parse_type_line(f2['type_line'])
-                if s: bside['supertypes'] = s
-                if t: bside['types'] = t
-                if sub: bside['subtypes'] = sub
-            if 'power' in f2: bside['power'] = f2['power']
-            if 'toughness' in f2: bside['toughness'] = f2['toughness']
-            if 'loyalty' in f2: bside['loyalty'] = f2['loyalty']
-            if 'defense' in f2: bside['defense'] = f2['defense']
-
+            bside = {'rarity': card.get('rarity', '')}
+            _map_scryfall_face(faces[1], bside)
             card[utils.json_field_bside] = bside
 
     return card
