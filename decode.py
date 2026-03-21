@@ -730,7 +730,7 @@ if __name__ == '__main__':
                            help='Force plain text output (Default unless detected from extension).')
     fmt_group.add_argument('-t', '--table', action='store_true',
                            help='Generate a formatted table for terminal view (Auto-detected for .tbl or .table).')
-    fmt_group.add_argument('--html', action='store_true',
+    fmt_group.add_argument('-H', '--html', action='store_true',
                            help='Generate a nicely formatted HTML file (Auto-detected for .html).')
     fmt_group.add_argument('-j', '--json', action='store_true',
                            help='Generate a structured JSON file (Auto-detected for .json).')
@@ -738,7 +738,7 @@ if __name__ == '__main__':
                            help='Generate a JSON Lines file (one card object per line). Auto-detected for .jsonl.')
     fmt_group.add_argument('--csv', action='store_true',
                            help='Generate a CSV file (Auto-detected for .csv).')
-    fmt_group.add_argument('--md', action='store_true',
+    fmt_group.add_argument('-M', '--md', action='store_true',
                            help='Generate a Markdown file (Auto-detected for .md).')
     fmt_group.add_argument('--md-table', '--mdt', action='store_true',
                            help='Generate a Markdown table file (Auto-detected for .mdt).')
