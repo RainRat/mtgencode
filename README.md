@@ -321,11 +321,11 @@ Use your encoded card data to train a neural network that can design its own Mag
 
 ---
 
-## Utility Scripts
+## Utility Tools
 
-Use the extra tools in the `scripts/` folder to manage your data.
+Use these extra tools to manage and analyze your card data. Most are located in the `scripts/` folder, except for `sortcards.py` which is in the root directory.
 
-### `sortcards.py`
+### `sortcards.py` (Root Directory)
 Organizes cards into categories (like Color or Card Type) and wraps them in `[spoiler]` tags. This is useful for posting cards on forums. It works with any card data (JSON, CSV, etc.) or encoded text.
 ```bash
 # Basic sorting
@@ -340,7 +340,7 @@ python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "El
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `summarize.py`
-Shows statistics about your card data, such as the distribution of card types and colors. It works with any card data (JSON, CSV, encoded text, etc.).
+Shows statistics, design budget analysis, and mechanical profiling for your card data. It works with any card data (JSON, CSV, XML, encoded text, etc.).
 ```bash
 # View statistics for the entire official dataset
 python3 scripts/summarize.py data/AllPrintings.json
@@ -357,12 +357,15 @@ python3 scripts/summarize.py encoded_output.txt summary.json
 *   **Options:**
     *   `-x`, `--outliers`: Show extra details and unusual cards.
     *   `-a`, `--all`: Show all information, including dumping invalid cards.
+    *   `-t N`, `--top N`: Limit the number of entries in breakdown tables (Default: 10).
+    *   `--sort CRITERIA`: Sort cards before summarizing.
+    *   `--booster N`: Simulate opening N booster packs and summarize the contents.
     *   `--json`: Force JSON output.
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
-    *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--booster`, `--cmc`, `--mechanic`).
+    *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--grep`, `--cmc`, `--mechanic`).
 
 ### `mtg_validate.py`
-Validates card data for rule and formatting consistency (e.g., checking creature stats or land costs). It works with both encoded card files and raw JSON data.
+Validates card data for rule and formatting consistency (e.g., checking creature stats or land costs). It works with all supported input formats (JSON, CSV, XML, encoded text, etc.).
 ```bash
 # Basic validation
 python3 scripts/mtg_validate.py encoded_output.txt
@@ -408,7 +411,9 @@ python3 scripts/splitcards.py data/AllPrintings.json --outputs rb_train.txt rb_v
     *   `-q`, `--quiet`: Suppress the progress bar.
     *   `--encoding`: Choose the text encoding format (e.g., `std`, `named`, `vec`).
     *   `--shuffle` / `--no-shuffle`: Whether to randomize the order of cards before splitting (Enabled by default).
-    *   Supports all filtering and sorting flags from `encode.py` (e.g., `--limit`, `--sample`, `--booster`, `--sort`, `--grep`, `--colors`, `--cmc`, `--mechanic`).
+    *   `--sort CRITERIA`: Sort cards before splitting.
+    *   `--booster N`: Simulate opening N booster packs before splitting.
+    *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--grep`, `--colors`, `--cmc`, `--mechanic`).
 
 ---
 
