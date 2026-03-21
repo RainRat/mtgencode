@@ -30,7 +30,7 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
          sets = None, rarities = None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
          mechanics=None,
-         shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None):
+         shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None, top = 10):
 
     # Set default format to JSON if no specific output format is selected and outfile is .json
     if not json_out and oname and oname.endswith('.json'):
@@ -82,9 +82,9 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
             output_f.write(json.dumps(mine.to_dict(), indent=2) + '\n')
         else:
             with redirect_stdout(output_f):
-                mine.summarize(use_color=actual_use_color)
+                mine.summarize(use_color=actual_use_color, vsize=top)
                 if outliers or dump_all:
-                    mine.outliers(dump_invalid = dump_all, use_color=actual_use_color)
+                    mine.outliers(dump_invalid = dump_all, use_color=actual_use_color, vsize=top)
     finally:
         if oname:
             output_f.close()
@@ -119,6 +119,8 @@ if __name__ == '__main__':
                         help='Only process the first N cards.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Randomize the order of cards before summarizing.')
+    proc_group.add_argument('-t', '--top', type=int, default=10,
+                        help='Limit the number of entries in breakdown tables.')
     proc_group.add_argument('--seed', type=int,
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
@@ -203,5 +205,6 @@ if __name__ == '__main__':
          sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
-         shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck)
+         shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck,
+         top = args.top)
     exit(0)

@@ -456,8 +456,8 @@ class Datamine:
         print(color_line('COLORS & MANA', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print('  ' + color_line(str(len(self.by_color_inclusive)) + ' represented colors (including colorless as \'A\'), '
                + str(len(self.by_color)) + ' combinations', use_color))
-        _print_breakdown('Breakdown by color:', self.by_color_inclusive, len(self.allcards), use_color)
-        _print_breakdown('Breakdown by number of colors:', self.by_color_count, len(self.allcards), use_color)
+        _print_breakdown('Breakdown by color:', self.by_color_inclusive, len(self.allcards), use_color, vsize=vsize)
+        _print_breakdown('Breakdown by number of colors:', self.by_color_count, len(self.allcards), use_color, vsize=vsize)
         print()
 
         print('  ' + color_line(str(len(self.by_cmc)) + ' different CMCs, ' +
@@ -497,7 +497,12 @@ class Datamine:
         # Section: Stats & Rarity
         print(color_line('STATS & RARITY', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print('  ' + color_line(str(len(self.by_rarity)) + ' represented rarities', use_color))
-        _print_breakdown('Breakdown by rarity:', self.by_rarity, len(self.allcards), use_color)
+        rarity_priorities = {
+            'mythic': 0, 'rare': 1, 'uncommon': 2, 'common': 3,
+            'basic land': 4, 'special': 5
+        }
+        _print_breakdown('Breakdown by rarity:', self.by_rarity, len(self.allcards), use_color,
+                         vsize=vsize, sort_key=lambda x: rarity_priorities.get(x.lower(), 6), reverse=False)
         print()
 
         print('  ' + color_line(str(len(self.by_pt)) + ' unique p/t combinations', use_color))
@@ -569,9 +574,11 @@ class Datamine:
                        key=lambda x: len(self.by_name[x]),
                        reverse = True)
             rows = []
-            for k in d[0:vsize]:
+            for k in d:
                 if len(self.by_name[k]) > 1:
                     rows += [[k, color_count(len(self.by_name[k]), use_color)]]
+                if len(rows) >= vsize:
+                    break
             if rows == []:
                 print('  No duplicated cardnames')
             else:
