@@ -141,8 +141,8 @@ if __name__ == '__main__':
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console.')
 
-    # Group: Encoding Options
-    enc_group = parser.add_argument_group('Encoding Options')
+    # Group: Content Formatting
+    enc_group = parser.add_argument_group('Content Formatting')
     enc_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
                         help="The encoding format to use: 'std' (Name last, default), 'named' (Name first), "
                              "'noname' (No names), 'rfields' (Random field order), "
@@ -170,51 +170,54 @@ if __name__ == '__main__':
                         help='Sort cards by a specific criterion (enables --stable).')
     proc_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
-    proc_group.add_argument('--grep', action='append',
+
+    # Group: Filtering Options
+    filter_group = parser.add_argument_group('Filtering Options')
+    filter_group.add_argument('--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
-    proc_group.add_argument('--grep-name', action='append',
+    filter_group.add_argument('--grep-name', action='append',
                         help='Only include cards whose name matches a search pattern.')
-    proc_group.add_argument('--grep-type', action='append',
+    filter_group.add_argument('--grep-type', action='append',
                         help='Only include cards whose typeline matches a search pattern.')
-    proc_group.add_argument('--grep-text', action='append',
+    filter_group.add_argument('--grep-text', action='append',
                         help='Only include cards whose rules text matches a search pattern.')
-    proc_group.add_argument('--grep-cost', action='append',
+    filter_group.add_argument('--grep-cost', action='append',
                         help='Only include cards whose mana cost matches a search pattern.')
-    proc_group.add_argument('--grep-pt', action='append',
+    filter_group.add_argument('--grep-pt', action='append',
                         help='Only include cards whose power/toughness matches a search pattern.')
-    proc_group.add_argument('--grep-loyalty', action='append',
+    filter_group.add_argument('--grep-loyalty', action='append',
                         help='Only include cards whose loyalty/defense matches a search pattern.')
-    proc_group.add_argument('--vgrep', '--exclude', action='append',
+    filter_group.add_argument('--vgrep', '--exclude', action='append',
                         help='Exclude cards matching a search pattern (checks name, type, and text). Use multiple times for OR logic.')
-    proc_group.add_argument('--exclude-name', action='append',
+    filter_group.add_argument('--exclude-name', action='append',
                         help='Exclude cards whose name matches a search pattern.')
-    proc_group.add_argument('--exclude-type', action='append',
+    filter_group.add_argument('--exclude-type', action='append',
                         help='Exclude cards whose typeline matches a search pattern.')
-    proc_group.add_argument('--exclude-text', action='append',
+    filter_group.add_argument('--exclude-text', action='append',
                         help='Exclude cards whose rules text matches a search pattern.')
-    proc_group.add_argument('--exclude-cost', action='append',
+    filter_group.add_argument('--exclude-cost', action='append',
                         help='Exclude cards whose mana cost matches a search pattern.')
-    proc_group.add_argument('--exclude-pt', action='append',
+    filter_group.add_argument('--exclude-pt', action='append',
                         help='Exclude cards whose power/toughness matches a search pattern.')
-    proc_group.add_argument('--exclude-loyalty', action='append',
+    filter_group.add_argument('--exclude-loyalty', action='append',
                         help='Exclude cards whose loyalty/defense matches a search pattern.')
-    proc_group.add_argument('--set', action='append',
+    filter_group.add_argument('--set', action='append',
                         help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
-    proc_group.add_argument('--rarity', action='append',
+    filter_group.add_argument('--rarity', action='append',
                         help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple rarities (OR logic).")
-    proc_group.add_argument('--colors', action='append',
+    filter_group.add_argument('--colors', action='append',
                         help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple colors (OR logic).")
-    proc_group.add_argument('--cmc', action='append',
+    filter_group.add_argument('--cmc', action='append',
                         help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
-    proc_group.add_argument('--pow', '--power', action='append', dest='pow',
+    filter_group.add_argument('--pow', '--power', action='append', dest='pow',
                         help='Only include cards with specific Power values. Supports inequalities and ranges.')
-    proc_group.add_argument('--tou', '--toughness', action='append', dest='tou',
+    filter_group.add_argument('--tou', '--toughness', action='append', dest='tou',
                         help='Only include cards with specific Toughness values. Supports inequalities and ranges.')
-    proc_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
+    filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.')
-    proc_group.add_argument('--mechanic', action='append',
+    filter_group.add_argument('--mechanic', action='append',
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
-    proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
+    filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
 
     # Group: Logging & Debugging
