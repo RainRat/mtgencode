@@ -6,6 +6,7 @@ import csv
 import zipfile
 import random
 import io
+import copy
 import xml.etree.ElementTree as ET
 
 import utils
@@ -776,7 +777,7 @@ def mtg_open_file(fname, verbose = False,
                   mechanics=None,
                   shuffle=False, seed=None,
                   decklist_file=None,
-                  stats=None):
+                  stats=None, booster=0):
     """
     High-level entry point for loading card data from various formats.
     Supported formats: JSON, JSONL, CSV, Magic Set Editor (.mse-set),
@@ -785,6 +786,9 @@ def mtg_open_file(fname, verbose = False,
     Decklist support includes "auto-hydration": if a decklist is provided as
     the primary input and data/AllPrintings.json exists, the tool will
     automatically resolve card names into full Card objects.
+
+    The `booster` parameter simulates opening N Magic booster packs from the
+    resulting card pool, following a standard 10/3/1/1 rarity distribution.
 
     Returns a list of cardlib.Card objects.
     """
@@ -1279,4 +1283,58 @@ def mtg_open_file(fname, verbose = False,
             random.seed(seed)
         random.shuffle(cards)
 
+    if booster > 0:
+        cards = _simulate_boosters(cards, booster, seed=seed, verbose=verbose)
+
     return _check_parsing_quality(cards, report_fobj)
+
+def _simulate_boosters(cards, count, seed=None, verbose=False):
+    """
+    Simulates opening Magic booster packs from a pool of cards.
+    Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land.
+    """
+    if seed is not None:
+        random.seed(seed)
+
+    # Group by rarity using markers from utils
+    commons = [c for c in cards if c.rarity == utils.rarity_common_marker]
+    uncommons = [c for c in cards if c.rarity == utils.rarity_uncommon_marker]
+    rares = [c for c in cards if c.rarity in [utils.rarity_rare_marker, utils.rarity_mythic_marker]]
+    lands = [c for c in cards if c.rarity == utils.rarity_basic_land_marker]
+
+    # Fallback to all cards if a category is empty to avoid crashing
+    # but try to be smart about lands
+    if not commons:
+        if verbose: print("Warning: No commons found for booster generation, using all available cards.", file=sys.stderr)
+        commons = cards
+    if not uncommons:
+        if verbose: print("Warning: No uncommons found for booster generation, using all available cards.", file=sys.stderr)
+        uncommons = cards
+    if not rares:
+        if verbose: print("Warning: No rares/mythics found for booster generation, using all available cards.", file=sys.stderr)
+        rares = cards
+    if not lands:
+        # Try to find lands by type if no basic land rarity marker
+        lands = [c for c in cards if 'land' in [t.lower() for t in c.types]]
+        if not lands:
+            if verbose: print("Warning: No lands found for booster generation, using all available cards.", file=sys.stderr)
+            lands = cards
+
+    new_cards = []
+    for p in range(count):
+        pack = []
+        # Standard distribution: 10 Commons, 3 Uncommons, 1 Rare/Mythic, 1 Land
+        # Use random.sample to avoid duplicates within each rarity slot in a single pack
+        pack.extend(random.sample(commons, min(len(commons), 10)))
+        pack.extend(random.sample(uncommons, min(len(uncommons), 3)))
+        pack.extend(random.sample(rares, min(len(rares), 1)))
+        pack.extend(random.sample(lands, min(len(lands), 1)))
+
+        # Tag cards with pack info for headers
+        for c in pack:
+            # Use copy to allow distinct pack_id tags for the same card appearing in multiple packs
+            c_copy = copy.copy(c)
+            c_copy.pack_id = p + 1
+            new_cards.append(c_copy)
+
+    return new_cards

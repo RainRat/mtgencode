@@ -45,7 +45,7 @@ def main():
                         help='Seed for the random number generator (Default: 1371367).')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --limit N). Shuffling is enabled unless --stable is used.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
                         help='Sort cards by a specific criterion (enables --stable).')
     proc_group.add_argument('--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
@@ -93,6 +93,8 @@ def main():
                         help='Only include cards with specific mechanical features or keyword abilities. Supports multiple values.')
     proc_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file.')
+    proc_group.add_argument('--booster', type=int, default=0,
+                        help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
 
     # Group: Logging & Debugging
     log_group = parser.add_argument_group('Logging & Debugging')
@@ -140,7 +142,7 @@ def main():
                                   pows=args.pow, tous=args.tou, loys=args.loy,
                                   mechanics=args.mechanic,
                                   shuffle=not args.stable, seed=args.seed if args.seed is not None else 1371367,
-                                  decklist_file=args.deck)
+                                  decklist_file=args.deck, booster=args.booster)
 
     if args.sort:
         cards = sortlib.sort_cards(cards, args.sort, quiet=args.quiet)
