@@ -467,7 +467,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
     proc_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
-    proc_group.add_argument('--summary', action='store_true',
+    proc_group.add_argument('-S', '--summary', action='store_true',
                         help='Output compact card summaries instead of full encoded text.')
     proc_group.add_argument('--md', '--markdown', action='store_true',
                         help='Output in Markdown format with collapsible sections (Auto-detected for .md).')
