@@ -377,9 +377,12 @@ python3 scripts/mtg_validate.py data/AllPrintings.json --dump
     *   `-d`, `--dump`: Print full details for cards that failed validation.
     *   `-v`, `--verbose`: Enable detailed status messages.
 
-### `csv2json.py` & `combinejson.py`
-Used for integrating custom cards into your dataset. See [CUSTOM.md](CUSTOM.md) for a full guide.
+### `json2csv.py`, `csv2json.py` & `combinejson.py`
+Used for integrating custom cards into your dataset. These scripts let you export existing cards to CSV, convert spreadsheets to JSON, and merge them with official data. See [CUSTOM.md](CUSTOM.md) for a full guide.
 ```bash
+# Export existing cards to CSV for editing
+python3 scripts/json2csv.py data/AllPrintings.json my_cards.csv --set MOM
+
 # Convert a spreadsheet to JSON
 python3 scripts/csv2json.py my_cards.csv my_cards.json
 
