@@ -289,10 +289,13 @@ def fields_from_json(src_json, linetrans = True):
         
 
     if 'rarity' in src_json:
-        if src_json['rarity'] in utils.json_rarity_map:
-            fields[field_rarity] = [(-1, utils.json_rarity_map[src_json['rarity']])]
+        rarity_val = src_json['rarity']
+        if rarity_val in utils.json_rarity_map:
+            fields[field_rarity] = [(-1, utils.json_rarity_map[rarity_val])]
+        elif hasattr(rarity_val, 'lower') and rarity_val.lower() in utils.json_rarity_map:
+            fields[field_rarity] = [(-1, utils.json_rarity_map[rarity_val.lower()])]
         else:
-            fields[field_rarity] = [(-1, src_json['rarity'])]
+            fields[field_rarity] = [(-1, rarity_val)]
             parsed = False
     else:
         parsed = False
