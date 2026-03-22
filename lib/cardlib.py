@@ -562,6 +562,11 @@ class Card:
         # Cost
         cost = self.cost.format(ansi_color=ansi_color)
 
+        # CMC
+        cmc = str(int(self.cost.cmc)) if self.cost.cmc == int(self.cost.cmc) else f"{self.cost.cmc:.1f}"
+        if ansi_color:
+            cmc = utils.colorize(cmc, utils.Ansi.BOLD + utils.Ansi.GREEN)
+
         # Type
         typeline = self.get_type_line()
         if ansi_color:
@@ -582,16 +587,17 @@ class Card:
         if ansi_color and rarity:
             rarity = utils.colorize(rarity, utils.Ansi.get_rarity_color(rarity))
 
-        return name, cost, typeline, stats, text, rarity
+        return name, cost, cmc, typeline, stats, text, rarity
 
     def _get_display_data(self, ansi_color=False, include_text=False):
         """Helper to get standardized display fields for the card, merging b-sides."""
-        name, cost, typeline, stats, text, rarity = self._get_single_face_display_data(ansi_color=ansi_color, include_text=include_text)
+        name, cost, cmc, typeline, stats, text, rarity = self._get_single_face_display_data(ansi_color=ansi_color, include_text=include_text)
 
         if self.bside:
-            b_name, b_cost, b_typeline, b_stats, b_text, b_rarity = self.bside._get_display_data(ansi_color=ansi_color, include_text=include_text)
+            b_name, b_cost, b_cmc, b_typeline, b_stats, b_text, b_rarity = self.bside._get_display_data(ansi_color=ansi_color, include_text=include_text)
             name = f"{name} // {b_name}"
             cost = f"{cost} // {b_cost}"
+            cmc = f"{cmc} // {b_cmc}"
             typeline = f"{typeline} // {b_typeline}"
             stats = f"{stats} // {b_stats}" if stats and b_stats else (stats or b_stats)
             if include_text:
@@ -599,7 +605,7 @@ class Card:
             if b_rarity and b_rarity != rarity:
                 rarity = f"{rarity} // {b_rarity}"
 
-        return name, cost, typeline, stats, text, rarity
+        return name, cost, cmc, typeline, stats, text, rarity
 
     @property
     def mechanics(self):
@@ -1472,19 +1478,19 @@ class Card:
 
     def to_markdown_row(self):
         """Returns a Markdown table row representation of the card."""
-        name, cost, typeline, stats, text, rarity = self._get_display_data(include_text=True)
+        name, cost, cmc, typeline, stats, text, rarity = self._get_display_data(include_text=True)
 
         # Escape pipe characters and ensure no actual newlines break the row
-        fields = [name, cost, typeline, stats, text, rarity]
+        fields = [name, cost, cmc, typeline, stats, text, rarity]
         fields = [f.replace('|', '\\|').replace('\n', ' ') for f in fields]
 
         return f"| {' | '.join(fields)} |"
 
     def to_table_row(self, ansi_color=False):
         """Returns a list of strings representing the card's fields for a terminal table."""
-        name, cost, typeline, stats, _, rarity = self._get_display_data(ansi_color=ansi_color)
+        name, cost, cmc, typeline, stats, _, rarity = self._get_display_data(ansi_color=ansi_color)
 
-        return [name, cost, typeline, stats, rarity]
+        return [name, cost, cmc, typeline, stats, rarity]
 
     def vectorize(self):
         """Vectorizes the card data into a string format suitable for machine learning.
