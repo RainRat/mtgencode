@@ -289,7 +289,12 @@ def fields_from_json(src_json, linetrans = True):
         
 
     if 'rarity' in src_json:
-        if src_json['rarity'] in utils.json_rarity_map:
+        # Use lowercase for robust rarity lookup
+        rarity_key = src_json['rarity'].lower() if hasattr(src_json['rarity'], 'lower') else src_json['rarity']
+        # Also try direct match if lowercase lookup fails (just in case)
+        if rarity_key in utils.json_rarity_map:
+            fields[field_rarity] = [(-1, utils.json_rarity_map[rarity_key])]
+        elif src_json['rarity'] in utils.json_rarity_map:
             fields[field_rarity] = [(-1, utils.json_rarity_map[src_json['rarity']])]
         else:
             fields[field_rarity] = [(-1, src_json['rarity'])]
@@ -605,6 +610,12 @@ class Card:
     def mechanics(self):
         """Returns a set of mechanical features and keyword abilities identified on the card."""
         text_raw = self.text.text.lower()
+        # To handle cards named after keywords (e.g., card "Exile" with rule text "@ target..."),
+        # we create a search string where @ is replaced by the card name.
+        # We replace spaces with underscores to avoid false positives from names like "Trample Bear".
+        safe_name = self.name.lower().replace(' ', '_')
+        text_search = text_raw.replace(utils.this_marker, safe_name)
+
         text_enc = self.text.encode().lower()
         cost_enc = self.cost.encode()
 
@@ -616,12 +627,12 @@ class Card:
 
         # Triggered: check start of lines
         for mt in self.text_lines:
-            line = mt.text.lower().strip()
+            line = mt.text.lower().strip().replace(utils.this_marker, safe_name)
             if line.startswith('when') or line.startswith('whenever') or line.startswith('at '):
                 m.add('Triggered')
                 break
 
-        if 'enters the battlefield' in text_raw or 'enters,' in text_raw or 'enters.' in text_raw:
+        if 'enters the battlefield' in text_search or 'enters,' in text_search or 'enters.' in text_search:
             m.add('ETB Effect')
 
         if utils.choice_open_delimiter in text_enc or utils.choice_close_delimiter in text_enc or '=' in text_enc:
@@ -658,7 +669,7 @@ class Card:
 
         for pattern, label in keywords:
             # Use word boundaries for keywords to avoid partial matches
-            if re.search(r'\b' + pattern + r'\b', text_raw):
+            if re.search(r'\b' + pattern + r'\b', text_search):
                 m.add(label)
 
         # Recursive profiling for split/double-faced cards

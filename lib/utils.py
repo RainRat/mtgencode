@@ -62,11 +62,13 @@ json_rarity_map = {
     'Rare' : rarity_rare_marker,
     'rare' : rarity_rare_marker,
     'Mythic Rare' : rarity_mythic_marker,
+    'mythic rare' : rarity_mythic_marker,
     'Mythic' : rarity_mythic_marker,
     'mythic' : rarity_mythic_marker,
     'Special' : rarity_special_marker,
     'special' : rarity_special_marker,
     'Basic Land' : rarity_basic_land_marker,
+    'basic land' : rarity_basic_land_marker,
 }
 json_rarity_unmap = {v: k for k, v in json_rarity_map.items()}
 
