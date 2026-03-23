@@ -84,6 +84,22 @@ def color_line(text, use_color, color_code=utils.Ansi.BOLD + utils.Ansi.CYAN):
         return utils.colorize(text, color_code)
     return text
 
+def _colorize_header(header, use_color):
+    if use_color:
+        return [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+    return header
+
+def _get_bar_chart(percent, use_color, color=None):
+    bar_width = 10
+    filled = int(round(percent / 100 * bar_width))
+    if filled == 0 and percent > 0:
+        filled = 1
+    bar = '[' + '█' * filled + ' ' * (bar_width - filled) + ']'
+    if use_color:
+        bar_color = color if color else (utils.Ansi.BOLD + utils.Ansi.GREEN)
+        bar = utils.colorize(bar, bar_color)
+    return bar
+
 def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, reverse=True, key_formatter=None):
     if not index:
         return
@@ -127,9 +143,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
     elif 'mechanic' in t_lower:
         cat_header = 'Mechanic'
 
-    header_row = [cat_header, 'Count', 'Percent', 'Distribution']
-    if use_color:
-        header_row = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header_row]
+    header_row = _colorize_header([cat_header, 'Count', 'Percent', 'Distribution'], use_color)
 
     rows = [header_row]
     for k in keys:
@@ -154,14 +168,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
                 display_key = utils.colorize(display_key, display_color)
 
         # Bar chart
-        bar_width = 10
-        filled = int(round(percent / 100 * bar_width))
-        if filled == 0 and percent > 0:
-            filled = 1
-        bar = '[' + '█' * filled + ' ' * (bar_width - filled) + ']'
-        if use_color:
-            bar_color = display_color if display_color else (utils.Ansi.BOLD + utils.Ansi.GREEN)
-            bar = utils.colorize(bar, bar_color)
+        bar = _get_bar_chart(percent, use_color, color=display_color)
 
         rows.append([
             display_key,
@@ -177,9 +184,7 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
     print()
     print('  ' + color_line('Mechanical Color Pie (Frequency %):', use_color))
 
-    header = ['Mechanic', 'W', 'U', 'B', 'R', 'G', 'A', 'M']
-    if use_color:
-        header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+    header = _colorize_header(['Mechanic', 'W', 'U', 'B', 'R', 'G', 'A', 'M'], use_color)
 
     rows = [header]
     # Sort mechanics by total frequency
@@ -226,9 +231,7 @@ def _print_mechanical_stats(mechanical_stats, use_color, vsize=None):
     print()
     print('  ' + color_line('Mechanical Budget Analysis (Averages):', use_color))
 
-    header = ['Mechanic', 'Count', 'CMC', 'P/T']
-    if use_color:
-        header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+    header = _colorize_header(['Mechanic', 'Count', 'CMC', 'P/T'], use_color)
 
     rows = [header]
     # Sort by frequency
@@ -425,14 +428,9 @@ class Datamine:
 
             for label, count in [('Matched', matched), ('Filtered Out', filtered)]:
                 percent = (count / total * 100) if total > 0 else 0
-                bar_width = 10
-                filled = int(round(percent / 100 * bar_width))
-                if filled == 0 and percent > 0:
-                    filled = 1
-                bar = '[' + '█' * filled + ' ' * (bar_width - filled) + ']'
-                if use_color:
-                    color = utils.Ansi.BOLD + utils.Ansi.GREEN if label == 'Matched' else utils.Ansi.BOLD + utils.Ansi.RED
-                    bar = utils.colorize(bar, color)
+                color = (utils.Ansi.BOLD + utils.Ansi.GREEN if label == 'Matched'
+                         else utils.Ansi.BOLD + utils.Ansi.RED)
+                bar = _get_bar_chart(percent, use_color, color=color)
 
                 rows.append([
                     label,
@@ -548,9 +546,7 @@ class Datamine:
         print(color_line('OUTLIER ANALYSIS', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
         print('  ' + color_line('Overview of indices:', use_color))
 
-        header_row = ['  Index Name', 'Keys', 'Total Members']
-        if use_color:
-            header_row = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header_row]
+        header_row = _colorize_header(['  Index Name', 'Keys', 'Total Members'], use_color)
 
         rows = [header_row]
         for index in self.indices:
