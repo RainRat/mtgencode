@@ -377,6 +377,20 @@ python3 scripts/mtg_validate.py data/AllPrintings.json --dump
     *   `-d`, `--dump`: Print full details for cards that failed validation.
     *   `-v`, `--verbose`: Enable detailed status messages.
 
+### `mtg_diff.py`
+Compares two card datasets and identifies additions, removals, and modifications. It highlights changes in cost, type, stats, text, and rarity.
+```bash
+# Compare two JSON datasets
+python3 scripts/mtg_diff.py data/OldSet.json data/NewSet.json
+
+# Compare encoded text against official data
+python3 scripts/mtg_diff.py data/AllPrintings.json generated_cards.txt
+```
+*   **Options:**
+    *   `--summary-only`: Only show count summary, not detailed card diffs.
+    *   `--color` / `--no-color`: Enable or disable ANSI color output.
+    *   Supports all **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
+
 ### `json2csv.py`, `csv2json.py` & `combinejson.py`
 Used for integrating custom cards into your dataset. These scripts let you export existing cards to CSV, convert spreadsheets to JSON, and merge them with official data. See [CUSTOM.md](CUSTOM.md) for a full guide.
 ```bash
