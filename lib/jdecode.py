@@ -494,7 +494,7 @@ def mtg_open_mse_content(content, verbose=False):
         d = {
             'name': c.get('name', ''),
             'manaCost': _format_mana_json(c.get('casting cost', '')),
-            'rarity': c.get('rarity', '').capitalize(),
+            'rarity': c.get('rarity', ''),
             'text': c.get('rule text', ''),
         }
         if c.get('power'): d['power'] = c['power']
@@ -536,7 +536,7 @@ def mtg_open_mse_content(content, verbose=False):
             b = {
                 'name': c.get('name 2', ''),
                 'manaCost': _format_mana_json(c.get('casting cost 2', '')),
-                'rarity': c.get('rarity 2', d['rarity']).capitalize(),
+                'rarity': c.get('rarity 2', d['rarity']),
                 'text': c.get('rule text 2', ''),
             }
             if c.get('power 2'): b['power'] = c['power 2']
