@@ -211,11 +211,11 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         if for_md_table:
             if booster > 0:
-                writer.write("| Pack | Name | Cost | Type | Stats | Rules Text | Rarity |\n")
-                writer.write("| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n")
+                writer.write("| Pack | Name | Cost | CMC | Type | Stats | Rules Text | Rarity |\n")
+                writer.write("| ---: | :--- | :--- | ---: | :--- | ---: | :--- | :--- |\n")
             else:
-                writer.write("| Name | Cost | Type | Stats | Rules Text | Rarity |\n")
-                writer.write("| :--- | :--- | :--- | :--- | :--- | :--- |\n")
+                writer.write("| Name | Cost | CMC | Type | Stats | Rules Text | Rarity |\n")
+                writer.write("| :--- | :--- | ---: | :--- | ---: | :--- | :--- |\n")
         if for_mse:
             # have to prepend a massive chunk of formatting info
             writer.write(utils.mse_prepend)
@@ -294,7 +294,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 use_color = True
 
             rows = []
-            header = ["Name", "Cost", "Type", "Stats", "Rarity"]
+            header = ["Name", "Cost", "CMC", "Type", "Stats", "Rarity"]
             if booster > 0:
                 header.insert(0, "Pack")
             if use_color:
@@ -318,8 +318,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             if booster > 0:
                 aligns[0] = 'r' # Right-align Pack column
 
-            # Right-align Stats column (index 3, or 4 if booster)
-            stats_idx = 4 if booster > 0 else 3
+            # Right-align CMC column (index 2, or 3 if booster)
+            cmc_idx = 3 if booster > 0 else 2
+            if cmc_idx < len(aligns):
+                aligns[cmc_idx] = 'r'
+
+            # Right-align Stats column (index 4, or 5 if booster)
+            stats_idx = 5 if booster > 0 else 4
             if stats_idx < len(aligns):
                 aligns[stats_idx] = 'r'
 

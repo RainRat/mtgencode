@@ -44,13 +44,13 @@ def test_markdown_table_format():
     src = "|1Table Card|5Creature|6Human|3{WW}|8&^/&^|9Lifelink|0O"
     card = cardlib.Card(src)
     row = card.to_markdown_row()
-    assert "| Table Card | {W} | Creature — Human | 1/1 | Lifelink | common |" in row
+    assert "| Table Card | {W} | 1 | Creature — Human | 1/1 | Lifelink | common |" in row
 
 def test_markdown_table_split_card():
     src = "|1Fire|5Sorcery|3{RR}|9Fire deals &^^ damage to any target.\n|1Ice|5Sorcery|3{^}{UU}|9Draw a card."
     card = cardlib.Card(src)
     row = card.to_markdown_row()
-    assert "| Fire // Ice | {R} // {1}{U} | Sorcery // Sorcery |  | Fire deals 2 damage to any target.<br>---<br>Draw a card. |  |" in row
+    assert "| Fire // Ice | {R} // {1}{U} | 1 // 2 | Sorcery // Sorcery |  | Fire deals 2 damage to any target.<br>---<br>Draw a card. |  |" in row
 
 def test_decode_markdown_table_cli(tmp_path):
     infile = tmp_path / "input.txt"
@@ -61,8 +61,8 @@ def test_decode_markdown_table_cli(tmp_path):
     decode.main(str(infile), str(outfile), quiet=True, verbose=False)
 
     content = outfile.read_text(encoding="utf-8")
-    assert "| Name | Cost | Type | Stats | Rules Text | Rarity |" in content
-    assert "| Table Card | {W} | Creature — Human | 1/1 | Lifelink | common |" in content
+    assert "| Name | Cost | CMC | Type | Stats | Rules Text | Rarity |" in content
+    assert "| Table Card | {W} | 1 | Creature — Human | 1/1 | Lifelink | common |" in content
 
 def test_decode_markdown_table_flag(tmp_path):
     infile = tmp_path / "input.txt"
@@ -73,5 +73,5 @@ def test_decode_markdown_table_flag(tmp_path):
     decode.main(str(infile), str(outfile), md_table_out=True, quiet=True, verbose=False)
 
     content = outfile.read_text(encoding="utf-8")
-    assert "| Name | Cost | Type | Stats | Rules Text | Rarity |" in content
-    assert "| Flag Card | {G} | Sorcery |  | Add {G}. | rare |" in content
+    assert "| Name | Cost | CMC | Type | Stats | Rules Text | Rarity |" in content
+    assert "| Flag Card | {G} | 1 | Sorcery |  | Add {G}. | rare |" in content
