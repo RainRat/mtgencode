@@ -11,6 +11,7 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import cardlib
+import datalib
 
 # Try to import tqdm for progress bars
 try:
@@ -439,7 +440,7 @@ def main(fname, oname = None, verbose = False, dump = False,
          pows=None, tous=None, loys=None,
          mechanics=None,
          shuffle = False, seed = None, quiet = False, decklist_file = None,
-         booster = 0, sort = None, limit = 0):
+         booster = 0, sort = None, limit = 0, use_color = None):
 
     # Use the robust mtg_open_file for all loading and filtering.
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
@@ -465,6 +466,19 @@ def main(fname, oname = None, verbose = False, dump = False,
 
     if limit > 0:
         cards = cards[:limit]
+
+    # Initialize summary statistics to avoid UnboundLocalError
+    total_all = 0
+    total_good = 0
+    total_bad = 0
+    total_uncovered = 0
+
+    # Determine if we should use color
+    actual_use_color = False
+    if use_color is True:
+        actual_use_color = True
+    elif use_color is None and not oname and sys.stdout.isatty():
+        actual_use_color = True
 
     output_f = sys.stdout
     if oname:
@@ -509,32 +523,105 @@ def main(fname, oname = None, verbose = False, dump = False,
                 print('95% - ' + str(pct95))
                 print('99% - ' + str(pct99))
 
-        else:
+        elif cards:
             with redirect_stdout(output_f):
                 ((total_all, total_good, total_bad, total_uncovered),
                  values) = process_props(cards, dump=dump, quiet=quiet)
 
                 # summary
-                print('-- overall --')
-                print(('  total     : ' + str(total_all)))
-                print(('  good      : ' + str(total_good) +
-                       ' ' + pct(total_good, total_all)))
-                print(('  bad       : ' + str(total_bad) + ' ' + pct(total_bad, total_all)))
-                print(('  uncovered : ' + str(total_uncovered) +
-                       ' ' + pct(total_uncovered, total_all)))
-                print('----')
+                header = 'VALIDATION SUMMARY'
+                if actual_use_color:
+                    header = utils.colorize(header, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
+                print(header)
+
+                rows = []
+                h_overall = ["Category", "Count", "Percent", "Progress"]
+                if actual_use_color:
+                    h_overall = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in h_overall]
+                rows.append(h_overall)
+
+                summary_data = [
+                    ('Valid Cards', total_good, utils.Ansi.BOLD + utils.Ansi.GREEN),
+                    ('Invalid Cards', total_bad, utils.Ansi.BOLD + utils.Ansi.RED),
+                    ('Uncovered Cards', total_uncovered, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                ]
+
+                for label, count, color in summary_data:
+                    percent = (count / total_all * 100) if total_all > 0 else 0
+
+                    bar_width = 10
+                    filled = int(round(percent / 100 * bar_width))
+                    if filled == 0 and percent > 0:
+                        filled = 1
+                    bar = '[' + '█' * filled + ' ' * (bar_width - filled) + ']'
+
+                    if actual_use_color:
+                        label_colored = utils.colorize(label, color)
+                        count_colored = datalib.color_count(count, actual_use_color, color)
+                        bar_colored = utils.colorize(bar, color)
+                    else:
+                        label_colored = label
+                        count_colored = str(count)
+                        bar_colored = bar
+
+                    rows.append([label_colored, count_colored, f"{percent:5.1f}%", bar_colored])
+
+                datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
+                print()
 
                 # breakdown
+                header_breakdown = 'PROPERTY BREAKDOWN'
+                if actual_use_color:
+                    header_breakdown = utils.colorize(header_breakdown, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
+                print(header_breakdown)
+
+                b_rows = []
+                h_breakdown = ["Property", "Total", "Good", "Bad", "Success %", "Chart"]
+                if actual_use_color:
+                    h_breakdown = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in h_breakdown]
+                b_rows.append(h_breakdown)
+
                 for prop in props:
                     (total, good, bad) = values[prop]
                     if total > 0:
-                        print((prop + ':'))
-                        print(('  total: ' + str(total) + ' ' + pct(total, total_all)))
-                        print(('  good : ' + str(good) + ' ' + pct(good, total_all)))
-                        print(('  bad  : ' + str(bad) + ' ' + pct(bad, total_all)))
+                        success_pct = (good / total * 100) if total > 0 else 0
+
+                        bar_width = 10
+                        filled = int(round(success_pct / 100 * bar_width))
+                        if filled == 0 and success_pct > 0:
+                            filled = 1
+                        bar = '[' + '█' * filled + ' ' * (bar_width - filled) + ']'
+
+                        if actual_use_color:
+                            prop_colored = utils.colorize(prop, utils.Ansi.CYAN)
+                            good_colored = datalib.color_count(good, actual_use_color, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                            bad_colored = datalib.color_count(bad, actual_use_color, utils.Ansi.BOLD + utils.Ansi.RED if bad > 0 else utils.Ansi.BOLD)
+                            bar_color = utils.Ansi.BOLD + utils.Ansi.GREEN if success_pct == 100 else (utils.Ansi.BOLD + utils.Ansi.YELLOW if success_pct >= 80 else utils.Ansi.BOLD + utils.Ansi.RED)
+                            bar_colored = utils.colorize(bar, bar_color)
+                        else:
+                            prop_colored = prop
+                            good_colored = str(good)
+                            bad_colored = str(bad)
+                            bar_colored = bar
+
+                        b_rows.append([
+                            prop_colored,
+                            str(total),
+                            good_colored,
+                            bad_colored,
+                            f"{success_pct:5.1f}%",
+                            bar_colored
+                        ])
+
+                datalib.printrows(datalib.padrows(b_rows, aligns=['l', 'r', 'r', 'r', 'r', 'l']), indent=2)
+
     finally:
         if oname:
             output_f.close()
+
+    # Provide clear feedback on operation completion
+    if not quiet:
+        utils.print_operation_summary("Validation", total_good, total_bad, quiet=quiet)
 
 
 if __name__ == '__main__':
@@ -631,6 +718,13 @@ if __name__ == '__main__':
     debug_group.add_argument('-q', '--quiet', action='store_true',
                         help='Suppress the progress bar.')
 
+    # Color options
+    color_group = debug_group.add_mutually_exclusive_group()
+    color_group.add_argument('--color', action='store_true', default=None,
+                        help='Force enable ANSI color output.')
+    color_group.add_argument('--no-color', action='store_false', dest='color',
+                        help='Disable ANSI color output.')
+
     args = parser.parse_args()
 
     # Handle --sample
@@ -651,5 +745,5 @@ if __name__ == '__main__':
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
          shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, decklist_file = args.deck,
-         booster = args.booster, sort = args.sort, limit = args.limit)
+         booster = args.booster, sort = args.sort, limit = args.limit, use_color = args.color)
     exit(0)
