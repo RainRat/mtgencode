@@ -9,26 +9,32 @@ libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 import utils
 
-#convert a CSV file (that follows a specific format) to JSON, If you want to have custom cards in whole or part of your training.
-
-# 1. Edit custom.csv (or create your own .csv) following the format in custom.csv
-# 2. Convert your custom.csv to json, i.e. "python csv2json.py custom.csv custom.json"
-# 3. Merge your json with the full official json, i.e. "python combinejson.py AllPrintings.json custom.json AllCustom.json"
+"""
+This script converts a specially formatted CSV file into the JSON format
+used by the MTG Card Encoder. This is useful for adding your own custom
+cards to the AI training dataset.
+"""
 
 parser = argparse.ArgumentParser(
-    description='Converts a CSV file of custom Magic cards into MTGJSON format.',
+    description='Convert a CSV file of custom Magic cards into MTGJSON format.',
     epilog='''
-CSV Format:
-  The CSV must have at least 7 columns in this order:
-  1. Name (e.g., "Giant Growth")
-  2. Mana Cost (e.g., "{G}")
-  3. Types & Supertypes (e.g., "Legendary Creature")
-  4. Subtypes (e.g., "Elf Warrior")
-  5. Rules Text (e.g., "Target creature gets +3/+3 until end of turn.")
-  6. P/T, Loyalty, or Defense (e.g., "3/3" for creatures, "5" for Planeswalkers)
-  7. Rarity (e.g., "C", "U", "R", "M")
+Custom Card Workflow:
+  1. Create a CSV file (e.g., custom.csv) following the format below.
+  2. Convert to JSON:
+     python3 scripts/csv2json.py custom.csv custom.json
+  3. Merge with official data:
+     python3 scripts/combinejson.py data/AllPrintings.json custom.json AllCustom.json
 
-  The first row (header) is ignored if the first column is exactly "name".
+CSV Format (7 columns in this order):
+  1. Name: The name of the card (e.g., "Giant Growth").
+  2. Mana Cost: The mana symbols in braces (e.g., "{G}" or "{1}{W}{B}").
+  3. Types: Supertypes and card types (e.g., "Legendary Creature").
+  4. Subtypes: Subtypes separated by spaces (e.g., "Elf Warrior").
+  5. Text: Rules text. Use "\\\\" for new lines.
+  6. Stats: Power/Toughness (3/3), Loyalty (5), or Defense (3).
+  7. Rarity: Short marker (C, U, R, M) or full name (common, rare, etc.).
+
+Note: The first row is ignored if the first column is exactly "name".
 ''',
     formatter_class=argparse.RawDescriptionHelpFormatter
 )
