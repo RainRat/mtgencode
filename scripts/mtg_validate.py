@@ -440,7 +440,7 @@ def main(fname, oname = None, verbose = False, dump = False,
          pows=None, tous=None, loys=None,
          mechanics=None,
          shuffle = False, seed = None, quiet = False, decklist_file = None,
-         booster = 0, sort = None, limit = 0, use_color = None):
+         booster = 0, sort = None, limit = 0, use_color = None, box = 0):
 
     # Use the robust mtg_open_file for all loading and filtering.
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
@@ -458,7 +458,8 @@ def main(fname, oname = None, verbose = False, dump = False,
                                   mechanics=mechanics,
                                   shuffle=shuffle, seed=seed,
                                   decklist_file=decklist_file,
-                                  booster=booster)
+                                  booster=booster,
+                                  box=box)
 
     if sort:
         import sortlib
@@ -661,6 +662,8 @@ if __name__ == '__main__':
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs.')
+    proc_group.add_argument('--box', type=int, default=0,
+                        help='Simulate opening N booster boxes (36 packs each).')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -745,5 +748,5 @@ if __name__ == '__main__':
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
          shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, decklist_file = args.deck,
-         booster = args.booster, sort = args.sort, limit = args.limit, use_color = args.color)
+         booster = args.booster, sort = args.sort, limit = args.limit, use_color = args.color, box = args.box)
     exit(0)

@@ -20,7 +20,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          sets=None, rarities=None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
          mechanics=None,
-         seed=None, decklist_file=None, booster=0):
+         seed=None, decklist_file=None, booster=0, box=0):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
     fieldsep = utils.fieldsep
@@ -82,7 +82,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   pows=pows, tous=tous, loys=loys,
                                   mechanics=mechanics,
                                   shuffle=not stable, seed=seed if seed is not None else 1371367,
-                                  decklist_file=decklist_file, booster=booster)
+                                  decklist_file=decklist_file, booster=booster, box=box)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -166,10 +166,12 @@ if __name__ == '__main__':
                         help='Seed for the random number generator (Default: 1371367).')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --limit N). Shuffling is enabled unless --stable is used.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
                         help='Sort cards by a specific criterion (enables --stable).')
     proc_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
+    proc_group.add_argument('--box', type=int, default=0,
+                        help='Simulate opening N booster boxes (36 packs each). Shuffles by default.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -248,5 +250,5 @@ if __name__ == '__main__':
          sets=args.set, rarities=args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
-         seed=args.seed, decklist_file=args.deck, booster=args.booster)
+         seed=args.seed, decklist_file=args.deck, booster=args.booster, box=args.box)
     exit(0)

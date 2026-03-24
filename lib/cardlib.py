@@ -1351,6 +1351,8 @@ class Card:
         if self.number:
             d['number'] = self.number
 
+        if hasattr(self, 'box_id'):
+            d['box_id'] = self.box_id
         if hasattr(self, 'pack_id'):
             d['pack_id'] = self.pack_id
 

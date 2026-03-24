@@ -255,7 +255,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          pows=None, tous=None, loys=None,
          mechanics=None,
          shuffle = False, seed = None, decklist_file = None,
-         booster = 0):
+         booster = 0, box = 0):
 
     # Determine format
     fmt_ordered = cardlib.fmt_ordered_default
@@ -293,7 +293,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   exclude_layouts=lambda x: False,
                                   shuffle=shuffle, seed=seed,
                                   decklist_file=decklist_file,
-                                  booster=booster)
+                                  booster=booster, box=box)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -411,7 +411,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Randomize the order of cards before sorting.')
@@ -467,6 +467,8 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
     proc_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
+    proc_group.add_argument('--box', type=int, default=0,
+                        help='Simulate opening N booster boxes (36 packs each). Shuffles by default.')
     proc_group.add_argument('-S', '--summary', action='store_true',
                         help='Output compact card summaries instead of full encoded text.')
     proc_group.add_argument('--md', '--markdown', action='store_true',
@@ -520,7 +522,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
          shuffle = args.shuffle, seed = args.seed, decklist_file = args.deck,
-         booster = args.booster)
+         booster = args.booster, box = args.box)
 
 if __name__ == '__main__':
     cli()

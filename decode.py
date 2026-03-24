@@ -33,7 +33,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          sets=None, rarities=None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
          mechanics=None,
-         shuffle=False, seed=None, decklist_file=None, booster=0):
+         shuffle=False, seed=None, decklist_file=None, booster=0, box=0):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -118,7 +118,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   pows=pows, tous=tous, loys=loys,
                                   mechanics=mechanics,
                                   shuffle=shuffle, seed=seed, decklist_file=decklist_file,
-                                  booster=booster)
+                                  booster=booster, box=box)
 
     if sort:
         cards = sortlib.sort_cards(cards, sort, quiet=quiet)
@@ -178,6 +178,14 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     def writecards(writer, for_html=False, for_md=False, for_table=False, for_md_table=False, for_summary=False, for_mse=False, for_xml=False):
         success_count = 0
         fail_count = 0
+
+        # Determine if we should use ANSI color for this writer/format
+        use_color = False
+        if not (for_html or for_mse or for_md or for_xml):
+            if color_arg is True:
+                use_color = True
+            elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
+                use_color = True
 
         def get_nav_bar(groups):
             if not groups or len(groups) <= 1:
@@ -240,7 +248,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                      + f'Pack {current_pack}<a href="#top" class="back-to-top">back to top</a></h2>'
                                      + '<div style="overflow: auto;">')
                     try:
-                        writecard(writer, card, for_html=True, for_mse=for_mse)
+                        writecard(writer, card, use_color=False, for_html=True, for_mse=for_mse)
                         success_count += 1
                     except Exception:
                         fail_count += 1
@@ -276,7 +284,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 writer.write('<div>')
                 for card in segments[i]:
                     try:
-                        writecard(writer, card, for_html=True, for_mse=for_mse)
+                        writecard(writer, card, use_color=False, for_html=True, for_mse=for_mse)
                         success_count += 1
                     except Exception:
                         fail_count += 1
@@ -287,16 +295,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         if for_table:
             import datalib
-            use_color = False
-            if color_arg is True:
-                use_color = True
-            elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
-                use_color = True
-
             rows = []
             header = ["Name", "Cost", "CMC", "Type", "Stats", "Rarity"]
-            if booster > 0:
+            if booster > 0 or box > 0:
                 header.insert(0, "Pack")
+            if box > 0:
+                header.insert(0, "Box")
+
             if use_color:
                 header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
             rows.append(header)
@@ -304,27 +309,42 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             for card in tqdm(cards, disable=quiet or len(cards) < 5, desc="Decoding"):
                 try:
                     row = card.to_table_row(ansi_color=use_color)
-                    if booster > 0:
+                    if booster > 0 or box > 0:
                         pack_id = str(getattr(card, 'pack_id', '?'))
                         if use_color:
                             pack_id = utils.colorize(pack_id, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
                         row.insert(0, pack_id)
+                    if box > 0:
+                        box_id = str(getattr(card, 'box_id', '?'))
+                        if use_color:
+                            box_id = utils.colorize(box_id, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                        row.insert(0, box_id)
                     rows.append(row)
                     success_count += 1
                 except Exception:
                     fail_count += 1
 
             aligns = ['l'] * len(header)
-            if booster > 0:
-                aligns[0] = 'r' # Right-align Pack column
+            # Right-align Box/Pack columns
+            if box > 0:
+                aligns[0] = 'r' # Box
+                aligns[1] = 'r' # Pack
+            elif booster > 0:
+                aligns[0] = 'r' # Pack
 
-            # Right-align CMC column (index 2, or 3 if booster)
-            cmc_idx = 3 if booster > 0 else 2
+            # Right-align CMC column
+            cmc_idx = 2
+            if box > 0: cmc_idx = 4
+            elif booster > 0: cmc_idx = 3
+
             if cmc_idx < len(aligns):
                 aligns[cmc_idx] = 'r'
 
-            # Right-align Stats column (index 4, or 5 if booster)
-            stats_idx = 5 if booster > 0 else 4
+            # Right-align Stats column
+            stats_idx = 4
+            if box > 0: stats_idx = 6
+            elif booster > 0: stats_idx = 5
+
             if stats_idx < len(aligns):
                 aligns[stats_idx] = 'r'
 
@@ -340,21 +360,31 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         first = True
         total = len(cards)
         current_pack = 0
+        current_box = 0
         for i, card in enumerate(tqdm(cards, disable=quiet or total < 5, desc="Decoding")):
             try:
+                # Box header
+                if box > 0 and not sort and not (for_mse or for_md_table or for_xml) and hasattr(card, 'box_id') and card.box_id != current_box:
+                    current_box = card.box_id
+                    header = f"=== Box {current_box} ==="
+                    if for_md:
+                        header = f"# {header}"
+
+                    if use_color:
+                        header = utils.colorize(header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+
+                    if not first:
+                        writer.write('\n')
+                    writer.write(header + '\n\n')
+                    first = True
+                    current_pack = 0 # Reset pack count for new box
+
                 # Pack header for non-HTML/non-MSE/non-XML formats
-                if booster > 0 and not sort and not (for_mse or for_md_table or for_xml) and hasattr(card, 'pack_id') and card.pack_id != current_pack:
+                if (booster > 0 or box > 0) and not sort and not (for_mse or for_md_table or for_xml) and hasattr(card, 'pack_id') and card.pack_id != current_pack:
                     current_pack = card.pack_id
                     header = f"== Pack {current_pack} =="
                     if for_md:
                         header = f"## {header}"
-
-                    use_color = False
-                    if not for_html and not for_mse and not for_md and not for_xml:
-                        if color_arg is True:
-                            use_color = True
-                        elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
-                            use_color = True
 
                     if use_color:
                         header = utils.colorize(header, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
@@ -366,19 +396,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
                 if not first and not (for_html or for_md or for_mse or for_summary or for_md_table or for_xml):
                     # Add a divider between cards for console output
-                    use_color = False
-                    if color_arg is True:
-                        use_color = True
-                    elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
-                        use_color = True
-
                     index_str = f" [ Card {i+1} / {total} ] "
                     divider = "--" + index_str + "-" * max(2, 40 - 2 - len(index_str))
                     if use_color:
                         divider = utils.colorize(divider, utils.Ansi.BOLD + utils.Ansi.CYAN)
                     writer.write(divider + '\n')
 
-                writecard(writer, card, for_md=for_md, for_md_table=for_md_table, for_summary=for_summary, for_mse=for_mse, for_xml=for_xml)
+                writecard(writer, card, use_color=use_color, for_md=for_md, for_md_table=for_md_table, for_summary=for_summary, for_mse=for_mse, for_xml=for_xml)
                 success_count += 1
                 first = False
             except Exception:
@@ -393,7 +417,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         return success_count, fail_count
 
-    def writecard(writer, card, for_html=False, for_md=False, for_md_table=False, for_summary=False, for_mse=False, for_xml=False):
+    def writecard(writer, card, use_color=False, for_html=False, for_md=False, for_md_table=False, for_summary=False, for_mse=False, for_xml=False):
         try:
             if for_xml:
                 writer.write(card.to_cockatrice_xml() + '\n')
@@ -418,28 +442,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 fstring = fstring.replace('<', '(').replace('>', ')')
                 writer.write(('\n' + fstring[:-1]).replace('\n', '\n\t\t'))
             elif for_summary:
-                # Determine if we should use color
-                use_color = False
-                if color_arg is True:
-                    use_color = True
-                elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
-                    use_color = True
-
                 writer.write(card.summary(ansi_color=use_color) + '\n')
                 return
             else:
-                # Determine if we should use color
-                # Use color if:
-                # 1. User explicitly requested it (color_arg == True)
-                # 2. User didn't specify (color_arg == None) AND writer is stdout AND stdout is a TTY
-                # 3. User didn't disable it (color_arg != False)
-                use_color = False
-                if not for_html and not for_mse and not for_md:
-                    if color_arg is True:
-                        use_color = True
-                    elif color_arg is None and writer == sys.stdout and sys.stdout.isatty():
-                        use_color = True
-
                 fstring = card.format(gatherer = gatherer, for_forum = for_forum,
                                       vdump = vdump, for_html = for_html, ansi_color = use_color, for_md = for_md)
                 if for_html and creativity:
@@ -793,10 +798,12 @@ if __name__ == '__main__':
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
+    proc_group.add_argument('--box', type=int, default=0,
+                        help='Simulate opening N booster boxes (36 packs each). Shuffles by default.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -893,6 +900,6 @@ if __name__ == '__main__':
          sets=args.set, rarities=args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
-         shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter, booster=args.booster)
+         shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter, booster=args.booster, box=args.box)
 
     exit(0)
