@@ -110,3 +110,32 @@ def test_mechanics_bside_recursive():
     }
     card = Card(split_card)
     assert 'Draw A Card' in card.mechanics
+
+def test_mechanics_defender_keyword():
+    """Verify that 'Defender' is identified as a keyword ability."""
+    card = Card({
+        "name": "Wall of Omens",
+        "manaCost": "{1}{W}",
+        "types": ["Creature"],
+        "subtypes": ["Wall"],
+        "text": "Defender\nWhen @ enters the battlefield, draw a card.",
+        "rarity": "Uncommon",
+        "power": "0",
+        "toughness": "4"
+    })
+    assert 'Defender' in card.mechanics
+    assert 'ETB Effect' in card.mechanics
+    assert 'Draw A Card' in card.mechanics
+
+def test_mechanics_defender_plural_boundary():
+    """Verify that 'Defender' does not match 'Defenders' or other partial words."""
+    card = Card({
+        "name": "Defender of Chaos",
+        "types": ["Creature"],
+        "text": "Defenders of the faith get +1/+1.",
+        "rarity": "Common",
+        "power": "2",
+        "toughness": "2"
+    })
+    # 'Defenders' should NOT trigger 'Defender'
+    assert 'Defender' not in card.mechanics

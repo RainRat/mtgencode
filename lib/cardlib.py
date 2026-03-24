@@ -668,9 +668,9 @@ class Card:
             ('haste', 'Haste'), ('deathtouch', 'Deathtouch'), ('vigilance', 'Vigilance'),
             ('ward', 'Ward'), ('prowess', 'Prowess'), ('menace', 'Menace'),
             ('reach', 'Reach'), ('flash', 'Flash'), ('indestructible', 'Indestructible'),
-            ('scry', 'Scry'), ('draw a card', 'Draw A Card'), ('mill', 'Mill'),
-            ('exile', 'Exile'), (r'tokens?', 'Token'), ('discard', 'Discard'),
-            ('cycling', 'Cycling')
+            ('defender', 'Defender'), ('scry', 'Scry'), ('draw a card', 'Draw A Card'),
+            ('mill', 'Mill'), ('exile', 'Exile'), (r'tokens?', 'Token'),
+            ('discard', 'Discard'), ('cycling', 'Cycling')
         ]
 
         for pattern, label in keywords:
