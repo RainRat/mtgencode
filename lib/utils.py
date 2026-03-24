@@ -510,36 +510,20 @@ def mana_untranslate(manastr, for_forum = False, for_html = False, ansi_color = 
             if idx == old_idx:
                 idx += 1
     
-    if for_html:
-        if jmanastr == '':
-            return mana_html_open_delimiter + str(colorless_total) + mana_html_close_delimiter
+    colorless_str = ''
+    if colorless_total > 0 or jmanastr == '':
+        if for_html:
+            colorless_str = f"{mana_html_open_delimiter}{colorless_total}{mana_html_close_delimiter}"
+        elif for_forum:
+            colorless_str = str(colorless_total)
         else:
-            return (('' if colorless_total == 0
-                     else mana_html_open_delimiter + str(colorless_total) + mana_html_close_delimiter)
-                    + jmanastr)
-
-    elif for_forum:
-        if jmanastr == '':
-            return mana_forum_open_delimiter + str(colorless_total) + mana_forum_close_delimiter
-        else:
-            return (mana_forum_open_delimiter + ('' if colorless_total == 0 
-                                                 else str(colorless_total))
-                    + jmanastr + mana_forum_close_delimiter)
-    else:
-        colorless_str = ''
-        if colorless_total > 0 or jmanastr == '':
-            colorless_str = mana_json_open_delimiter + str(colorless_total) + mana_json_close_delimiter
+            colorless_str = f"{mana_json_open_delimiter}{colorless_total}{mana_json_close_delimiter}"
             if ansi_color:
                 colorless_str = colorize(colorless_str, Ansi.BOLD)
 
-        if jmanastr == '':
-            return colorless_str
-        else:
-            # If jmanastr is not empty, we only include colorless if it's > 0
-            if colorless_total > 0:
-                return colorless_str + jmanastr
-            else:
-                return jmanastr
+    if for_forum:
+        return f"{mana_forum_open_delimiter}{colorless_str}{jmanastr}{mana_forum_close_delimiter}"
+    return f"{colorless_str}{jmanastr}"
 
 # finally, replacing all instances in a string
 # notice the calls to .upper(), this way we recognize lowercase symbols as well just in case
