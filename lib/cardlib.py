@@ -592,14 +592,20 @@ class Card:
         if ansi_color and rarity:
             rarity = utils.colorize(rarity, utils.Ansi.get_rarity_color(rarity))
 
-        return name, cost, cmc, typeline, stats, text, rarity
+        # Mechanics
+        mech_list = sorted(list(self.get_face_mechanics()))
+        mechanics = ', '.join(mech_list)
+        if ansi_color and mechanics:
+            mechanics = utils.colorize(mechanics, utils.Ansi.CYAN)
+
+        return name, cost, cmc, typeline, stats, text, rarity, mechanics
 
     def _get_display_data(self, ansi_color=False, include_text=False):
         """Helper to get standardized display fields for the card, merging b-sides."""
-        name, cost, cmc, typeline, stats, text, rarity = self._get_single_face_display_data(ansi_color=ansi_color, include_text=include_text)
+        name, cost, cmc, typeline, stats, text, rarity, mechanics = self._get_single_face_display_data(ansi_color=ansi_color, include_text=include_text)
 
         if self.bside:
-            b_name, b_cost, b_cmc, b_typeline, b_stats, b_text, b_rarity = self.bside._get_display_data(ansi_color=ansi_color, include_text=include_text)
+            b_name, b_cost, b_cmc, b_typeline, b_stats, b_text, b_rarity, b_mechanics = self.bside._get_display_data(ansi_color=ansi_color, include_text=include_text)
             name = f"{name} // {b_name}"
             cost = f"{cost} // {b_cost}"
             cmc = f"{cmc} // {b_cmc}"
@@ -609,12 +615,13 @@ class Card:
                 text = f"{text}<br>---<br>{b_text}"
             if b_rarity and b_rarity != rarity:
                 rarity = f"{rarity} // {b_rarity}"
+            if b_mechanics:
+                mechanics = f"{mechanics} // {b_mechanics}" if mechanics else b_mechanics
 
-        return name, cost, cmc, typeline, stats, text, rarity
+        return name, cost, cmc, typeline, stats, text, rarity, mechanics
 
-    @property
-    def mechanics(self):
-        """Returns a set of mechanical features and keyword abilities identified on the card."""
+    def get_face_mechanics(self):
+        """Returns a set of mechanical features and keyword abilities identified on this card face."""
         text_raw = self.text.text.lower()
         # To handle cards named after keywords (e.g., card "Exile" with rule text "@ target..."),
         # we create a search string where @ is replaced by the card name.
@@ -677,6 +684,13 @@ class Card:
             # Use word boundaries for keywords to avoid partial matches
             if re.search(r'\b' + pattern + r'\b', text_search):
                 m.add(label)
+
+        return m
+
+    @property
+    def mechanics(self):
+        """Returns a set of mechanical features and keyword abilities identified on the card (including b-side)."""
+        m = self.get_face_mechanics()
 
         # Recursive profiling for split/double-faced cards
         if self.bside:
@@ -1111,10 +1125,18 @@ class Card:
         if not stats:
             stats = self._get_loyalty_display(ansi_color=ansi_color)
 
+        # Mechanics
+        mech_list = sorted(list(self.get_face_mechanics()))
+        mech_str = ', '.join(mech_list)
+        if ansi_color and mech_str:
+            mech_str = utils.colorize(mech_str, utils.Ansi.CYAN)
+
         # Construct final summary string with consistent bullet separators
         res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
         if stats:
             res += f' \u2022 {stats}'
+        if mech_str:
+            res += f' \u2022 {mech_str}'
 
         if self.bside:
             res += ' // ' + self.bside.summary(ansi_color=ansi_color)
@@ -1491,19 +1513,23 @@ class Card:
 
     def to_markdown_row(self):
         """Returns a Markdown table row representation of the card."""
-        name, cost, cmc, typeline, stats, text, rarity = self._get_display_data(include_text=True)
+        name, cost, cmc, typeline, stats, text, rarity, mechanics = self._get_display_data(include_text=True)
 
         # Escape pipe characters and ensure no actual newlines break the row
-        fields = [name, cost, cmc, typeline, stats, text, rarity]
+        fields = [name, cost, cmc, typeline, stats, text, rarity, mechanics]
         fields = [f.replace('|', '\\|').replace('\n', ' ') for f in fields]
 
         return f"| {' | '.join(fields)} |"
 
     def to_table_row(self, ansi_color=False):
         """Returns a list of strings representing the card's fields for a terminal table."""
-        name, cost, cmc, typeline, stats, _, rarity = self._get_display_data(ansi_color=ansi_color)
+        import datalib
+        name, cost, cmc, typeline, stats, _, rarity, mechanics = self._get_display_data(ansi_color=ansi_color)
 
-        return [name, cost, cmc, typeline, stats, rarity]
+        # Limit mechanics list width to prevent table overflow
+        mechanics = datalib.plimit(mechanics, 30)
+
+        return [name, cost, cmc, typeline, stats, rarity, mechanics]
 
     def vectorize(self):
         """Vectorizes the card data into a string format suitable for machine learning.

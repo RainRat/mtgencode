@@ -68,10 +68,37 @@ def inc(d, k, obj):
 
 # thanks gleemax
 def plimit(s, mlen = 1000):
-    if len(s) > mlen:
-        return s[:mlen] + '[...]'
-    else:
+    """
+    Limits the length of a string to mlen characters.
+    If the string is truncated, adds '[...]' and ensures ANSI codes are reset.
+    Uses visible_len to correctly handle strings with ANSI escape sequences.
+    """
+    if utils.visible_len(s) <= mlen:
         return s
+
+    # Basic truncation logic that tries to be ANSI-aware
+    # We find the index where visible length reaches mlen
+    vlen = 0
+    idx = 0
+    in_escape = False
+
+    while idx < len(s) and vlen < mlen:
+        if s[idx] == '\x1b':
+            in_escape = True
+
+        if not in_escape:
+            vlen += 1
+
+        if in_escape and s[idx] in 'mABCD': # simplified end of ANSI sequence
+            in_escape = False
+
+        idx += 1
+
+    res = s[:idx] + '[...]'
+    # If the original string had escape codes, append a reset just in case
+    if '\x1b' in s:
+        res += utils.Ansi.RESET
+    return res
 
 def color_count(count, use_color, color_code=utils.Ansi.BOLD + utils.Ansi.GREEN):
     s = str(count)

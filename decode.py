@@ -296,7 +296,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if for_table:
             import datalib
             rows = []
-            header = ["Name", "Cost", "CMC", "Type", "Stats", "Rarity"]
+            header = ["Name", "Cost", "CMC", "Type", "Stats", "Rarity", "Mechanics"]
             if booster > 0 or box > 0:
                 header.insert(0, "Pack")
             if box > 0:
