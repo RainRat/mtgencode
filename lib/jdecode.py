@@ -12,6 +12,9 @@ import xml.etree.ElementTree as ET
 import utils
 import cardlib
 
+# Default Magic booster box size
+BOOSTER_BOX_SIZE = 36
+
 def mtg_open_csv_reader(reader, verbose = False):
     """
     Processes a CSV reader containing card data.
@@ -757,7 +760,7 @@ def mtg_open_file(fname, verbose = False,
                   mechanics=None,
                   shuffle=False, seed=None,
                   decklist_file=None,
-                  stats=None, booster=0):
+                  stats=None, booster=0, box=0):
     """
     High-level entry point for loading card data from various formats.
     Supported formats: JSON, JSONL, CSV, Magic Set Editor (.mse-set),
@@ -1265,8 +1268,32 @@ def mtg_open_file(fname, verbose = False,
 
     if booster > 0:
         cards = _simulate_boosters(cards, booster, seed=seed, verbose=verbose)
+    elif box > 0:
+        cards = _simulate_boxes(cards, box, seed=seed, verbose=verbose)
 
     return _check_parsing_quality(cards, report_fobj)
+
+def _simulate_boxes(cards, count, seed=None, verbose=False):
+    """
+    Simulates opening Magic booster boxes from a pool of cards.
+    Each box contains standard booster packs (typically 36).
+    """
+    if seed is not None:
+        random.seed(seed)
+
+    all_cards = []
+    for b in range(count):
+        # A box contains standard number of boosters
+        box_cards = _simulate_boosters(cards, BOOSTER_BOX_SIZE, seed=None, verbose=False)
+        for c in box_cards:
+            # Tag cards with box info
+            c.box_id = b + 1
+            all_cards.append(c)
+
+    if verbose:
+        print(f"Simulated {count} booster boxes ({count * BOOSTER_BOX_SIZE} packs total).", file=sys.stderr)
+
+    return all_cards
 
 def _simulate_boosters(cards, count, seed=None, verbose=False):
     """

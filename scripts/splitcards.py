@@ -95,6 +95,8 @@ def main():
                         help='Filter cards using a standard MTG decklist file.')
     proc_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
+    proc_group.add_argument('--box', type=int, default=0,
+                        help='Simulate opening N booster boxes (36 packs each). Shuffles by default.')
 
     # Group: Logging & Debugging
     log_group = parser.add_argument_group('Logging & Debugging')
@@ -142,7 +144,7 @@ def main():
                                   pows=args.pow, tous=args.tou, loys=args.loy,
                                   mechanics=args.mechanic,
                                   shuffle=not args.stable, seed=args.seed if args.seed is not None else 1371367,
-                                  decklist_file=args.deck, booster=args.booster)
+                                  decklist_file=args.deck, booster=args.booster, box=args.box)
 
     if args.sort:
         cards = sortlib.sort_cards(cards, args.sort, quiet=args.quiet)

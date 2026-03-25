@@ -93,7 +93,9 @@ def sort_cards(cards, criterion, quiet=False):
     elif criterion == 'loyalty':
         return sorted(cards, key=lambda c: _get_numeric_sort_key(c.loyalty))
     elif criterion == 'pack':
-        return sorted(cards, key=lambda c: (getattr(c, 'pack_id', 0), c.name.lower()))
+        return sorted(cards, key=lambda c: (getattr(c, 'box_id', 0), getattr(c, 'pack_id', 0), c.name.lower()))
+    elif criterion == 'box':
+        return sorted(cards, key=lambda c: (getattr(c, 'box_id', 0), getattr(c, 'pack_id', 0), c.name.lower()))
     elif criterion == 'set':
         def get_set_key(card):
             s = card.set_code.upper() if card.set_code else 'ZZZ'
