@@ -11,6 +11,14 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import cardlib
+import datalib
+
+# Try to import tqdm for progress bars
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(iterable, **kwargs):
+        return iterable
 
 def get_card_map(cards):
     """Groups cards by name for easier comparison."""
@@ -132,7 +140,7 @@ def main():
     modified = []
 
     # Check for removals and modifications
-    for name, c1 in map1.items():
+    for name, c1 in tqdm(map1.items(), disable=args.quiet or len(map1) < 5, desc="Comparing datasets"):
         if name not in map2:
             removed.append(c1)
         else:
@@ -159,10 +167,37 @@ def main():
             print(f"=== {text} ===")
 
     print_header("SUMMARY")
-    print(f"  Added:    {len(added)}")
-    print(f"  Removed:  {len(removed)}")
-    print(f"  Modified: {len(modified)}")
-    print(f"  Shared:   {len(map1.keys() & map2.keys())}")
+    total_distinct = len(map1.keys() | map2.keys())
+    unchanged_count = len(map1.keys() & map2.keys()) - len(modified)
+
+    rows = [[
+        utils.colorize("Category", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Category",
+        utils.colorize("Count", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Count",
+        utils.colorize("Percent", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Percent",
+        utils.colorize("Progress", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Progress"
+    ]]
+
+    summary_data = [
+        ('Added', len(added), utils.Ansi.BOLD + utils.Ansi.GREEN),
+        ('Removed', len(removed), utils.Ansi.BOLD + utils.Ansi.RED),
+        ('Modified', len(modified), utils.Ansi.BOLD + utils.Ansi.YELLOW),
+        ('Unchanged', unchanged_count, utils.Ansi.BOLD)
+    ]
+
+    for label, count, color in summary_data:
+        percent = (count / total_distinct * 100) if total_distinct > 0 else 0
+        bar = datalib.get_bar_chart(percent, use_color, color=color)
+
+        if use_color:
+            label_str = utils.colorize(label, color)
+            count_str = datalib.color_count(count, use_color, color)
+        else:
+            label_str = label
+            count_str = str(count)
+
+        rows.append([label_str, count_str, f"{percent:5.1f}%", bar])
+
+    datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
     print()
 
     if args.summary_only:
@@ -202,6 +237,9 @@ def main():
                 else:
                     print(f"    {field}: {old} -> {new}")
         print()
+
+    # Provide clear feedback on operation completion
+    utils.print_operation_summary("Comparison", len(map2), 0, quiet=args.quiet)
 
 if __name__ == "__main__":
     main()

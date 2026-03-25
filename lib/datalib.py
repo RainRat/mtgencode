@@ -89,7 +89,7 @@ def _colorize_header(header, use_color):
         return [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
     return header
 
-def _get_bar_chart(percent, use_color, color=None):
+def get_bar_chart(percent, use_color, color=None):
     bar_width = 10
     filled = int(round(percent / 100 * bar_width))
     if filled == 0 and percent > 0:
@@ -168,7 +168,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
                 display_key = utils.colorize(display_key, display_color)
 
         # Bar chart
-        bar = _get_bar_chart(percent, use_color, color=display_color)
+        bar = get_bar_chart(percent, use_color, color=display_color)
 
         rows.append([
             display_key,

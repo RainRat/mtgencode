@@ -548,23 +548,16 @@ def main(fname, oname = None, verbose = False, dump = False,
 
                 for label, count, color in summary_data:
                     percent = (count / total_all * 100) if total_all > 0 else 0
-
-                    bar_width = 10
-                    filled = int(round(percent / 100 * bar_width))
-                    if filled == 0 and percent > 0:
-                        filled = 1
-                    bar = '[' + '█' * filled + ' ' * (bar_width - filled) + ']'
+                    bar = datalib.get_bar_chart(percent, actual_use_color, color=color)
 
                     if actual_use_color:
                         label_colored = utils.colorize(label, color)
                         count_colored = datalib.color_count(count, actual_use_color, color)
-                        bar_colored = utils.colorize(bar, color)
                     else:
                         label_colored = label
                         count_colored = str(count)
-                        bar_colored = bar
 
-                    rows.append([label_colored, count_colored, f"{percent:5.1f}%", bar_colored])
+                    rows.append([label_colored, count_colored, f"{percent:5.1f}%", bar])
 
                 datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
                 print()
@@ -586,23 +579,18 @@ def main(fname, oname = None, verbose = False, dump = False,
                     if total > 0:
                         success_pct = (good / total * 100) if total > 0 else 0
 
-                        bar_width = 10
-                        filled = int(round(success_pct / 100 * bar_width))
-                        if filled == 0 and success_pct > 0:
-                            filled = 1
-                        bar = '[' + '█' * filled + ' ' * (bar_width - filled) + ']'
-
                         if actual_use_color:
                             prop_colored = utils.colorize(prop, utils.Ansi.CYAN)
                             good_colored = datalib.color_count(good, actual_use_color, utils.Ansi.BOLD + utils.Ansi.GREEN)
                             bad_colored = datalib.color_count(bad, actual_use_color, utils.Ansi.BOLD + utils.Ansi.RED if bad > 0 else utils.Ansi.BOLD)
                             bar_color = utils.Ansi.BOLD + utils.Ansi.GREEN if success_pct == 100 else (utils.Ansi.BOLD + utils.Ansi.YELLOW if success_pct >= 80 else utils.Ansi.BOLD + utils.Ansi.RED)
-                            bar_colored = utils.colorize(bar, bar_color)
                         else:
                             prop_colored = prop
                             good_colored = str(good)
                             bad_colored = str(bad)
-                            bar_colored = bar
+                            bar_color = None
+
+                        bar = datalib.get_bar_chart(success_pct, actual_use_color, color=bar_color)
 
                         b_rows.append([
                             prop_colored,
@@ -610,7 +598,7 @@ def main(fname, oname = None, verbose = False, dump = False,
                             good_colored,
                             bad_colored,
                             f"{success_pct:5.1f}%",
-                            bar_colored
+                            bar
                         ])
 
                 datalib.printrows(datalib.padrows(b_rows, aligns=['l', 'r', 'r', 'r', 'r', 'l']), indent=2)
