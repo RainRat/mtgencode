@@ -219,11 +219,11 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         if for_md_table:
             if booster > 0:
-                writer.write("| Pack | Name | Cost | CMC | Type | Stats | Rules Text | Rarity |\n")
-                writer.write("| ---: | :--- | :--- | ---: | :--- | ---: | :--- | :--- |\n")
+                writer.write("| Pack | Name | Cost | CMC | Type | Stats | Mechanics | Rules Text | Rarity |\n")
+                writer.write("| ---: | :--- | :--- | ---: | :--- | ---: | :--- | :--- | :--- |\n")
             else:
-                writer.write("| Name | Cost | CMC | Type | Stats | Rules Text | Rarity |\n")
-                writer.write("| :--- | :--- | ---: | :--- | ---: | :--- | :--- |\n")
+                writer.write("| Name | Cost | CMC | Type | Stats | Mechanics | Rules Text | Rarity |\n")
+                writer.write("| :--- | :--- | ---: | :--- | ---: | :--- | :--- | :--- |\n")
         if for_mse:
             # have to prepend a massive chunk of formatting info
             writer.write(utils.mse_prepend)
@@ -296,7 +296,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if for_table:
             import datalib
             rows = []
-            header = ["Name", "Cost", "CMC", "Type", "Stats", "Rarity"]
+            header = ["Name", "Cost", "CMC", "Type", "Stats", "Mechanics", "Rarity"]
             if booster > 0 or box > 0:
                 header.insert(0, "Pack")
             if box > 0:
@@ -347,6 +347,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
             if stats_idx < len(aligns):
                 aligns[stats_idx] = 'r'
+
+            # Right-align Mechanics column (optional, but keep it left aligned for readability)
+            # Mechanics is at index 5 (default), 6 (booster), 7 (box)
+            # We keep it left aligned by default.
 
             # Insert a separator row of dashes
             col_widths = datalib.get_col_widths(rows)

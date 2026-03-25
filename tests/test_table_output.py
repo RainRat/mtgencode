@@ -22,7 +22,7 @@ def test_to_table_row():
     print(f"Row: {row}")
     # Rarity is lowercase from MTGJSON if not in map, but Card(card_json) uses fields_from_json
     # which uses utils.json_rarity_map if available.
-    assert row == ["Grizzly Bears", "{1}{G}", "2", "Creature \u2014 Bear", "2/2", "common"]
+    assert row == ["Grizzly Bears", "{1}{G}", "2", "Creature \u2014 Bear", "2/2", "", "common"]
 
 def test_to_table_row_bside():
     card_json = {
@@ -34,13 +34,14 @@ def test_to_table_row_bside():
             "name": "Ice",
             "manaCost": "{1}{U}",
             "types": ["Instant"],
-            "rarity": "Uncommon"
+            "rarity": "Uncommon",
+            "text": "Draw a card."
         }
     }
     card = Card(card_json)
     row = card.to_table_row(ansi_color=False)
     print(f"Bside Row: {row}")
-    assert row == ["Fire // Ice", "{1}{R} // {1}{U}", "2 // 2", "Instant // Instant", "", "uncommon"]
+    assert row == ["Fire // Ice", "{1}{R} // {1}{U}", "2 // 2", "Instant // Instant", "", "Draw A Card", "uncommon"]
 
 def test_cli_table():
     # Encode a sample card and decode it with --table
