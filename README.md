@@ -65,14 +65,17 @@ After downloading, set up your data folder:
 1.  Create a folder named `data` in this project.
 2.  Place your downloaded JSON file inside the `data` folder.
 
-### 2. Encode Cards (JSON to Text)
-Convert JSON data into a simple text format for AI training.
+### 2. Encode Cards (Data to Text)
+Convert card data from various formats into a simple text format for AI training.
 
 ```bash
-# Basic encoding
+# Basic encoding from JSON
 python3 encode.py data/AllPrintings.json encoded_output.txt --verbose
+
+# Convert a Cockatrice XML database to encoded text
+python3 encode.py my_database.xml encoded_output.txt
 ```
-*   **Input:** `data/AllPrintings.json`. You can also provide a folder path or a ZIP file to process all compatible files inside it.
+*   **Input:** Supports JSON (MTGJSON or Scryfall), CSV, XML, and MSE set files. You can also provide a folder path or a ZIP file to process all compatible files inside it.
 *   **Output:** `encoded_output.txt` (A text file with one card per entry).
 
 ### 3. Decode Cards (Text to Readable)
@@ -81,9 +84,6 @@ Convert AI-generated text back into a readable format. You can see the results i
 ```bash
 # View decoded cards in your terminal
 python3 decode.py encoded_output.txt
-
-# Convert a Cockatrice XML database to encoded text
-python3 encode.py my_database.xml encoded_output.txt
 
 # Save to a file (the format is detected from the file extension)
 python3 decode.py encoded_output.txt my_cards.html
@@ -259,8 +259,8 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, and `scripts/summarize.py`.
 
 *   **Global Filters:**
-    *   `--grep "pattern"`: Only include cards where the name, type line, or rules text matches the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
-    *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the search pattern. Use multiple flags for **OR** logic (matching any pattern excludes the card).
+    *   `--grep "pattern"`: Only include cards where the name, type line, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
+    *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the search pattern (checks name, type line, rules text, mana cost, and stats). Use multiple flags for **OR** logic (matching any pattern excludes the card).
 *   **Field-Specific Filters:**
     *   `--grep-name`, `--grep-type`, `--grep-text`: Only include cards where the specific field matches the search pattern.
     *   `--grep-cost`, `--grep-pt`, `--grep-loyalty`: Only include cards whose mana cost, power/toughness, or loyalty matches the search pattern.
