@@ -64,16 +64,21 @@ def main(fname, oname, verbose = True, parallel = True):
 if __name__ == '__main__':
     
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Calculate the semantic and name distance between generated cards and the official dataset.")
     
-    parser.add_argument('infile', #nargs='?'. default=None,
-                        help='encoded card file or json corpus to process')
-    parser.add_argument('outfile', #nargs='?', default=None,
-                        help='name of output file, will be overwritten')
-    parser.add_argument('-v', '--verbose', action='store_true', 
-                        help='verbose output')
-    parser.add_argument('-p', '--parallel', action='store_true', 
-                        help='run in parallel on all cores')
+    # Group: Input / Output
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('infile',
+                        help='The card dataset to analyze (JSON, CSV, or encoded text).')
+    io_group.add_argument('outfile',
+                        help='Path to save the distance data. This file is used as input for scripts/sum.py.')
+
+    # Group: Processing Options
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--parallel', action='store_true',
+                        help='Run calculations in parallel on all CPU cores for faster processing.')
+    proc_group.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable detailed status messages.')
 
     args = parser.parse_args()
     main(args.infile, args.outfile, verbose=args.verbose, parallel=args.parallel)

@@ -410,6 +410,18 @@ Extracts a single card from the massive `AllPrintings.json` file. This is useful
 python3 scripts/extract_one.py data/AllPrintings.json SET_CODE "Card Name"
 ```
 
+### `distances.py` & `sum.py`
+These tools allow for bulk creativity analysis of your generated cards. `distances.py` calculates the semantic and name distance between your cards and the official dataset, and `sum.py` provides a statistical summary of the results.
+
+```bash
+# Calculate distances for a generated dataset
+python3 scripts/distances.py generated_cards.txt distances.txt --parallel
+
+# Summarize the results
+python3 scripts/sum.py distances.txt
+```
+*   **Note:** Like the `--creativity` flag in `decode.py`, these tools require `data/cbow.bin` and `data/output.txt`. See [DEPENDENCIES.md](DEPENDENCIES.md) for setup instructions.
+
 ### `splitcards.py`
 Splits a card dataset into multiple files. This is essential for creating training and validation sets for AI models. It supports all input formats (JSON, CSV, encoded text, etc.).
 ```bash
