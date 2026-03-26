@@ -404,6 +404,16 @@ python3 scripts/csv2json.py my_cards.csv my_cards.json
 python3 scripts/combinejson.py data/AllPrintings.json my_cards.json AllCards.json
 ```
 
+### `mtg_sets.py`
+Lists all Magic: The Gathering sets available in a JSON dataset. This is useful for identifying the correct 3-character set codes (e.g., `MOM`, `RAV`) to use with other tools.
+```bash
+# List all sets, newest first
+python3 scripts/mtg_sets.py data/AllPrintings.json
+
+# Search for sets by name
+python3 scripts/mtg_sets.py data/AllPrintings.json --grep Ravnica
+```
+
 ### `extract_one.py`
 Extracts a single card from the massive `AllPrintings.json` file. This is useful for testing a specific card without loading the entire dataset.
 ```bash
