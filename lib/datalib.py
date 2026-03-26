@@ -225,13 +225,13 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
 
     printrows(padrows(rows, aligns=['l', 'r', 'r', 'r', 'r', 'r', 'r', 'r']), indent=4)
 
-def _print_mechanical_stats(mechanical_stats, use_color, vsize=None):
+def _print_mechanical_profile(mechanical_stats, total, use_color, vsize=None):
     if not mechanical_stats:
         return
     print()
-    print('  ' + color_line('Mechanical Budget Analysis (Averages):', use_color))
+    print('  ' + color_line('Mechanical Profile (Frequency & Averages):', use_color))
 
-    header = _colorize_header(['Mechanic', 'Count', 'CMC', 'P/T'], use_color)
+    header = _colorize_header(['Mechanic', 'Count', 'Percent', 'CMC', 'P/T', 'Distribution'], use_color)
 
     rows = [header]
     # Sort by frequency
@@ -241,6 +241,8 @@ def _print_mechanical_stats(mechanical_stats, use_color, vsize=None):
 
     for m in sorted_mechanics:
         stats = mechanical_stats[m]
+        count = stats['count']
+        percent = (count / total * 100) if total > 0 else 0
 
         pt_str = "-"
         if stats['avg_power'] is not None and stats['avg_toughness'] is not None:
@@ -250,20 +252,25 @@ def _print_mechanical_stats(mechanical_stats, use_color, vsize=None):
         elif stats['avg_toughness'] is not None:
              pt_str = f"?/{stats['avg_toughness']:.1f}"
 
+        # Bar chart
+        bar = get_bar_chart(percent, use_color)
+
         row = [
             m,
-            color_count(stats['count'], use_color),
+            color_count(count, use_color),
+            f"{percent:5.1f}%",
             f"{stats['avg_cmc']:.2f}",
-            pt_str
+            pt_str,
+            bar
         ]
 
         if use_color:
             # Maybe colorize P/T red like in Card.format()
-            row[3] = utils.colorize(row[3], utils.Ansi.RED) if pt_str != "-" else row[3]
+            row[4] = utils.colorize(row[4], utils.Ansi.RED) if pt_str != "-" else row[4]
 
         rows.append(row)
 
-    printrows(padrows(rows, aligns=['l', 'r', 'r', 'r']), indent=4)
+    printrows(padrows(rows, aligns=['l', 'r', 'r', 'r', 'r', 'l']), indent=4)
 
 class Datamine:
     # build the global indices
@@ -534,9 +541,7 @@ class Datamine:
         print()
 
         print('  ' + color_line(str(len(self.by_mechanic)) + ' distinct mechanical features identified', use_color))
-        _print_breakdown('Mechanical Breakdown:', self.by_mechanic, len(self.allcards), use_color,
-                         vsize=vsize, sort_key=lambda x: len(self.by_mechanic[x]))
-        _print_mechanical_stats(self.mechanical_stats, use_color, vsize=vsize)
+        _print_mechanical_profile(self.mechanical_stats, len(self.allcards), use_color, vsize=vsize)
         _print_color_pie(self.pie_groups, self.pie_mechanics, self.by_mechanic, use_color, vsize=vsize)
         print()
 
