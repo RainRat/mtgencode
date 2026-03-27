@@ -1,3 +1,8 @@
+"""
+This script merges two Magic: The Gathering card data files in JSON format.
+It is primarily used to combine custom card data with the official MTGJSON
+dataset, allowing you to include your own designs in AI training or analysis.
+"""
 import json
 import argparse
 
@@ -18,11 +23,23 @@ def merge_dicts(dict1, dict2):
     
 def main():
     parser = argparse.ArgumentParser(
-        description="Merges two card data files in JSON format. If both files contain the same set or card keys, the information from the second file is used."
+        description="Merge two Magic: The Gathering card data files in JSON format.",
+        epilog='''
+Custom Card Workflow:
+  1. Create a CSV file with your custom cards.
+  2. Convert the CSV to JSON:
+     python3 scripts/csv2json.py custom.csv custom.json
+  3. Merge with official data:
+     python3 scripts/combinejson.py data/AllPrintings.json custom.json AllCustom.json
+
+Example:
+  python3 scripts/combinejson.py data/AllPrintings.json my_set.json AllCards.json
+''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('base_file', help='The primary JSON file (e.g., AllPrintings.json).')
-    parser.add_argument('custom_file', help='The second JSON file containing your custom cards.')
-    parser.add_argument('output_file', help='The name for the new, merged JSON file.')
+    parser.add_argument('base_file', help='Path to the primary JSON file (e.g., data/AllPrintings.json).')
+    parser.add_argument('custom_file', help='Path to the second JSON file containing your custom cards.')
+    parser.add_argument('output_file', help='Path where the merged JSON file will be saved.')
     args = parser.parse_args()
 
     try:
