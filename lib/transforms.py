@@ -66,7 +66,8 @@ def text_pass_2_cardname(s, name):
     elif name == 'fear':
         return s
 
-    s = s.replace(name, this_marker)
+    if name:
+        s = s.replace(name, this_marker)
     
     # So, some legends don't use the full cardname in their text box...
     # this check finds about 400 of them.
@@ -95,7 +96,8 @@ def text_pass_2_cardname(s, name):
     ]
     
     for override in overrides:
-        s = s.replace(override, this_marker)
+        if override in name:
+            s = s.replace(override, this_marker)
 
     # Standardize self-references in older card text (e.g., replacing masculine pronouns with the self-reference marker).
     s = s.replace('to him.', 'to ' + this_marker + '.')
