@@ -673,7 +673,7 @@ class Card:
             ('reach', 'Reach'), ('flash', 'Flash'), ('indestructible', 'Indestructible'),
             ('defender', 'Defender'), ('scry', 'Scry'), ('draw a card', 'Draw A Card'),
             ('mill', 'Mill'), ('exile', 'Exile'), (r'tokens?', 'Token'),
-            ('discard', 'Discard'), ('cycling', 'Cycling')
+            ('discard', 'Discard'), ('cycling', 'Cycling'), ('convoke', 'Convoke')
         ]
 
         for pattern, label in keywords:
