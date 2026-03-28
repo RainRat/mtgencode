@@ -114,7 +114,7 @@ Customization options for formatting data:
 *   `--nolinetrans`: Disables the automatic reordering and normalization of card text lines.
 *   `-r`, `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
 *   `-s`, `--stable`: Preserve the original order of cards from the input (the tool shuffles cards by default).
-*   `--sort`: Sorts cards by `name`, `color`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, or `set` before encoding. Automatically enables `--stable`.
+*   `--sort`: Sorts cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, or `set` before encoding. Automatically enables `--stable`.
 *   `--seed N`: Seed for the random number generator (Default: 1371367).
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Shorthand for `--limit N`. The tool shuffles cards by default unless you use `--stable`.
@@ -139,7 +139,7 @@ Options for formatting the output. While primarily used for AI output, this tool
 *   `--summary`: Creates a compact one-line summary for each card.
 *   `--color` / `--no-color`: Manually enable or disable ANSI color output in your terminal.
 *   `--shuffle`: Randomizes the order of cards (the tool does not shuffle cards by default for decoding).
-*   `--sort`: Sorts cards by `name`, `color`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, or `set`.
+*   `--sort`: Sorts cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, or `set`.
 *   `--seed N`: Seed for the random number generator.
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
@@ -270,6 +270,8 @@ Filter which cards the tool processes using search patterns, set codes, rarities
     *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets (OR logic).
     *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports multiple rarities (OR logic).
     *   `--colors SYMBOLS`: Only include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless. Multiple colors use OR logic.
+*   `--identity SYMBOLS`: Only include cards with specific colors in their color identity (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless. Multiple colors use OR logic.
+*   `--id-count VALUE`: Only include cards with specific color identity counts. Supports inequalities (e.g., `>3`, `<=2`), ranges (e.g., `1-4`), and multiple values (OR logic).
     *   `--cmc VALUE`: Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., `>3`, `<=2`), ranges (e.g., `1-4`), and multiple values (OR logic).
     *   `--pow VALUE` (or `--power`): Only include cards with specific Power values. Supports inequalities and ranges.
     *   `--tou VALUE` (or `--toughness`): Only include cards with specific Toughness values. Supports inequalities and ranges.

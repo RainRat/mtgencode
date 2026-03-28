@@ -545,6 +545,21 @@ class Card:
         """Returns True if the card is a sorcery."""
         return 'sorcery' in self.types
 
+    @property
+    def color_identity(self):
+        """Returns the color identity of the card (mana cost + rules text symbols)."""
+        colors = set(self.cost.colors)
+        if hasattr(self.text, 'costs'):
+            for cost in self.text.costs:
+                for char in cost.colors:
+                    colors.add(char)
+
+        if self.bside:
+            for char in self.bside.color_identity:
+                colors.add(char)
+
+        return "".join(sorted(list(colors)))
+
     def get_type_line(self, separator='\u2014'):
         """Returns a formatted type line string (e.g., 'Legendary Creature — Human Warrior')."""
         supertypes = [titlecase(s) for s in self.__dict__[field_supertypes]]
@@ -1367,6 +1382,13 @@ class Card:
         face_mechanics = sorted(list(self.get_face_mechanics()))
         if face_mechanics:
             d['mechanics'] = face_mechanics
+
+        # Color Identity
+        identity = self.color_identity
+        if identity:
+            d['colorIdentity'] = list(identity)
+        else:
+            d['colorIdentity'] = []
 
         # Metadata
         if self.set_code:

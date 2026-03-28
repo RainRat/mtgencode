@@ -439,6 +439,7 @@ def main(fname, oname = None, verbose = False, dump = False,
          sets = None, rarities = None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
          mechanics=None,
+         identities=None, id_counts=None,
          shuffle = False, seed = None, quiet = False, decklist_file = None,
          booster = 0, sort = None, limit = 0, use_color = None, box = 0):
 
@@ -456,6 +457,7 @@ def main(fname, oname = None, verbose = False, dump = False,
                                   colors=colors, cmcs=cmcs,
                                   pows=pows, tous=tous, loys=loys,
                                   mechanics=mechanics,
+                                  identities=identities, id_counts=id_counts,
                                   shuffle=shuffle, seed=seed,
                                   decklist_file=decklist_file,
                                   booster=booster,
@@ -646,7 +648,7 @@ if __name__ == '__main__':
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs.')
@@ -689,6 +691,10 @@ if __name__ == '__main__':
                         help="Only include cards of specific rarities. Supports full names or shorthands (O, N, A, Y, I, L). Supports multiple rarities.")
     filter_group.add_argument('--colors', action='append',
                         help="Only include cards of specific colors (W, U, B, R, G, C/A). Supports multiple colors.")
+    filter_group.add_argument('--identity', action='append',
+                        help="Only include cards with specific colors in their color identity (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple colors (OR logic).")
+    filter_group.add_argument('--id-count', action='append',
+                        help='Only include cards with specific color identity counts. Supports inequalities and ranges.')
     filter_group.add_argument('--cmc', action='append',
                         help='Only include cards with specific CMC values. Supports inequalities and ranges.')
     filter_group.add_argument('--pow', '--power', action='append', dest='pow',
@@ -735,6 +741,7 @@ if __name__ == '__main__':
          sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
+         identities=args.identity, id_counts=args.id_count,
          shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, decklist_file = args.deck,
          booster = args.booster, sort = args.sort, limit = args.limit, use_color = args.color, box = args.box)
     exit(0)

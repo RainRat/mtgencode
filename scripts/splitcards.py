@@ -45,7 +45,7 @@ def main():
                         help='Seed for the random number generator (Default: 1371367).')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --limit N). Shuffling is enabled unless --stable is used.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
                         help='Sort cards by a specific criterion (enables --stable).')
     proc_group.add_argument('--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
@@ -81,6 +81,13 @@ def main():
                         help="Only include cards of specific rarities. Supports full names or shorthands (O, N, A, Y, I, L). Supports multiple rarities.")
     proc_group.add_argument('--colors', action='append',
                         help="Only include cards of specific colors (W, U, B, R, G, C/A). Supports multiple colors.")
+
+    # Group: Filtering Options
+    filter_group = parser.add_argument_group('Filtering Options')
+    filter_group.add_argument('--identity', action='append',
+                        help="Only include cards with specific colors in their color identity (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple colors (OR logic).")
+    filter_group.add_argument('--id-count', action='append', dest='id_count',
+                        help='Only include cards with specific color identity counts. Supports inequalities and ranges.')
     proc_group.add_argument('--cmc', action='append',
                         help='Only include cards with specific CMC values. Supports inequalities and ranges.')
     proc_group.add_argument('--pow', '--power', action='append', dest='pow',
@@ -143,6 +150,7 @@ def main():
                                   sets=args.set, rarities=args.rarity, colors=args.colors, cmcs=args.cmc,
                                   pows=args.pow, tous=args.tou, loys=args.loy,
                                   mechanics=args.mechanic,
+                                  identities=args.identity, id_counts=args.id_count,
                                   shuffle=not args.stable, seed=args.seed if args.seed is not None else 1371367,
                                   decklist_file=args.deck, booster=args.booster, box=args.box)
 
