@@ -67,11 +67,43 @@ def inc(d, k, obj):
             d[k] = obj
 
 # thanks gleemax
-def plimit(s, mlen = 1000):
-    if len(s) > mlen:
-        return s[:mlen] + '[...]'
-    else:
+def plimit(s, mlen=1000):
+    vlen = utils.visible_len(s)
+    raw_len = len(s)
+
+    if raw_len == vlen:
+        if raw_len > mlen:
+            return s[:mlen] + '[...]'
         return s
+
+    if vlen <= mlen:
+        return s
+
+    res = ""
+    visible_count = 0
+    last_idx = 0
+    ansi_encountered = False
+
+    for match in utils._ansi_escape_re.finditer(s):
+        pre_text = s[last_idx:match.start()]
+        if visible_count + len(pre_text) > mlen:
+            res += pre_text[:mlen - visible_count]
+            return res + '[...]' + (utils.Ansi.RESET if ansi_encountered else "")
+
+        res += pre_text
+        visible_count += len(pre_text)
+
+        res += match.group()
+        ansi_encountered = True
+        last_idx = match.end()
+
+    remaining = s[last_idx:]
+    if visible_count + len(remaining) > mlen:
+        res += remaining[:mlen - visible_count]
+        return res + '[...]' + (utils.Ansi.RESET if ansi_encountered else "")
+
+    res += remaining
+    return res
 
 def color_count(count, use_color, color_code=utils.Ansi.BOLD + utils.Ansi.GREEN):
     s = str(count)
