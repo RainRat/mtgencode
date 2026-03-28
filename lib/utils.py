@@ -352,20 +352,26 @@ def mana_sym_to_forum(sym):
         return mana_json_open_delimiter + sym + mana_json_close_delimiter
 
 # forward symbol tables for encoding
-mana_syms_encode = {sym : mana_sym_to_encoding(sym) for sym in mana_syms}
-mana_symalt_encode = {sym : mana_sym_to_encoding(sym) for sym in mana_symalt}
-mana_symall_encode = {sym : mana_sym_to_encoding(sym) for sym in mana_symall}
-mana_syms_jencode = {sym : mana_sym_to_json(sym) for sym in mana_syms}
-mana_symalt_jencode = {sym : mana_sym_to_json(sym) for sym in mana_symalt}
-mana_symall_jencode = {sym : mana_sym_to_json(sym) for sym in mana_symall}
+def _build_sym_map(symbols, transform_func):
+    return {sym: transform_func(sym) for sym in symbols}
+
+mana_syms_encode = _build_sym_map(mana_syms, mana_sym_to_encoding)
+mana_symalt_encode = _build_sym_map(mana_symalt, mana_sym_to_encoding)
+mana_symall_encode = _build_sym_map(mana_symall, mana_sym_to_encoding)
+mana_syms_jencode = _build_sym_map(mana_syms, mana_sym_to_json)
+mana_symalt_jencode = _build_sym_map(mana_symalt, mana_sym_to_json)
+mana_symall_jencode = _build_sym_map(mana_symall, mana_sym_to_json)
 
 # reverse symbol tables for decoding
-mana_syms_decode = {mana_sym_to_encoding(sym) : sym for sym in mana_syms}
-mana_symalt_decode = {mana_sym_to_encoding(sym) : sym for sym in mana_symalt}
-mana_symall_decode = {mana_sym_to_encoding(sym) : sym for sym in mana_symall}
-mana_syms_jdecode = {mana_sym_to_json(sym) : sym for sym in mana_syms}
-mana_symalt_jdecode = {mana_sym_to_json(sym) : sym for sym in mana_symalt}
-mana_symall_jdecode = {mana_sym_to_json(sym) : sym for sym in mana_symall}
+def _build_reverse_sym_map(symbols, transform_func):
+    return {transform_func(sym): sym for sym in symbols}
+
+mana_syms_decode = _build_reverse_sym_map(mana_syms, mana_sym_to_encoding)
+mana_symalt_decode = _build_reverse_sym_map(mana_symalt, mana_sym_to_encoding)
+mana_symall_decode = _build_reverse_sym_map(mana_symall, mana_sym_to_encoding)
+mana_syms_jdecode = _build_reverse_sym_map(mana_syms, mana_sym_to_json)
+mana_symalt_jdecode = _build_reverse_sym_map(mana_symalt, mana_sym_to_json)
+mana_symall_jdecode = _build_reverse_sym_map(mana_symall, mana_sym_to_json)
 
 # going straight from json to encoding and vice versa
 def mana_encode_direct(jsym):
