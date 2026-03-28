@@ -208,6 +208,12 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
             f"{percent:5.1f}%",
             bar
         ])
+
+    # Insert a separator row of dashes
+    col_widths = get_col_widths(rows)
+    separator = ['-' * w for w in col_widths]
+    rows.insert(1, separator)
+
     printrows(padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=4)
 
 def _print_mechanical_profile(mechanical_stats, total, use_color, vsize=None):
@@ -251,6 +257,11 @@ def _print_mechanical_profile(mechanical_stats, total, use_color, vsize=None):
             row[5] = utils.colorize(row[5], utils.Ansi.RED) if pt_str != "-" else row[5]
 
         rows.append(row)
+
+    # Insert a separator row of dashes
+    col_widths = get_col_widths(rows)
+    separator = ['-' * w for w in col_widths]
+    rows.insert(1, separator)
 
     printrows(padrows(rows, aligns=['l', 'r', 'r', 'l', 'r', 'r']), indent=4)
 
@@ -298,6 +309,11 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
                 val = "  - "
             row.append(val)
         rows.append(row)
+
+    # Insert a separator row of dashes
+    col_widths = get_col_widths(rows)
+    separator = ['-' * w for w in col_widths]
+    rows.insert(1, separator)
 
     printrows(padrows(rows, aligns=['l', 'r', 'r', 'r', 'r', 'r', 'r', 'r']), indent=4)
 

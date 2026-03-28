@@ -560,6 +560,11 @@ def main(fname, oname = None, verbose = False, dump = False,
 
                     rows.append([label_colored, count_colored, f"{percent:5.1f}%", bar])
 
+                # Insert a separator row of dashes
+                col_widths = datalib.get_col_widths(rows)
+                separator = ['-' * w for w in col_widths]
+                rows.insert(1, separator)
+
                 datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
                 print()
 
@@ -601,6 +606,11 @@ def main(fname, oname = None, verbose = False, dump = False,
                             f"{success_pct:5.1f}%",
                             bar
                         ])
+
+                # Insert a separator row of dashes
+                col_widths = datalib.get_col_widths(b_rows)
+                separator = ['-' * w for w in col_widths]
+                b_rows.insert(1, separator)
 
                 datalib.printrows(datalib.padrows(b_rows, aligns=['l', 'r', 'r', 'r', 'r', 'l']), indent=2)
 
