@@ -118,6 +118,8 @@ Customization options for formatting data:
 *   `--seed N`: Seed for the random number generator (Default: 1371367).
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Shorthand for `--limit N`. The tool shuffles cards by default unless you use `--stable`.
+*   `--booster N`: Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land.
+*   `--box N`: Simulate opening N booster boxes (36 packs each).
 *   `-q`, `--quiet`: Suppress the progress bar and status messages.
 *   `--report-unparsed FILE`: Save the raw JSON of cards that failed to parse into a separate file.
 
@@ -145,6 +147,7 @@ Options for formatting the output. While primarily used for AI output, this tool
 *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
 *   `-q`, `--quiet`: Suppress the progress bar and status messages.
 *   `--booster N`: Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land.
+*   `--box N`: Simulate opening N booster boxes (36 packs each).
 *   `--report-failed FILE`: Save the text of cards that failed to parse or validate into a separate file.
 
 > **Important:** If you used a specific encoding (like `named`) when running `encode.py`, you **must** use that same encoding flag when running `decode.py`.
@@ -334,7 +337,7 @@ python3 sortcards.py data/AllPrintings.json sorted_output.txt
 # Sort encoded cards with filters and sampling
 python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "Elf"
 ```
-*   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, `--booster`, and all **Advanced Filtering** flags.
+*   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, `--booster`, `--box`, and all **Advanced Filtering** flags.
 *   `--summary`: Output compact card summaries instead of full text.
 *   `--md`: Output in Markdown format with collapsible sections.
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
@@ -360,6 +363,7 @@ python3 scripts/summarize.py encoded_output.txt summary.json
     *   `-t N`, `--top N`: Limit the number of entries in breakdown tables (Default: 10).
     *   `--sort CRITERIA`: Sort cards before summarizing.
     *   `--booster N`: Simulate opening N booster packs and summarize the contents.
+    *   `--box N`: Simulate opening N booster boxes (36 packs each) and summarize the contents.
     *   `--json`: Force JSON output.
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
     *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--grep`, `--cmc`, `--mechanic`).
@@ -375,7 +379,15 @@ python3 scripts/mtg_validate.py data/AllPrintings.json --dump
 ```
 *   **Options:**
     *   `-d`, `--dump`: Print full details for cards that failed validation.
+    *   `-n LIMIT`, `--limit LIMIT`: Only process the first N cards.
+    *   `--shuffle`: Randomize the order of cards before validating.
+    *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+    *   `--sort CRITERIA`: Sort cards before validating.
+    *   `--booster N`: Simulate opening N booster packs.
+    *   `--box N`: Simulate opening N booster boxes (36 packs each).
     *   `-v`, `--verbose`: Enable detailed status messages.
+    *   `-q`, `--quiet`: Suppress the progress bar.
+    *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_diff.py`
 Compares two card datasets and identifies additions, removals, and modifications. It highlights changes in cost, type, stats, text, and rarity.
@@ -442,6 +454,7 @@ python3 scripts/splitcards.py data/AllPrintings.json --outputs rb_train.txt rb_v
     *   `--shuffle` / `--no-shuffle`: Whether to randomize the order of cards before splitting (Enabled by default).
     *   `--sort CRITERIA`: Sort cards before splitting.
     *   `--booster N`: Simulate opening N booster packs before splitting.
+    *   `--box N`: Simulate opening N booster boxes (36 packs each) before splitting.
     *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--grep`, `--colors`, `--cmc`, `--mechanic`).
 
 ---
