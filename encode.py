@@ -170,13 +170,13 @@ if __name__ == '__main__':
                         help='Pick N random cards from the input (shorthand for --limit N). Shuffling is enabled unless --stable is used.')
     proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
                         help='Sort cards by a specific criterion (enables --stable).')
-    proc_group.add_argument('--booster', type=int, default=0,
-                        help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
-    proc_group.add_argument('--box', type=int, default=0,
-                        help='Simulate opening N booster boxes (36 packs each). Shuffles by default.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
+    filter_group.add_argument('--booster', type=int, default=0,
+                        help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
+    filter_group.add_argument('--box', type=int, default=0,
+                        help='Simulate opening N booster boxes (36 packs each). Shuffles by default.')
     filter_group.add_argument('--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
     filter_group.add_argument('--grep-name', action='append',
