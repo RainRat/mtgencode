@@ -166,6 +166,8 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
         cat_header = 'Combination'
     elif 'rarity' in t_lower:
         cat_header = 'Rarity'
+    elif 'identity' in t_lower:
+        cat_header = 'Identity'
     elif 'p/t' in t_lower:
         cat_header = 'P/T'
     elif 'loyalty' in t_lower:
@@ -190,7 +192,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
             if 'rarity' in title.lower():
                 display_color = utils.Ansi.get_rarity_color(k)
                 display_key = utils.colorize(display_key, display_color)
-            elif 'color' in title.lower() and 'number' not in title.lower():
+            elif ('color' in title.lower() or 'identity' in title.lower()) and 'number' not in title.lower() and 'count' not in title.lower():
                 display_color = utils.Ansi.get_color_color(k)
                 display_key = utils.colorize(display_key, display_color)
             elif 'mana costs' in title.lower():
@@ -349,6 +351,9 @@ class Datamine:
         self.by_pt = {}
         self.by_loyalty = {}
         self.by_rarity = {}
+        self.by_identity = {}
+        self.by_identity_inclusive = {}
+        self.by_identity_count = {}
         self.by_textlines = {}
         self.by_textlen = {}
         self.by_mechanic = {}
@@ -364,6 +369,9 @@ class Datamine:
             'by_color' : self.by_color,
             'by_color_inclusive' : self.by_color_inclusive,
             'by_color_count' : self.by_color_count,
+            'by_identity' : self.by_identity,
+            'by_identity_inclusive' : self.by_identity_inclusive,
+            'by_identity_count' : self.by_identity_count,
             'by_cmc' : self.by_cmc,
             'by_cost' : self.by_cost,
             'by_power' : self.by_power,
@@ -430,6 +438,18 @@ class Datamine:
 
                 inc(self.by_rarity, card.rarity_name, [card])
 
+                # Color Identity indexing
+                identity = card.color_identity
+                if identity:
+                    inc(self.by_identity, identity, [card])
+                    for c in identity:
+                        inc(self.by_identity_inclusive, c, [card])
+                    inc(self.by_identity_count, len(identity), [card])
+                else:
+                    inc(self.by_identity, 'A', [card])
+                    inc(self.by_identity_inclusive, 'A', [card])
+                    inc(self.by_identity_count, 0, [card])
+
                 inc(self.by_textlines, len(card.text_lines), [card])
                 inc(self.by_textlen, len(card.text.encode()), [card])
 
@@ -482,7 +502,7 @@ class Datamine:
                 percent = (count / total * 100) if total > 0 else 0
                 color = (utils.Ansi.BOLD + utils.Ansi.GREEN if label == 'Matched'
                          else utils.Ansi.BOLD + utils.Ansi.RED)
-                bar = _get_bar_chart(percent, use_color, color=color)
+                bar = get_bar_chart(percent, use_color, color=color)
 
                 rows.append([
                     label,
@@ -508,6 +528,12 @@ class Datamine:
                + str(len(self.by_color)) + ' combinations', use_color))
         _print_breakdown('Breakdown by color:', self.by_color_inclusive, len(self.allcards), use_color, vsize=vsize)
         _print_breakdown('Breakdown by number of colors:', self.by_color_count, len(self.allcards), use_color, vsize=vsize)
+        print()
+
+        print('  ' + color_line(str(len(self.by_identity_inclusive)) + ' represented identity colors, '
+               + str(len(self.by_identity)) + ' identity combinations', use_color))
+        _print_breakdown('Breakdown by color identity:', self.by_identity, len(self.allcards), use_color, vsize=vsize)
+        _print_breakdown('Breakdown by identity count:', self.by_identity_count, len(self.allcards), use_color, vsize=vsize)
         print()
 
         print('  ' + color_line(str(len(self.by_cmc)) + ' different CMCs, ' +

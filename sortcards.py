@@ -254,6 +254,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          sets = None, rarities = None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
          mechanics=None,
+         identities=None, id_counts=None,
          shuffle = False, seed = None, decklist_file = None,
          booster = 0, box = 0):
 
@@ -288,6 +289,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   colors=colors, cmcs=cmcs,
                                   pows=pows, tous=tous, loys=loys,
                                   mechanics=mechanics,
+                                  identities=identities, id_counts=id_counts,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
                                   exclude_layouts=lambda x: False,
@@ -411,7 +413,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Randomize the order of cards before sorting.')
@@ -453,6 +455,13 @@ Supports any encoding format supported by encode.py/decode.py.""",
                         help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple rarities (OR logic).")
     proc_group.add_argument('--colors', action='append',
                         help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple colors (OR logic).")
+
+    # Group: Filtering Options
+    filter_group = parser.add_argument_group('Filtering Options')
+    filter_group.add_argument('--identity', action='append',
+                        help="Only include cards with specific colors in their color identity (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple colors (OR logic).")
+    filter_group.add_argument('--id-count', action='append',
+                        help='Only include cards with specific color identity counts. Supports inequalities and ranges.')
     proc_group.add_argument('--cmc', action='append',
                         help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
     proc_group.add_argument('--pow', '--power', action='append', dest='pow',
@@ -521,6 +530,7 @@ Supports any encoding format supported by encode.py/decode.py.""",
          sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
+         identities=args.identity, id_counts=args.id_count,
          shuffle = args.shuffle, seed = args.seed, decklist_file = args.deck,
          booster = args.booster, box = args.box)
 

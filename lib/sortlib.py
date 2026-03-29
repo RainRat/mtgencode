@@ -69,6 +69,8 @@ def sort_cards(cards, criterion, quiet=False):
         # Flatten the list of lists returned by sort_colors
         segments = sort_colors(cards, quiet=quiet)
         return [card for segment in segments for card in segment]
+    elif criterion == 'identity':
+        return sorted(cards, key=lambda c: (len(c.color_identity), c.color_identity, c.name.lower()))
     elif criterion == 'type':
         return sort_type(cards)
     elif criterion == 'rarity':
