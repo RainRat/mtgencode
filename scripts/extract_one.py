@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+"""
+This utility extracts a single card object from a large MTGJSON file (like
+AllPrintings.json) and saves it to a smaller JSON file. This is useful for
+creating targeted test data or debugging specific card processing issues
+without having to load the entire dataset.
+"""
 import json
 import argparse
 
@@ -6,13 +13,12 @@ def extract_card(input_file, target_set_code, target_card_name, output_file):
     
     try:
         with open(input_file, 'r', encoding='utf-8') as f:
-            # MTGJSON v5 structure: { "data": { "SET_CODE": { "cards": [ ... ] } } }
+            # MTGJSON v4/v5 structure: { "data": { "SET_CODE": { "cards": [ ... ] } } }
             content = json.load(f)
             
         print("File loaded. Searching for card...")
 
-        # 1. Locate the Set
-        # Ensure 'data' key exists
+        # Locate the Set
         if 'data' not in content:
             print(f"Error: 'data' key not found in {input_file}. Is this a valid MTGJSON file?")
             return
@@ -24,20 +30,15 @@ def extract_card(input_file, target_set_code, target_card_name, output_file):
         set_data = content['data'][target_set_code]
         cards = set_data.get('cards', [])
 
-        # 2. Locate the Card
+        # Locate the Card
         found_card = None
         for card in cards:
-            # Use exact match or 'in' depending on preference. The original used 'in'.
-            # I'll stick to 'in' but maybe lowercase comparison would be better?
-            # The original code was: if TARGET_CARD_NAME in (card.get('name')):
-            # Let's keep the original logic for now.
+            # Use case-insensitive partial match to find the card
             if target_card_name.lower() in card.get('name', '').lower():
                 found_card = card
                 break
-                # Note: If you want a specific variant (foil/alt art), 
-                # you might need to check card['uuid'] or card['number'] here.
 
-        # 3. Save the Card
+        # Save the Card
         if found_card:
             print(f"Found '{found_card.get('name', 'Unknown')}'! Saving to {output_file}...")
             with open(output_file, 'w', encoding='utf-8') as out_f:
@@ -47,18 +48,32 @@ def extract_card(input_file, target_set_code, target_card_name, output_file):
             print(f"Error: Card '{target_card_name}' not found in set '{target_set_code}'.")
 
     except FileNotFoundError:
-        print(f"Error: Could not find {input_file} in this directory.")
+        print(f"Error: Could not find {input_file}.")
     except MemoryError:
         print("Error: The file is too large for your RAM.")
     except json.JSONDecodeError:
         print(f"Error: {input_file} is not a valid JSON file.")
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract a single card from an MTGJSON file.")
-    parser.add_argument("input_file", help="Path to the input JSON file (e.g., Vintage.json)")
-    parser.add_argument("set_code", help="The 3-character code for the set (e.g., MOM)")
-    parser.add_argument("card_name", help="The name of the card to extract")
-    parser.add_argument("--output", "-o", default="extracted_card.json", help="Path to the output JSON file")
+    parser = argparse.ArgumentParser(
+        description="Extract a single card from an MTGJSON file.",
+        epilog='''
+Example Usage:
+  python3 scripts/extract_one.py data/AllPrintings.json MOM "Etali, Primal Conqueror"
+  python3 scripts/extract_one.py data/Standard.json LEA "Black Lotus" -o lotus.json
+
+Notes:
+  - The card name search is case-insensitive and supports partial matches.
+  - Set codes should be 3-character uppercase codes (e.g., MOM, LEA, MRD).
+  - This tool is primarily used for creating small JSON files for testing.
+''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("input_file", help="Path to the input JSON file (e.g., data/AllPrintings.json).")
+    parser.add_argument("set_code", help="The 3-character set code (e.g., MOM, LEA).")
+    parser.add_argument("card_name", help="The name of the card to extract (supports partial matches).")
+    parser.add_argument("--output", "-o", default="extracted_card.json",
+                        help="Path where the extracted card data will be saved. Default: extracted_card.json")
 
     args = parser.parse_args()
 
