@@ -424,6 +424,20 @@ Extracts a single card from the massive `AllPrintings.json` file. This is useful
 python3 scripts/extract_one.py data/AllPrintings.json SET_CODE "Card Name"
 ```
 
+### `mtg_mechanics.py`
+Lists all mechanical keywords (e.g., Flying, Trample, Ward) recognized by the toolkit and can calculate their frequency in a dataset. This is useful for seeing which keywords are currently tracked or for analyzing the mechanical profile of a set.
+```bash
+# List all recognized mechanics
+python3 scripts/mtg_mechanics.py
+
+# Count frequency of mechanics in a dataset
+python3 scripts/mtg_mechanics.py data/AllPrintings.json --set MOM
+```
+*   **Options:**
+    *   `--sort {name,count}`: Sort results by name or frequency.
+    *   `--limit N`: Only show the top N mechanics.
+    *   Supports standard **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
+
 ### `distances.py` & `sum.py`
 These tools allow for bulk creativity analysis of your generated cards. `distances.py` calculates the semantic and name distance between your cards and the official dataset, and `sum.py` provides a statistical summary of the results.
 
