@@ -4,6 +4,8 @@ import os
 import json
 import argparse
 import re
+import random
+from contextlib import redirect_stdout
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -14,13 +16,16 @@ import datalib
 
 def load_sets(fname, verbose=False):
     if verbose:
-        print(f"Loading {fname}...", file=sys.stderr)
+        print(f"Loading {fname if fname != '-' else 'stdin'}...", file=sys.stderr)
 
     try:
-        with open(fname, 'r', encoding='utf-8') as f:
-            content = json.load(f)
+        if fname == '-':
+            content = json.load(sys.stdin)
+        else:
+            with open(fname, 'r', encoding='utf-8') as f:
+                content = json.load(f)
     except Exception as e:
-        print(f"Error loading {fname}: {e}", file=sys.stderr)
+        print(f"Error loading {fname if fname != '-' else 'stdin'}: {e}", file=sys.stderr)
         return []
 
     # MTGJSON v4/v5 structure: { "data": { "SET_CODE": { ... } } }
@@ -50,6 +55,11 @@ def load_sets(fname, verbose=False):
 def display_sets(sets, use_color=False):
     if not sets:
         return
+
+    header_text = 'AVAILABLE SETS'
+    if use_color:
+        header_text = utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
+    print(header_text)
 
     header = ["Code", "Name", "Type", "Release Date", "Count"]
     if use_color:
@@ -85,17 +95,26 @@ def display_sets(sets, use_color=False):
     separator = ['-' * w for w in col_widths]
     rows.insert(1, separator)
 
-    datalib.printrows(datalib.padrows(rows, aligns=['l', 'l', 'l', 'l', 'r']))
+    datalib.printrows(datalib.padrows(rows, aligns=['l', 'l', 'l', 'l', 'r']), indent=2)
 
 def main():
     parser = argparse.ArgumentParser(description="List and filter sets in an MTGJSON file.")
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infile', help='Path to the MTGJSON file (e.g., AllPrintings.json)')
+    io_group.add_argument('infile', nargs='?', default='-',
+                        help='Path to the MTGJSON file (e.g., AllPrintings.json). Defaults to stdin (-).')
+    io_group.add_argument('outfile', nargs='?', default=None,
+                        help='Optional path to save the set list. If not provided, the list prints to the console.')
 
     # Group: Data Processing
     proc_group = parser.add_argument_group('Data Processing')
+    proc_group.add_argument('-n', '--limit', type=int, default=0,
+                        help='Only process the first N sets.')
+    proc_group.add_argument('--shuffle', action='store_true',
+                        help='Randomize the order of sets before listing.')
+    proc_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random sets (shorthand for --shuffle --limit N).')
     proc_group.add_argument('--sort', choices=['code', 'name', 'type', 'date', 'count'], default='date',
                         help='Sort sets by a specific criterion (Default: date).')
     proc_group.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
@@ -113,12 +132,10 @@ def main():
 
     args = parser.parse_args()
 
-    # Determine if we should use color
-    use_color = False
-    if args.color is True:
-        use_color = True
-    elif args.color is None and sys.stdout.isatty():
-        use_color = True
+    # Handle --sample
+    if args.sample > 0:
+        args.shuffle = True
+        args.limit = args.sample
 
     sets = load_sets(args.infile, args.verbose)
     if not sets:
@@ -149,8 +166,36 @@ def main():
 
     sets.sort(key=sort_key_map[args.sort], reverse=args.reverse)
 
-    display_sets(sets, use_color=use_color)
-    print(f"\nFound {len(sets)} sets matching criteria.")
+    if args.shuffle:
+        random.shuffle(sets)
+
+    if args.limit > 0:
+        sets = sets[:args.limit]
+
+    output_f = sys.stdout
+    if args.outfile:
+        if args.verbose:
+            print(f'Writing set list to: {args.outfile}', file=sys.stderr)
+        output_f = open(args.outfile, 'w', encoding='utf8')
+
+    # Determine if we should use color
+    use_color = False
+    if args.color is True:
+        use_color = True
+    elif args.color is None and output_f.isatty():
+        use_color = True
+
+    try:
+        with redirect_stdout(output_f):
+            display_sets(sets, use_color=use_color)
+
+            summary = f"\nFound {len(sets)} sets matching criteria."
+            if use_color:
+                summary = utils.colorize(summary, utils.Ansi.BOLD + utils.Ansi.GREEN)
+            print(summary)
+    finally:
+        if args.outfile:
+            output_f.close()
 
 if __name__ == "__main__":
     main()
