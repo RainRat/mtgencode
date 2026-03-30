@@ -38,12 +38,20 @@ def padrows(rows, aligns=None):
         padded_cells = []
         for i, cell in enumerate(row):
             s = str(cell)
-            pad = ' ' * (col_widths[i] - utils.visible_len(s))
+            vis_len = utils.visible_len(s)
+            diff = col_widths[i] - vis_len
 
-            if aligns and i < len(aligns) and aligns[i] == 'r':
-                cell_str = pad + s
+            if aligns and i < len(aligns):
+                if aligns[i] == 'r':
+                    cell_str = (' ' * diff) + s
+                elif aligns[i] == 'c':
+                    left = diff // 2
+                    right = diff - left
+                    cell_str = (' ' * left) + s + (' ' * right)
+                else: # 'l'
+                    cell_str = s + (' ' * diff)
             else:
-                cell_str = s + pad
+                cell_str = s + (' ' * diff)
 
             padded_cells.append(cell_str)
 

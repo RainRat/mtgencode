@@ -11,6 +11,16 @@ import nltk.data
 
 from titlecase import titlecase
 
+# List of all mechanics recognized by get_face_mechanics()
+RECOGNIZED_MECHANICS = [
+    'Activated', 'Triggered', 'ETB Effect', 'Modal/Choice', 'X-Cost/Effect',
+    'Kicker', 'Uncast', 'Equipment', 'Leveler', 'Counters',
+    'Flying', 'Trample', 'Lifelink', 'Haste', 'Deathtouch', 'Vigilance',
+    'Ward', 'Prowess', 'Menace', 'Reach', 'Flash', 'Indestructible',
+    'Defender', 'Scry', 'Draw A Card', 'Mill', 'Exile', 'Token',
+    'Discard', 'Cycling', 'Convoke'
+]
+
 sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 # This could be made smarter - MSE will capitalize for us after :,
 # but we still need to capitalize the first english component of an activation
