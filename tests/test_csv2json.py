@@ -22,9 +22,9 @@ def test_csv2json_escaping():
 
         card = data['data']['CUS']['cards'][0]
         assert card['name'] == '"Giant" Growth'
-        # We expect the text to be exactly as in CSV (after csv.reader parsing)
-        # "He said ""Hello"".\\nNew line." in CSV -> He said "Hello".\nNew line. (literal \ and n)
-        assert card['text'] == 'He said "Hello".\\nNew line.'
+        # We expect the text to have \\n replaced by actual newline
+        # "He said ""Hello"".\\nNew line." in CSV -> He said "Hello".\nNew line.
+        assert card['text'] == 'He said "Hello".\nNew line.'
 
 def test_csv2json_newlines():
     # Test with actual newlines in CSV cells (requires quoting)

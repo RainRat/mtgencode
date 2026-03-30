@@ -30,9 +30,9 @@ CSV Format (7 columns in this order):
   2. Mana Cost: The mana symbols in braces (e.g., "{G}" or "{1}{W}{B}").
   3. Types: Supertypes and card types (e.g., "Legendary Creature").
   4. Subtypes: Subtypes separated by spaces (e.g., "Elf Warrior").
-  5. Text: Rules text. Use "\\\\" for new lines.
+  5. Text: Rules text. Use "\\n" or literal newlines for new lines.
   6. Stats: Power/Toughness (3/3), Loyalty (5), or Defense (3).
-  7. Rarity: Short marker (C, U, R, M) or full name (common, rare, etc.).
+  7. Rarity: Short marker (C, U, R, M, L, I) or full name (common, rare, etc.).
 
 Note: The first row is ignored if the first column is exactly "name".
 ''',
@@ -42,7 +42,7 @@ parser.add_argument('csv_file', help='Path to the input CSV file.')
 parser.add_argument('json_output', help='Path to the output JSON file.')
 args = parser.parse_args()
 
-rarity_mapping = {"R": "rare", "U": "uncommon", "C": "common", "M": "mythic"}
+rarity_mapping = {"R": "rare", "U": "uncommon", "C": "common", "M": "mythic", "L": "basic land", "I": "special"}
 
 with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
     reader = csv.reader(csvfile)
@@ -60,7 +60,7 @@ with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
             "name": row[0],
             "rarity": temprarity,
             "setCode": "CUS",
-            "text": row[4],
+            "text": row[4].replace("\\n", "\n"),
         }
         # supertypes, types, subtypes
         supertypes, types = utils.split_types(row[2])

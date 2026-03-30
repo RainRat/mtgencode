@@ -15,7 +15,7 @@ def comprehensive_cards_data():
         {
             "name": "Card A",
             "types": ["Creature"],
-            "supertypes": ["Legendary"], # For supertype coverage
+            "supertypes": ["Legendary"],
             "pt": "1/1",
             "manaCost": "{R}",
             "cmc": 1,
@@ -61,13 +61,9 @@ def test_summarize_with_color(comprehensive_cards_data, capsys):
     assert "CONTENT & MECHANICS" in output
 
     # Check specific colorized breakdown logic
-    # Rarity breakdown colorization
     assert "common" in output.lower()
-    # Color breakdown colorization
     assert "R" in output
-    # Mana cost breakdown colorization
     assert "{R}" in output
-    # P/T and Loyalty breakdown colorization
     assert "1/1" in output
     assert "3" in output
 
@@ -85,12 +81,8 @@ def test_outliers_comprehensive(comprehensive_cards_data, capsys):
     assert "card a" in output.lower()
     assert "invalid cards" in output
     assert "unparsed cards" in output
-    # Check for some expected index keys in overview
     assert "by_name" in output
     assert "by_type" in output
-    # Check supertype outlier coverage
-    # Cardlib might be lowercasing supertypes?
-    # Yes, from fields_from_json: supertypes = [s.strip().lower() for s in src_json['supertypes']]
     assert "legendary" in output.lower()
 
 def test_outliers_no_dump_invalid(comprehensive_cards_data, capsys):
@@ -122,7 +114,6 @@ def test_outliers_empty_indices(capsys):
     assert "No cards indexed by char count?" in output
 
 def test_inc_with_zero():
-    # Covering 'if k or k == 0:' branch in inc
     from datalib import inc
     d = {}
     inc(d, 0, [1])
@@ -130,18 +121,15 @@ def test_inc_with_zero():
     assert d[0] == [1]
 
 def test_print_breakdown_empty():
-    # Covering 'if not index: return' in _print_breakdown
     from datalib import _print_breakdown
     # Should just return without printing anything
     _print_breakdown("Empty", {}, 0, False)
 
 def test_datamine_init_empty_item():
-    # Covering 'if not item: continue' in Datamine.__init__
     dm = Datamine([None, {}])
     assert len(dm.allcards) == 0
 
 def test_datamine_init_has_fields():
-    # Covering 'if hasattr(item, "fields"): card = item'
     card = Card({"name": "Test", "types": ["Instant"], "rarity": "Common"})
     dm = Datamine([card])
     assert len(dm.cards) == 1

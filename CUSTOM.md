@@ -37,9 +37,9 @@ Create a CSV file with your custom cards. You can start with this [Google Sheet 
     *   **Mana Cost**: Use brackets for symbols (e.g., `{1}{W}{B}`).
     *   **Type**: Supertypes and Types (e.g., `Legendary Creature`).
     *   **Subtypes**: (e.g., `Elf Warrior`).
-    *   **Text**: Rules text. Use `\n` for new lines.
+    *   **Text**: Rules text. Use `\n` or literal newlines for new lines.
     *   **P/T, Loyalty, or Defense**: Use `3/3` for creatures, or a single number for Planeswalker loyalty or Battle defense.
-    *   **Rarity**: Use shorthands: `C` (Common), `U` (Uncommon), `R` (Rare), `M` (Mythic).
+    *   **Rarity**: Use shorthands: `C` (Common), `U` (Uncommon), `R` (Rare), `M` (Mythic), `L` (Basic Land), `I` (Special).
 3.  Click **File -> Download -> Comma Separated Values (.csv)**.
 4.  Save it as `custom.csv`.
 
