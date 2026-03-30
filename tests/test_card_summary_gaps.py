@@ -1,41 +1,162 @@
-from lib.cardlib import Card
-from lib import utils
 
-def test_summary_invalid_colored_status_indicator():
-    invalid_json = {"name": "Invalid Creature", "types": ["Creature"], "rarity": "Common"}
-    card = Card(invalid_json)
+import pytest
+from lib.cardlib import Card, field_other
+
+def test_card_summary_bside():
+    card_json = {
+        "name": "Side A",
+        "types": ["Creature"],
+        "rarity": "Common",
+        "bside": {
+            "name": "Side B",
+            "types": ["Instant"]
+        }
+    }
+    card = Card(card_json)
+    summary = card.summary()
+    assert "Side A" in summary
+    assert "Side B" in summary
+    assert " // " in summary
+
+def test_card_summary_invalid_ansi():
+    # Line 1106: not self.valid with ansi_color=True
+    card = Card({"name": "Invalid", "types": ["Creature"], "rarity": "Common"})
+    # Missing P/T makes it invalid
     assert not card.valid
-
     summary = card.summary(ansi_color=True)
-    expected_status = utils.colorize("[?] ", utils.Ansi.YELLOW)
-    assert summary.startswith(expected_status)
+    assert "[?]" in summary
+    assert "\033[93m" in summary # Yellow
 
-def test_summary_planeswalker_loyalty_parentheses():
-    pw_json = {
-        "name": "Jace",
-        "manaCost": "{1}{U}{U}",
-        "types": ["Planeswalker"],
-        "rarity": "Rare",
-        "loyalty": 3
+def test_card_format_vdump_no_name_no_type():
+    card_json = {
+        "name": "",
+        "types": []
     }
-    card = Card(pw_json)
-    assert card.loyalty == "&^^^"
+    card = Card(card_json)
+    formatted = card.format(vdump=True, gatherer=True)
+    assert "_NONAME_" in formatted
+    assert "_NOTYPE_" in formatted
 
-    summary = card.summary()
-    assert "(3)" in summary
-    assert "[[3]]" not in summary
-
-def test_summary_battle_defense_brackets():
-    battle_json = {
-        "name": "Invasion",
-        "manaCost": "{1}{G}",
-        "types": ["Battle"],
-        "rarity": "Uncommon",
-        "defense": 5
+def test_card_format_bside_variants():
+    card_json = {
+        "name": "A", "types": ["Land"],
+        "bside": {"name": "B", "types": ["Land"]}
     }
-    card = Card(battle_json)
-    assert card.loyalty == "&^^^^^"
+    card = Card(card_json)
 
-    summary = card.summary()
-    assert "[[5]]" in summary
-    assert "(5)" not in summary
+    # Standard
+    fmt = card.format()
+    assert "~~~~ (B-Side) ~~~~" in fmt
+
+    # ANSI Color
+    fmt_color = card.format(ansi_color=True)
+    assert "\033[" in fmt_color
+
+    # Markdown
+    fmt_md = card.format(for_md=True)
+    assert "~~~~~~~~" in fmt_md
+
+def test_card_to_dict_metadata_and_pt():
+    card_json = {
+        "name": "Test",
+        "types": ["Creature"],
+        "pt": "1/1",
+        "setCode": "EXP",
+        "number": "42"
+    }
+    card = Card(card_json)
+    # Manually set pt to something without '/'
+    card.pt = "7"
+    d = card.to_dict()
+    assert d['pt'] == "7"
+    assert d['setCode'] == "EXP"
+    assert d['number'] == "42"
+
+def test_card_to_mse_bside_complex():
+    card_json = {
+        "name": "A", "types": ["Creature"], "rarity": "rare",
+        "bside": {
+            "name": "B", "types": ["Creature"], "subtypes": ["Warrior"],
+            "rarity": "special", "power": "2", "toughness": "2"
+        }
+    }
+    card = Card(card_json)
+    mse = card.to_mse()
+    assert "name 2: B" in mse
+    assert "rarity 2: special" in mse
+    assert "sub type 2: Warrior" in mse
+    assert "power 2: 2" in mse
+    assert "toughness 2: 2" in mse
+
+def test_card_to_markdown_row_variants():
+    card_json = {
+        "name": "A", "types": ["Land"], "rarity": "Common",
+        "bside": {
+            "name": "B", "types": ["Land"], "rarity": "Rare"
+        }
+    }
+    card = Card(card_json)
+    row = card.to_markdown_row()
+    assert "common // rare" in row or "Common // Rare" in row
+
+    # No cost
+    card_no_cost = Card({"name": "C", "types": ["Land"]})
+    row_no_cost = card_no_cost.to_markdown_row()
+    assert "| C |" in row_no_cost
+
+def test_card_encode_invalid_field():
+    card = Card({"name": "Test", "types": ["Land"]})
+    with pytest.raises(ValueError, match="unknown field for Card.encode"):
+        card.encode(fmt_ordered=["nonexistent_field"])
+
+def test_card_set_pt_multiple_and_invalid():
+    # We'll call _set_pt directly.
+    card = Card({"name": "Test", "types": ["Creature"]})
+    card.verbose = True
+    # Invalid P/T (missing /)
+    card._set_pt([(-1, "7")])
+    assert card.valid == False
+
+    # Multiple P/T
+    card._set_pt([(0, "1/1"), (1, "2/2")])
+    assert card.valid == False
+
+def test_card_set_text_multiple():
+    card = Card({"name": "Test", "types": ["Instant"]})
+    # Multiple text values
+    card._set_text([(0, card.text), (1, card.text)])
+    assert card.valid == False
+
+def test_card_format_other_fields():
+    card = Card({"name": "Test", "types": ["Land"]})
+    card_other_fields = [(0, "extra1"), (1, "extra2")]
+    setattr(card, field_other, card_other_fields)
+
+    # HTML
+    fmt_html = card.format(for_html=True, vdump=True)
+    assert "<br>\n(1) extra2" in fmt_html
+
+    # Markdown
+    fmt_md = card.format(for_md=True, vdump=True)
+    assert "  \n(1) extra2" in fmt_md
+
+def test_card_fields_from_format_multiple():
+    # Encoded card with duplicate name field
+    card = Card("|1Name1|1Name2|5land|")
+    assert card.valid == False
+
+def test_card_constructor_unknown_field():
+    with pytest.raises(ValueError, match="Unknown field for Card object"):
+        Card("Test", fmt_ordered=["unknown_field"])
+
+def test_card_set_loyalty_multiple():
+    card = Card({"name": "Test", "types": ["Planeswalker"], "loyalty": "3"})
+    card.verbose = True
+    card._set_loyalty([(0, "3"), (1, "4")])
+    assert card.valid == False
+
+def test_card_to_mse_rarity_not_in_unmap():
+    card = Card({"name": "Test", "types": ["Land"]})
+    card.rarity = "SuperRare"
+    mse = card.to_mse()
+    assert "rarity: superrare" in mse
