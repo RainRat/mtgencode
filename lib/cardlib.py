@@ -521,42 +521,42 @@ class Card:
     @property
     def is_artifact(self):
         """Returns True if the card is an artifact."""
-        return 'artifact' in self.types
+        return any(t.lower() == 'artifact' for t in self.types)
 
     @property
     def is_creature(self):
         """Returns True if the card is a creature or a vehicle."""
-        return 'creature' in self.types or 'vehicle' in self.subtypes
+        return any(t.lower() == 'creature' for t in self.types) or any(s.lower() == 'vehicle' for s in self.subtypes)
 
     @property
     def is_planeswalker(self):
         """Returns True if the card is a planeswalker."""
-        return 'planeswalker' in self.types
+        return any(t.lower() == 'planeswalker' for t in self.types)
 
     @property
     def is_battle(self):
         """Returns True if the card is a battle."""
-        return 'battle' in self.types
+        return any(t.lower() == 'battle' for t in self.types)
 
     @property
     def is_land(self):
         """Returns True if the card is a land."""
-        return 'land' in self.types
+        return any(t.lower() == 'land' for t in self.types)
 
     @property
     def is_enchantment(self):
         """Returns True if the card is an enchantment."""
-        return 'enchantment' in self.types
+        return any(t.lower() == 'enchantment' for t in self.types)
 
     @property
     def is_instant(self):
         """Returns True if the card is an instant."""
-        return 'instant' in self.types
+        return any(t.lower() == 'instant' for t in self.types)
 
     @property
     def is_sorcery(self):
         """Returns True if the card is a sorcery."""
-        return 'sorcery' in self.types
+        return any(t.lower() == 'sorcery' for t in self.types)
 
     @property
     def color_identity(self):
@@ -787,7 +787,7 @@ class Card:
         else:
             # Colorless / Artifacts
             # Lands are typically just BOLD, non-land colorless are CYAN
-            if 'land' not in [t.lower() for t in self.types]:
+            if not self.is_land:
                 return utils.Ansi.get_color_color('A')
             return utils.Ansi.BOLD
 
@@ -1638,12 +1638,11 @@ class Card:
         # Determine tablerow
         # 0: Land, 1: Other, 2: Creature, 3: Spells
         tablerow = 1
-        types_lower = [t.lower() for t in self.types]
-        if 'land' in types_lower:
+        if self.is_land:
             tablerow = 0
-        elif 'creature' in types_lower:
+        elif any(t.lower() == 'creature' for t in self.types):
             tablerow = 2
-        elif 'instant' in types_lower or 'sorcery' in types_lower:
+        elif self.is_instant or self.is_sorcery:
             tablerow = 3
 
         xml_out = "    <card>\n"
