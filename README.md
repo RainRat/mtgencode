@@ -391,6 +391,24 @@ python3 scripts/mtg_validate.py data/AllPrintings.json --dump
     *   `-q`, `--quiet`: Suppress the progress bar.
     *   Supports all **Advanced Filtering** flags.
 
+### `mtg_sets.py`
+Lists and filters sets in an MTGJSON file. This is useful for seeing which sets are available in a large dataset like `AllPrintings.json`.
+```bash
+# List all sets in a dataset
+python3 scripts/mtg_sets.py data/AllPrintings.json
+
+# Find sets with "Masters" in their name or code
+python3 scripts/mtg_sets.py data/AllPrintings.json --grep "Masters"
+```
+*   **Options:**
+    *   `-n LIMIT`, `--limit LIMIT`: Only process the first N sets.
+    *   `--shuffle`: Randomize the order of sets before listing.
+    *   `--sample N`: Pick N random sets (shorthand for `--shuffle --limit N`).
+    *   `--sort {code,name,type,date,count}`: Sort sets by a specific criterion (Default: date).
+    *   `--reverse`: Reverse the sort order.
+    *   `--grep PATTERN`: Only include sets matching a search pattern (checks name and code). Use multiple times for AND logic.
+    *   `--color` / `--no-color`: Enable or disable ANSI color output.
+
 ### `mtg_diff.py`
 Compares two card datasets and identifies additions, removals, and modifications. It highlights changes in cost, type, stats, text, and rarity.
 ```bash
