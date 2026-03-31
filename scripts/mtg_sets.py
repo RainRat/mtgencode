@@ -13,6 +13,7 @@ sys.path.append(libdir)
 
 import utils
 import datalib
+import jdecode
 
 def load_sets(fname, verbose=False):
     if verbose:
@@ -26,16 +27,16 @@ def load_sets(fname, verbose=False):
                 content = json.load(f)
     except Exception as e:
         print(f"Error loading {fname if fname != '-' else 'stdin'}: {e}", file=sys.stderr)
-        return []
+        return [], None, None
 
     # MTGJSON v4/v5 structure: { "data": { "SET_CODE": { ... } } }
     if 'data' not in content:
         # Fallback for files that might just be a dictionary of sets already
-        if isinstance(content, dict) and any('cards' in v for v in content.values()):
+        if isinstance(content, dict) and any(isinstance(v, dict) and 'cards' in v for v in content.values()):
             sets_data = content
         else:
             print(f"Error: 'data' key not found in {fname}. Is this a valid MTGJSON file?", file=sys.stderr)
-            return []
+            return [], None, None
     else:
         sets_data = content['data']
 
@@ -50,7 +51,7 @@ def load_sets(fname, verbose=False):
             'count': len(data.get('cards', []))
         })
 
-    return sets
+    return sets, sets_data, content
 
 def display_sets(sets, use_color=False):
     if not sets:
@@ -120,6 +121,12 @@ def main():
     proc_group.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
     proc_group.add_argument('--grep', '--filter', action='append',
                         help='Only include sets matching a search pattern (checks name and code). Use multiple times for AND logic.')
+    proc_group.add_argument('--summarize', action='store_true',
+                        help='Show statistics and mechanical profiling for the cards in the filtered sets.')
+    proc_group.add_argument('--view', action='store_true',
+                        help='Display a compact list of all cards in the filtered sets.')
+    proc_group.add_argument('-t', '--top', type=int, default=10,
+                        help='Limit the number of entries in breakdown tables (used with --summarize).')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -137,7 +144,7 @@ def main():
         args.shuffle = True
         args.limit = args.sample
 
-    sets = load_sets(args.infile, args.verbose)
+    sets, sets_data, full_content = load_sets(args.infile, args.verbose)
     if not sets:
         sys.exit(1)
 
@@ -193,6 +200,34 @@ def main():
             if use_color:
                 summary = utils.colorize(summary, utils.Ansi.BOLD + utils.Ansi.GREEN)
             print(summary)
+
+            if (args.summarize or args.view) and sets:
+                set_codes = [s['code'] for s in sets]
+
+                # Re-load cards from filtered sets
+                # We wrap the data in a 'data' key if it was present in the original
+                if 'data' in full_content:
+                    jobj = {'data': {k: v for k, v in sets_data.items() if k in set_codes}}
+                else:
+                    jobj = {k: v for k, v in sets_data.items() if k in set_codes}
+
+                allcards, _ = jdecode.mtg_open_json_obj(jobj)
+                cards = jdecode._process_json_srcs(allcards, set(), verbose=args.verbose,
+                                                   linetrans=True,
+                                                   exclude_sets=lambda x: False,
+                                                   exclude_types=lambda x: False,
+                                                   exclude_layouts=lambda x: False,
+                                                   report_fobj=None)
+
+                if args.view:
+                    print('\n' + (utils.colorize("CARD LIST", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) if use_color else "=== CARD LIST ==="))
+                    for card in cards:
+                        print(card.summary(ansi_color=use_color))
+
+                if args.summarize:
+                    print('\n' + (utils.colorize("SET SUMMARY", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) if use_color else "=== SET SUMMARY ==="))
+                    mine = datalib.Datamine(cards)
+                    mine.summarize(use_color=use_color, vsize=args.top)
     finally:
         if args.outfile:
             output_f.close()
