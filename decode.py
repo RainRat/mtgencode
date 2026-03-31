@@ -221,10 +221,10 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         if for_md_table:
             if booster > 0:
-                writer.write("| Pack | Name | Cost | CMC | Type | Stats | Mechanics | Rules Text | Rarity |\n")
+                writer.write("| Pack | Name | Cost | CMC | Type | Stats | Rarity | Mechanics | Rules Text |\n")
                 writer.write("| ---: | :--- | :--- | ---: | :--- | ---: | :--- | :--- | :--- |\n")
             else:
-                writer.write("| Name | Cost | CMC | Type | Stats | Mechanics | Rules Text | Rarity |\n")
+                writer.write("| Name | Cost | CMC | Type | Stats | Rarity | Mechanics | Rules Text |\n")
                 writer.write("| :--- | :--- | ---: | :--- | ---: | :--- | :--- | :--- |\n")
         if for_mse:
             # have to prepend a massive chunk of formatting info
@@ -298,7 +298,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         if for_table:
             import datalib
             rows = []
-            header = ["Name", "Cost", "CMC", "Type", "Stats", "Mechanics", "Rarity"]
+            header = ["Name", "Cost", "CMC", "Type", "Stats", "Rarity", "Mechanics"]
             if booster > 0 or box > 0:
                 header.insert(0, "Pack")
             if box > 0:

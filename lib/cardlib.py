@@ -1552,7 +1552,7 @@ class Card:
         name, cost, cmc, typeline, stats, text, rarity, mechanics = self._get_display_data(include_text=True)
 
         # Escape pipe characters and ensure no actual newlines break the row
-        fields = [name, cost, cmc, typeline, stats, mechanics, text, rarity]
+        fields = [name, cost, cmc, typeline, stats, rarity, mechanics, text]
         fields = [f.replace('|', '\\|').replace('\n', ' ') for f in fields]
 
         return f"| {' | '.join(fields)} |"
@@ -1561,7 +1561,7 @@ class Card:
         """Returns a list of strings representing the card's fields for a terminal table."""
         name, cost, cmc, typeline, stats, _, rarity, mechanics = self._get_display_data(ansi_color=ansi_color)
 
-        return [name, cost, cmc, typeline, stats, mechanics, rarity]
+        return [name, cost, cmc, typeline, stats, rarity, mechanics]
 
     def vectorize(self):
         """Vectorizes the card data into a string format suitable for machine learning.
