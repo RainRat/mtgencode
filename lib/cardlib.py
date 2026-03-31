@@ -562,10 +562,9 @@ class Card:
     def color_identity(self):
         """Returns the color identity of the card (mana cost + rules text symbols)."""
         colors = set(self.cost.colors)
-        if hasattr(self.text, 'costs'):
-            for cost in self.text.costs:
-                for char in cost.colors:
-                    colors.add(char)
+        for cost in self.text.costs:
+            for char in cost.colors:
+                colors.add(char)
 
         if self.bside:
             for char in self.bside.color_identity:
