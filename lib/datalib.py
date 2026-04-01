@@ -41,16 +41,14 @@ def padrows(rows, aligns=None):
             vis_len = utils.visible_len(s)
             diff = col_widths[i] - vis_len
 
-            if aligns and i < len(aligns):
-                if aligns[i] == 'r':
-                    cell_str = (' ' * diff) + s
-                elif aligns[i] == 'c':
-                    left = diff // 2
-                    right = diff - left
-                    cell_str = (' ' * left) + s + (' ' * right)
-                else: # 'l'
-                    cell_str = s + (' ' * diff)
-            else:
+            align = aligns[i] if (aligns and i < len(aligns)) else 'l'
+            if align == 'r':
+                cell_str = (' ' * diff) + s
+            elif align == 'c':
+                left = diff // 2
+                right = diff - left
+                cell_str = (' ' * left) + s + (' ' * right)
+            else: # 'l'
                 cell_str = s + (' ' * diff)
 
             padded_cells.append(cell_str)
