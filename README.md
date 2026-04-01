@@ -423,6 +423,23 @@ python3 scripts/mtg_diff.py data/AllPrintings.json generated_cards.txt
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
     *   Supports all **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
 
+### `mtg_compare.py`
+Provides a side-by-side statistical comparison of two or more card datasets. This is useful for evaluating how well a generated dataset matches the characteristics of official Magic data.
+```bash
+# Compare official data vs generated cards
+python3 scripts/mtg_compare.py data/AllPrintings.json generated.txt
+
+# Compare multiple sets
+python3 scripts/mtg_compare.py --set MOM --set ONE data/AllPrintings.json
+```
+*   **Comparison includes:** Card counts, validity, uniqueness, average stats (CMC, P/T), and percentage distributions for colors, types, and rarities.
+*   **Options:**
+    *   `--limit N`: Only process the first N cards from each input.
+    *   `--shuffle`: Randomize cards before analysis.
+    *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+    *   `--color` / `--no-color`: Enable or disable ANSI color output.
+    *   Supports standard **Advanced Filtering** flags.
+
 ### `json2csv.py`, `csv2json.py` & `combinejson.py`
 Used for integrating custom cards into your dataset. These scripts let you export existing cards to CSV, convert spreadsheets to JSON, and merge them with official data. See [CUSTOM.md](CUSTOM.md) for a full guide.
 ```bash
