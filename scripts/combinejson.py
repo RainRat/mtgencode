@@ -1,7 +1,15 @@
 """
-This script merges two Magic: The Gathering card data files in JSON format.
-It is primarily used to combine custom card data with the official MTGJSON
-dataset, allowing you to include your own designs in AI training or analysis.
+Merge two Magic: The Gathering card data files in JSON format.
+
+This utility is primarily used to combine custom card data with the official
+MTGJSON dataset. By merging your own designs with official data, you can
+create comprehensive datasets for AI training, validation, or mechanical
+analysis.
+
+Conflict Resolution:
+If the same key (e.g., a set code or card identifier) exists in both files,
+the value from the second file (custom_file) will overwrite the value from
+the first file (base_file).
 """
 import json
 import argparse
@@ -26,14 +34,18 @@ def main():
         description="Merge two Magic: The Gathering card data files in JSON format.",
         epilog='''
 Custom Card Workflow:
-  1. Create a CSV file with your custom cards.
-  2. Convert the CSV to JSON:
+  1. Create a CSV file containing your custom cards (see CUSTOM.md).
+  2. Convert the CSV to JSON format:
      python3 scripts/csv2json.py custom.csv custom.json
-  3. Merge with official data:
+  3. Merge your custom JSON with the official dataset:
      python3 scripts/combinejson.py data/AllPrintings.json custom.json AllCustom.json
 
+Notes:
+  - If keys conflict, data from the second file (custom_file) overwrites the first.
+  - This script supports recursive dictionary merging for nested metadata.
+
 Example:
-  python3 scripts/combinejson.py data/AllPrintings.json my_set.json AllCards.json
+  python3 scripts/combinejson.py data/AllPrintings.json my_custom_set.json AllCards.json
 ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
