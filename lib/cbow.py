@@ -168,8 +168,8 @@ class CBOW:
             (vocab, vecs) = read_vector_file(vector_fname)
             self.vocab = vocab
             self.vecs = vecs
-        except struct.error:
-            print('WARNING: cbow.bin is malformed, CBOW will be disabled.')
+        except (struct.error, ValueError, OSError):
+            print('WARNING: cbow.bin is malformed or missing, CBOW will be disabled.')
             self.disabled = True
             return
 
