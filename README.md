@@ -473,6 +473,21 @@ python3 scripts/mtg_mechanics.py data/AllPrintings.json --set MOM
     *   `--limit N`: Only show the top N mechanics.
     *   Supports standard **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
 
+### `mtg_lexicon.py`
+Analyzes the characteristic vocabulary (lexicon) of each Magic color. This identifies "signature words" that appear significantly more often in one color compared to others, helping verify the color-pie integrity of AI designs.
+```bash
+# Analyze lexicon for a dataset
+python3 scripts/mtg_lexicon.py data/AllPrintings.json
+
+# Compare lexicon between official data and AI output
+python3 scripts/mtg_lexicon.py data/AllPrintings.json --compare generated.txt
+```
+*   **Options:**
+    *   `-t N`, `--top N`: Number of signature words to show per color (Default: 10).
+    *   `--min-len N`: Minimum word length to include in analysis (Default: 4).
+    *   `--compare FILE`: Side-by-side comparison with a second dataset.
+    *   Supports standard **Advanced Filtering** flags.
+
 ### `distances.py` & `sum.py`
 These tools allow for bulk creativity analysis of your generated cards. `distances.py` calculates the semantic and name distance between your cards and the official dataset, and `sum.py` provides a statistical summary of the results.
 
