@@ -11,31 +11,52 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import cardlib
+from titlecase import titlecase
 
-def get_field_value(card, field):
+def get_field_value(card, field, ansi_color=False):
     """Extracts a specific field value from a Card object."""
     field = field.lower().strip()
 
     if field == 'name':
-        return card.name
+        res = titlecase(card.name)
+        if ansi_color:
+            res = utils.colorize(res, card._get_ansi_color())
+        return res
     elif field == 'cost':
-        return card.cost.format()
+        return card.cost.format(ansi_color=ansi_color)
     elif field == 'cmc':
-        return card.cost.cmc
+        res = str(int(card.cost.cmc)) if card.cost.cmc == int(card.cost.cmc) else f"{card.cost.cmc:.1f}"
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
+        return res
     elif field == 'supertypes':
         return " ".join(card.supertypes)
     elif field == 'types':
         return " ".join(card.types)
     elif field == 'subtypes':
         return " ".join(card.subtypes)
+    elif field == 'type':
+        res = card.get_type_line(separator=utils.dash_marker)
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.GREEN)
+        return res
     elif field == 'pt':
-        return utils.from_unary(card.pt) if card.pt else ""
+        res = utils.from_unary(card.pt) if card.pt else ""
+        if res and ansi_color:
+            res = utils.colorize(res, utils.Ansi.RED)
+        return res
     elif field == 'loyalty':
-        return utils.from_unary(card.loyalty) if card.loyalty else ""
+        res = utils.from_unary(card.loyalty) if card.loyalty else ""
+        if res and ansi_color:
+            res = utils.colorize(res, utils.Ansi.RED)
+        return res
     elif field == 'text':
-        return card.get_text(force_unpass=True)
+        return card.get_text(force_unpass=True, ansi_color=ansi_color)
     elif field == 'rarity':
-        return card.rarity_name
+        res = card.rarity_name
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.get_rarity_color(res))
+        return res
     elif field == 'mechanics':
         return ", ".join(sorted(list(card.mechanics)))
     elif field == 'identity':
@@ -81,8 +102,8 @@ Example Usage:
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to stdin (-).')
-    io_group.add_argument('--fields', default='name',
-                        help='Comma-separated list of fields to output (Default: name).')
+    io_group.add_argument('--fields', default='name,cost,type,rarity',
+                        help='Comma-separated list of fields to output (Default: name,cost,type,rarity).')
     io_group.add_argument('--delimiter', default=' | ',
                         help='Separator between fields in text output (Default: " | ").')
     io_group.add_argument('--json', action='store_true',
@@ -161,6 +182,13 @@ Example Usage:
     debug_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
     debug_group.add_argument('-q', '--quiet', action='store_true', help='Suppress status messages.')
 
+    # Color options
+    color_group = debug_group.add_mutually_exclusive_group()
+    color_group.add_argument('--color', action='store_true', default=None,
+                        help='Force enable ANSI color output (useful for piping to less -R).')
+    color_group.add_argument('--no-color', action='store_false', dest='color',
+                        help='Disable ANSI color output.')
+
     args = parser.parse_args()
 
     # Handle --sample
@@ -193,6 +221,13 @@ Example Usage:
     if args.limit > 0:
         cards = cards[:args.limit]
 
+    # Determine if we should use color
+    use_color = False
+    if args.color is True:
+        use_color = True
+    elif args.color is None and not args.json and sys.stdout.isatty():
+        use_color = True
+
     # Process output
     field_list = [f.strip() for f in args.fields.split(',')]
 
@@ -200,7 +235,7 @@ Example Usage:
     for card in cards:
         card_data = {}
         for field in field_list:
-            card_data[field] = get_field_value(card, field)
+            card_data[field] = get_field_value(card, field, ansi_color=use_color)
         results.append(card_data)
 
     if args.json:
