@@ -1,0 +1,35 @@
+{
+  "data": {
+    "EOC": {
+      "code": "EOC",
+      "cards": [
+        {
+          "name": "Uthros Research Craft",
+          "manaCost": "{2}{U}",
+          "rarity": "rare",
+          "supertypes": [],
+          "types": [
+            "Artifact"
+          ],
+          "subtypes": [
+            "Spacecraft"
+          ],
+          "power": "0",
+          "toughness": "8",
+          "text": "Station\nStation 3+\nStation 12+\nFlying\nWhenever you cast an artifact spell, draw a card. Put a charge counter on this spacecraft.\nThis spacecraft gets +1/+0 for each artifact you control.\n",
+          "mechanics": [
+            "Counters",
+            "Draw A Card",
+            "Flying",
+            "Triggered"
+          ],
+          "colorIdentity": [
+            "U"
+          ],
+          "setCode": "EOC",
+          "number": "7"
+        }
+      ]
+    }
+  }
+}

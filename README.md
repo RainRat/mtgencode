@@ -471,6 +471,17 @@ python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" 
 *   **Fields:** `name`, `cost`, `cmc`, `supertypes`, `types`, `subtypes`, `pt`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `encoded`.
 *   Supports all **Advanced Filtering** flags and booster/box simulation.
 
+### `mtg_subset.py`
+Creates a filtered subset of an MTGJSON file while preserving its structure. This is useful for creating specialized training datasets or lightweight card databases without losing set-level metadata.
+```bash
+# Create a subset of only Legendary cards from a specific set
+python3 scripts/mtg_subset.py data/AllPrintings.json output.json --set MOM --grep "Legendary"
+
+# Create a tiny dataset of 100 random rare creatures
+python3 scripts/mtg_subset.py data/AllPrintings.json tiny.json --rarity rare --grep-type "Creature" --sample 100
+```
+*   Supports all **Advanced Filtering** flags and sorting.
+
 ### `mtg_mechanics.py`
 Lists all mechanical keywords (e.g., Flying, Trample, Ward) recognized by the toolkit and can calculate their frequency in a dataset. This is useful for seeing which keywords are currently tracked or for analyzing the mechanical profile of a set.
 ```bash
