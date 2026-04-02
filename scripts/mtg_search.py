@@ -57,22 +57,32 @@ def get_field_value(card, field):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Search Magic: The Gathering card data and extract specific fields.",
+        description="Search card data and extract specific fields. It works with all supported formats (JSON, CSV, XML, or encoded text).",
         epilog='''
 Available Fields:
-  name, cost, cmc, supertypes, types, subtypes, pt, loyalty,
-  text, rarity, mechanics, identity, id_count, set, number,
-  pack, box, encoded
+  Basic Metadata:
+    name, cost, cmc, rarity, set, number
+  Types & Text:
+    supertypes, types, subtypes, text, mechanics
+  Stats:
+    pt (Power/Toughness), loyalty (Loyalty or Defense)
+  Color Info:
+    identity (Color Identity), id_count
+  Simulation & Encoding:
+    pack (Pack ID), box (Box ID), encoded (Encoded text string)
 
-Example Usage:
+Usage Examples:
   # List names and costs of all Goblins
   python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "name,cost"
 
-  # Find all mythic rares with CMC > 7 and output as JSON
-  python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" --json
+  # Find all mythic rares with CMC > 7 and save to a JSON file
+  python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" --json > mythics.json
 
-  # Extract encoded strings for all artifacts from a directory
+  # Extract encoded strings for all artifacts from a directory for training
   python3 scripts/mtg_search.py my_data/ --grep-type "Artifact" --fields "encoded"
+
+  # Simulate opening a booster box and list the rare cards
+  python3 scripts/mtg_search.py data/AllPrintings.json --box 1 --rarity rare --fields "name,rarity,pack"
 ''' ,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -82,18 +92,18 @@ Example Usage:
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to stdin (-).')
     io_group.add_argument('--fields', default='name',
-                        help='Comma-separated list of fields to output (Default: name).')
+                        help='Comma-separated list of fields to extract (Default: name).')
     io_group.add_argument('--delimiter', default=' | ',
-                        help='Separator between fields in text output (Default: " | ").')
+                        help='The separator used between fields in text output (Default: " | ").')
     io_group.add_argument('--json', action='store_true',
-                        help='Output results as a JSON list of objects.')
+                        help='Format results as a JSON list of objects.')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
     proc_group.add_argument('--shuffle', action='store_true',
-                        help='Randomize the order of cards.')
+                        help='Shuffle the cards before processing.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards (shorthand for --shuffle --limit N).')
     proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
@@ -116,7 +126,7 @@ Example Usage:
     filter_group.add_argument('--grep-loyalty', action='append',
                         help='Only include cards whose loyalty/defense matches a search pattern.')
     filter_group.add_argument('--vgrep', '--exclude', action='append',
-                        help='Exclude cards matching a search pattern. Use multiple times for OR logic.')
+                        help='Skip cards matching a search pattern. Use multiple times for OR logic.')
     filter_group.add_argument('--exclude-name', action='append',
                         help='Exclude cards whose name matches a search pattern.')
     filter_group.add_argument('--exclude-type', action='append',
@@ -152,9 +162,9 @@ Example Usage:
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file.')
     filter_group.add_argument('--booster', type=int, default=0,
-                        help='Simulate opening N booster packs.')
+                        help='Simulate opening N booster packs and search their contents.')
     filter_group.add_argument('--box', type=int, default=0,
-                        help='Simulate opening N booster boxes (36 packs each).')
+                        help='Simulate opening N booster boxes (36 packs each) and search their contents.')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
