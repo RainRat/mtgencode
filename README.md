@@ -459,6 +459,18 @@ Extracts a single card from the massive `AllPrintings.json` file. This is useful
 python3 scripts/extract_one.py data/AllPrintings.json SET_CODE "Card Name"
 ```
 
+### `mtg_search.py`
+Search card data (JSON, encoded text, etc.) and extract specific fields. This is useful for dataset exploration and creating lightweight card listings.
+```bash
+# List names and costs of all Goblins
+python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "name,cost"
+
+# Find all mythic rares with CMC > 7 and output as JSON
+python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" --json
+```
+*   **Fields:** `name`, `cost`, `cmc`, `supertypes`, `types`, `subtypes`, `pt`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `encoded`.
+*   Supports all **Advanced Filtering** flags and booster/box simulation.
+
 ### `mtg_mechanics.py`
 Lists all mechanical keywords (e.g., Flying, Trample, Ward) recognized by the toolkit and can calculate their frequency in a dataset. This is useful for seeing which keywords are currently tracked or for analyzing the mechanical profile of a set.
 ```bash
