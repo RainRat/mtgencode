@@ -297,6 +297,11 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         if for_table:
             import datalib
+            header_text = 'DECODED CARDS'
+            if use_color:
+                header_text = utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
+            writer.write(header_text + '\n')
+
             rows = []
             header = ["Name", "Cost", "CMC", "Type", "Stats", "Rarity", "Mechanics"]
             if booster > 0 or box > 0:
@@ -360,7 +365,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             rows.insert(1, separator)
 
             for row in datalib.padrows(rows, aligns=aligns):
-                writer.write(row + '\n')
+                writer.write('  ' + row + '\n')
             return success_count, fail_count
 
         first = True
