@@ -518,45 +518,53 @@ class Card:
             # valid but not parsed indicates that the card was apparently empty
             self.parsed = False
 
+    def _has_type(self, type_name):
+        """Returns True if the card has the specified type (case-insensitive)."""
+        return any(t.lower() == type_name.lower() for t in self.types)
+
+    def _has_subtype(self, subtype_name):
+        """Returns True if the card has the specified subtype (case-insensitive)."""
+        return any(s.lower() == subtype_name.lower() for s in self.subtypes)
+
     @property
     def is_artifact(self):
         """Returns True if the card is an artifact."""
-        return any(t.lower() == 'artifact' for t in self.types)
+        return self._has_type('artifact')
 
     @property
     def is_creature(self):
         """Returns True if the card is a creature or a vehicle."""
-        return any(t.lower() == 'creature' for t in self.types) or any(s.lower() == 'vehicle' for s in self.subtypes)
+        return self._has_type('creature') or self._has_subtype('vehicle')
 
     @property
     def is_planeswalker(self):
         """Returns True if the card is a planeswalker."""
-        return any(t.lower() == 'planeswalker' for t in self.types)
+        return self._has_type('planeswalker')
 
     @property
     def is_battle(self):
         """Returns True if the card is a battle."""
-        return any(t.lower() == 'battle' for t in self.types)
+        return self._has_type('battle')
 
     @property
     def is_land(self):
         """Returns True if the card is a land."""
-        return any(t.lower() == 'land' for t in self.types)
+        return self._has_type('land')
 
     @property
     def is_enchantment(self):
         """Returns True if the card is an enchantment."""
-        return any(t.lower() == 'enchantment' for t in self.types)
+        return self._has_type('enchantment')
 
     @property
     def is_instant(self):
         """Returns True if the card is an instant."""
-        return any(t.lower() == 'instant' for t in self.types)
+        return self._has_type('instant')
 
     @property
     def is_sorcery(self):
         """Returns True if the card is a sorcery."""
-        return any(t.lower() == 'sorcery' for t in self.types)
+        return self._has_type('sorcery')
 
     @property
     def color_identity(self):
