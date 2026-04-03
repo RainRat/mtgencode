@@ -84,7 +84,7 @@ Available Fields:
   Basic Metadata:
     name, cost, cmc, rarity, set, number
   Types & Text:
-    supertypes, types, subtypes, text, mechanics
+    type, supertypes, types, subtypes, text, mechanics
   Stats:
     pt (Power/Toughness), loyalty (Loyalty or Defense)
   Color Info:
