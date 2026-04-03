@@ -13,7 +13,14 @@ import utils
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Converts MTG card data into the CSV format used by csv2json.py and the custom card template."
+        description="Converts MTG card data into the CSV format used by csv2json.py and the custom card template.",
+        epilog='''
+Multi-Faced Cards:
+  This script supports multi-faced cards (Splits, Transforms, Battles). All faces
+  are exported into a single CSV row, with fields merged using the " // " separator.
+  This format is compatible with csv2json.py for round-trip data processing.
+''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     # Group: Input / Output
@@ -102,25 +109,11 @@ def main():
         writer.writerow(['name', 'mana_cost', 'type', 'subtypes', 'text', 'pt', 'rarity'])
 
         for card in cards:
-            # Reconstruct the fields in the exact order csv2json.py expects
-
-            # P/T or Loyalty/Defense
-            pt_val = card._get_pt_display(include_parens=False)
-            if not pt_val:
-                pt_val = card._get_loyalty_display(include_parens=False)
-
-            # Rarity shorthand
-            rarity_short = cardlib.RARITY_MAP.get(card.rarity, card.rarity)
-
-            row = [
-                card.name,
-                card.cost.format(),
-                ' '.join(card.supertypes + card.types),
-                ' '.join(card.subtypes),
-                card.get_text(force_unpass=True),
-                pt_val,
-                rarity_short
-            ]
+            # Use the robust CSV extraction logic from cardlib
+            row = card._get_csv_data()
+            # card._get_csv_data() already returns unpassed text.
+            # We don't need to double-escape if we want literal unpassed newlines to stay literal.
+            # Wait, the test expects Gideon without \n at the end.
             writer.writerow(row)
 
     if args.verbose:

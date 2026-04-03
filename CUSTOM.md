@@ -40,6 +40,15 @@ Create a CSV file with your custom cards. You can start with this [Google Sheet 
     *   **Text**: Rules text. Use `\n` or literal newlines for new lines.
     *   **P/T, Loyalty, or Defense**: Use `3/3` for creatures, or a single number for Planeswalker loyalty or Battle defense.
     *   **Rarity**: Use shorthands: `C` (Common), `U` (Uncommon), `R` (Rare), `M` (Mythic), `L` (Basic Land), `I` (Special).
+
+### Multi-Faced Cards (Splits, Transforms, Battles)
+To add a card with two faces (like a Split card or a Transforming double-faced card), use the ` // ` separator in any column where the faces differ.
+*   **Name**: `Front Name // Back Name`
+*   **Mana Cost**: `{1}{W} // {U}`
+*   **Type**: `Creature // Instant`
+*   **Text**: `Front rules text // Back rules text` (Use `\n` for new lines within a face).
+*   **Stats**: `1/1 // ` (If only one face has P/T).
+
 3.  Click **File -> Download -> Comma Separated Values (.csv)**.
 4.  Save it as `custom.csv`.
 

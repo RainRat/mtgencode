@@ -1,0 +1,2 @@
+|5battle|4|6siege|7&^^^^^|8|9when this siege enters, reveal any number of dragon cards from your hand. when you do, this siege deals X plus &^^ damage to any other target, where X is the number of cards revealed this way.|3{^RR}|0M|1invasion of tarkir|
+|5battle|4|6siege|7&^^^^^|8|9when this siege enters, reveal any number of dragon cards from your hand. when you do, this siege deals X plus &^^ damage to any other target, where X is the number of cards revealed this way.|3{^RR}|0M|1defiant thundermaw|

@@ -34,6 +34,11 @@ CSV Format (7 columns in this order):
   6. Stats: Power/Toughness (3/3), Loyalty (5), or Defense (3).
   7. Rarity: Short marker (C, U, R, M, L, I) or full name (common, rare, etc.).
 
+Multi-Faced Cards:
+  To represent cards with multiple faces (e.g., Splits or Transforms), use the
+  " // " separator in the relevant columns.
+  Example: Name: "Front // Back", Cost: "{1}{W} // {U}", Type: "Creature // Instant"
+
 Note: The first row is ignored if the first column is exactly "name".
 ''',
     formatter_class=argparse.RawDescriptionHelpFormatter
@@ -51,44 +56,71 @@ with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
     for row in reader:
         if row[0] == "name":
             continue
-        
-        temprarity = rarity_mapping.get(row[6], row[6])
 
-        card = {
-            "layout": "normal",
-            "manaCost": row[1],
-            "name": row[0],
-            "rarity": temprarity,
-            "setCode": "CUS",
-            "text": row[4].replace("\\n", "\n"),
-        }
-        # supertypes, types, subtypes
-        supertypes, types = utils.split_types(row[2])
-        if supertypes:
-            card["supertypes"] = supertypes
-        card["types"] = types
-        if row[3] != "":
-            card["subtypes"] = row[3].split(" ")
+        # Check for multi-faced cards via ' // ' in Name, Cost, or Type
+        is_multi = any(' // ' in row[i] for i in [0, 1, 2])
 
-        if row[5] != "":
-            pt = row[5].split("/")
-            if len(pt) >= 2:
-                card["power"] = pt[0]
-                card["toughness"] = pt[1]
-            else:
-                if "Planeswalker" in types:
-                    card["loyalty"] = row[5]
-                elif "Battle" in types:
-                    card["defense"] = row[5]
+        def process_face(name, cost, type_line, subtypes, text, stats, rarity):
+            temprarity = rarity_mapping.get(rarity, rarity)
+            face = {
+                "name": name,
+                "manaCost": cost,
+                "rarity": temprarity,
+                "text": text.replace("\\n", "\n"),
+            }
+
+            # supertypes, types, subtypes
+            supertypes, types = utils.split_types(type_line)
+            if supertypes:
+                face["supertypes"] = supertypes
+            face["types"] = types
+            if subtypes != "":
+                face["subtypes"] = subtypes.split(" ")
+
+            if stats != "":
+                pt = stats.split("/")
+                if len(pt) >= 2:
+                    face["power"] = pt[0]
+                    face["toughness"] = pt[1]
                 else:
-                    card["pt"] = row[5]
+                    if "Planeswalker" in types:
+                        face["loyalty"] = stats
+                    elif "Battle" in types:
+                        face["defense"] = stats
+                    else:
+                        face["pt"] = stats
 
-        # create "type"
-        fulltypes = row[2]
-        if row[3] != "":
-            fulltypes = fulltypes + " — " + row[3]
-        card["type"] = fulltypes
+            # create "type" (full type line)
+            fulltypes = type_line
+            if subtypes != "":
+                fulltypes = fulltypes + " — " + subtypes
+            face["type"] = fulltypes
 
+            return face
+
+        if is_multi:
+            # Split fields
+            front_args = []
+            back_args = []
+            for i in range(7):
+                val = row[i]
+                if ' // ' in val:
+                    parts = val.split(' // ', 1)
+                    front_args.append(parts[0])
+                    back_args.append(parts[1])
+                else:
+                    front_args.append(val)
+                    back_args.append(val)
+
+            card = process_face(*front_args)
+            bside = process_face(*back_args)
+            card["bside"] = bside
+            card["layout"] = "transform" # Standard multi-face layout
+        else:
+            card = process_face(row[0], row[1], row[2], row[3], row[4], row[5], row[6])
+            card["layout"] = "normal"
+
+        card["setCode"] = "CUS"
         json_data["data"]["CUS"]["cards"].append(card)
 
     json.dump(json_data, jsonfile)

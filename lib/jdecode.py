@@ -15,38 +15,114 @@ import cardlib
 # Default Magic booster box size
 BOOSTER_BOX_SIZE = 36
 
+def _split_csv_row(row):
+    """
+    Detects the ' // ' separator in CSV fields and parses a row into
+    a nested dictionary structure for multi-faced cards.
+    """
+    # Canonical CSV fields
+    fields = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'pt', 'rarity']
+
+    # Normalize row keys (support manaCost vs mana_cost)
+    normalized_row = {
+        'name': row.get('name', ''),
+        'mana_cost': row.get('mana_cost', row.get('manaCost', '')),
+        'type': row.get('type', ''),
+        'subtypes': row.get('subtypes', ''),
+        'text': row.get('text', ''),
+        'pt': row.get('pt', ''),
+        'rarity': row.get('rarity', ''),
+    }
+
+    # Handle explicit power/toughness/loyalty/defense columns if present
+    if not normalized_row['pt']:
+        if row.get('power') and row.get('toughness'):
+            normalized_row['pt'] = f"{row['power']}/{row['toughness']}"
+        elif row.get('loyalty'):
+            normalized_row['pt'] = row['loyalty']
+        elif row.get('defense'):
+            normalized_row['pt'] = row['defense']
+
+    # Check for ' // ' separator in Name, Cost, or Type (likely indicator of multi-face)
+    is_multi = any(' // ' in normalized_row[f] for f in ['name', 'mana_cost', 'type'])
+
+    if not is_multi:
+        return normalized_row
+
+    # Split fields
+    front_row = {}
+    back_row = {}
+
+    for field in fields:
+        val = normalized_row.get(field, '')
+        if ' // ' in val:
+            parts = val.split(' // ', 1)
+            front_row[field] = parts[0]
+            back_row[field] = parts[1]
+        else:
+            # If separator is missing in a field, both faces share the value
+            # (common for rarity or subtypes in some exports)
+            front_row[field] = val
+            back_row[field] = val
+
+    return front_row, back_row
+
+def _csv_row_to_dict(row):
+    """Converts a normalized CSV row into an MTGJSON-style dictionary."""
+    card_dict = {
+        'name': row.get('name', ''),
+        'manaCost': row.get('mana_cost', ''),
+        'text': row.get('text', '').replace('\\n', '\n'),
+        'rarity': row.get('rarity', ''),
+    }
+
+    # Split type into supertypes and types
+    full_type = row.get('type', '')
+    supertypes, types = utils.split_types(full_type)
+    card_dict['supertypes'] = supertypes
+    card_dict['types'] = types
+
+    # Subtypes
+    subtypes = row.get('subtypes', '')
+    if subtypes:
+        card_dict['subtypes'] = subtypes.split()
+
+    # P/T and Loyalty
+    pt = row.get('pt', '')
+    if '/' in pt:
+        p, t = pt.split('/', 1)
+        card_dict['power'] = p.strip()
+        card_dict['toughness'] = t.strip()
+    elif 'Planeswalker' in full_type or 'Battle' in full_type:
+        if 'Battle' in full_type:
+            card_dict['defense'] = pt.strip()
+        else:
+            card_dict['loyalty'] = pt.strip()
+    elif pt:
+        # Ambiguous, but we'll try to guess based on 'Creature'
+        if 'Creature' in full_type:
+            card_dict['power'] = pt.strip()
+        else:
+            card_dict['loyalty'] = pt.strip()
+
+    return card_dict
+
 def mtg_open_csv_reader(reader, verbose = False):
     """
     Processes a CSV reader containing card data.
     """
     srcs = {}
     for row in reader:
-        # Map CSV columns to JSON-style dict keys
-        card_dict = {
-            'name': row.get('name', ''),
-            'manaCost': row.get('mana_cost', row.get('manaCost', '')),
-            'text': row.get('text', ''),
-            'rarity': row.get('rarity', ''),
-        }
-        if row.get('power'):
-            card_dict['power'] = row['power']
-        if row.get('toughness'):
-            card_dict['toughness'] = row['toughness']
-        if row.get('loyalty'):
-            card_dict['loyalty'] = row['loyalty']
-        elif row.get('defense'):
-            card_dict['defense'] = row['defense']
+        # Support multi-faced rows via ' // '
+        split_result = _split_csv_row(row)
 
-        # Split type into supertypes and types
-        full_type = row.get('type', '')
-        supertypes, types = utils.split_types(full_type)
-        card_dict['supertypes'] = supertypes
-        card_dict['types'] = types
-
-        # Subtypes
-        subtypes = row.get('subtypes', '')
-        if subtypes:
-            card_dict['subtypes'] = subtypes.split()
+        if isinstance(split_result, tuple):
+            front_row, back_row = split_result
+            card_dict = _csv_row_to_dict(front_row)
+            bside_dict = _csv_row_to_dict(back_row)
+            card_dict[utils.json_field_bside] = bside_dict
+        else:
+            card_dict = _csv_row_to_dict(split_result)
 
         cardname = card_dict['name'].lower()
         if cardname in srcs:

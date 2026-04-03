@@ -1354,6 +1354,43 @@ class Card:
 
         return outstr
 
+    def _get_face_csv_data(self):
+        """Returns the 7 canonical CSV fields for this card face."""
+        # P/T or Loyalty/Defense
+        pt_val = self._get_pt_display(include_parens=False)
+        if not pt_val:
+            pt_val = self._get_loyalty_display(include_parens=False)
+
+        # Rarity shorthand
+        rarity_short = RARITY_MAP.get(self.rarity, self.rarity)
+
+        return [
+            self.name,
+            self.cost.format(),
+            ' '.join(self.supertypes + self.types),
+            ' '.join(self.subtypes),
+            self.get_text(force_unpass=True),
+            pt_val,
+            rarity_short
+        ]
+
+    def _get_csv_data(self):
+        """Returns merged CSV data for all faces of the card."""
+        face_data = self._get_face_csv_data()
+        if self.bside:
+            b_face_data = self.bside._get_csv_data()
+            res = []
+            for i in range(len(face_data)):
+                val1 = str(face_data[i])
+                val2 = str(b_face_data[i])
+                if val1 and val2:
+                    res.append(f"{val1} // {val2}")
+                else:
+                    res.append(val1 or val2)
+            return res
+        else:
+            return face_data
+
     def to_dict(self):
         """Returns a dictionary representation of the card, compatible with MTGJSON."""
         d = {}
