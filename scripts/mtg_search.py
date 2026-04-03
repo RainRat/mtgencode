@@ -11,6 +11,7 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import cardlib
+import datalib
 from titlecase import titlecase
 
 def get_field_value(card, field, ansi_color=False):
@@ -116,7 +117,12 @@ Usage Examples:
                         help='Comma-separated list of fields to output (Default: name,cost,type,rarity).')
     io_group.add_argument('--delimiter', default=' | ',
                         help='The separator used between fields in text output (Default: " | ").')
-    io_group.add_argument('--json', action='store_true',
+
+    # Group: Output Format (Mutually Exclusive)
+    fmt_group = io_group.add_mutually_exclusive_group()
+    fmt_group.add_argument('-t', '--table', action='store_true',
+                        help='Format results as a aligned table (terminal-optimized).')
+    fmt_group.add_argument('-j', '--json', action='store_true',
                         help='Format results as a JSON list of objects.')
 
     # Group: Processing Options
@@ -235,7 +241,7 @@ Usage Examples:
     use_color = False
     if args.color is True:
         use_color = True
-    elif args.color is None and not args.json and sys.stdout.isatty():
+    elif args.color is None and not (args.json or (args.table and not sys.stdout.isatty())) and sys.stdout.isatty():
         use_color = True
 
     # Process output
@@ -250,6 +256,28 @@ Usage Examples:
 
     if args.json:
         print(json.dumps(results, indent=2))
+    elif args.table:
+        header_text = 'SEARCH RESULTS'
+        if use_color:
+            header_text = utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
+        print(header_text)
+
+        # Prepare table rows
+        header = [titlecase(f) for f in field_list]
+        if use_color:
+            header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+
+        rows = [header]
+        for card_data in results:
+            rows.append([str(card_data[f]) for f in field_list])
+
+        # Add separator
+        col_widths = datalib.get_col_widths(rows)
+        separator = ['-' * w for w in col_widths]
+        rows.insert(1, separator)
+
+        # Print table
+        datalib.printrows(datalib.padrows(rows), indent=2)
     else:
         for card_data in results:
             output_line = args.delimiter.join(str(card_data[f]) for f in field_list)
