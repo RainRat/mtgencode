@@ -153,10 +153,10 @@ def mtg_open_json_obj(jobj, verbose = False):
 
     if is_mtgjson_format:
         for set_data in jobj.values():
-            setname = set_data['name']
+            setname = set_data.get('name', 'Unknown')
             # flag sets that should be excluded by default, like funny and art card sets
-            if (set_data['type'] in ['funny', 'memorabilia', 'alchemy']):
-                bad_sets.add(set_data['code'])
+            if (set_data.get('type') in ['funny', 'memorabilia', 'alchemy']):
+                bad_sets.add(set_data.get('code'))
             codename = set_data.get('magicCardsInfoCode', '')
 
             for card in set_data['cards']:

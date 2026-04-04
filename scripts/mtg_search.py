@@ -11,6 +11,7 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import cardlib
+import datalib
 from titlecase import titlecase
 
 def get_field_value(card, field, ansi_color=False):
@@ -84,7 +85,7 @@ Available Fields:
   Basic Metadata:
     name, cost, cmc, rarity, set, number
   Types & Text:
-    supertypes, types, subtypes, text, mechanics
+    type, supertypes, types, subtypes, text, mechanics
   Stats:
     pt (Power/Toughness), loyalty (Loyalty or Defense)
   Color Info:
@@ -116,6 +117,8 @@ Usage Examples:
                         help='Comma-separated list of fields to output (Default: name,cost,type,rarity).')
     io_group.add_argument('--delimiter', default=' | ',
                         help='The separator used between fields in text output (Default: " | ").')
+    io_group.add_argument('-t', '--table', action='store_true',
+                        help='Generate a formatted table for terminal view.')
     io_group.add_argument('--json', action='store_true',
                         help='Format results as a JSON list of objects.')
 
@@ -241,18 +244,52 @@ Usage Examples:
     # Process output
     field_list = [f.strip() for f in args.fields.split(',')]
 
-    results = []
-    for card in cards:
-        card_data = {}
-        for field in field_list:
-            card_data[field] = get_field_value(card, field, ansi_color=use_color)
-        results.append(card_data)
-
     if args.json:
+        results = []
+        for card in cards:
+            card_data = {}
+            for field in field_list:
+                card_data[field] = get_field_value(card, field, ansi_color=use_color)
+            results.append(card_data)
         print(json.dumps(results, indent=2))
+    elif args.table:
+        header_text = 'SEARCH RESULTS'
+        if use_color:
+            header_text = utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
+        print(header_text)
+
+        header = [titlecase(f) for f in field_list]
+        if use_color:
+            header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+
+        rows = [header]
+        for card in cards:
+            row = []
+            for field in field_list:
+                row.append(get_field_value(card, field, ansi_color=use_color))
+            rows.append(row)
+
+        # Get column widths and add a separator
+        col_widths = datalib.get_col_widths(rows)
+        separator = ['-' * w for w in col_widths]
+        rows.insert(1, separator)
+
+        # Determine alignments: right-align for numeric fields
+        aligns = []
+        right_align_fields = ['cmc', 'id_count', 'pt', 'loyalty', 'pack', 'box', 'number']
+        for field in field_list:
+            if field.lower() in right_align_fields:
+                aligns.append('r')
+            else:
+                aligns.append('l')
+
+        datalib.printrows(datalib.padrows(rows, aligns=aligns), indent=2)
     else:
-        for card_data in results:
-            output_line = args.delimiter.join(str(card_data[f]) for f in field_list)
+        for card in cards:
+            row = []
+            for field in field_list:
+                row.append(get_field_value(card, field, ansi_color=use_color))
+            output_line = args.delimiter.join(str(val) for val in row)
             print(output_line)
 
     if not args.quiet:
