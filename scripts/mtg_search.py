@@ -45,6 +45,16 @@ def get_field_value(card, field, ansi_color=False):
         if res and ansi_color:
             res = utils.colorize(res, utils.Ansi.RED)
         return res
+    elif field == 'power':
+        res = utils.from_unary(card.pt_p) if card.pt_p else ""
+        if res and ansi_color:
+            res = utils.colorize(res, utils.Ansi.RED)
+        return res
+    elif field == 'toughness':
+        res = utils.from_unary(card.pt_t) if card.pt_t else ""
+        if res and ansi_color:
+            res = utils.colorize(res, utils.Ansi.RED)
+        return res
     elif field == 'loyalty':
         res = utils.from_unary(card.loyalty) if card.loyalty else ""
         if res and ansi_color:
@@ -86,24 +96,27 @@ Available Fields:
   Types & Text:
     supertypes, types, subtypes, text, mechanics
   Stats:
-    pt (Power/Toughness), loyalty (Loyalty or Defense)
+    pt (Power/Toughness), power, toughness, loyalty (Loyalty or Defense)
   Color Info:
     identity (Color Identity), id_count
   Simulation & Encoding:
     pack (Pack ID), box (Box ID), encoded (Encoded text string)
 
 Usage Examples:
-  # List names and costs of all Goblins
-  python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "name,cost"
+  # List names and costs of all Goblins in a table
+  python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "name,cost" --table
 
   # Find all mythic rares with CMC > 7 and save to a JSON file
   python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" --json > mythics.json
 
+  # Generate a Markdown table of legendary creatures for a forum post
+  python3 scripts/mtg_search.py data/AllPrintings.json --grep "Legendary" --grep "Creature" --md-table
+
   # Extract encoded strings for all artifacts from a directory for training
   python3 scripts/mtg_search.py my_data/ --grep-type "Artifact" --fields "encoded"
 
-  # Simulate opening a booster box and list the rare cards
-  python3 scripts/mtg_search.py data/AllPrintings.json --box 1 --rarity rare --fields "name,rarity,pack"
+  # Simulate opening a booster box and list the rare cards in a table
+  python3 scripts/mtg_search.py data/AllPrintings.json --box 1 --rarity rare --fields "name,rarity,pack" --table
 ''' ,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -116,8 +129,20 @@ Usage Examples:
                         help='Comma-separated list of fields to output (Default: name,cost,type,rarity).')
     io_group.add_argument('--delimiter', default=' | ',
                         help='The separator used between fields in text output (Default: " | ").')
-    io_group.add_argument('--json', action='store_true',
-                        help='Format results as a JSON list of objects.')
+
+    # Group: Output Format (Mutually Exclusive)
+    fmt_group_title = parser.add_argument_group('Output Format')
+    fmt_group = fmt_group_title.add_mutually_exclusive_group()
+    fmt_group.add_argument('--text', action='store_true',
+                           help='Force plain text output (Default).')
+    fmt_group.add_argument('-t', '--table', action='store_true',
+                           help='Generate a formatted table for terminal view.')
+    fmt_group.add_argument('--md-table', '--mdt', action='store_true',
+                           help='Generate a Markdown table.')
+    fmt_group.add_argument('-j', '--json', action='store_true',
+                           help='Generate a structured JSON file.')
+    fmt_group.add_argument('--jsonl', action='store_true',
+                           help='Generate a JSON Lines file (one card object per line).')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
@@ -231,29 +256,87 @@ Usage Examples:
     if args.limit > 0:
         cards = cards[:args.limit]
 
+    # Set default format if none chosen
+    if not (args.text or args.table or args.md_table or args.json or args.jsonl):
+        args.text = True
+
     # Determine if we should use color
     use_color = False
     if args.color is True:
         use_color = True
-    elif args.color is None and not args.json and sys.stdout.isatty():
+    elif args.color is None and not (args.json or args.jsonl or args.md_table) and sys.stdout.isatty():
         use_color = True
 
     # Process output
     field_list = [f.strip() for f in args.fields.split(',')]
 
-    results = []
-    for card in cards:
-        card_data = {}
-        for field in field_list:
-            card_data[field] = get_field_value(card, field, ansi_color=use_color)
-        results.append(card_data)
-
     if args.json:
+        results = []
+        for card in cards:
+            card_data = {}
+            for field in field_list:
+                card_data[field] = get_field_value(card, field, ansi_color=use_color)
+            results.append(card_data)
         print(json.dumps(results, indent=2))
-    else:
-        for card_data in results:
-            output_line = args.delimiter.join(str(card_data[f]) for f in field_list)
-            print(output_line)
+    elif args.jsonl:
+        for card in cards:
+            card_data = {}
+            for field in field_list:
+                card_data[field] = get_field_value(card, field, ansi_color=use_color)
+            print(json.dumps(card_data))
+    elif args.table or args.md_table:
+        import datalib
+        rows = []
+        # Header
+        header = [f.title() for f in field_list]
+        if use_color:
+            header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+        rows.append(header)
+
+        # Content
+        for card in cards:
+            row = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
+            rows.append(row)
+
+        if args.md_table:
+            # Markdown table output
+            header_row = "| " + " | ".join(header) + " |"
+            # Alignment row
+            align_row = "|"
+            for field in field_list:
+                if field.lower() in ['cmc', 'id_count', 'power', 'toughness', 'loyalty', 'pack', 'box']:
+                    align_row += " ---: |"
+                else:
+                    align_row += " :--- |"
+            print(header_row)
+            print(align_row)
+            for row in rows[1:]:
+                # Escape pipes in markdown
+                escaped_row = [str(cell).replace('|', '\\|').replace('\n', ' ') for cell in row]
+                print("| " + " | ".join(escaped_row) + " |")
+        else:
+            # Terminal table output
+            if use_color:
+                print(utils.colorize("SEARCH RESULTS", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+
+            aligns = []
+            for field in field_list:
+                if field.lower() in ['cmc', 'id_count', 'power', 'toughness', 'loyalty', 'pack', 'box']:
+                    aligns.append('r')
+                else:
+                    aligns.append('l')
+
+            # Add separator row
+            col_widths = datalib.get_col_widths(rows)
+            separator = ['-' * w for w in col_widths]
+            rows.insert(1, separator)
+
+            for row in datalib.padrows(rows, aligns=aligns):
+                print("  " + row)
+    else: # Default text output
+        for card in cards:
+            card_data = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
+            print(args.delimiter.join(str(val) for val in card_data))
 
     if not args.quiet:
         utils.print_operation_summary("Search", len(cards), 0, quiet=args.quiet)
