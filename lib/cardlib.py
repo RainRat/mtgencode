@@ -864,9 +864,9 @@ class Card:
                                                                     fulltext.split(utils.newline)))
                     self.__dict__[field_text + '_words'] = re.sub(utils.unletters_regex,
                                                                   ' ',
-                                                                  fulltext).split()
+                                                                  fulltext.lower()).split()
                     self.__dict__[field_text + '_lines_words'] = [re.sub(
-                        utils.unletters_regex, ' ', line).split() for line in fulltext.split(utils.newline)]
+                        utils.unletters_regex, ' ', line.lower()).split() for line in fulltext.split(utils.newline)]
             else:
                 self.valid = False
                 self.__dict__[field_other] += [(idx, '<text> ' + str(value))]
