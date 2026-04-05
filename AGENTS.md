@@ -37,3 +37,11 @@ python3 encode.py data/AllPrintings.json --report-unparsed unparsed_cards.json
 ```
 
 This will create a file containing the raw data for any cards that could not be parsed or validated.
+
+## Toolkit Utilities
+
+Key utility scripts for dataset analysis:
+*   `scripts/mtg_search.py`: Comprehensive card searching and field extraction.
+*   `scripts/mtg_subset.py`: Creates filtered subsets of MTGJSON files.
+*   `scripts/mtg_lexicon.py`: Analyzes color-characteristic vocabulary.
+*   `scripts/mtg_tokens.py`: Extracts and summarizes token definitions from rules text.
