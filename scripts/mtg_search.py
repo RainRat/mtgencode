@@ -125,8 +125,8 @@ Usage Examples:
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to stdin (-).')
-    io_group.add_argument('--fields', default='name,cost,type,rarity',
-                        help='Comma-separated list of fields to output (Default: name,cost,type,rarity).')
+    io_group.add_argument('--fields', default='name,cost,cmc,type,pt,rarity',
+                        help='Comma-separated list of fields to output (Default: name,cost,cmc,type,pt,rarity).')
     io_group.add_argument('--delimiter', default=' | ',
                         help='The separator used between fields in text output (Default: " | ").')
 
@@ -258,7 +258,10 @@ Usage Examples:
 
     # Set default format if none chosen
     if not (args.text or args.table or args.md_table or args.json or args.jsonl):
-        args.text = True
+        if sys.stdout.isatty():
+            args.table = True
+        else:
+            args.text = True
 
     # Determine if we should use color
     use_color = False
@@ -316,8 +319,12 @@ Usage Examples:
                 print("| " + " | ".join(escaped_row) + " |")
         else:
             # Terminal table output
+            header_text = "SEARCH RESULTS"
             if use_color:
-                print(utils.colorize("SEARCH RESULTS", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+                print(utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+            else:
+                print(header_text)
+                print("=" * len(header_text))
 
             aligns = []
             for field in field_list:
