@@ -12,9 +12,45 @@ import utils
 import jdecode
 from titlecase import titlecase
 
+# Field mapping for aliases, pretty headers, and alignment
+FIELD_MAP = {
+    'name': {'key': 'name', 'header': 'Name', 'align': 'l'},
+    'cost': {'key': 'cost', 'header': 'Cost', 'align': 'l'},
+    'mana': {'key': 'cost', 'header': 'Cost', 'align': 'l'},
+    'cmc': {'key': 'cmc', 'header': 'CMC', 'align': 'r'},
+    'rarity': {'key': 'rarity', 'header': 'Rarity', 'align': 'l'},
+    'set': {'key': 'set', 'header': 'Set', 'align': 'l'},
+    'number': {'key': 'number', 'header': 'Num', 'align': 'r'},
+    'num': {'key': 'number', 'header': 'Num', 'align': 'r'},
+    'supertypes': {'key': 'supertypes', 'header': 'Supertypes', 'align': 'l'},
+    'types': {'key': 'types', 'header': 'Types', 'align': 'l'},
+    'subtypes': {'key': 'subtypes', 'header': 'Subtypes', 'align': 'l'},
+    'type': {'key': 'type', 'header': 'Type', 'align': 'l'},
+    'text': {'key': 'text', 'header': 'Text', 'align': 'l'},
+    'mechanics': {'key': 'mechanics', 'header': 'Mechanics', 'align': 'l'},
+    'pt': {'key': 'pt', 'header': 'P/T', 'align': 'r'},
+    'power': {'key': 'power', 'header': 'Pow', 'align': 'r'},
+    'pow': {'key': 'power', 'header': 'Pow', 'align': 'r'},
+    'toughness': {'key': 'toughness', 'header': 'Tou', 'align': 'r'},
+    'tou': {'key': 'toughness', 'header': 'Tou', 'align': 'r'},
+    'loyalty': {'key': 'loyalty', 'header': 'Loy', 'align': 'r'},
+    'loy': {'key': 'loyalty', 'header': 'Loy', 'align': 'r'},
+    'identity': {'key': 'identity', 'header': 'ID', 'align': 'l'},
+    'id': {'key': 'identity', 'header': 'ID', 'align': 'l'},
+    'id_count': {'key': 'id_count', 'header': 'ID Count', 'align': 'r'},
+    'colors': {'key': 'colors', 'header': 'Colors', 'align': 'l'},
+    'pack': {'key': 'pack', 'header': 'Pack', 'align': 'r'},
+    'box': {'key': 'box', 'header': 'Box', 'align': 'r'},
+    'encoded': {'key': 'encoded', 'header': 'Encoded', 'align': 'l'},
+}
+
 def get_field_value(card, field, ansi_color=False):
     """Extracts a specific field value from a Card object."""
     field = field.lower().strip()
+
+    # Resolve aliases
+    if field in FIELD_MAP:
+        field = FIELD_MAP[field]['key']
 
     if field == 'name':
         res = titlecase(card.name)
@@ -69,9 +105,20 @@ def get_field_value(card, field, ansi_color=False):
     elif field == 'mechanics':
         return ", ".join(sorted(list(card.mechanics)))
     elif field == 'identity':
-        return card.color_identity
+        res = card.color_identity
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.get_color_color(res))
+        return res
     elif field == 'id_count':
-        return len(card.color_identity)
+        res = len(card.color_identity)
+        if ansi_color:
+            res = utils.colorize(str(res), utils.Ansi.BOLD + utils.Ansi.GREEN)
+        return res
+    elif field == 'colors':
+        res = "".join(card.cost.colors)
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.get_color_color(res))
+        return res
     elif field == 'set':
         return card.set_code if card.set_code else ""
     elif field == 'number':
@@ -91,13 +138,13 @@ def main():
         epilog='''
 Available Fields:
   Basic Metadata:
-    name, cost, cmc, rarity, set, number
+    name, cost (alias: mana), cmc, rarity, set, number (alias: num)
   Types & Text:
     supertypes, types, subtypes, text, mechanics
   Stats:
-    pt (Power/Toughness), power, toughness, loyalty (Loyalty or Defense)
+    pt (P/T), power (alias: pow), toughness (alias: tou), loyalty (alias: loy)
   Color Info:
-    identity (Color Identity), id_count
+    identity (Color Identity, alias: id), id_count, colors (mana cost colors)
   Simulation & Encoding:
     pack (Pack ID), box (Box ID), encoded (Encoded text string)
 
@@ -272,6 +319,13 @@ Usage Examples:
     # Process output
     field_list = [f.strip() for f in args.fields.split(',')]
 
+    # Field validation
+    invalid_fields = [f for f in field_list if f.lower() not in FIELD_MAP]
+    if invalid_fields:
+        print(f"Warning: Unrecognized field(s): {', '.join(invalid_fields)}", file=sys.stderr)
+        print(f"Valid fields are: {', '.join(sorted(FIELD_MAP.keys()))}", file=sys.stderr)
+        print("", file=sys.stderr)
+
     if args.json:
         results = []
         for card in cards:
@@ -290,7 +344,7 @@ Usage Examples:
         import datalib
         rows = []
         # Header
-        header = [f.title() for f in field_list]
+        header = [FIELD_MAP.get(f.lower(), {'header': f.title()})['header'] for f in field_list]
         if use_color:
             header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
         rows.append(header)
@@ -306,7 +360,8 @@ Usage Examples:
             # Alignment row
             align_row = "|"
             for field in field_list:
-                if field.lower() in ['cmc', 'id_count', 'power', 'toughness', 'loyalty', 'pack', 'box']:
+                align = FIELD_MAP.get(field.lower(), {}).get('align', 'l')
+                if align == 'r':
                     align_row += " ---: |"
                 else:
                     align_row += " :--- |"
@@ -327,10 +382,7 @@ Usage Examples:
 
             aligns = []
             for field in field_list:
-                if field.lower() in ['cmc', 'id_count', 'power', 'toughness', 'loyalty', 'pack', 'box']:
-                    aligns.append('r')
-                else:
-                    aligns.append('l')
+                aligns.append(FIELD_MAP.get(field.lower(), {}).get('align', 'l'))
 
             # Add separator row
             col_widths = datalib.get_col_widths(rows)
