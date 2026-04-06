@@ -1,0 +1,56 @@
+{
+  "data": {
+    "TOK": {
+      "name": "Token Test Set",
+      "code": "TOK",
+      "type": "expansion",
+      "cards": [
+        {
+          "name": "Soldier Maker",
+          "manaCost": "{1}{W}",
+          "types": ["Sorcery"],
+          "text": "Create a 1/1 white Soldier creature token.",
+          "rarity": "common"
+        },
+        {
+          "name": "Beast Summoner",
+          "manaCost": "{2}{G}",
+          "types": ["Creature"],
+          "subtypes": ["Elf", "Druid"],
+          "text": "When Beast Summoner enters the battlefield, create a 3/3 green Beast creature token.",
+          "rarity": "uncommon",
+          "pt": "2/2"
+        },
+        {
+          "name": "Treasure Hunter",
+          "manaCost": "{U}",
+          "types": ["Creature"],
+          "text": "When Treasure Hunter deals combat damage to a player, create a Treasure token.",
+          "rarity": "rare",
+          "pt": "1/1"
+        },
+        {
+          "name": "Drake Nest",
+          "manaCost": "{1}{U}",
+          "types": ["Enchantment"],
+          "text": "Whenever you cast an instant or sorcery spell, create a 2/2 blue Drake creature token with flying.",
+          "rarity": "uncommon"
+        },
+        {
+          "name": "Food Factory",
+          "manaCost": "{2}",
+          "types": ["Artifact"],
+          "text": "{2}, {T}: Create a Food token.",
+          "rarity": "common"
+        },
+        {
+          "name": "Multi Token Generator",
+          "manaCost": "{4}{W}{G}",
+          "types": ["Sorcery"],
+          "text": "Create two 1/1 white Soldier creature tokens and a 4/4 green Rhino creature token with trample.",
+          "rarity": "rare"
+        }
+      ]
+    }
+  }
+}

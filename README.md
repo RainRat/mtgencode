@@ -512,6 +512,19 @@ python3 scripts/mtg_lexicon.py data/AllPrintings.json --compare generated.txt
     *   `--compare FILE`: Side-by-side comparison with a second dataset.
     *   Supports standard **Advanced Filtering** flags.
 
+### `mtg_tokens.py`
+Extracts and summarizes token definitions from card rules text. This tool identifies the properties of tokens created by cards (like P/T, color, types, and abilities) and de-duplicates them to show a consolidated list.
+```bash
+# List all unique tokens found in a dataset
+python3 scripts/mtg_tokens.py data/AllPrintings.json
+
+# Extract tokens from a specific set and output to JSON
+python3 scripts/mtg_tokens.py data/AllPrintings.json --set MOM --json
+```
+*   **Options:**
+    *   `--json`: Output results in structured JSON format.
+    *   Supports standard **Advanced Filtering** flags (`--grep`, `--set`, `--rarity`).
+
 ### `distances.py` & `sum.py`
 These tools allow for bulk creativity analysis of your generated cards. `distances.py` calculates the semantic and name distance between your cards and the official dataset, and `sum.py` provides a statistical summary of the results.
 
