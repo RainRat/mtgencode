@@ -2,7 +2,6 @@
 import sys
 import os
 import argparse
-from contextlib import redirect_stdout
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -269,13 +268,15 @@ def main():
         row = [label]
         base_total = len(mines[0].allcards)
         base_val = base_data
-        for k in key_path: base_val = base_val[k]
+        for k in key_path:
+            base_val = base_val[k]
         base_pct = (base_val / base_total * 100) if base_total > 0 else 0
         row.append(f"{base_pct:.1f}%")
         for i in range(1, len(mines)):
             total = len(mines[i].allcards)
             val = mines[i].to_dict()
-            for k in key_path: val = val[k]
+            for k in key_path:
+                val = val[k]
             pct = (val / total * 100) if total > 0 else 0
             row.append(f"{pct:.1f}%")
             row.append(format_delta(pct, base_pct, is_percent=True, use_color=use_color))

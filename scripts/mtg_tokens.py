@@ -4,7 +4,7 @@ import os
 import argparse
 import json
 import re
-from collections import Counter, OrderedDict
+from collections import OrderedDict
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -12,7 +12,6 @@ sys.path.append(libdir)
 
 import utils
 import jdecode
-import cardlib
 import datalib
 
 def extract_tokens_from_text(text):
@@ -197,8 +196,10 @@ Example Usage:
     if args.json:
         # Clean up for JSON output
         for t in token_list:
-            if 'source_text' in t: del t['source_text']
-            if 'source_card' in t: del t['source_card']
+            if 'source_text' in t:
+                del t['source_text']
+            if 'source_card' in t:
+                del t['source_card']
         print(json.dumps(token_list, indent=2))
     else:
         if not token_list:

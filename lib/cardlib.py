@@ -398,10 +398,10 @@ def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep, linetrans =
 
         lab = None
         if fmt_labeled:
-            for l in sorted_labels:
-                if textfield.startswith(l):
-                    lab = l
-                    textfield = textfield[len(l):]
+            for label in sorted_labels:
+                if textfield.startswith(label):
+                    lab = label
+                    textfield = textfield[len(label):]
                     break
         # try to use the field label if we got one
         if lab and lab in labels:

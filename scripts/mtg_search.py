@@ -10,7 +10,6 @@ sys.path.append(libdir)
 
 import utils
 import jdecode
-import cardlib
 from titlecase import titlecase
 
 def get_field_value(card, field, ansi_color=False):

@@ -7,8 +7,6 @@ def test_mtg_tokens_basic():
     test_file = "testdata/token_test.json"
     if not os.path.exists(test_file):
         # Create it if it doesn't exist (though it should from previous steps)
-        from scripts.mtg_tokens import main
-        # This is a bit complex to run main directly due to argparse
         pass
 
     # Run the script and capture output
