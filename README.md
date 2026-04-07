@@ -468,9 +468,9 @@ python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "n
 # Find all mythic rares with CMC > 7 and output as JSON
 python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" --json
 ```
-*   **Fields:** `name`, `cost`, `cmc`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `encoded`.
+*   **Fields:** `name`, `cost`, `cmc`, `type`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `encoded`.
 *   **Output Formats:** Plain text (default), `--table`, `--md-table`, `--json`, `--jsonl`.
-*   Supports all **Advanced Filtering** flags and booster/box simulation.
+*   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
 
 ### `mtg_subset.py`
 Creates a filtered subset of an MTGJSON file while preserving its structure. This is useful for creating specialized training datasets or lightweight card databases without losing set-level metadata.

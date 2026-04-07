@@ -93,7 +93,7 @@ Available Fields:
   Basic Metadata:
     name, cost, cmc, rarity, set, number
   Types & Text:
-    supertypes, types, subtypes, text, mechanics
+    type, supertypes, types, subtypes, text, mechanics
   Stats:
     pt (Power/Toughness), power, toughness, loyalty (Loyalty or Defense)
   Color Info:
@@ -123,7 +123,7 @@ Usage Examples:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to stdin (-).')
+                        help='Input card data (MTGJSON, Scryfall, CSV, XML, MSE, JSONL, ZIP, or Decklist), encoded text, or directory. Defaults to stdin (-).')
     io_group.add_argument('--fields', default='name,cost,cmc,type,pt,rarity',
                         help='Comma-separated list of fields to output (Default: name,cost,cmc,type,pt,rarity).')
     io_group.add_argument('--delimiter', default=' | ',
@@ -151,13 +151,13 @@ Usage Examples:
                         help='Shuffle the cards before processing.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
                         help='Sort cards by a specific criterion.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
     filter_group.add_argument('--grep', action='append',
-                        help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
+                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
     filter_group.add_argument('--grep-name', action='append',
                         help='Only include cards whose name matches a search pattern.')
     filter_group.add_argument('--grep-type', action='append',
@@ -171,7 +171,7 @@ Usage Examples:
     filter_group.add_argument('--grep-loyalty', action='append',
                         help='Only include cards whose loyalty/defense matches a search pattern.')
     filter_group.add_argument('--vgrep', '--exclude', action='append',
-                        help='Skip cards matching a search pattern. Use multiple times for OR logic.')
+                        help='Skip cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for OR logic.')
     filter_group.add_argument('--exclude-name', action='append',
                         help='Exclude cards whose name matches a search pattern.')
     filter_group.add_argument('--exclude-type', action='append',
