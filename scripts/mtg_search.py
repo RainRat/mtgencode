@@ -59,6 +59,23 @@ def get_field_value(card, field, ansi_color=False):
         if res and ansi_color:
             res = utils.colorize(res, utils.Ansi.RED)
         return res
+    elif field == 'stats':
+        # Smart field that pulls P/T, Loyalty, or Defense
+        res = utils.from_unary(card.pt) if card.pt else ""
+        if not res:
+            res = utils.from_unary(card.loyalty) if card.loyalty else ""
+
+        # Handle B-side stats if present
+        if card.bside:
+            b_stats = get_field_value(card.bside, 'stats', ansi_color=False)
+            if res and b_stats:
+                res = f"{res} // {b_stats}"
+            else:
+                res = res or b_stats
+
+        if res and ansi_color:
+            res = utils.colorize(res, utils.Ansi.RED)
+        return res
     elif field == 'text':
         return card.get_text(force_unpass=True, ansi_color=ansi_color)
     elif field == 'rarity':
@@ -95,7 +112,7 @@ Available Fields:
   Types & Text:
     supertypes, types, subtypes, text, mechanics
   Stats:
-    pt (Power/Toughness), power, toughness, loyalty (Loyalty or Defense)
+    stats (Smart P/T or Loyalty), pt (Power/Toughness), power, toughness, loyalty (Loyalty or Defense)
   Color Info:
     identity (Color Identity), id_count
   Simulation & Encoding:
@@ -124,8 +141,8 @@ Usage Examples:
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to stdin (-).')
-    io_group.add_argument('--fields', default='name,cost,cmc,type,pt,rarity',
-                        help='Comma-separated list of fields to output (Default: name,cost,cmc,type,pt,rarity).')
+    io_group.add_argument('--fields', default='name,cost,cmc,type,stats,rarity',
+                        help='Comma-separated list of fields to output (Default: name,cost,cmc,type,stats,rarity).')
     io_group.add_argument('--delimiter', default=' | ',
                         help='The separator used between fields in text output (Default: " | ").')
 
@@ -306,7 +323,7 @@ Usage Examples:
             # Alignment row
             align_row = "|"
             for field in field_list:
-                if field.lower() in ['cmc', 'id_count', 'power', 'toughness', 'loyalty', 'pack', 'box']:
+                if field.lower() in ['cmc', 'id_count', 'pt', 'stats', 'power', 'toughness', 'loyalty', 'pack', 'box']:
                     align_row += " ---: |"
                 else:
                     align_row += " :--- |"
@@ -318,16 +335,19 @@ Usage Examples:
                 print("| " + " | ".join(escaped_row) + " |")
         else:
             # Terminal table output
-            header_text = "SEARCH RESULTS"
+            match_count = f" ({len(cards)} matches)"
+            header_text = "SEARCH RESULTS" + match_count
             if use_color:
-                print(utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+                header_main = utils.colorize("SEARCH RESULTS", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
+                header_count = utils.colorize(match_count, utils.Ansi.CYAN)
+                print(header_main + header_count)
             else:
                 print(header_text)
                 print("=" * len(header_text))
 
             aligns = []
             for field in field_list:
-                if field.lower() in ['cmc', 'id_count', 'power', 'toughness', 'loyalty', 'pack', 'box']:
+                if field.lower() in ['cmc', 'id_count', 'pt', 'stats', 'power', 'toughness', 'loyalty', 'pack', 'box']:
                     aligns.append('r')
                 else:
                     aligns.append('l')

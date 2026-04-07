@@ -12,7 +12,8 @@ def get_col_widths(rows):
     col_widths = []
     for row in rows:
         for i, cell in enumerate(row):
-            length = utils.visible_len(str(cell))
+            s = str(cell).replace('\n', ' ')
+            length = utils.visible_len(s)
             if i < len(col_widths):
                 col_widths[i] = max(col_widths[i], length)
             else:
@@ -37,7 +38,7 @@ def padrows(rows, aligns=None):
     for row in rows:
         padded_cells = []
         for i, cell in enumerate(row):
-            s = str(cell)
+            s = str(cell).replace('\n', ' ')
             vis_len = utils.visible_len(s)
             diff = col_widths[i] - vis_len
 
