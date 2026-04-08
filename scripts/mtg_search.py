@@ -23,7 +23,8 @@ FIELD_MAP = {
     'supertypes': {'header': 'Supertypes', 'align': 'l', 'aliases': []},
     'types': {'header': 'Types', 'align': 'l', 'aliases': []},
     'subtypes': {'header': 'Subtypes', 'align': 'l', 'aliases': []},
-    'pt': {'header': 'P/T', 'align': 'r', 'aliases': ['stats', 'pow_tou']},
+    'pt': {'header': 'P/T', 'align': 'r', 'aliases': ['pow_tou']},
+    'stats': {'header': 'Stats', 'align': 'r', 'aliases': []},
     'power': {'header': 'Power', 'align': 'r', 'aliases': ['pow']},
     'toughness': {'header': 'Toughness', 'align': 'r', 'aliases': ['tou']},
     'loyalty': {'header': 'Loyalty', 'align': 'r', 'aliases': ['loy', 'defense', 'def']},
@@ -80,6 +81,13 @@ def get_field_value(card, field, ansi_color=False):
             res = utils.colorize(res, utils.Ansi.GREEN)
     elif canon == 'pt':
         res = utils.from_unary(card.pt) if card.pt else ""
+        if res and ansi_color:
+            res = utils.colorize(res, utils.Ansi.RED)
+    elif canon == 'stats':
+        # Smart field that pulls P/T, Loyalty, or Defense
+        res = utils.from_unary(card.pt) if card.pt else ""
+        if not res:
+            res = utils.from_unary(card.loyalty) if card.loyalty else ""
         if res and ansi_color:
             res = utils.colorize(res, utils.Ansi.RED)
     elif canon == 'power':
@@ -148,9 +156,9 @@ Available Fields (aliases in parentheses):
   Basic Metadata:
     name, cost (mana), cmc (mv), rarity, set (code), number (num)
   Types & Text:
-    supertypes, types, subtypes, type (typeline), text (rules), mechanics (keywords)
+    type (typeline), text (rules), mechanics (keywords), supertypes, types, subtypes
   Stats:
-    pt (stats), power (pow), toughness (tou), loyalty (def)
+    stats (Smart P/T or Loyalty), pt, power (pow), toughness (tou), loyalty (def)
   Color Info:
     colors, identity (ci), id_count
   Simulation & Encoding:
@@ -165,15 +173,6 @@ Usage Examples:
 
   # Export all legendary creatures to a CSV file
   python3 scripts/mtg_search.py data/AllPrintings.json --grep "Legendary" --grep "Creature" --fields "name,mana,type,stats,rarity" legends.csv
-
-  # Generate a Markdown table of all artifacts from a directory for a forum post
-  python3 scripts/mtg_search.py my_data/ --grep-type "Artifact" --md-table
-
-  # Extract encoded strings for all Goblins
-  python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "encoded"
-
-  # Simulate opening a booster box and list the rare cards in a table
-  python3 scripts/mtg_search.py data/AllPrintings.json --box 1 --rarity rare --fields "name,rarity,pack" --table
 ''' ,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -181,11 +180,11 @@ Usage Examples:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to stdin (-).')
+                        help='Input card data (MTGJSON, Scryfall, CSV, XML, MSE, JSONL, ZIP, or Decklist), encoded text, or directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the search results. If not provided, results print to the console. The format is automatically detected from the file extension.')
-    io_group.add_argument('--fields', default='name,cost,cmc,type,pt,rarity',
-                        help='Comma-separated list of fields to output (Default: name,cost,cmc,type,pt,rarity).')
+    io_group.add_argument('--fields', default='name,cost,cmc,type,stats,rarity',
+                        help='Comma-separated list of fields to output (Default: name,cost,cmc,type,stats,rarity).')
     io_group.add_argument('--delimiter', default=' | ',
                         help='The separator used between fields in text output (Default: " | ").')
 
@@ -213,13 +212,13 @@ Usage Examples:
                         help='Shuffle the cards before processing.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
                         help='Sort cards by a specific criterion.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
     filter_group.add_argument('--grep', action='append',
-                        help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
+                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
     filter_group.add_argument('--grep-name', action='append',
                         help='Only include cards whose name matches a search pattern.')
     filter_group.add_argument('--grep-type', action='append',
@@ -233,7 +232,7 @@ Usage Examples:
     filter_group.add_argument('--grep-loyalty', action='append',
                         help='Only include cards whose loyalty/defense matches a search pattern.')
     filter_group.add_argument('--vgrep', '--exclude', action='append',
-                        help='Skip cards matching a search pattern. Use multiple times for OR logic.')
+                        help='Skip cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for OR logic.')
     filter_group.add_argument('--exclude-name', action='append',
                         help='Exclude cards whose name matches a search pattern.')
     filter_group.add_argument('--exclude-type', action='append',
@@ -421,9 +420,12 @@ Usage Examples:
                     output_f.write("| " + " | ".join(escaped_row) + " |" + '\n')
             else:
                 # Terminal table output
-                header_text = "SEARCH RESULTS"
+                match_count = f" ({len(cards)} matches)"
+                header_text = "SEARCH RESULTS" + match_count
                 if use_color:
-                    output_f.write(utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) + '\n')
+                    header_main = utils.colorize("SEARCH RESULTS", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
+                    header_count = utils.colorize(match_count, utils.Ansi.CYAN)
+                    output_f.write(header_main + header_count + '\n')
                 else:
                     output_f.write(header_text + '\n')
                     output_f.write("=" * len(header_text) + '\n')
