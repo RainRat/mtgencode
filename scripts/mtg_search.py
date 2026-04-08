@@ -183,8 +183,8 @@ Usage Examples:
                         help='Input card data (MTGJSON, Scryfall, CSV, XML, MSE, JSONL, ZIP, or Decklist), encoded text, or directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the search results. If not provided, results print to the console. The format is automatically detected from the file extension.')
-    io_group.add_argument('--fields', default='name,cost,cmc,type,stats,rarity',
-                        help='Comma-separated list of fields to output (Default: name,cost,cmc,type,stats,rarity).')
+    io_group.add_argument('--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                        help='Comma-separated list of fields to output (Default: name,cost,cmc,type,stats,rarity,mechanics).')
     io_group.add_argument('--delimiter', default=' | ',
                         help='The separator used between fields in text output (Default: " | ").')
 
@@ -340,6 +340,17 @@ Usage Examples:
     # Process output
     field_list = [f.strip() for f in args.fields.split(',')]
 
+    # Simulation fields (auto-include)
+    sim_fields = []
+    if args.box > 0:
+        sim_fields = ['box', 'pack']
+    elif args.booster > 0:
+        sim_fields = ['pack']
+
+    for sf in reversed(sim_fields):
+        if sf not in field_list:
+            field_list.insert(0, sf)
+
     # Field Validation
     recognized_fields = set(FIELD_MAP.keys())
     for k, v in FIELD_MAP.items():
@@ -421,14 +432,18 @@ Usage Examples:
             else:
                 # Terminal table output
                 match_count = f" ({len(cards)} matches)"
-                header_text = "SEARCH RESULTS" + match_count
+                header_title = "SEARCH RESULTS"
+                header_text = header_title + match_count
+
                 if use_color:
-                    header_main = utils.colorize("SEARCH RESULTS", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
+                    header_main = utils.colorize(header_title, utils.Ansi.BOLD + utils.Ansi.CYAN)
                     header_count = utils.colorize(match_count, utils.Ansi.CYAN)
                     output_f.write(header_main + header_count + '\n')
                 else:
                     output_f.write(header_text + '\n')
-                    output_f.write("=" * len(header_text) + '\n')
+
+                # Always use a visible separator line for better visual hierarchy
+                output_f.write("=" * len(header_text) + '\n')
 
                 aligns = []
                 for field in field_list:
