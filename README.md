@@ -542,6 +542,17 @@ python3 scripts/mtg_tokens.py data/AllPrintings.json --set MOM --json
     *   `--json`: Output results in structured JSON format.
     *   Supports standard **Advanced Filtering** flags (`--grep`, `--set`, `--rarity`).
 
+### `mtg_skeleton.py`
+Generates a "Design Skeleton" (Set Skeleton) for a dataset, bucketing cards by their type and CMC (Converted Mana Cost). This provides a high-level view of the mechanical curve and balance of a set.
+```bash
+# Generate skeleton for a dataset
+python3 scripts/mtg_skeleton.py data/AllPrintings.json --set MOM
+
+# Analyze the curve of a specific color identity
+python3 scripts/mtg_skeleton.py data/AllPrintings.json --identity "W"
+```
+*   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
+
 ### `distances.py` & `sum.py`
 These tools allow for bulk creativity analysis of your generated cards. `distances.py` calculates the semantic and name distance between your cards and the official dataset, and `sum.py` provides a statistical summary of the results.
 
