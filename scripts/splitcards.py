@@ -51,7 +51,7 @@ def main():
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
     filter_group.add_argument('--grep', action='append',
-                        help='Only include cards matching a search pattern (checks name, type, and text). Use multiple times for AND logic.')
+                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
     filter_group.add_argument('--grep-name', action='append',
                         help='Only include cards whose name matches a search pattern.')
     filter_group.add_argument('--grep-type', action='append',
@@ -65,7 +65,7 @@ def main():
     filter_group.add_argument('--grep-loyalty', action='append',
                         help='Only include cards whose loyalty/defense matches a search pattern.')
     filter_group.add_argument('--vgrep', '--exclude', action='append',
-                        help='Exclude cards matching a search pattern (checks name, type, and text). Use multiple times for OR logic.')
+                        help='Skip cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for OR logic.')
     filter_group.add_argument('--exclude-name', action='append',
                         help='Exclude cards whose name matches a search pattern.')
     filter_group.add_argument('--exclude-type', action='append',
@@ -81,23 +81,23 @@ def main():
     filter_group.add_argument('--set', action='append',
                         help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
     filter_group.add_argument('--rarity', action='append',
-                        help="Only include cards of specific rarities. Supports full names or shorthands (O, N, A, Y, I, L). Supports multiple rarities.")
+                        help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple values (OR logic).")
     filter_group.add_argument('--colors', action='append',
-                        help="Only include cards of specific colors (W, U, B, R, G, C/A). Supports multiple colors.")
+                        help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple values (OR logic).")
     filter_group.add_argument('--identity', action='append',
-                        help="Only include cards with specific colors in their color identity (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple colors (OR logic).")
+                        help="Only include cards with specific colors in their color identity (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple values (OR logic).")
     filter_group.add_argument('--id-count', action='append', dest='id_count',
-                        help='Only include cards with specific color identity counts. Supports inequalities and ranges.')
+                        help='Only include cards with specific color identity counts. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--cmc', action='append',
-                        help='Only include cards with specific CMC values. Supports inequalities and ranges.')
+                        help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
     filter_group.add_argument('--pow', '--power', action='append', dest='pow',
-                        help='Only include cards with specific Power values. Supports inequalities and ranges.')
+                        help='Only include cards with specific Power values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--tou', '--toughness', action='append', dest='tou',
-                        help='Only include cards with specific Toughness values. Supports inequalities and ranges.')
+                        help='Only include cards with specific Toughness values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
-                        help='Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.')
+                        help='Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--mechanic', action='append',
-                        help='Only include cards with specific mechanical features or keyword abilities. Supports multiple values.')
+                        help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file.')
     filter_group.add_argument('--booster', type=int, default=0,

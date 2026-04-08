@@ -259,27 +259,27 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 ---
 
 ### Advanced Filtering
-Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, and `scripts/mtg_search.py`.
+Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, and `scripts/mtg_diff.py`.
 
 *   **Global Filters:**
-    *   `--grep "pattern"`: Only include cards where the name, type line, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
-    *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the search pattern (checks name, type line, rules text, mana cost, and stats). Use multiple flags for **OR** logic (matching any pattern excludes the card).
+    *   `--grep "pattern"`: Only include cards where the name, typeline, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
+    *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the search pattern (checks name, typeline, rules text, mana cost, and stats). Use multiple flags for **OR** logic (matching any pattern excludes the card).
 *   **Field-Specific Filters:**
     *   `--grep-name`, `--grep-type`, `--grep-text`: Only include cards where the specific field matches the search pattern.
-    *   `--grep-cost`, `--grep-pt`, `--grep-loyalty`: Only include cards whose mana cost, power/toughness, or loyalty matches the search pattern.
+    *   `--grep-cost`, `--grep-pt`, `--grep-loyalty`: Only include cards whose mana cost, power/toughness, or loyalty/defense matches the search pattern.
     *   `--exclude-name`, `--exclude-type`, `--exclude-text`: Skip cards where the specific field matches the search pattern.
-    *   `--exclude-cost`, `--exclude-pt`, `--exclude-loyalty`: Skip cards whose mana cost, power/toughness, or loyalty matches the search pattern.
+    *   `--exclude-cost`, `--exclude-pt`, `--exclude-loyalty`: Skip cards whose mana cost, power/toughness, or loyalty/defense matches the search pattern.
 *   **Metadata Filters:**
     *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets (OR logic).
-    *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports multiple rarities (OR logic).
+    *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports full names or shorthands: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), `L` (Basic Land). Supports multiple values (OR logic).
     *   `--colors SYMBOLS`: Only include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless. Multiple colors use OR logic.
     *   `--identity SYMBOLS`: Only include cards with specific colors in their color identity (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless. Multiple colors use OR logic.
     *   `--id-count VALUE`: Only include cards with specific color identity counts. Supports inequalities (e.g., `>3`, `<=2`), ranges (e.g., `1-4`), and multiple values (OR logic).
     *   `--cmc VALUE`: Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., `>3`, `<=2`), ranges (e.g., `1-4`), and multiple values (OR logic).
-    *   `--pow VALUE` (or `--power`): Only include cards with specific Power values. Supports inequalities and ranges.
-    *   `--tou VALUE` (or `--toughness`): Only include cards with specific Toughness values. Supports inequalities and ranges.
-    *   `--loy VALUE` (or `--loyalty`, `--defense`): Only include cards with specific Loyalty or Defense values. Supports inequalities and ranges.
-    *   `--mechanic NAME`: Only include cards with specific mechanical features or keyword abilities (e.g., `Flying`, `Activated`, `ETB Effect`). Supports multiple mechanics (OR logic).
+    *   `--pow VALUE` (or `--power`): Only include cards with specific Power values. Supports inequalities, ranges, and multiple values (OR logic).
+    *   `--tou VALUE` (or `--toughness`): Only include cards with specific Toughness values. Supports inequalities, ranges, and multiple values (OR logic).
+    *   `--loy VALUE` (or `--loyalty`, `--defense`): Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).
+    *   `--mechanic NAME`: Only include cards with specific mechanical features or keyword abilities (e.g., `Flying`, `Activated`, `ETB Effect`). Supports multiple values (OR logic).
     *   `--deck-filter FILE` (or `--decklist-filter`): Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
 
 > **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), and `L` (Basic Land).
@@ -485,7 +485,7 @@ python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "n
 # Find all mythic rares with CMC > 7 and output as JSON
 python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" --json
 ```
-*   **Fields:** `name`, `cost`, `cmc`, `type`, `stats`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `encoded`.
+*   **Fields:** `name`, `cost`, `cmc`, `colors`, `type`, `stats`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `encoded`.
 *   **Output Formats:** Plain text (default), `--table`, `--md-table`, `--json`, `--jsonl`, `--csv`.
 *   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
 

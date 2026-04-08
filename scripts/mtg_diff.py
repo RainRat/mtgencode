@@ -93,15 +93,30 @@ def main():
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--grep', action='append', help='Only include cards matching a search pattern.')
-    filter_group.add_argument('--set', action='append', help='Only include cards from specific sets.')
-    filter_group.add_argument('--rarity', action='append', help='Only include cards of specific rarities.')
-    filter_group.add_argument('--colors', action='append', help='Only include cards of specific colors.')
-    filter_group.add_argument('--cmc', action='append', help='Only include cards with specific CMC values.')
-    filter_group.add_argument('--pow', '--power', action='append', dest='pow', help='Only include cards with specific Power values.')
-    filter_group.add_argument('--tou', '--toughness', action='append', dest='tou', help='Only include cards with specific Toughness values.')
-    filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy', help='Only include cards with specific Loyalty or Defense values.')
-    filter_group.add_argument('--mechanic', action='append', help='Only include cards with specific mechanical features.')
+    filter_group.add_argument('--grep', action='append',
+                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
+    filter_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Skip cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for OR logic.')
+    filter_group.add_argument('--set', action='append',
+                        help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
+    filter_group.add_argument('--rarity', action='append',
+                        help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple values (OR logic).")
+    filter_group.add_argument('--colors', action='append',
+                        help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple values (OR logic).")
+    filter_group.add_argument('--identity', action='append',
+                        help="Only include cards with specific colors in their color identity (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple values (OR logic).")
+    filter_group.add_argument('--id-count', action='append',
+                        help='Only include cards with specific color identity counts. Supports inequalities, ranges, and multiple values (OR logic).')
+    filter_group.add_argument('--cmc', action='append',
+                        help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
+    filter_group.add_argument('--pow', '--power', action='append', dest='pow',
+                        help='Only include cards with specific Power values. Supports inequalities, ranges, and multiple values (OR logic).')
+    filter_group.add_argument('--tou', '--toughness', action='append', dest='tou',
+                        help='Only include cards with specific Toughness values. Supports inequalities, ranges, and multiple values (OR logic).')
+    filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
+                        help='Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).')
+    filter_group.add_argument('--mechanic', action='append',
+                        help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
 
     # Color options
     color_group = parser.add_mutually_exclusive_group()

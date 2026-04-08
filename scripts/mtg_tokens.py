@@ -128,9 +128,12 @@ Example Usage:
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--grep', action='append', help='Only include cards matching a search pattern.')
-    filter_group.add_argument('--set', action='append', help='Only include cards from specific sets.')
-    filter_group.add_argument('--rarity', action='append', help='Only include cards of specific rarities.')
+    filter_group.add_argument('--grep', action='append',
+                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
+    filter_group.add_argument('--set', action='append',
+                        help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
+    filter_group.add_argument('--rarity', action='append',
+                        help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple values (OR logic).")
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
