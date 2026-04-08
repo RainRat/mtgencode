@@ -332,9 +332,7 @@ def main():
     # Print Table
     print(utils.colorize("DATASET COMPARISON", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) if use_color else "=== DATASET COMPARISON ===")
 
-    col_widths = datalib.get_col_widths(rows)
-    separator = ['-' * w for w in col_widths]
-    rows.insert(1, separator)
+    datalib.add_separator_row(rows)
 
     aligns = ['l'] + ['r'] * (len(header) - 1)
     datalib.printrows(datalib.padrows(rows, aligns=aligns), indent=2)

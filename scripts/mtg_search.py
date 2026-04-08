@@ -436,9 +436,7 @@ Usage Examples:
                     aligns.append(FIELD_MAP.get(canon, {}).get('align', 'l'))
 
                 # Add separator row
-                col_widths = datalib.get_col_widths(rows)
-                separator = ['-' * w for w in col_widths]
-                rows.insert(1, separator)
+                datalib.add_separator_row(rows)
 
                 for row in datalib.padrows(rows, aligns=aligns):
                     output_f.write("  " + row + '\n')

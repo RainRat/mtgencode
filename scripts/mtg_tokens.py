@@ -235,9 +235,7 @@ Example Usage:
 
             rows.append([name, pt, color, stype, abilities, count])
 
-        col_widths = datalib.get_col_widths(rows)
-        separator = ['-' * w for w in col_widths]
-        rows.insert(1, separator)
+        datalib.add_separator_row(rows)
 
         datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'l', 'l', 'l', 'r']), indent=2)
 

@@ -360,9 +360,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             # We keep it left aligned by default.
 
             # Insert a separator row of dashes
-            col_widths = datalib.get_col_widths(rows)
-            separator = ['-' * w for w in col_widths]
-            rows.insert(1, separator)
+            datalib.add_separator_row(rows)
 
             for row in datalib.padrows(rows, aligns=aligns):
                 writer.write('  ' + row + '\n')

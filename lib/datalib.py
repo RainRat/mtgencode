@@ -20,6 +20,17 @@ def get_col_widths(rows):
                 col_widths.append(length)
     return col_widths
 
+def add_separator_row(rows, index=1):
+    """
+    Calculates column widths for the provided rows and inserts a separator
+    row of dashes at the specified index.
+    """
+    if not rows:
+        return
+    col_widths = get_col_widths(rows)
+    separator = ['-' * w for w in col_widths]
+    rows.insert(index, separator)
+
 # Format a list of rows of data into nice columns.
 # Note that it's the columns that are nice, not this code.
 def padrows(rows, aligns=None):
@@ -219,9 +230,7 @@ def _print_breakdown(title, index, total, use_color, vsize=None, sort_key=None, 
         ])
 
     # Insert a separator row of dashes
-    col_widths = get_col_widths(rows)
-    separator = ['-' * w for w in col_widths]
-    rows.insert(1, separator)
+    add_separator_row(rows)
 
     printrows(padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=4)
 
@@ -268,9 +277,7 @@ def _print_mechanical_profile(mechanical_stats, total, use_color, vsize=None):
         rows.append(row)
 
     # Insert a separator row of dashes
-    col_widths = get_col_widths(rows)
-    separator = ['-' * w for w in col_widths]
-    rows.insert(1, separator)
+    add_separator_row(rows)
 
     printrows(padrows(rows, aligns=['l', 'r', 'r', 'l', 'r', 'r']), indent=4)
 
@@ -320,9 +327,7 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
         rows.append(row)
 
     # Insert a separator row of dashes
-    col_widths = get_col_widths(rows)
-    separator = ['-' * w for w in col_widths]
-    rows.insert(1, separator)
+    add_separator_row(rows)
 
     printrows(padrows(rows, aligns=['l', 'r', 'r', 'r', 'r', 'r', 'r', 'r']), indent=4)
 

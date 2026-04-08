@@ -92,9 +92,7 @@ def display_sets(sets, use_color=False):
         rows.append([code, name, stype, date, count])
 
     # Get column widths and add a separator
-    col_widths = datalib.get_col_widths(rows)
-    separator = ['-' * w for w in col_widths]
-    rows.insert(1, separator)
+    datalib.add_separator_row(rows)
 
     datalib.printrows(datalib.padrows(rows, aligns=['l', 'l', 'l', 'l', 'r']), indent=2)
 
