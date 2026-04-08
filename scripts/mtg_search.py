@@ -3,6 +3,7 @@ import sys
 import os
 import argparse
 import json
+import csv
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -12,107 +13,164 @@ import utils
 import jdecode
 from titlecase import titlecase
 
-def get_field_value(card, field, ansi_color=False):
-    """Extracts a specific field value from a Card object."""
-    field = field.lower().strip()
+# Metadata mapping for available fields: Pretty headers, alignment, and aliases
+FIELD_MAP = {
+    'name': {'header': 'Name', 'align': 'l', 'aliases': []},
+    'cost': {'header': 'Cost', 'align': 'l', 'aliases': ['mana', 'mana_cost', 'manacost']},
+    'cmc': {'header': 'CMC', 'align': 'r', 'aliases': ['mv', 'mana_value']},
+    'colors': {'header': 'Colors', 'align': 'l', 'aliases': []},
+    'type': {'header': 'Type', 'align': 'l', 'aliases': ['typeline']},
+    'supertypes': {'header': 'Supertypes', 'align': 'l', 'aliases': []},
+    'types': {'header': 'Types', 'align': 'l', 'aliases': []},
+    'subtypes': {'header': 'Subtypes', 'align': 'l', 'aliases': []},
+    'pt': {'header': 'P/T', 'align': 'r', 'aliases': ['stats', 'pow_tou']},
+    'power': {'header': 'Power', 'align': 'r', 'aliases': ['pow']},
+    'toughness': {'header': 'Toughness', 'align': 'r', 'aliases': ['tou']},
+    'loyalty': {'header': 'Loyalty', 'align': 'r', 'aliases': ['loy', 'defense', 'def']},
+    'text': {'header': 'Rules Text', 'align': 'l', 'aliases': ['oracle', 'rules']},
+    'rarity': {'header': 'Rarity', 'align': 'l', 'aliases': []},
+    'mechanics': {'header': 'Mechanics', 'align': 'l', 'aliases': ['keywords']},
+    'identity': {'header': 'Identity', 'align': 'l', 'aliases': ['color_identity', 'ci']},
+    'id_count': {'header': 'ID', 'align': 'r', 'aliases': ['identity_count']},
+    'set': {'header': 'Set', 'align': 'l', 'aliases': ['code']},
+    'number': {'header': 'Num', 'align': 'r', 'aliases': ['collector_number', 'num']},
+    'pack': {'header': 'Pack', 'align': 'r', 'aliases': ['pack_id']},
+    'box': {'header': 'Box', 'align': 'r', 'aliases': ['box_id']},
+    'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
+}
 
-    if field == 'name':
+def get_field_canonical_name(field):
+    """Maps a field alias to its canonical name."""
+    f = field.lower().strip()
+    if f in FIELD_MAP:
+        return f
+    for k, v in FIELD_MAP.items():
+        if f in v.get('aliases', []):
+            return k
+    return f
+
+def get_field_value(card, field, ansi_color=False):
+    """Extracts a specific field value from a Card object, recursing for b-sides."""
+    canon = get_field_canonical_name(field)
+
+    res = ""
+    if canon == 'name':
         res = titlecase(card.name)
         if ansi_color:
             res = utils.colorize(res, card._get_ansi_color())
-        return res
-    elif field == 'cost':
-        return card.cost.format(ansi_color=ansi_color)
-    elif field == 'cmc':
+    elif canon == 'cost':
+        res = card.cost.format(ansi_color=ansi_color)
+    elif canon == 'cmc':
         res = str(int(card.cost.cmc)) if card.cost.cmc == int(card.cost.cmc) else f"{card.cost.cmc:.1f}"
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
-        return res
-    elif field == 'supertypes':
-        return " ".join(card.supertypes)
-    elif field == 'types':
-        return " ".join(card.types)
-    elif field == 'subtypes':
-        return " ".join(card.subtypes)
-    elif field == 'type':
+    elif canon == 'colors':
+        res = "".join(card.cost.colors)
+        if ansi_color and res:
+            res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in res])
+    elif canon == 'supertypes':
+        res = " ".join(card.supertypes)
+    elif canon == 'types':
+        res = " ".join(card.types)
+    elif canon == 'subtypes':
+        res = " ".join(card.subtypes)
+    elif canon == 'type':
         res = card.get_type_line(separator=utils.dash_marker)
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.GREEN)
-        return res
-    elif field == 'pt':
+    elif canon == 'pt':
         res = utils.from_unary(card.pt) if card.pt else ""
         if res and ansi_color:
             res = utils.colorize(res, utils.Ansi.RED)
-        return res
-    elif field == 'power':
+    elif canon == 'power':
         res = utils.from_unary(card.pt_p) if card.pt_p else ""
         if res and ansi_color:
             res = utils.colorize(res, utils.Ansi.RED)
-        return res
-    elif field == 'toughness':
+    elif canon == 'toughness':
         res = utils.from_unary(card.pt_t) if card.pt_t else ""
         if res and ansi_color:
             res = utils.colorize(res, utils.Ansi.RED)
-        return res
-    elif field == 'loyalty':
+    elif canon == 'loyalty':
         res = utils.from_unary(card.loyalty) if card.loyalty else ""
         if res and ansi_color:
             res = utils.colorize(res, utils.Ansi.RED)
-        return res
-    elif field == 'text':
-        return card.get_text(force_unpass=True, ansi_color=ansi_color)
-    elif field == 'rarity':
+    elif canon == 'text':
+        res = card.get_text(force_unpass=True, ansi_color=ansi_color)
+    elif canon == 'rarity':
         res = card.rarity_name
-        if ansi_color:
+        if ansi_color and res:
             res = utils.colorize(res, utils.Ansi.get_rarity_color(res))
-        return res
-    elif field == 'mechanics':
+    elif canon == 'mechanics':
+        # mechanics and identity properties already aggregate b-sides
         return ", ".join(sorted(list(card.mechanics)))
-    elif field == 'identity':
-        return card.color_identity
-    elif field == 'id_count':
-        return len(card.color_identity)
-    elif field == 'set':
+    elif canon == 'identity':
+        res = card.color_identity
+        if ansi_color and res:
+            res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in res])
+        return res
+    elif canon == 'id_count':
+        res = len(card.color_identity)
+        if ansi_color:
+            res = utils.colorize(str(res), utils.Ansi.BOLD + utils.Ansi.YELLOW)
+        return str(res)
+    elif canon == 'set':
         return card.set_code if card.set_code else ""
-    elif field == 'number':
+    elif canon == 'number':
         return card.number if card.number else ""
-    elif field == 'pack':
-        return getattr(card, 'pack_id', "")
-    elif field == 'box':
-        return getattr(card, 'box_id', "")
-    elif field == 'encoded':
-        return card.encode()
+    elif canon == 'pack':
+        return str(getattr(card, 'pack_id', ""))
+    elif canon == 'box':
+        return str(getattr(card, 'box_id', ""))
+    elif canon == 'encoded':
+        res = card.encode()
     else:
         return ""
+
+    # Recursive joining for multi-faced cards
+    if card.bside:
+        # Exclude fields that are typically shared or already aggregated
+        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics']:
+            return str(res)
+
+        b_res = get_field_value(card.bside, field, ansi_color)
+        if res and b_res:
+            sep = "\n\n" if canon in ['text', 'encoded'] else " // "
+            return f"{res}{sep}{b_res}"
+        return str(res or b_res)
+
+    return str(res)
 
 def main():
     parser = argparse.ArgumentParser(
         description="Search card data and extract specific fields. It works with all supported formats (JSON, CSV, XML, or encoded text).",
         epilog='''
-Available Fields:
+Available Fields (aliases in parentheses):
   Basic Metadata:
-    name, cost, cmc, rarity, set, number
+    name, cost (mana), cmc (mv), rarity, set (code), number (num)
   Types & Text:
-    supertypes, types, subtypes, text, mechanics
+    supertypes, types, subtypes, type (typeline), text (rules), mechanics (keywords)
   Stats:
-    pt (Power/Toughness), power, toughness, loyalty (Loyalty or Defense)
+    pt (stats), power (pow), toughness (tou), loyalty (def)
   Color Info:
-    identity (Color Identity), id_count
+    colors, identity (ci), id_count
   Simulation & Encoding:
-    pack (Pack ID), box (Box ID), encoded (Encoded text string)
+    pack, box, encoded
 
 Usage Examples:
   # List names and costs of all Goblins in a table
   python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "name,cost" --table
 
   # Find all mythic rares with CMC > 7 and save to a JSON file
-  python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" --json > mythics.json
+  python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" mythics.json
 
-  # Generate a Markdown table of legendary creatures for a forum post
-  python3 scripts/mtg_search.py data/AllPrintings.json --grep "Legendary" --grep "Creature" --md-table
+  # Export all legendary creatures to a CSV file
+  python3 scripts/mtg_search.py data/AllPrintings.json --grep "Legendary" --grep "Creature" --fields "name,mana,type,stats,rarity" legends.csv
 
-  # Extract encoded strings for all artifacts from a directory for training
-  python3 scripts/mtg_search.py my_data/ --grep-type "Artifact" --fields "encoded"
+  # Generate a Markdown table of all artifacts from a directory for a forum post
+  python3 scripts/mtg_search.py my_data/ --grep-type "Artifact" --md-table
+
+  # Extract encoded strings for all Goblins
+  python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "encoded"
 
   # Simulate opening a booster box and list the rare cards in a table
   python3 scripts/mtg_search.py data/AllPrintings.json --box 1 --rarity rare --fields "name,rarity,pack" --table
@@ -124,6 +182,8 @@ Usage Examples:
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to stdin (-).')
+    io_group.add_argument('outfile', nargs='?', default=None,
+                        help='Path to save the search results. If not provided, results print to the console. The format is automatically detected from the file extension.')
     io_group.add_argument('--fields', default='name,cost,cmc,type,pt,rarity',
                         help='Comma-separated list of fields to output (Default: name,cost,cmc,type,pt,rarity).')
     io_group.add_argument('--delimiter', default=' | ',
@@ -133,15 +193,17 @@ Usage Examples:
     fmt_group_title = parser.add_argument_group('Output Format')
     fmt_group = fmt_group_title.add_mutually_exclusive_group()
     fmt_group.add_argument('--text', action='store_true',
-                           help='Force plain text output (Default).')
+                           help='Force plain text output (Default unless detected from extension).')
     fmt_group.add_argument('-t', '--table', action='store_true',
-                           help='Generate a formatted table for terminal view.')
+                           help='Generate a formatted table for terminal view (Auto-detected for .tbl or .table).')
     fmt_group.add_argument('--md-table', '--mdt', action='store_true',
-                           help='Generate a Markdown table.')
+                           help='Generate a Markdown table (Auto-detected for .md or .mdt).')
     fmt_group.add_argument('-j', '--json', action='store_true',
-                           help='Generate a structured JSON file.')
+                           help='Generate a structured JSON file (Auto-detected for .json).')
     fmt_group.add_argument('--jsonl', action='store_true',
-                           help='Generate a JSON Lines file (one card object per line).')
+                           help='Generate a JSON Lines file (one card object per line). Auto-detected for .jsonl.')
+    fmt_group.add_argument('--csv', action='store_true',
+                           help='Generate a CSV file (Auto-detected for .csv).')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
@@ -256,8 +318,15 @@ Usage Examples:
         cards = cards[:args.limit]
 
     # Set default format if none chosen
-    if not (args.text or args.table or args.md_table or args.json or args.jsonl):
-        if sys.stdout.isatty():
+    if not (args.text or args.table or args.md_table or args.json or args.jsonl or args.csv):
+        if args.outfile:
+            if args.outfile.endswith('.json'): args.json = True
+            elif args.outfile.endswith('.jsonl'): args.jsonl = True
+            elif args.outfile.endswith('.csv'): args.csv = True
+            elif args.outfile.endswith('.md') or args.outfile.endswith('.mdt'): args.md_table = True
+            elif args.outfile.endswith('.tbl') or args.outfile.endswith('.table'): args.table = True
+            else: args.text = True
+        elif sys.stdout.isatty():
             args.table = True
         else:
             args.text = True
@@ -266,83 +335,118 @@ Usage Examples:
     use_color = False
     if args.color is True:
         use_color = True
-    elif args.color is None and not (args.json or args.jsonl or args.md_table) and sys.stdout.isatty():
+    elif args.color is None and not (args.json or args.jsonl or args.md_table or args.csv) and sys.stdout.isatty():
         use_color = True
 
     # Process output
     field_list = [f.strip() for f in args.fields.split(',')]
 
-    if args.json:
-        results = []
-        for card in cards:
-            card_data = {}
-            for field in field_list:
-                card_data[field] = get_field_value(card, field, ansi_color=use_color)
-            results.append(card_data)
-        print(json.dumps(results, indent=2))
-    elif args.jsonl:
-        for card in cards:
-            card_data = {}
-            for field in field_list:
-                card_data[field] = get_field_value(card, field, ansi_color=use_color)
-            print(json.dumps(card_data))
-    elif args.table or args.md_table:
-        import datalib
-        rows = []
-        # Header
-        header = [f.title() for f in field_list]
-        if use_color:
-            header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
-        rows.append(header)
+    # Field Validation
+    recognized_fields = set(FIELD_MAP.keys())
+    for k, v in FIELD_MAP.items():
+        recognized_fields.update(v.get('aliases', []))
 
-        # Content
-        for card in cards:
-            row = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
-            rows.append(row)
+    invalid_fields = [f for f in field_list if get_field_canonical_name(f) not in FIELD_MAP]
+    if invalid_fields and not args.quiet:
+        print(f"Warning: Unrecognized fields: {', '.join(invalid_fields)}", file=sys.stderr)
 
-        if args.md_table:
-            # Markdown table output
-            header_row = "| " + " | ".join(header) + " |"
-            # Alignment row
-            align_row = "|"
-            for field in field_list:
-                if field.lower() in ['cmc', 'id_count', 'power', 'toughness', 'loyalty', 'pack', 'box']:
-                    align_row += " ---: |"
-                else:
-                    align_row += " :--- |"
-            print(header_row)
-            print(align_row)
-            for row in rows[1:]:
-                # Escape pipes in markdown
-                escaped_row = [str(cell).replace('|', '\\|').replace('\n', ' ') for cell in row]
-                print("| " + " | ".join(escaped_row) + " |")
-        else:
-            # Terminal table output
-            header_text = "SEARCH RESULTS"
+    # Set up output writer
+    output_f = sys.stdout
+    if args.outfile:
+        if args.verbose:
+            print(f"Writing search results to: {args.outfile}", file=sys.stderr)
+        output_f = open(args.outfile, 'w', encoding='utf-8')
+
+    try:
+        if args.json:
+            results = []
+            for card in cards:
+                card_data = {}
+                for field in field_list:
+                    card_data[field] = get_field_value(card, field, ansi_color=use_color)
+                results.append(card_data)
+            output_f.write(json.dumps(results, indent=2) + '\n')
+        elif args.jsonl:
+            for card in cards:
+                card_data = {}
+                for field in field_list:
+                    card_data[field] = get_field_value(card, field, ansi_color=use_color)
+                output_f.write(json.dumps(card_data) + '\n')
+        elif args.csv:
+            writer = csv.writer(output_f)
+            # Header
+            header = [FIELD_MAP.get(get_field_canonical_name(f), {}).get('header', f) for f in field_list]
+            writer.writerow(header)
+            # Content
+            for card in cards:
+                row = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
+                writer.writerow(row)
+        elif args.table or args.md_table:
+            import datalib
+            rows = []
+            # Header
+            header = []
+            for f in field_list:
+                canon = get_field_canonical_name(f)
+                header.append(FIELD_MAP.get(canon, {}).get('header', f.title()))
+
             if use_color:
-                print(utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+                header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+            rows.append(header)
+
+            # Content
+            for card in cards:
+                row = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
+                rows.append(row)
+
+            if args.md_table:
+                # Markdown table output
+                header_row = "| " + " | ".join(header) + " |"
+                # Alignment row
+                align_row = "|"
+                for field in field_list:
+                    canon = get_field_canonical_name(field)
+                    align = FIELD_MAP.get(canon, {}).get('align', 'l')
+                    if align == 'r':
+                        align_row += " ---: |"
+                    elif align == 'c':
+                        align_row += " :---: |"
+                    else:
+                        align_row += " :--- |"
+                output_f.write(header_row + '\n')
+                output_f.write(align_row + '\n')
+                for row in rows[1:]:
+                    # Escape pipes in markdown
+                    escaped_row = [str(cell).replace('|', '\\|').replace('\n', ' ') for cell in row]
+                    output_f.write("| " + " | ".join(escaped_row) + " |" + '\n')
             else:
-                print(header_text)
-                print("=" * len(header_text))
-
-            aligns = []
-            for field in field_list:
-                if field.lower() in ['cmc', 'id_count', 'power', 'toughness', 'loyalty', 'pack', 'box']:
-                    aligns.append('r')
+                # Terminal table output
+                header_text = "SEARCH RESULTS"
+                if use_color:
+                    output_f.write(utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) + '\n')
                 else:
-                    aligns.append('l')
+                    output_f.write(header_text + '\n')
+                    output_f.write("=" * len(header_text) + '\n')
 
-            # Add separator row
-            col_widths = datalib.get_col_widths(rows)
-            separator = ['-' * w for w in col_widths]
-            rows.insert(1, separator)
+                aligns = []
+                for field in field_list:
+                    canon = get_field_canonical_name(field)
+                    aligns.append(FIELD_MAP.get(canon, {}).get('align', 'l'))
 
-            for row in datalib.padrows(rows, aligns=aligns):
-                print("  " + row)
-    else: # Default text output
-        for card in cards:
-            card_data = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
-            print(args.delimiter.join(str(val) for val in card_data))
+                # Add separator row
+                col_widths = datalib.get_col_widths(rows)
+                separator = ['-' * w for w in col_widths]
+                rows.insert(1, separator)
+
+                for row in datalib.padrows(rows, aligns=aligns):
+                    output_f.write("  " + row + '\n')
+        else: # Default text output
+            for card in cards:
+                card_data = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
+                output_f.write(args.delimiter.join(str(val) for val in card_data) + '\n')
+    finally:
+        if args.outfile:
+            output_f.close()
 
     if not args.quiet:
         utils.print_operation_summary("Search", len(cards), 0, quiet=args.quiet)
