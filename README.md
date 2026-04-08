@@ -459,6 +459,23 @@ Extracts a single card from the massive `AllPrintings.json` file. This is useful
 python3 scripts/extract_one.py data/AllPrintings.json SET_CODE "Card Name"
 ```
 
+### `mtg_oracle.py`
+Search and display card details in a human-readable format. This tool is optimized for quick lookup and features fuzzy name matching to find cards even if you misspell them. It works with all supported input formats (JSON, CSV, XML, encoded text, etc.).
+```bash
+# Lookup a specific card by name
+python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizzly Bears"
+
+# Use fuzzy matching for misspelled names
+python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizly Beers"
+
+# Find cards matching specific filters
+python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --rarity rare --grep "Battle"
+```
+*   **Options:**
+    *   `--gatherer`: Use modern Gatherer-style wording and formatting.
+    *   `--color` / `--no-color`: Enable or disable ANSI color output.
+    *   Supports all **Advanced Filtering** flags.
+
 ### `mtg_search.py`
 Search card data (JSON, encoded text, etc.) and extract specific fields. This is useful for dataset exploration and creating lightweight card listings.
 ```bash
