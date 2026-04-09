@@ -553,6 +553,18 @@ python3 scripts/mtg_skeleton.py data/AllPrintings.json --identity "W"
 ```
 *   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
 
+### `mtg_functional.py`
+Identifies and groups "functional reprints" (cards with different names but identical stats and abilities). This is useful for dataset cleanup and identifying redundancy in a set.
+```bash
+# List all functional reprints in a dataset
+python3 scripts/mtg_functional.py data/AllPrintings.json
+
+# Create a deduplicated dataset (one card per functional group)
+python3 scripts/mtg_functional.py data/AllPrintings.json --dedupe unique_cards.json
+```
+*   **Output Formats:** Formatted table (default), `--json`, `--csv`.
+*   Supports all **Advanced Filtering** flags.
+
 ### `distances.py` & `sum.py`
 These tools allow for bulk creativity analysis of your generated cards. `distances.py` calculates the semantic and name distance between your cards and the official dataset, and `sum.py` provides a statistical summary of the results.
 
