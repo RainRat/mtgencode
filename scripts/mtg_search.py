@@ -313,8 +313,13 @@ Usage Examples:
         import sortlib
         cards = sortlib.sort_cards(cards, args.sort, quiet=args.quiet)
 
+    total_matches = len(cards)
     if args.limit > 0:
         cards = cards[:args.limit]
+    displayed_matches = len(cards)
+
+    if total_matches == 0 and not args.quiet:
+        print("No cards found matching the criteria.", file=sys.stderr)
 
     # Set default format if none chosen
     if not (args.text or args.table or args.md_table or args.json or args.jsonl or args.csv):
@@ -393,68 +398,78 @@ Usage Examples:
                 writer.writerow(row)
         elif args.table or args.md_table:
             import datalib
-            rows = []
-            # Header
-            header = []
-            for f in field_list:
-                canon = get_field_canonical_name(f)
-                header.append(FIELD_MAP.get(canon, {}).get('header', f.title()))
-
-            if use_color:
-                header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
-            rows.append(header)
-
-            # Content
-            for card in cards:
-                row = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
-                rows.append(row)
-
-            if args.md_table:
-                # Markdown table output
-                header_row = "| " + " | ".join(header) + " |"
-                # Alignment row
-                align_row = "|"
-                for field in field_list:
-                    canon = get_field_canonical_name(field)
-                    align = FIELD_MAP.get(canon, {}).get('align', 'l')
-                    if align == 'r':
-                        align_row += " ---: |"
-                    elif align == 'c':
-                        align_row += " :---: |"
-                    else:
-                        align_row += " :--- |"
-                output_f.write(header_row + '\n')
-                output_f.write(align_row + '\n')
-                for row in rows[1:]:
-                    # Escape pipes in markdown
-                    escaped_row = [str(cell).replace('|', '\\|').replace('\n', ' ') for cell in row]
-                    output_f.write("| " + " | ".join(escaped_row) + " |" + '\n')
+            if total_matches == 0 and not args.md_table:
+                # For regular tables with 0 matches, we've already printed a message to stderr
+                # and we don't want to print an empty table header.
+                pass
             else:
-                # Terminal table output
-                match_count = f" ({len(cards)} matches)"
-                header_title = "SEARCH RESULTS"
-                header_text = header_title + match_count
+                rows = []
+                # Header
+                header = []
+                for f in field_list:
+                    canon = get_field_canonical_name(f)
+                    header.append(FIELD_MAP.get(canon, {}).get('header', f.title()))
 
                 if use_color:
-                    header_main = utils.colorize(header_title, utils.Ansi.BOLD + utils.Ansi.CYAN)
-                    header_count = utils.colorize(match_count, utils.Ansi.CYAN)
-                    output_f.write(header_main + header_count + '\n')
+                    header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+                rows.append(header)
+                # Content
+                for card in cards:
+                    row = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
+                    rows.append(row)
+
+                if args.md_table:
+                    # Markdown table output
+                    header_row = "| " + " | ".join(header) + " |"
+                    # Alignment row
+                    align_row = "|"
+                    for field in field_list:
+                        canon = get_field_canonical_name(field)
+                        align = FIELD_MAP.get(canon, {}).get('align', 'l')
+                        if align == 'r':
+                            align_row += " ---: |"
+                        elif align == 'c':
+                            align_row += " :---: |"
+                        else:
+                            align_row += " :--- |"
+                    output_f.write(header_row + '\n')
+                    output_f.write(align_row + '\n')
+                    for row in rows[1:]:
+                        # Escape pipes in markdown
+                        escaped_row = [str(cell).replace('|', '\\|').replace('\n', ' ') for cell in row]
+                        output_f.write("| " + " | ".join(escaped_row) + " |" + '\n')
                 else:
-                    output_f.write(header_text + '\n')
+                    # Terminal table output
+                    if displayed_matches < total_matches:
+                        match_count = f" (Showing {displayed_matches} of {total_matches} matches)"
+                    else:
+                        match_count = f" ({total_matches} matches)"
 
-                # Always use a visible separator line for better visual hierarchy
-                output_f.write("=" * len(header_text) + '\n')
+                    header_title = "SEARCH RESULTS"
+                    header_text = header_title + match_count
 
-                aligns = []
-                for field in field_list:
-                    canon = get_field_canonical_name(field)
-                    aligns.append(FIELD_MAP.get(canon, {}).get('align', 'l'))
+                    if use_color:
+                        header_main = utils.colorize(header_title, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                        header_count = utils.colorize(match_count, utils.Ansi.CYAN)
+                        output_f.write("  " + header_main + header_count + '\n')
+                    else:
+                        output_f.write("  " + header_text + '\n')
 
-                # Add separator row
-                datalib.add_separator_row(rows)
+                    # Always use a visible separator line for better visual hierarchy
+                    output_f.write("  " + "=" * len(header_text) + '\n')
 
-                for row in datalib.padrows(rows, aligns=aligns):
-                    output_f.write("  " + row + '\n')
+                    aligns = []
+                    for field in field_list:
+                        canon = get_field_canonical_name(field)
+                        aligns.append(FIELD_MAP.get(canon, {}).get('align', 'l'))
+
+                    # Add separator row
+                    datalib.add_separator_row(rows)
+
+                    for row in datalib.padrows(rows, aligns=aligns):
+                        # Data rows are already indented by 2 spaces in padrows?
+                        # No, padrows joins with 2 spaces but doesn't indent the whole line.
+                        output_f.write("  " + row + '\n')
         else: # Default text output
             for card in cards:
                 card_data = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
@@ -464,7 +479,7 @@ Usage Examples:
             output_f.close()
 
     if not args.quiet:
-        utils.print_operation_summary("Search", len(cards), 0, quiet=args.quiet)
+        utils.print_operation_summary("Search", total_matches, 0, quiet=args.quiet)
 
 if __name__ == "__main__":
     main()
