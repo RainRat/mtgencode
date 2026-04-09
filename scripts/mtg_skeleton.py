@@ -158,10 +158,9 @@ It displays a 2D grid of card types (Creature, Instant, etc.) vs. mana costs (CM
         grand_total += row_total
         rows.append(row)
 
-    # Add separator
-    col_widths = datalib.get_col_widths(rows)
-    separator = ['-' * w for w in col_widths]
-    rows.append(separator)
+    # Add separators
+    datalib.add_separator_row(rows, index=1)
+    datalib.add_separator_row(rows, index=len(rows))
 
     # Add totals row
     totals_label = "TOTAL"
