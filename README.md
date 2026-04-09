@@ -204,6 +204,7 @@ When you run `encode.py`, the cards are converted into a specialized text format
 | `{ }` | Mana symbols (symbols are doubled, e.g., `{WW}`). | `{GG}` |
 | `T` | The Tap symbol. | `T: Add {GG}` |
 | `Q` | The Untap symbol. | `Q: Untap @` |
+| `uncast` | Replaces the verb "counter" (to avoid confusion with counters). | `uncast target spell` |
 
 ### Unary Numbers
 To help the AI learn how to count, numbers are written as a sequence of symbols instead of digits.
@@ -226,6 +227,8 @@ To help the AI learn how to count, numbers are written as a sequence of symbols 
 | 1 | `&^` |
 | 2 | `&^^` |
 | 5 | `&^^^^^` |
+
+> **Note for Mana Costs:** Inside mana symbols `{ }`, the start marker `&` is omitted and only the count `^` is used for generic mana. Additionally, single-letter mana symbols are doubled (e.g., `{2}{R}` is encoded as `{^^RR}`).
 
 ### Rarity Markers
 Rarity is encoded using a single-letter marker. These markers are often the second letter of the rarity name (to avoid collision with mana symbols like `C` for Colorless).
