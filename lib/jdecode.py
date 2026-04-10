@@ -21,7 +21,7 @@ def _split_csv_row(row):
     a nested dictionary structure for multi-faced cards.
     """
     # Canonical CSV fields
-    fields = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'pt', 'rarity']
+    fields = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'pt', 'rarity', 'flavor']
 
     # Normalize row keys (support manaCost vs mana_cost)
     normalized_row = {
@@ -32,6 +32,7 @@ def _split_csv_row(row):
         'text': row.get('text', ''),
         'pt': row.get('pt', ''),
         'rarity': row.get('rarity', ''),
+        'flavor': row.get('flavor', row.get('flavor_text', '')),
     }
 
     # Handle explicit power/toughness/loyalty/defense columns if present
@@ -74,6 +75,7 @@ def _csv_row_to_dict(row):
         'manaCost': row.get('mana_cost', ''),
         'text': row.get('text', '').replace('\\n', '\n'),
         'rarity': row.get('rarity', ''),
+        'flavorText': row.get('flavor', ''),
     }
 
     # Split type into supertypes and types
@@ -152,6 +154,7 @@ def _map_scryfall_face(face, d):
     if 'name' in face: d['name'] = face['name']
     if 'mana_cost' in face: d['manaCost'] = face['mana_cost']
     if 'oracle_text' in face: d['text'] = face['oracle_text']
+    if 'flavor_text' in face: d['flavorText'] = face['flavor_text']
     if 'type_line' in face:
         d['type'] = face['type_line']
         s, t, sub = utils.parse_type_line(face['type_line'])
@@ -184,7 +187,7 @@ def _normalize_scryfall_card(card):
         if len(faces) >= 2:
             # Map the second face to the 'bside' field.
             # This follows the linking logic used for double-faced/split cards.
-            bside = {'rarity': card.get('rarity', '')}
+            bside = {'rarity': card.get('rarity', ''), 'flavorText': card.get('flavorText', '')}
             _map_scryfall_face(faces[1], bside)
             card[utils.json_field_bside] = bside
 

@@ -30,6 +30,7 @@ FIELD_MAP = {
     'loyalty': {'header': 'Loyalty', 'align': 'r', 'aliases': ['loy', 'defense', 'def']},
     'text': {'header': 'Rules Text', 'align': 'l', 'aliases': ['oracle', 'rules']},
     'rarity': {'header': 'Rarity', 'align': 'l', 'aliases': []},
+    'flavor': {'header': 'Flavor Text', 'align': 'l', 'aliases': ['flavor_text']},
     'mechanics': {'header': 'Mechanics', 'align': 'l', 'aliases': ['keywords']},
     'identity': {'header': 'Identity', 'align': 'l', 'aliases': ['color_identity', 'ci']},
     'id_count': {'header': 'ID', 'align': 'r', 'aliases': ['identity_count']},
@@ -104,6 +105,10 @@ def get_field_value(card, field, ansi_color=False):
             res = utils.colorize(res, utils.Ansi.RED)
     elif canon == 'text':
         res = card.get_text(force_unpass=True, ansi_color=ansi_color)
+    elif canon == 'flavor':
+        res = card.flavor
+        if ansi_color and res:
+            res = utils.colorize(res, utils.Ansi.ITALIC)
     elif canon == 'rarity':
         res = card.rarity_name
         if ansi_color and res:
@@ -142,7 +147,7 @@ def get_field_value(card, field, ansi_color=False):
 
         b_res = get_field_value(card.bside, field, ansi_color)
         if res and b_res:
-            sep = "\n\n" if canon in ['text', 'encoded'] else " // "
+            sep = "\n\n" if canon in ['text', 'flavor', 'encoded'] else " // "
             return f"{res}{sep}{b_res}"
         return str(res or b_res)
 
@@ -156,7 +161,7 @@ Available Fields (aliases in parentheses):
   Basic Metadata:
     name, cost (mana), cmc (mv), rarity, set (code), number (num)
   Types & Text:
-    type (typeline), text (rules), mechanics (keywords), supertypes, types, subtypes
+    type (typeline), text (rules), flavor (flavor_text), mechanics (keywords), supertypes, types, subtypes
   Stats:
     stats (Smart P/T or Loyalty), pt, power (pow), toughness (tou), loyalty (def)
   Color Info:

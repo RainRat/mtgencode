@@ -67,6 +67,7 @@ field_subtypes = 'subtypes'
 field_loyalty = 'loyalty'
 field_pt = 'pt'
 field_text = 'text'
+field_flavor = 'flavor'
 field_other = 'other' # it's kind of a pseudo-field
 
 # Import the labels, because these do appear in the encoded text.
@@ -90,6 +91,7 @@ fieldnames = [
     field_loyalty,
     field_pt,
     field_text,
+    field_flavor,
 ]
 
 # Use shorthand: C, U, R, M, S, L
@@ -359,6 +361,10 @@ def fields_from_json(src_json, linetrans = True):
         mtext = Manatext(text_val, fmt = 'json')
         valid = valid and mtext.valid
         fields[field_text] = [(-1, mtext)]
+
+    flavor_val = src_json.get('flavorText', src_json.get('flavor', ''))
+    if flavor_val:
+        fields[field_flavor] = [(-1, utils.to_ascii(flavor_val))]
     
     # we don't need to worry about bsides because we handle that in the constructor
     return parsed, valid and fields_check_valid(fields), fields
@@ -776,6 +782,7 @@ class Card:
         setattr(self, field_pt + '_p', None)
         setattr(self, field_pt + '_t', None)
         setattr(self, field_text, Manatext(''))
+        setattr(self, field_flavor, '')
         setattr(self, field_text + '_lines', [])
         setattr(self, field_text + '_words', [])
         setattr(self, field_text + '_lines_words', [])
@@ -1055,6 +1062,8 @@ class Card:
             return True
         if self.search_loyalty(pattern):
             return True
+        if self.search_flavor(pattern):
+            return True
         return False
 
     def search_name(self, pattern):
@@ -1107,6 +1116,14 @@ class Card:
             return True
         if self.bside:
             return self.bside.search_loyalty(pattern)
+        return False
+
+    def search_flavor(self, pattern):
+        """Returns True if the pattern matches the card's flavor text."""
+        if self.flavor and pattern.search(self.flavor):
+            return True
+        if self.bside:
+            return self.bside.search_flavor(pattern)
         return False
 
     def summary(self, ansi_color=False):
@@ -1338,6 +1355,21 @@ class Card:
             elif for_md:
                 outstr += '_'
 
+        if self.flavor:
+            outstr += linebreak
+            flavor_display = self.flavor
+            if ansi_color:
+                flavor_display = utils.colorize(flavor_display, utils.Ansi.ITALIC)
+
+            if for_html:
+                outstr += '<i>' + flavor_display.replace('\n', '<br>') + '</i>'
+            elif for_forum:
+                outstr += '[i]' + flavor_display + '[/i]'
+            elif for_md:
+                outstr += '_' + flavor_display.replace('\n', '  \n') + '_'
+            else:
+                outstr += flavor_display
+
         if self.bside:
             outstr += linebreak
             if not for_html and not for_forum and not for_md:
@@ -1435,6 +1467,10 @@ class Card:
         if self.text.text:
             d['text'] = self.get_text(force_unpass=True)
 
+        # Flavor
+        if self.flavor:
+            d['flavorText'] = self.flavor
+
         # Mechanics
         face_mechanics = sorted(list(self.get_face_mechanics()))
         if face_mechanics:
@@ -1505,6 +1541,9 @@ class Card:
                 outstr += '\tpower: ' + ptstring[0] + '\n'
                 outstr += '\ttoughness: ' + ptstring[1] + '\n'
 
+        if self.flavor:
+            outstr += '\tflavor text: ' + self.flavor.replace('\n', ' ') + '\n'
+
         newtext = self.get_text(mse=True)
 
         # Annoying special case for bsides;
@@ -1548,6 +1587,9 @@ class Card:
             if newtext2:
                 newtext2 = newtext2.replace('\n', '\n\t\t')
                 outstr += '\trule text 2:\n\t\t' + newtext2 + '\n'
+
+            if self.bside.flavor:
+                outstr += '\tflavor text 2: ' + self.bside.flavor.replace('\n', ' ') + '\n'
 
         # Apply specific formatting for planeswalker cards.
         elif self.is_planeswalker:
@@ -1700,7 +1742,15 @@ class Card:
         if pt:
             xml_out += f"      <pt>{escape(pt)}</pt>\n"
         xml_out += f"      <tablerow>{tablerow}</tablerow>\n"
-        xml_out += f"      <text>{escape(text)}</text>\n"
+
+        full_text = text
+        if self.flavor:
+            full_text += "\n\n" + self.flavor
+        if self.bside and self.bside.flavor:
+            # Note: bside rules text is already appended to 'text' in the helper
+            full_text += "\n\n" + self.bside.flavor
+
+        xml_out += f"      <text>{escape(full_text)}</text>\n"
         xml_out += "    </card>"
 
         return xml_out
