@@ -317,10 +317,7 @@ mana_symall = mana_syms + mana_symalt
 def mana_alt(sym):
     if sym not in mana_symall:
         raise ValueError('invalid mana symbol for mana_alt(): ' + repr(sym))
-    if len(sym) < 2:
-        return sym
-    else:
-        return sym[::-1]
+    return sym[::-1]
 
 # produce intended neural net output format
 def mana_sym_to_encoding(sym):
