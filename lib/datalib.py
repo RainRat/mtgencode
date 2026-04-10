@@ -5,6 +5,7 @@ from cardlib import Card
 def get_col_widths(rows):
     """
     Returns a list of maximum visible lengths for each column in the provided rows.
+    Accounts for newlines by taking the maximum width of any single line in a cell.
     """
     if not rows:
         return []
@@ -12,12 +13,12 @@ def get_col_widths(rows):
     col_widths = []
     for row in rows:
         for i, cell in enumerate(row):
-            s = str(cell).replace('\n', ' ')
-            length = utils.visible_len(s)
+            lines = str(cell).split('\n')
+            max_line_len = max([utils.visible_len(line) for line in lines]) if lines else 0
             if i < len(col_widths):
-                col_widths[i] = max(col_widths[i], length)
+                col_widths[i] = max(col_widths[i], max_line_len)
             else:
-                col_widths.append(length)
+                col_widths.append(max_line_len)
     return col_widths
 
 def add_separator_row(rows, index=1):
@@ -36,39 +37,45 @@ def add_separator_row(rows, index=1):
 def padrows(rows, aligns=None):
     """
     Formats a list of data rows into aligned columns.
-    Ensures that the last column does not have trailing spaces.
+    Supports multi-line cells and ensures proper alignment across columns.
     """
     if not rows:
         return []
 
-    # Get maximum visible length for each column
     col_widths = get_col_widths(rows)
+    padded_output_rows = []
 
-    # Pad each cell and join rows
-    padded_rows = []
     for row in rows:
-        padded_cells = []
-        for i, cell in enumerate(row):
-            s = str(cell).replace('\n', ' ')
-            vis_len = utils.visible_len(s)
-            diff = col_widths[i] - vis_len
+        # Split each cell into lines
+        cell_lines = [str(cell).split('\n') for cell in row]
+        # Determine the maximum number of lines in this row
+        max_lines = max(len(lines) for lines in cell_lines) if cell_lines else 0
 
-            align = aligns[i] if (aligns and i < len(aligns)) else 'l'
-            if align == 'r':
-                cell_str = (' ' * diff) + s
-            elif align == 'c':
-                left = diff // 2
-                right = diff - left
-                cell_str = (' ' * left) + s + (' ' * right)
-            else: # 'l'
-                cell_str = s + (' ' * diff)
+        # We will generate one or more terminal output lines for this logical row
+        for line_idx in range(max_lines):
+            padded_cells = []
+            for i, lines in enumerate(cell_lines):
+                # Get the current line for this cell, or empty string if it's shorter than max_lines
+                s = lines[line_idx] if line_idx < len(lines) else ""
+                vis_len = utils.visible_len(s)
+                diff = col_widths[i] - vis_len
 
-            padded_cells.append(cell_str)
+                align = aligns[i] if (aligns and i < len(aligns)) else 'l'
+                if align == 'r':
+                    cell_str = (' ' * diff) + s
+                elif align == 'c':
+                    left = diff // 2
+                    right = diff - left
+                    cell_str = (' ' * left) + s + (' ' * right)
+                else: # 'l'
+                    cell_str = s + (' ' * diff)
 
-        # Join cells with 2 spaces
-        padded_rows.append('  '.join(padded_cells).rstrip())
+                padded_cells.append(cell_str)
 
-    return padded_rows
+            # Join cells with 2 spaces and add to output
+            padded_output_rows.append('  '.join(padded_cells).rstrip())
+
+    return padded_output_rows
 def printrows(l, indent=0):
     pad = ' ' * indent
     for row in l:
