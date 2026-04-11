@@ -1678,15 +1678,21 @@ class Card:
             text = f"{text}\n\n---\n\n{b_text}"
             # Combined colors
             color = "".join(sorted(list(set(color + b_color))))
+            # Combined P/T
+            if b_pt:
+                if pt:
+                    pt = f"{pt} // {b_pt}"
+                else:
+                    pt = b_pt
 
         # Determine tablerow
         # 0: Land, 1: Other, 2: Creature, 3: Spells
         tablerow = 1
-        if self.is_land:
+        if self.is_land or (self.bside and self.bside.is_land):
             tablerow = 0
-        elif any(t.lower() == 'creature' for t in self.types):
+        elif self.is_creature or (self.bside and self.bside.is_creature):
             tablerow = 2
-        elif self.is_instant or self.is_sorcery:
+        elif self.is_instant or self.is_sorcery or (self.bside and (self.bside.is_instant or self.bside.is_sorcery)):
             tablerow = 3
 
         xml_out = "    <card>\n"
