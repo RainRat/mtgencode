@@ -191,12 +191,15 @@ python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - so
 
 When you run `encode.py`, the cards are converted into a specialized text format. This format uses symbols and "unary" numbers to help the AI learn card patterns more easily. AI models often find regular card text confusing, so we simplify it into a language they can better understand.
 
+### Multi-Faced Cards
+Multi-faced cards (Splits, Transforms, or Battles) are represented as discrete blocks separated by a single newline character (`\n`).
+
 ### Special Markers
 | Symbol | Description | Example |
 | :--- | :--- | :--- |
 | `\|` | Separates card parts (like Name, Cost, or Type). | `\|5creature\|4legendary\|` |
 | `@` | Represents the card's own name. | `@ gets +&^/+&^` |
-| `\\` | Indicates a new line of rules text. | `Flying\\Trample` |
+| `\` | Indicates a new line of rules text. | `Flying\Trample` |
 | `~` | Replaces a dash (e.g., in type lines). | `Enchantment~Aura` |
 | `=` | Separates options in a choice or modal ability. | `[&^ = Option A = Option B]` |
 | `%` | Represents a counter (like a +1/+1 or Charge counter). | `Put a % counter on @` |
