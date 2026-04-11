@@ -154,13 +154,13 @@ def main():
         epilog='''
 Available Fields (aliases in parentheses):
   Basic Metadata:
-    name, cost (mana), cmc (mv), rarity, set (code), number (num)
+    name, cost (mana, mana_cost), cmc (mv, mana_value), rarity, set (code), number (num)
   Types & Text:
-    type (typeline), text (rules), mechanics (keywords), supertypes, types, subtypes
+    type (typeline), text (rules, oracle), mechanics (keywords), supertypes, types, subtypes
   Stats:
-    stats (Smart P/T or Loyalty), pt, power (pow), toughness (tou), loyalty (def)
+    stats (Smart field: P/T, Loyalty, or Defense), pt (pow_tou), power (pow), toughness (tou), loyalty (def, defense)
   Color Info:
-    colors, identity (ci), id_count
+    colors, identity (ci, color_identity), id_count (identity_count)
   Simulation & Encoding:
     pack, box, encoded
 
@@ -170,6 +170,9 @@ Usage Examples:
 
   # Find all mythic rares with CMC > 7 and save to a JSON file
   python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" mythics.json
+
+  # Find all 5-color cards (cards with color identity count of 5)
+  python3 scripts/mtg_search.py data/AllPrintings.json --id-count 5
 
   # Export all legendary creatures to a CSV file
   python3 scripts/mtg_search.py data/AllPrintings.json --grep "Legendary" --grep "Creature" --fields "name,mana,type,stats,rarity" legends.csv
