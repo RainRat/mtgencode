@@ -50,7 +50,7 @@ def get_field_canonical_name(field):
             return k
     return f
 
-def get_field_value(card, field, ansi_color=False):
+def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
     """Extracts a specific field value from a Card object, recursing for b-sides."""
     canon = get_field_canonical_name(field)
 
@@ -140,9 +140,9 @@ def get_field_value(card, field, ansi_color=False):
         if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics']:
             return str(res)
 
-        b_res = get_field_value(card.bside, field, ansi_color)
+        b_res = get_field_value(card.bside, field, ansi_color, multi_sep=multi_sep)
         if res and b_res:
-            sep = "\n\n" if canon in ['text', 'encoded'] else " // "
+            sep = "\n\n" if canon in ['text', 'encoded'] else multi_sep
             return f"{res}{sep}{b_res}"
         return str(res or b_res)
 
@@ -183,7 +183,7 @@ Usage Examples:
                         help='Input card data (MTGJSON, Scryfall, CSV, XML, MSE, JSONL, ZIP, or Decklist), encoded text, or directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the search results. If not provided, results print to the console. The format is automatically detected from the file extension.')
-    io_group.add_argument('--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+    io_group.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
                         help='Comma-separated list of fields to output (Default: name,cost,cmc,type,stats,rarity,mechanics).')
     io_group.add_argument('--delimiter', default=' | ',
                         help='The separator used between fields in text output (Default: " | ").')
@@ -217,7 +217,7 @@ Usage Examples:
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--grep', action='append',
+    filter_group.add_argument('-g', '--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
     filter_group.add_argument('--grep-name', action='append',
                         help='Only include cards whose name matches a search pattern.')
@@ -342,6 +342,11 @@ Usage Examples:
     elif args.color is None and not (args.json or args.jsonl or args.md_table or args.csv) and sys.stdout.isatty():
         use_color = True
 
+    # Determine multi-face separator
+    multi_sep = " // "
+    if args.table or args.md_table:
+        multi_sep = "\n"
+
     # Process output
     field_list = [f.strip() for f in args.fields.split(',')]
 
@@ -378,14 +383,14 @@ Usage Examples:
             for card in cards:
                 card_data = {}
                 for field in field_list:
-                    card_data[field] = get_field_value(card, field, ansi_color=use_color)
+                    card_data[field] = get_field_value(card, field, ansi_color=use_color, multi_sep=multi_sep)
                 results.append(card_data)
             output_f.write(json.dumps(results, indent=2) + '\n')
         elif args.jsonl:
             for card in cards:
                 card_data = {}
                 for field in field_list:
-                    card_data[field] = get_field_value(card, field, ansi_color=use_color)
+                    card_data[field] = get_field_value(card, field, ansi_color=use_color, multi_sep=multi_sep)
                 output_f.write(json.dumps(card_data) + '\n')
         elif args.csv:
             writer = csv.writer(output_f)
@@ -394,7 +399,7 @@ Usage Examples:
             writer.writerow(header)
             # Content
             for card in cards:
-                row = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
+                row = [get_field_value(card, f, ansi_color=use_color, multi_sep=multi_sep) for f in field_list]
                 writer.writerow(row)
         elif args.table or args.md_table:
             import datalib
@@ -415,7 +420,7 @@ Usage Examples:
                 rows.append(header)
                 # Content
                 for card in cards:
-                    row = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
+                    row = [get_field_value(card, f, ansi_color=use_color, multi_sep=multi_sep) for f in field_list]
                     rows.append(row)
 
                 if args.md_table:
@@ -472,7 +477,7 @@ Usage Examples:
                         output_f.write("  " + row + '\n')
         else: # Default text output
             for card in cards:
-                card_data = [get_field_value(card, f, ansi_color=use_color) for f in field_list]
+                card_data = [get_field_value(card, f, ansi_color=use_color, multi_sep=multi_sep) for f in field_list]
                 output_f.write(args.delimiter.join(str(val) for val in card_data) + '\n')
     finally:
         if args.outfile:
