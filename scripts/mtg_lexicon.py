@@ -269,7 +269,7 @@ def main():
                     vocab_size = str(stats2[c]['total'])
                     c_rows.append([label, word_str, vocab_size])
 
-                c_rows.insert(1, separator)
+                datalib.add_separator_row(c_rows)
                 datalib.printrows(datalib.padrows(c_rows, aligns=['l', 'l', 'r']), indent=2)
 
     utils.print_operation_summary("Lexicon Analysis", len(cards1) + (len(cards2) if args.compare else 0), 0, quiet=args.quiet)

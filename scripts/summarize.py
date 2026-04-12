@@ -11,6 +11,7 @@ sys.path.append(libdir)
 
 import cardlib
 import jdecode
+import sortlib
 from datalib import Datamine
 
 # Try to import tqdm for progress bars
