@@ -37,6 +37,7 @@ FIELD_MAP = {
     'number': {'header': 'Num', 'align': 'r', 'aliases': ['collector_number', 'num']},
     'pack': {'header': 'Pack', 'align': 'r', 'aliases': ['pack_id']},
     'box': {'header': 'Box', 'align': 'r', 'aliases': ['box_id']},
+    'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
 
@@ -129,6 +130,8 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return str(getattr(card, 'pack_id', ""))
     elif canon == 'box':
         return str(getattr(card, 'box_id', ""))
+    elif canon == 'summary':
+        return card.summary(ansi_color=ansi_color)
     elif canon == 'encoded':
         res = card.encode()
     else:
@@ -137,7 +140,7 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
     # Recursive joining for multi-faced cards
     if card.bside:
         # Exclude fields that are typically shared or already aggregated
-        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics']:
+        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary']:
             return str(res)
 
         b_res = get_field_value(card.bside, field, ansi_color, multi_sep=multi_sep)
@@ -167,6 +170,9 @@ Available Fields (aliases in parentheses):
 Usage Examples:
   # List names and costs of all Goblins in a table
   python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "name,cost" --table
+
+  # Quickly scan search results using a compact one-line summary
+  python3 scripts/mtg_search.py data/AllPrintings.json --grep "Dragon" --summary
 
   # Find all mythic rares with CMC > 7 and save to a JSON file
   python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" mythics.json
@@ -206,6 +212,8 @@ Usage Examples:
                            help='Generate a JSON Lines file (one card object per line). Auto-detected for .jsonl.')
     fmt_group.add_argument('--csv', action='store_true',
                            help='Generate a CSV file (Auto-detected for .csv).')
+    fmt_group.add_argument('-S', '--summary', action='store_true',
+                           help='Generate a compact one-line summary for each card (Auto-detected for .sum or .summary).')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
@@ -325,13 +333,14 @@ Usage Examples:
         print("No cards found matching the criteria.", file=sys.stderr)
 
     # Set default format if none chosen
-    if not (args.text or args.table or args.md_table or args.json or args.jsonl or args.csv):
+    if not (args.text or args.table or args.md_table or args.json or args.jsonl or args.csv or args.summary):
         if args.outfile:
             if args.outfile.endswith('.json'): args.json = True
             elif args.outfile.endswith('.jsonl'): args.jsonl = True
             elif args.outfile.endswith('.csv'): args.csv = True
             elif args.outfile.endswith('.md') or args.outfile.endswith('.mdt'): args.md_table = True
             elif args.outfile.endswith('.tbl') or args.outfile.endswith('.table'): args.table = True
+            elif args.outfile.endswith('.sum') or args.outfile.endswith('.summary'): args.summary = True
             else: args.text = True
         elif sys.stdout.isatty():
             args.table = True
@@ -478,6 +487,9 @@ Usage Examples:
                         # Data rows are already indented by 2 spaces in padrows?
                         # No, padrows joins with 2 spaces but doesn't indent the whole line.
                         output_f.write("  " + row + '\n')
+        elif args.summary:
+            for card in cards:
+                output_f.write(card.summary(ansi_color=use_color) + '\n')
         else: # Default text output
             for card in cards:
                 card_data = [get_field_value(card, f, ansi_color=use_color, multi_sep=multi_sep) for f in field_list]
