@@ -14,7 +14,7 @@ def get_col_widths(rows):
     for row in rows:
         for i, cell in enumerate(row):
             lines = str(cell).split('\n')
-            max_line_len = max([utils.visible_len(line) for line in lines]) if lines else 0
+            max_line_len = max(utils.visible_len(line) for line in lines)
             if i < len(col_widths):
                 col_widths[i] = max(col_widths[i], max_line_len)
             else:
