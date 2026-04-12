@@ -410,6 +410,9 @@ python3 scripts/mtg_sets.py data/AllPrintings.json --grep "Masters"
     *   `-n LIMIT`, `--limit LIMIT`: Only process the first N sets.
     *   `--shuffle`: Randomize the order of sets before listing.
     *   `--sample N`: Pick N random sets (shorthand for `--shuffle --limit N`).
+    *   `--summarize`: Show statistics and mechanical profiling for the cards in the filtered sets.
+    *   `--view`: Display a compact list of all cards in the filtered sets.
+    *   `-t TOP`, `--top TOP`: Limit the number of entries in breakdown tables (used with `--summarize`).
     *   `--sort {code,name,type,date,count}`: Sort sets by a specific criterion (Default: date).
     *   `--reverse`: Reverse the sort order.
     *   `--grep PATTERN`: Only include sets matching a search pattern (checks name and code). Use multiple times for AND logic.
