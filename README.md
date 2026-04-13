@@ -137,8 +137,8 @@ Options for formatting the output. While primarily used for AI output, this tool
 *   `--jsonl`: Creates a JSON Lines file (one card per line).
 *   `--csv`: Creates a spreadsheet file.
 *   `--md`: Creates a Markdown document.
-*   `--md-table`: Creates a Markdown table.
-*   `--summary`: Creates a compact one-line summary for each card.
+*   `--md-table` (or `--mdt`): Creates a Markdown table.
+*   `-S`, `--summary`: Creates a compact one-line summary for each card.
 *   `--color` / `--no-color`: Manually enable or disable ANSI color output in your terminal.
 *   `--shuffle`: Randomizes the order of cards (the tool does not shuffle cards by default for decoding).
 *   `--sort`: Sorts cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, or `box`.
@@ -346,8 +346,8 @@ python3 sortcards.py data/AllPrintings.json sorted_output.txt
 python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "Elf"
 ```
 *   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, `--booster`, `--box`, and all **Advanced Filtering** flags.
-*   `--summary`: Output compact card summaries instead of full text.
-*   `--md`: Output in Markdown format with collapsible sections.
+*   `-S`, `--summary`: Output compact card summaries instead of full text.
+*   `--md` (or `--markdown`): Output in Markdown format with collapsible sections.
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `summarize.py`
@@ -489,14 +489,14 @@ python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --rarity rare --g
 Search card data (JSON, encoded text, etc.) and extract specific fields. This is useful for dataset exploration and creating lightweight card listings.
 ```bash
 # List names and costs of all Goblins in a formatted table
-python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "name,cost" --table
+python3 scripts/mtg_search.py data/AllPrintings.json -g "Goblin" -f "name,cost" --table
 
 # Find all mythic rares with CMC > 7 and output as JSON
 python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" --json
 ```
-*   **Fields:** `name`, `cost`, `cmc`, `colors`, `type`, `stats`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `encoded`.
-*   **Output Formats:** Plain text (default), `--table`, `--md-table`, `--json`, `--jsonl`, `--csv`.
-*   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
+*   **Fields:** `name`, `cost`, `cmc`, `colors`, `type`, `stats`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `summary` (alias `view`), `encoded`.
+*   **Output Formats:** Plain text (default), `--table` (alias `-t`), `--md-table` (alias `--mdt`), `--json` (alias `-j`), `--jsonl`, `--csv`, `--summary` (alias `-S`).
+*   **Options:** Supports `-f` (for `--fields`), `-g` (for `--grep`), sorting, and all **Advanced Filtering** and simulation flags.
 
 ### `mtg_subset.py`
 Creates a filtered subset of an MTGJSON file while preserving its structure. This is useful for creating specialized training datasets or lightweight card databases without losing set-level metadata.
