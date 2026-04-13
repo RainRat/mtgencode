@@ -744,15 +744,13 @@ class NumericFilter:
     - Ranges: "2-4", "0.5-1.5"
     """
     def __init__(self, filter_str):
-        self.filter_str = filter_str.strip()
+        s = filter_str.strip()
+        self.filter_str = s
         self.mode = None # 'exact', 'inequality', 'range'
         self.op = None   # '>', '<', '>=', '<=', '!=', '=='
         self.val = None
         self.val2 = None # for range
-        self._parse()
 
-    def _parse(self):
-        s = self.filter_str
         # Check for range
         range_match = re.match(r'^([-+]?\d*\.?\d+)\s*-\s*([-+]?\d*\.?\d+)$', s)
         if range_match:
