@@ -749,9 +749,7 @@ class NumericFilter:
         self.op = None   # '>', '<', '>=', '<=', '!=', '=='
         self.val = None
         self.val2 = None # for range
-        self._parse()
 
-    def _parse(self):
         s = self.filter_str
         # Check for range
         range_match = re.match(r'^([-+]?\d*\.?\d+)\s*-\s*([-+]?\d*\.?\d+)$', s)
