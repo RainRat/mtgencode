@@ -562,6 +562,18 @@ python3 scripts/mtg_skeleton.py data/AllPrintings.json --identity "W"
 ```
 *   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
 
+### `mtg_pips.py`
+Analyzes the distribution of mana symbols (pips) in a dataset. This is useful for evaluating color weight and mana requirements for a set or deck.
+```bash
+# Analyze pip distribution for a specific set
+python3 scripts/mtg_pips.py data/AllPrintings.json --set MOM
+
+# Include pips from rules text (activated abilities, etc.)
+python3 scripts/mtg_pips.py data/AllPrintings.json --include-text --rarity rare
+```
+*   **Output Formats:** Formatted table (default), `--json`, `--csv`.
+*   Supports all **Advanced Filtering** flags and simulation.
+
 ### `mtg_functional.py`
 Identifies and groups "functional reprints" (cards with different names but identical stats and abilities). This is useful for dataset cleanup and identifying redundancy in a set.
 ```bash
