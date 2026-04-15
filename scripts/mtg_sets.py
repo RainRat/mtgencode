@@ -57,10 +57,19 @@ def display_sets(sets, use_color=False):
     if not sets:
         return
 
-    header_text = 'AVAILABLE SETS'
+    header_title = "AVAILABLE SETS"
+    match_count = f" ({len(sets)} {'match' if len(sets) == 1 else 'matches'})"
+    header_text = header_title + match_count
+
     if use_color:
-        header_text = utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
-    print(header_text)
+        header_main = utils.colorize(header_title, utils.Ansi.BOLD + utils.Ansi.CYAN)
+        header_count = utils.colorize(match_count, utils.Ansi.CYAN)
+        print("  " + header_main + header_count)
+    else:
+        print("  " + header_text)
+
+    # Always use a visible separator line for better visual hierarchy
+    print("  " + "=" * len(header_text))
 
     header = ["Code", "Name", "Type", "Release Date", "Count"]
     if use_color:
@@ -193,11 +202,6 @@ def main():
     try:
         with redirect_stdout(output_f):
             display_sets(sets, use_color=use_color)
-
-            summary = f"\nFound {len(sets)} sets matching criteria."
-            if use_color:
-                summary = utils.colorize(summary, utils.Ansi.BOLD + utils.Ansi.GREEN)
-            print(summary)
 
             if (args.summarize or args.view) and sets:
                 set_codes = [s['code'] for s in sets]

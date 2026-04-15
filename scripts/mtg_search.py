@@ -511,7 +511,7 @@ Usage Examples:
                     if displayed_matches < total_matches:
                         match_count = f" (Showing {displayed_matches} of {total_matches} matches)"
                     else:
-                        match_count = f" ({total_matches} matches)"
+                        match_count = f" ({total_matches} {'match' if total_matches == 1 else 'matches'})"
 
                     header_title = "SEARCH RESULTS"
                     header_text = header_title + match_count

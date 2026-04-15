@@ -708,7 +708,8 @@ def print_operation_summary(op_name, success_count, fail_count, quiet=False):
     use_color = sys.stderr.isatty()
 
     if fail_count == 0:
-        summary = f">> {op_name} complete: {success_count} cards processed."
+        noun = "card" if success_count == 1 else "cards"
+        summary = f">> {op_name} complete: {success_count} {noun} processed."
         if use_color:
             summary = colorize(summary, Ansi.BOLD + Ansi.GREEN)
         print('\n' + summary, file=sys.stderr)
