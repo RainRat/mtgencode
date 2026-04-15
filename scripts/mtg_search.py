@@ -4,6 +4,8 @@ import os
 import argparse
 import json
 import csv
+import difflib
+import re
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -331,6 +333,55 @@ Usage Examples:
 
     if total_matches == 0 and not args.quiet:
         print("No cards found matching the criteria.", file=sys.stderr)
+
+        # Fallback to fuzzy suggestions for name-based lookups
+        if args.infile != '-' and (args.grep or args.grep_name):
+            # Relax the name-based filters to get a candidate pool
+            candidate_cards = jdecode.mtg_open_file(
+                args.infile, verbose=False,
+                grep=None, vgrep=args.vgrep,
+                grep_name=None, vgrep_name=args.exclude_name,
+                grep_types=args.grep_type, vgrep_types=args.exclude_type,
+                grep_text=args.grep_text, vgrep_text=args.exclude_text,
+                grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
+                grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
+                grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
+                sets=args.set, rarities=args.rarity,
+                colors=args.colors, cmcs=args.cmc,
+                pows=args.pow, tous=args.tou, loys=args.loy,
+                mechanics=args.mechanic,
+                identities=args.identity, id_counts=args.id_count,
+                decklist_file=args.deck,
+                booster=args.booster, box=args.box,
+                shuffle=False
+            )
+
+            if candidate_cards:
+                # Build a mapping of searchable names (full names and significant words)
+                search_map = {}
+                for c in candidate_cards:
+                    search_map[c.name.lower()] = titlecase(c.name)
+                    for word in c.name.split():
+                        if len(word) > 3:
+                            # Strip punctuation for word-based fuzzy matching
+                            clean_word = re.sub(r'[^a-zA-Z0-9]', '', word).lower()
+                            if clean_word and clean_word not in search_map:
+                                search_map[clean_word] = titlecase(c.name)
+
+                queries = []
+                if args.grep: queries.extend(args.grep)
+                if args.grep_name: queries.extend(args.grep_name)
+
+                suggestions = set()
+                for q in queries:
+                    matches = difflib.get_close_matches(q.lower(), list(search_map.keys()), n=3, cutoff=0.7)
+                    for m in matches:
+                        suggestions.add(search_map[m])
+
+                if suggestions:
+                    print("Did you mean:", file=sys.stderr)
+                    for s in sorted(list(suggestions)):
+                        print(f"  - {s}", file=sys.stderr)
 
     # Set default format if none chosen
     if not (args.text or args.table or args.md_table or args.json or args.jsonl or args.csv or args.summary):
