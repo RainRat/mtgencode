@@ -155,18 +155,33 @@ Example Usage:
     else:
         display_cards = cards
 
+    total_matches = len(display_cards)
+
+    if not args.quiet:
+        header_title = "SEARCH RESULTS"
+        match_count = f" ({total_matches} {'match' if total_matches == 1 else 'matches'})"
+        header_text = header_title + match_count
+
+        if use_color:
+            header_main = utils.colorize(header_title, utils.Ansi.BOLD + utils.Ansi.CYAN)
+            header_count = utils.colorize(match_count, utils.Ansi.CYAN)
+            print("  " + header_main + header_count)
+        else:
+            print("  " + header_text)
+
+        print("  " + "=" * len(header_text))
+
     # Display the cards
     for i, card in enumerate(display_cards):
         if i > 0:
-            print("\n" + "=" * 40 + "\n")
+            print("\n  " + "=" * 40 + "\n")
 
-        print(card.format(gatherer=args.gatherer, ansi_color=use_color))
+        formatted_card = card.format(gatherer=args.gatherer, ansi_color=use_color)
+        indented_card = "\n".join(["  " + line for line in formatted_card.split("\n")])
+        print(indented_card)
 
-    if not args.quiet and len(display_cards) > 1:
-        summary = f"\nShowing {len(display_cards)} matches."
-        if use_color:
-            summary = utils.colorize(summary, utils.Ansi.BOLD + utils.Ansi.CYAN)
-        print(summary, file=sys.stderr)
+    if not args.quiet:
+        utils.print_operation_summary("Search", total_matches, 0)
 
 if __name__ == "__main__":
     main()
