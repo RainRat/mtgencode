@@ -268,7 +268,7 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 ---
 
 ### Advanced Filtering
-Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_skeleton.py`, and `scripts/mtg_pips.py`.
+Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, and `scripts/mtg_pips.py`.
 
 *   **Global Filters:**
     *   `--grep "pattern"`: Only include cards where the name, typeline, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
@@ -450,6 +450,25 @@ python3 scripts/mtg_compare.py --set MOM --set ONE data/AllPrintings.json
     *   `--shuffle`: Randomize cards before analysis.
     *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
+    *   Supports standard **Advanced Filtering** flags.
+
+### `mtg_functional.py`
+Identifies and groups 'functional reprints' (cards with different names but identical mana costs, types, stats, and rules text).
+```bash
+# List all functional reprints in a dataset
+python3 scripts/mtg_functional.py data/AllPrintings.json
+
+# Create a deduplicated dataset (one card per functional group)
+python3 scripts/mtg_functional.py data/AllPrintings.json --dedupe unique_cards.json
+
+# Find functional reprints of Goblins
+python3 scripts/mtg_functional.py data/AllPrintings.json --grep "Goblin"
+```
+*   **Options:**
+    *   `--table`: Display groups in a formatted table (Default).
+    *   `--json`: Output groups as JSON.
+    *   `--csv`: Output groups as CSV.
+    *   `--dedupe`: Output a JSON file containing the full dataset with functional duplicates removed.
     *   Supports standard **Advanced Filtering** flags.
 
 ### `json2csv.py`, `csv2json.py` & `combinejson.py`
