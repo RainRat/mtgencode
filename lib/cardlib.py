@@ -1202,10 +1202,7 @@ class Card:
         if for_html:
             outstr += '<div class="card-text">\n'
 
-        if gatherer:
-            cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
-        else:
-            cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
+        cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
 
         if vdump and not cardname:
             cardname = '_NONAME_'
