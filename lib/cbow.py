@@ -36,7 +36,7 @@ def read_vector_file(fname):
             raise struct.error("Invalid header format")
         words = int(header_parts[0])
         size = int(header_parts[1])
-        vocab = [' '] * (words * max_w)
+        vocab = []
         M = []
         for b in range(0,words):
             a = 0
@@ -50,16 +50,14 @@ def read_vector_file(fname):
                     a += 1
             
             word_str = word_bytes.decode('utf-8', errors='replace')
-            for i, char in enumerate(word_str):
-                if i < max_w:
-                    vocab[b * max_w + i] = char
+            vocab.append(word_str)
             
             tmp = list(struct.unpack('f'*size,f.read(4 * size)))
             length = math.sqrt(sum([tmp[i] * tmp[i] for i in range(0,len(tmp))]))
             for i in range(0,len(tmp)):
                 tmp[i] /= length
             M.append(tmp)
-        return ((''.join(vocab)).split(),M)
+        return (vocab, M)
 
 def makevector(vocabulary,vecs,sequence):
     words = sequence.split()
