@@ -567,6 +567,20 @@ python3 scripts/mtg_skeleton.py data/AllPrintings.json --identity "W"
 ```
 *   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
 
+### `mtg_archetypes.py`
+Profiles the 10 primary two-color archetypes in a dataset. It identifies "signpost" uncommons, signature mechanical themes, and curve statistics for each color pair.
+```bash
+# Analyze archetypes in a specific set
+python3 scripts/mtg_archetypes.py data/AllPrintings.json --set MOM
+
+# Filter analysis by specific mechanics or rarities
+python3 scripts/mtg_archetypes.py data/AllPrintings.json --rarity uncommon --mechanic "Flying"
+```
+*   **Options:**
+    *   `--min-cards N`: Minimum number of cards required to profile an archetype (Default: 5).
+    *   `--top-mechanics N`: Number of signature mechanics to show per archetype (Default: 3).
+    *   Supports all standard **Advanced Filtering** flags.
+
 ### `mtg_pips.py`
 Analyzes the distribution of mana symbols (pips) in a dataset. It counts symbols from casting costs and rules text (optionally via `--include-text`), supports table, JSON, and CSV output formats, and integrates with standard Advanced Filtering and simulation flags.
 ```bash
