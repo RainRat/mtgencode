@@ -96,7 +96,7 @@ def test_card_format(sample_card_json):
     default_output = card.format(gatherer=False)
     expected_default_output = (
         "Ornithopter {0}\n"
-        "Artifact Creature ~ Thopter (uncommon)\n\n"
+        "Artifact Creature - Thopter (uncommon)\n\n"
         "Flying\n"
         "(0/2)"
     )
@@ -111,7 +111,7 @@ def test_card_format(sample_card_json):
     # Rarity: Cyan (Uncommon)
     expected_name = utils.colorize("Ornithopter", utils.Ansi.BOLD + utils.Ansi.CYAN)
     expected_cost = utils.colorize("{0}", utils.Ansi.BOLD)
-    expected_type = utils.colorize("Artifact Creature ~ Thopter", utils.Ansi.GREEN)
+    expected_type = utils.colorize("Artifact Creature - Thopter", utils.Ansi.GREEN)
     expected_pt = utils.colorize("(0/2)", utils.Ansi.RED)
     expected_rarity = utils.colorize("uncommon", utils.Ansi.BOLD + utils.Ansi.CYAN)
 

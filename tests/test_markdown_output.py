@@ -13,7 +13,7 @@ def test_markdown_format():
     card = cardlib.Card(src)
     formatted = card.format(for_md=True)
     assert "**Markdown Card**" in formatted
-    assert "Creature ~ Human" in formatted
+    assert "Creature - Human" in formatted
     assert "(1/1)" in formatted
     assert "Lifelink" in formatted
 

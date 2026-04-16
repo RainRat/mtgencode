@@ -112,8 +112,10 @@ Example Usage:
 
     # If query is provided, perform name-based filtering
     if args.query:
+        # Sanitize query to match internal representations (hyphens are dash_marker)
+        query_sanitized = args.query.lower().replace('-', utils.dash_marker)
         query_lower = args.query.lower()
-        exact_matches = [c for c in cards if c.name.lower() == query_lower]
+        exact_matches = [c for c in cards if c.name.lower() == query_sanitized]
 
         if exact_matches:
             display_cards = exact_matches
@@ -128,13 +130,14 @@ Example Usage:
                 # to the actual card objects for suggesting and matching.
                 search_map = {}
                 for c in cards:
-                    search_map[c.name.lower()] = cardlib.titlecase(c.name)
-                    for word in c.name.split():
+                    unpassed_name = c.name.replace(utils.dash_marker, '-')
+                    search_map[c.name.lower()] = cardlib.titlecase(unpassed_name)
+                    for word in unpassed_name.split():
                         if len(word) > 3:
                             # Strip punctuation for word-based fuzzy matching
                             clean_word = re.sub(r'[^a-zA-Z0-9]', '', word).lower()
                             if clean_word and clean_word not in search_map:
-                                search_map[clean_word] = cardlib.titlecase(c.name)
+                                search_map[clean_word] = cardlib.titlecase(unpassed_name)
 
                 matches = difflib.get_close_matches(query_lower, list(search_map.keys()), n=3, cutoff=0.7)
 

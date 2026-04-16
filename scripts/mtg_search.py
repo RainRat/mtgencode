@@ -59,7 +59,7 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
 
     res = ""
     if canon == 'name':
-        res = titlecase(card.name)
+        res = titlecase(card.name.replace(utils.dash_marker, '-'))
         if ansi_color:
             res = utils.colorize(res, card._get_ansi_color())
     elif canon == 'cost':
@@ -73,13 +73,13 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         if ansi_color and res:
             res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in res])
     elif canon == 'supertypes':
-        res = " ".join(card.supertypes)
+        res = " ".join([titlecase(s.replace(utils.dash_marker, '-')) for s in card.supertypes])
     elif canon == 'types':
-        res = " ".join(card.types)
+        res = " ".join([titlecase(t.replace(utils.dash_marker, '-')) for t in card.types])
     elif canon == 'subtypes':
-        res = " ".join(card.subtypes)
+        res = " ".join([titlecase(s.replace(utils.dash_marker, '-')) for s in card.subtypes])
     elif canon == 'type':
-        res = card.get_type_line(separator=utils.dash_marker)
+        res = card.get_type_line(separator='-')
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.GREEN)
     elif canon == 'pt':
@@ -360,13 +360,14 @@ Usage Examples:
                 # Build a mapping of searchable names (full names and significant words)
                 search_map = {}
                 for c in candidate_cards:
-                    search_map[c.name.lower()] = titlecase(c.name)
-                    for word in c.name.split():
+                    unpassed_name = c.name.replace(utils.dash_marker, '-')
+                    search_map[c.name.lower()] = titlecase(unpassed_name)
+                    for word in unpassed_name.split():
                         if len(word) > 3:
                             # Strip punctuation for word-based fuzzy matching
                             clean_word = re.sub(r'[^a-zA-Z0-9]', '', word).lower()
                             if clean_word and clean_word not in search_map:
-                                search_map[clean_word] = titlecase(c.name)
+                                search_map[clean_word] = titlecase(unpassed_name)
 
                 queries = []
                 if args.grep: queries.extend(args.grep)

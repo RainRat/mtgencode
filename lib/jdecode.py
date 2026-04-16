@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 
 import utils
 import cardlib
+import transforms
 
 # Default Magic booster box size
 BOOSTER_BOX_SIZE = 36
@@ -1154,14 +1155,15 @@ def mtg_open_file(fname, verbose = False,
                                    decklist_names=decklist_names)
 
     if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or identities or id_counts:
-        greps = [re.compile(p, re.IGNORECASE) for p in (grep if grep else [])]
-        vgreps = [re.compile(p, re.IGNORECASE) for p in (vgrep if vgrep else [])]
-        greps_name = [re.compile(p, re.IGNORECASE) for p in (grep_name if grep_name else [])]
-        vgreps_name = [re.compile(p, re.IGNORECASE) for p in (vgrep_name if vgrep_name else [])]
-        greps_types = [re.compile(p, re.IGNORECASE) for p in (grep_types if grep_types else [])]
-        vgreps_types = [re.compile(p, re.IGNORECASE) for p in (vgrep_types if vgrep_types else [])]
-        greps_text = [re.compile(p, re.IGNORECASE) for p in (grep_text if grep_text else [])]
-        vgreps_text = [re.compile(p, re.IGNORECASE) for p in (vgrep_text if vgrep_text else [])]
+        # Sanitize queries to match internal representations (hyphens are dash_marker)
+        greps = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (grep if grep else [])]
+        vgreps = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (vgrep if vgrep else [])]
+        greps_name = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (grep_name if grep_name else [])]
+        vgreps_name = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (vgrep_name if vgrep_name else [])]
+        greps_types = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (grep_types if grep_types else [])]
+        vgreps_types = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (vgrep_types if vgrep_types else [])]
+        greps_text = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (grep_text if grep_text else [])]
+        vgreps_text = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (vgrep_text if vgrep_text else [])]
         greps_cost = [re.compile(p, re.IGNORECASE) for p in (grep_cost if grep_cost else [])]
         vgreps_cost = [re.compile(p, re.IGNORECASE) for p in (vgrep_cost if vgrep_cost else [])]
         greps_pt = [re.compile(p, re.IGNORECASE) for p in (grep_pt if grep_pt else [])]

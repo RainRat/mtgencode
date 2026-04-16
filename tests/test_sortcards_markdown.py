@@ -36,7 +36,7 @@ def test_markdown_output_format(tmp_path):
     assert "<details><summary>" in content
     assert "</details>" in content
     assert "**Markdown Card**" in content
-    assert "Creature ~ Human" in content
+    assert "Creature - Human" in content
     assert "(1/1)" in content
 
 def test_markdown_auto_detection(tmp_path):

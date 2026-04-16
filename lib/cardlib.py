@@ -582,11 +582,11 @@ class Card:
 
     def get_type_line(self, separator='\u2014'):
         """Returns a formatted type line string (e.g., 'Legendary Creature — Human Warrior')."""
-        supertypes = [titlecase(s) for s in self.__dict__[field_supertypes]]
-        types = [titlecase(t) for t in self.__dict__[field_types]]
+        supertypes = [titlecase(transforms.name_unpass_1_dashes(s)) for s in self.__dict__[field_supertypes]]
+        types = [titlecase(transforms.name_unpass_1_dashes(t)) for t in self.__dict__[field_types]]
         res = ' '.join(supertypes + types)
         if self.__dict__[field_subtypes]:
-            res += f' {separator} ' + ' '.join([titlecase(s) for s in self.__dict__[field_subtypes]])
+            res += f' {separator} ' + ' '.join([titlecase(transforms.name_unpass_1_dashes(s)) for s in self.__dict__[field_subtypes]])
         return res
 
     def _get_single_face_display_data(self, ansi_color=False, include_text=False):
@@ -1136,7 +1136,7 @@ class Card:
             rarity_indicator = f'{indicator} '
 
         # Name
-        cardname = titlecase(self.name)
+        cardname = titlecase(transforms.name_unpass_1_dashes(self.name))
         if ansi_color:
             color = self._get_ansi_color()
             cardname = utils.colorize(cardname, color)
@@ -1205,7 +1205,7 @@ class Card:
         if gatherer:
             cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
         else:
-            cardname = titlecase(self.__dict__[field_name])
+            cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
 
         if vdump and not cardname:
             cardname = '_NONAME_'
@@ -1272,9 +1272,9 @@ class Card:
             if self.__dict__[field_subtypes]:
                 typeline += ' \u2014'
                 for subtype in self.__dict__[field_subtypes]:
-                    typeline += ' ' + titlecase(subtype)
+                    typeline += ' ' + titlecase(transforms.name_unpass_1_dashes(subtype))
         else:
-            typeline = self.get_type_line(separator=utils.dash_marker)
+            typeline = self.get_type_line(separator='-')
 
         if ansi_color:
             typeline = utils.colorize(typeline, utils.Ansi.GREEN)
@@ -1396,7 +1396,7 @@ class Card:
         d = {}
 
         # Name
-        cardname = titlecase(self.name)
+        cardname = titlecase(transforms.name_unpass_1_dashes(self.name))
         d['name'] = cardname
 
         # Mana Cost
@@ -1408,10 +1408,10 @@ class Card:
             d['rarity'] = self.rarity_name
 
         # Types
-        d['supertypes'] = [titlecase(s) for s in self.supertypes]
-        d['types'] = [titlecase(t) for t in self.types]
+        d['supertypes'] = [titlecase(transforms.name_unpass_1_dashes(s)) for s in self.supertypes]
+        d['types'] = [titlecase(transforms.name_unpass_1_dashes(t)) for t in self.types]
         if self.subtypes:
-            d['subtypes'] = [titlecase(s) for s in self.subtypes]
+            d['subtypes'] = [titlecase(transforms.name_unpass_1_dashes(s)) for s in self.subtypes]
 
         # Power / Toughness
         pt_str = self._get_pt_display(include_parens=False)

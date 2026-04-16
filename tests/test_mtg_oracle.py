@@ -9,7 +9,7 @@ def test_oracle_basic():
     )
     assert result.returncode == 0
     assert 'Uthros Research Craft' in result.stdout
-    assert 'Artifact ~ Spacecraft' in result.stdout
+    assert 'Artifact - Spacecraft' in result.stdout
 
 def test_oracle_fuzzy():
     """Test oracle fuzzy matching suggestions."""
