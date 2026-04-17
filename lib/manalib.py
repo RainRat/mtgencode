@@ -10,17 +10,6 @@ COLOR_STRIP_CHARS = {'2', 'P', 'S', 'X', 'C', 'E'}
 class Manacost:
     '''mana cost representation with data'''
     
-    # hardcoded to be dependent on the symbol structure... ah well
-    def _compute_colors(self):
-        colors = set()
-        for sym, count in self.symbols.items():
-            if count > 0:
-                for char in sym:
-                    if char not in COLOR_STRIP_CHARS:
-                        colors.add(char)
-        # sort so the order is always consistent
-        return ''.join(sorted(colors))
-
     def __init__(self, src, fmt = ''):
         # source fields, exactly one will be set
         self.raw = None
@@ -95,7 +84,13 @@ class Manacost:
                         idx += 1
                         self.valid = False
 
-        self.colors = self._compute_colors()
+        colors = set()
+        for sym, count in self.symbols.items():
+            if count > 0:
+                for char in sym:
+                    if char not in COLOR_STRIP_CHARS:
+                        colors.add(char)
+        self.colors = ''.join(sorted(colors))
 
     def __str__(self):
         return self.format()
