@@ -4,7 +4,7 @@ import os
 import struct
 import tempfile
 import numpy as np
-from cbow import CBOW, read_vector_file, f_nearest
+from cbow import CBOW, read_vector_file, f_nearest, f_nearest_per_thread
 from cardlib import Card
 
 def test_read_vector_file_malformed_header():
@@ -18,6 +18,45 @@ def test_read_vector_file_malformed_header():
             read_vector_file(tmp_path)
     finally:
         os.remove(tmp_path)
+
+def test_read_vector_file_empty_word_alignment():
+    # Test that empty or whitespace-only words in the binary file don't
+    # cause misalignment between the vocabulary and the vector list.
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        # 3 words, vector size 1
+        tmp.write(b"3 1\n")
+        # Word 1: "foo"
+        tmp.write(b"foo " + struct.pack('f', 1.0))
+        # Word 2: empty (just the space separator)
+        tmp.write(b" " + struct.pack('f', 2.0))
+        # Word 3: "bar"
+        tmp.write(b"bar " + struct.pack('f', 3.0))
+        tmp_path = tmp.name
+
+    try:
+        vocab, vecs = read_vector_file(tmp_path)
+        # BUG: Currently vocab will be ['foo', 'bar'] and vecs will be [[1.0], [1.0], [1.0]] (normalized)
+        # but len(vocab) should be 3 to match len(vecs).
+        assert len(vocab) == 3
+        assert vocab == ["foo", "", "bar"]
+        assert len(vecs) == 3
+    finally:
+        os.remove(tmp_path)
+
+def test_f_nearest_per_thread_basic():
+    vocab = ["fire", "ice"]
+    vecs = [[1.0, 0.0], [0.0, 1.0]]
+    cardvecs = [("fire", [1.0, 0.0]), ("ice", [0.0, 1.0])]
+
+    # Workitem: (workcards, vocab, vecs, cardvecs, n)
+    workcards = ["fire", "ice"]
+    workitem = (workcards, vocab, vecs, cardvecs, 1)
+
+    results = f_nearest_per_thread(workitem)
+    assert len(results) == 2
+    # Each result is a list of comparisons: [(score, name), ...]
+    assert results[0][0][1] == "fire"
+    assert results[1][0][1] == "ice"
 
 def test_f_nearest_empty_input():
     # vocab, vecs, cardvecs, n
