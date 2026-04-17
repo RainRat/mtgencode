@@ -170,16 +170,24 @@ def main():
             added.append(c2)
 
     # Output report
-    header_color = utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE
     added_color = utils.Ansi.BOLD + utils.Ansi.GREEN
     removed_color = utils.Ansi.BOLD + utils.Ansi.RED
     mod_color = utils.Ansi.BOLD + utils.Ansi.YELLOW
 
-    def print_header(text):
+    def print_header(text, count=None):
+        match_count = ""
+        if count is not None:
+            match_count = f" ({count} {'match' if count == 1 else 'matches'})"
+
+        header_text = text + match_count
+
         if use_color:
-            print(utils.colorize(text, header_color))
+            header_main = utils.colorize(text, utils.Ansi.BOLD + utils.Ansi.CYAN)
+            header_count = utils.colorize(match_count, utils.Ansi.CYAN)
+            print("  " + header_main + header_count)
         else:
-            print(f"=== {text} ===")
+            print("  " + header_text)
+        print("  " + "=" * len(header_text))
 
     print_header("SUMMARY")
     total_distinct = len(map1.keys() | map2.keys())
@@ -219,7 +227,7 @@ def main():
         return
 
     if removed:
-        print_header("REMOVED CARDS")
+        print_header("REMOVED CARDS", len(removed))
         for c in removed:
             name = c.name
             if use_color:
@@ -228,7 +236,7 @@ def main():
         print()
 
     if added:
-        print_header("ADDED CARDS")
+        print_header("ADDED CARDS", len(added))
         for c in added:
             name = c.name
             if use_color:
@@ -237,20 +245,27 @@ def main():
         print()
 
     if modified:
-        print_header("MODIFIED CARDS")
+        print_header("MODIFIED CARDS", len(modified))
         for c, diffs in modified:
             name = c.name
             if use_color:
                 name = utils.colorize(name, mod_color)
             print(f"  * {name}")
+
+            diff_rows = []
             for field, old, new in diffs:
+                field_str = f"{field}:"
                 if use_color:
-                    field_str = utils.colorize(f"    {field}:", utils.Ansi.CYAN)
+                    field_str = utils.colorize(field_str, utils.Ansi.CYAN)
                     old_str = utils.colorize(str(old), utils.Ansi.RED)
                     new_str = utils.colorize(str(new), utils.Ansi.GREEN)
-                    print(f"{field_str} {old_str} -> {new_str}")
                 else:
-                    print(f"    {field}: {old} -> {new}")
+                    old_str = str(old)
+                    new_str = str(new)
+                diff_rows.append([f"    {field_str}", old_str, "->", new_str])
+
+            for row in datalib.padrows(diff_rows, aligns=['l', 'r', 'c', 'l']):
+                print(row)
         print()
 
     # Provide clear feedback on operation completion
