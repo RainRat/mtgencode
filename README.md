@@ -605,6 +605,24 @@ python3 scripts/mtg_archetypes.py data/AllPrintings.json --rarity uncommon --mec
     *   `--top-mechanics N`: Number of signature mechanics to show per archetype (Default: 3).
     *   Supports all standard **Advanced Filtering** flags.
 
+### `mtg_complexity.py`
+Analyze and rank cards by their heuristic "Complexity Score." This helps identify "New World Order" (NWO) violations and understand the complexity curve of a dataset.
+```bash
+# Rank the most complex cards in a set
+python3 scripts/mtg_complexity.py data/AllPrintings.json --set MOM
+
+# Identify overly complex common cards (NWO Violations)
+python3 scripts/mtg_complexity.py data/AllPrintings.json --rarity common
+
+# Output complexity data as JSON
+python3 scripts/mtg_complexity.py generated_cards.txt --json
+```
+*   **Options:**
+    *   `-t N`, `--top N`: Number of most complex cards to display (Default: 15).
+    *   `--nwo-threshold N`: Score threshold for flagging "NWO Violation" commons (Default: 15).
+    *   `--json`: Output results in structured JSON format.
+    *   Supports standard **Advanced Filtering** flags.
+
 ### `mtg_pips.py`
 Analyzes the distribution of mana symbols (pips) in a dataset. It counts symbols from casting costs and rules text (optionally via `--include-text`), supports table, JSON, and CSV output formats, and integrates with standard Advanced Filtering and simulation flags.
 ```bash
