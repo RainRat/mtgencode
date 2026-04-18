@@ -95,8 +95,32 @@ def main():
     filter_group = parser.add_argument_group('Filtering Options')
     filter_group.add_argument('--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
+    filter_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a search pattern.')
+    filter_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a search pattern.')
+    filter_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a search pattern.')
+    filter_group.add_argument('--grep-cost', action='append',
+                        help='Only include cards whose mana cost matches a search pattern.')
+    filter_group.add_argument('--grep-pt', action='append',
+                        help='Only include cards whose power/toughness matches a search pattern.')
+    filter_group.add_argument('--grep-loyalty', action='append',
+                        help='Only include cards whose loyalty/defense matches a search pattern.')
     filter_group.add_argument('--vgrep', '--exclude', action='append',
                         help='Skip cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for OR logic.')
+    filter_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a search pattern.')
+    filter_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a search pattern.')
+    filter_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a search pattern.')
+    filter_group.add_argument('--exclude-cost', action='append',
+                        help='Exclude cards whose mana cost matches a search pattern.')
+    filter_group.add_argument('--exclude-pt', action='append',
+                        help='Exclude cards whose power/toughness matches a search pattern.')
+    filter_group.add_argument('--exclude-loyalty', action='append',
+                        help='Exclude cards whose loyalty/defense matches a search pattern.')
     filter_group.add_argument('--set', action='append',
                         help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
     filter_group.add_argument('--rarity', action='append',
@@ -136,16 +160,32 @@ def main():
     if args.verbose:
         print(f"Loading {args.file1}...", file=sys.stderr)
     cards1 = jdecode.mtg_open_file(args.file1, verbose=args.verbose,
-                                  grep=args.grep, sets=args.set, rarities=args.rarity,
+                                  grep=args.grep, vgrep=args.vgrep,
+                                  grep_name=args.grep_name, vgrep_name=args.exclude_name,
+                                  grep_types=args.grep_type, vgrep_types=args.exclude_type,
+                                  grep_text=args.grep_text, vgrep_text=args.exclude_text,
+                                  grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
+                                  grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
+                                  grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
+                                  sets=args.set, rarities=args.rarity,
                                   colors=args.colors, cmcs=args.cmc, pows=args.pow,
-                                  tous=args.tou, loys=args.loy, mechanics=args.mechanic)
+                                  tous=args.tou, loys=args.loy, mechanics=args.mechanic,
+                                  identities=args.identity, id_counts=args.id_count)
 
     if args.verbose:
         print(f"Loading {args.file2}...", file=sys.stderr)
     cards2 = jdecode.mtg_open_file(args.file2, verbose=args.verbose,
-                                  grep=args.grep, sets=args.set, rarities=args.rarity,
+                                  grep=args.grep, vgrep=args.vgrep,
+                                  grep_name=args.grep_name, vgrep_name=args.exclude_name,
+                                  grep_types=args.grep_type, vgrep_types=args.exclude_type,
+                                  grep_text=args.grep_text, vgrep_text=args.exclude_text,
+                                  grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
+                                  grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
+                                  grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
+                                  sets=args.set, rarities=args.rarity,
                                   colors=args.colors, cmcs=args.cmc, pows=args.pow,
-                                  tous=args.tou, loys=args.loy, mechanics=args.mechanic)
+                                  tous=args.tou, loys=args.loy, mechanics=args.mechanic,
+                                  identities=args.identity, id_counts=args.id_count)
 
     map1 = get_card_map(cards1)
     map2 = get_card_map(cards2)
