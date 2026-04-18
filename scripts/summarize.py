@@ -100,7 +100,27 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Show statistics, design budget analysis, mechanical profiling, and details about a Magic: The Gathering card dataset.")
+    parser = argparse.ArgumentParser(
+        description="Analyze a Magic: The Gathering card dataset and show statistics. "
+                    "This tool provides a high-level overview of card counts, average stats, "
+                    "color distribution, and mechanical frequency. It supports all common "
+                    "data formats including MTGJSON, Scryfall, and encoded text.",
+        epilog='''
+Example Usage:
+  # Basic statistics for a dataset
+  python3 scripts/summarize.py data/AllPrintings.json
+
+  # Analysis with unusual cards (outliers) highlighted
+  python3 scripts/summarize.py generated_cards.txt --outliers
+
+  # Filter analysis by set and rarity
+  python3 scripts/summarize.py data/AllPrintings.json --set MOM --rarity mythic
+
+  # Save statistics to a JSON file
+  python3 scripts/summarize.py data/AllPrintings.json summary.json
+''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
@@ -121,19 +141,19 @@ if __name__ == '__main__':
     # Group: Data Processing
     proc_group = parser.add_argument_group('Data Processing')
     proc_group.add_argument('-x', '--outliers', action='store_true',
-                        help='Show extra details and unusual cards.')
+                        help='Identify and display cards with unusual stats or rules text.')
     proc_group.add_argument('-a', '--all', action='store_true',
-                        help='Show all information and dump invalid cards.')
+                        help='Display all available analysis, including details for invalid cards.')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
-                        help='Only process the first N cards.')
+                        help='Process only the first N cards.')
     proc_group.add_argument('--shuffle', action='store_true',
-                        help='Randomize the order of cards before summarizing.')
+                        help='Randomly shuffle the dataset before analysis.')
     proc_group.add_argument('-t', '--top', type=int, default=10,
-                        help='Limit the number of entries in breakdown tables.')
+                        help='Limit the number of rows displayed in breakdown tables (Default: 10).')
     proc_group.add_argument('--seed', type=int,
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
-                        help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
+                        help='Analyze N random cards from the input (shorthand for --shuffle --limit).')
     proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
                         help='Sort cards by a specific criterion.')
 
