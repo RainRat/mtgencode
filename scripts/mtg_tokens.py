@@ -209,10 +209,18 @@ Example Usage:
             print("No token definitions found in rules text.")
             return
 
-        header_text = 'EXTRACTED TOKENS'
+        header_title = 'EXTRACTED TOKENS'
+        match_count = f" ({len(token_list)} {'match' if len(token_list) == 1 else 'matches'})"
+        header_text = header_title + match_count
+
         if use_color:
-            header_text = utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
-        print(header_text)
+            header_main = utils.colorize(header_title, utils.Ansi.BOLD + utils.Ansi.CYAN)
+            header_count = utils.colorize(match_count, utils.Ansi.CYAN)
+            print("  " + header_main + header_count)
+        else:
+            print("  " + header_text)
+
+        print("  " + "=" * len(header_text))
 
         header = ["Token Name", "P/T", "Color", "Type", "Abilities", "Count"]
         if use_color:
