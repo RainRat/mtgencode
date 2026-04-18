@@ -279,16 +279,18 @@ Filter which cards the tool processes using search patterns, set codes, rarities
     *   `--exclude-name`, `--exclude-type`, `--exclude-text`: Skip cards where the specific field matches the search pattern.
     *   `--exclude-cost`, `--exclude-pt`, `--exclude-loyalty`: Skip cards whose mana cost, power/toughness, or loyalty/defense matches the search pattern.
 *   **Metadata Filters:**
-    *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets (OR logic).
-    *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports full names or shorthands: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), `L` (Basic Land). Supports multiple values (OR logic).
-    *   `--colors SYMBOLS`: Only include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless. Multiple colors use OR logic.
-    *   `--identity SYMBOLS`: Only include cards with specific colors in their color identity (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless. Multiple colors use OR logic.
-    *   `--id-count VALUE`: Only include cards with specific color identity counts. Supports inequalities (e.g., `>3`, `<=2`), ranges (e.g., `1-4`), and multiple values (OR logic).
-    *   `--cmc VALUE`: Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., `>3`, `<=2`), ranges (e.g., `1-4`), and multiple values (OR logic).
-    *   `--pow VALUE` (or `--power`): Only include cards with specific Power values. Supports inequalities, ranges, and multiple values (OR logic).
-    *   `--tou VALUE` (or `--toughness`): Only include cards with specific Toughness values. Supports inequalities, ranges, and multiple values (OR logic).
-    *   `--loy VALUE` (or `--loyalty`, `--defense`): Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).
-    *   `--mechanic NAME`: Only include cards with specific mechanical features or keyword abilities (e.g., `Flying`, `Activated`, `ETB Effect`). Supports multiple values (OR logic).
+    > **Note:** Repeat a flag to include multiple values using **OR** logic (e.g., `--rarity rare --rarity mythic` finds both rares and mythics).
+    *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets.
+    *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports full names or shorthands: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), `L` (Basic Land).
+    *   `--colors SYMBOLS`: Only include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
+    *   `--identity SYMBOLS`: Only include cards with specific colors in their color identity (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
+    *   **Numerical Filters:** These flags support exact values (`5`), inequalities (`>3`, `<=2`, `!=0`), and ranges (`1-4`).
+        *   `--id-count VALUE`: Filter by the number of colors in a card's color identity.
+        *   `--cmc VALUE`: Filter by Converted Mana Cost (Mana Value).
+        *   `--pow VALUE` (or `--power`): Filter by Power.
+        *   `--tou VALUE` (or `--toughness`): Filter by Toughness.
+        *   `--loy VALUE` (or `--loyalty`, `--defense`): Filter by Loyalty or Defense.
+    *   `--mechanic NAME`: Only include cards with specific mechanical features or keyword abilities (e.g., `Flying`, `Activated`, `ETB Effect`).
     *   `--deck-filter FILE` (or `--decklist-filter`): Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
 
 > **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), and `L` (Basic Land).
@@ -309,6 +311,9 @@ python3 encode.py data/AllPrintings.json --deck-filter my_deck.txt encoded_deck.
 
 # Find all creatures with power 5 or greater
 python3 scripts/summarize.py data/AllPrintings.json --pow ">=5"
+
+# Find rare cards with CMC between 2 and 4
+python3 scripts/mtg_search.py data/AllPrintings.json --rarity rare --cmc "2-4"
 ```
 
 ---
