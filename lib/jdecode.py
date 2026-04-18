@@ -655,17 +655,6 @@ def default_exclude_layouts(layout):
     return layout in ['token', 'planar', 'scheme', 'phenomenon', 'vanguard']
 
 # centralized logic for opening files of cards, either encoded or json
-def _find_best_candidate(jcards, exclude_sets, linetrans):
-    # look for a normal rarity version, in a set we can use
-    for idx, jcard in enumerate(jcards):
-        card = cardlib.Card(jcard, linetrans=linetrans)
-        if (card.rarity != utils.rarity_special_marker and
-            not exclude_sets(jcard.get(utils.json_field_set_name))):
-            return idx, card
-
-    # if there isn't one, settle with index 0
-    return 0, cardlib.Card(jcards[0], linetrans=linetrans)
-
 def _check_parsing_quality(cards, report_fobj):
     good_count = 0
     bad_count = 0
@@ -710,11 +699,18 @@ def _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
         if json_cardname in json_srcs and len(json_srcs[json_cardname]) > 0:
             jcards = json_srcs[json_cardname]
 
-            idx, card = _find_best_candidate(jcards, exclude_sets, linetrans)
+            # Look for a normal rarity version in a set we can use
+            idx, card = 0, cardlib.Card(jcards[0], linetrans=linetrans)
+            for i, jcard in enumerate(jcards):
+                c = cardlib.Card(jcard, linetrans=linetrans)
+                if (c.rarity != utils.rarity_special_marker and
+                    not exclude_sets(jcard.get(utils.json_field_set_name))):
+                    idx, card = i, c
+                    break
 
             skip = False
             # Check exclusions
-            # Note: _find_best_candidate returns a cardlib.Card object, but we also check jcards[idx] for raw fields
+            # Note: the candidate selection above returns a cardlib.Card object, but we also check jcards[idx] for raw fields
             # Checking set name and layout from raw json
             if (exclude_sets(jcards[idx].get(utils.json_field_set_name))
                 or exclude_layouts(jcards[idx].get('layout'))
