@@ -605,6 +605,21 @@ python3 scripts/mtg_archetypes.py data/AllPrintings.json --rarity uncommon --mec
     *   `--top-mechanics N`: Number of signature mechanics to show per archetype (Default: 3).
     *   Supports all standard **Advanced Filtering** flags.
 
+### `mtg_complexity.py`
+Analyzes and reports on the "Complexity Score" of cards in a dataset. This composite metric combines rules text density, mechanical frequency, structural properties, and mana complexity to help designers identify "complexity creep" and evaluate the cognitive load of cards.
+```bash
+# Analyze complexity for a dataset
+python3 scripts/mtg_complexity.py data/AllPrintings.json
+
+# Find the most complex rare cards in a set
+python3 scripts/mtg_complexity.py data/AllPrintings.json --rarity rare --set MOM
+```
+*   **Options:**
+    *   `-t N`, `--top N`: Limit the number of cards shown in the "Most Complex" table (Default: 10).
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports all standard **Advanced Filtering** flags.
+
 ### `mtg_pips.py`
 Analyzes the distribution of mana symbols (pips) in a dataset. It counts symbols from casting costs and rules text (optionally via `--include-text`), supports table, JSON, and CSV output formats, and integrates with standard Advanced Filtering and simulation flags.
 ```bash
