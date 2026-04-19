@@ -57,19 +57,7 @@ def display_sets(sets, use_color=False):
     if not sets:
         return
 
-    header_title = "AVAILABLE SETS"
-    match_count = f" ({len(sets)} {'match' if len(sets) == 1 else 'matches'})"
-    header_text = header_title + match_count
-
-    if use_color:
-        header_main = utils.colorize(header_title, utils.Ansi.BOLD + utils.Ansi.CYAN)
-        header_count = utils.colorize(match_count, utils.Ansi.CYAN)
-        print("  " + header_main + header_count)
-    else:
-        print("  " + header_text)
-
-    # Always use a visible separator line for better visual hierarchy
-    print("  " + "=" * len(header_text))
+    utils.print_header("AVAILABLE SETS", count=len(sets), use_color=use_color)
 
     header = ["Code", "Name", "Type", "Release Date", "Count"]
     if use_color:
@@ -222,12 +210,14 @@ def main():
                                                    report_fobj=None)
 
                 if args.view:
-                    print('\n' + (utils.colorize("CARD LIST", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) if use_color else "=== CARD LIST ==="))
+                    print()
+                    utils.print_header("CARD LIST", use_color=use_color)
                     for card in cards:
                         print(card.summary(ansi_color=use_color))
 
                 if args.summarize:
-                    print('\n' + (utils.colorize("SET SUMMARY", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) if use_color else "=== SET SUMMARY ==="))
+                    print()
+                    utils.print_header("SET SUMMARY", use_color=use_color)
                     mine = datalib.Datamine(cards)
                     mine.summarize(use_color=use_color, vsize=args.top)
     finally:

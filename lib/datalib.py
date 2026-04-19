@@ -509,7 +509,7 @@ class Datamine:
     def summarize(self, hsize = 10, vsize = 10, cmcsize = 20, use_color = False):
 
         if self.search_stats:
-            print(color_line('SEARCH STATISTICS', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+            utils.print_header('SEARCH STATISTICS', use_color=use_color)
 
             total = self.search_stats.get('matched', 0) + self.search_stats.get('filtered', 0)
             matched = self.search_stats.get('matched', 0)
@@ -533,7 +533,7 @@ class Datamine:
             printrows(padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=4)
             print()
 
-        print(color_line('DATASET SUMMARY', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+        utils.print_header('DATASET SUMMARY', use_color=use_color)
         print('  ' + color_count(len(self.cards), use_color) + ' valid cards, ' +
               color_count(len(self.invalid_cards), use_color, utils.Ansi.BOLD + utils.Ansi.RED) + ' invalid cards.')
         print('  ' + color_count(len(self.allcards), use_color) + ' cards parsed, ' +
@@ -542,7 +542,7 @@ class Datamine:
         print()
 
         # Section: Colors & Mana
-        print(color_line('COLORS & MANA', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+        utils.print_header('COLORS & MANA', use_color=use_color)
         print('  ' + color_line(str(len(self.by_color_inclusive)) + ' represented colors (including colorless as \'A\'), '
                + str(len(self.by_color)) + ' combinations', use_color))
         _print_breakdown('Breakdown by color:', self.by_color_inclusive, len(self.allcards), use_color, vsize=vsize)
@@ -568,7 +568,7 @@ class Datamine:
         print()
 
         # Section: Card Types
-        print(color_line('CARD TYPES', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+        utils.print_header('CARD TYPES', use_color=use_color)
         print('  ' + color_line(str(len(self.by_type_inclusive)) + ' unique card types, ' +
               str(len(self.by_type)) + ' combinations', use_color))
         _print_breakdown('Breakdown by type:', self.by_type_inclusive, len(self.allcards), use_color,
@@ -590,7 +590,7 @@ class Datamine:
         print()
 
         # Section: Stats & Rarity
-        print(color_line('STATS & RARITY', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+        utils.print_header('STATS & RARITY', use_color=use_color)
         print('  ' + color_line(str(len(self.by_rarity)) + ' represented rarities', use_color))
         rarity_priorities = {
             'mythic': 0, 'rare': 1, 'uncommon': 2, 'common': 3,
@@ -620,7 +620,7 @@ class Datamine:
             print()
 
         # Section: Content & Mechanics
-        print(color_line('CONTENT & MECHANICS', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+        utils.print_header('CONTENT & MECHANICS', use_color=use_color)
         if len(self.by_textlen) > 0 and len(self.by_textlines) > 0:
             print('  ' + color_line('Card text ranges from ' + str(min(self.by_textlen)) + ' to '
                    + str(max(self.by_textlen)) + ' characters in length', use_color))
@@ -638,7 +638,7 @@ class Datamine:
     # describe outliers in the indices
     def outliers(self, hsize=10, vsize=10, dump_invalid=False, use_color = False):
 
-        print(color_line('OUTLIER ANALYSIS', use_color, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE))
+        utils.print_header('OUTLIER ANALYSIS', use_color=use_color)
         print('  ' + color_line('Overview of indices:', use_color))
 
         header_row = _colorize_header(['  Index Name', 'Keys', 'Total Members'], use_color)

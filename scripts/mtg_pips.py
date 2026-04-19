@@ -202,7 +202,7 @@ It provides a breakdown of each symbol's frequency across the filtered card pool
             if args.include_text:
                 title += " (INCLUDES RULES TEXT)"
 
-            print(utils.colorize(title, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) if use_color else f"=== {title} ===")
+            utils.print_header(title, use_color=use_color)
             datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
 
     finally:

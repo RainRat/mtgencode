@@ -697,6 +697,37 @@ def visible_len(s):
     """Returns the length of a string without ANSI escape sequences."""
     return len(_ansi_escape_re.sub('', s))
 
+def print_header(title, count=None, use_color=False, indent=2, file=None):
+    """Prints a standardized header with an optional match count and separator line."""
+    import sys
+    if file is None:
+        file = sys.stdout
+
+    indent_str = " " * indent
+    header_title = str(title).upper()
+
+    if count is not None:
+        noun = "match" if count == 1 else "matches"
+        match_count = f" ({count} {noun})"
+        header_text = header_title + match_count
+
+        if use_color:
+            title_colored = colorize(header_title, Ansi.BOLD + Ansi.CYAN)
+            count_colored = colorize(match_count, Ansi.CYAN)
+            file.write(f"{indent_str}{title_colored}{count_colored}\n")
+        else:
+            file.write(f"{indent_str}{header_text}\n")
+    else:
+        header_text = header_title
+        if use_color:
+            title_colored = colorize(header_title, Ansi.BOLD + Ansi.CYAN)
+            file.write(f"{indent_str}{title_colored}\n")
+        else:
+            file.write(f"{indent_str}{header_text}\n")
+
+    file.write(f"{indent_str}{'=' * len(header_text)}\n")
+
+
 def print_operation_summary(op_name, success_count, fail_count, quiet=False):
     """Prints a standardized, colorized summary of a CLI operation to stderr."""
     if quiet:

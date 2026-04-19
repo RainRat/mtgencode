@@ -509,23 +509,9 @@ Usage Examples:
                         output_f.write("| " + " | ".join(escaped_row) + " |" + '\n')
                 else:
                     # Terminal table output
+                    utils.print_header("SEARCH RESULTS", count=total_matches if displayed_matches == total_matches else None, use_color=use_color, file=output_f)
                     if displayed_matches < total_matches:
-                        match_count = f" (Showing {displayed_matches} of {total_matches} matches)"
-                    else:
-                        match_count = f" ({total_matches} {'match' if total_matches == 1 else 'matches'})"
-
-                    header_title = "SEARCH RESULTS"
-                    header_text = header_title + match_count
-
-                    if use_color:
-                        header_main = utils.colorize(header_title, utils.Ansi.BOLD + utils.Ansi.CYAN)
-                        header_count = utils.colorize(match_count, utils.Ansi.CYAN)
-                        output_f.write("  " + header_main + header_count + '\n')
-                    else:
-                        output_f.write("  " + header_text + '\n')
-
-                    # Always use a visible separator line for better visual hierarchy
-                    output_f.write("  " + "=" * len(header_text) + '\n')
+                         output_f.write(f"  (Showing {displayed_matches} of {total_matches} matches)\n")
 
                     aligns = []
                     for field in field_list:

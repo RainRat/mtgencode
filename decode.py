@@ -297,10 +297,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         if for_table:
             import datalib
-            header_text = 'DECODED CARDS'
-            if use_color:
-                header_text = utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
-            writer.write(header_text + '\n')
+            utils.print_header('DECODED CARDS', count=len(cards), use_color=use_color, file=writer)
 
             rows = []
             header = ["Name", "Cost", "CMC", "Type", "Stats", "Rarity", "Mechanics"]
