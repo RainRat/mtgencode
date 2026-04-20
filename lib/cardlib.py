@@ -522,10 +522,6 @@ class Card:
         """Returns True if the card has the specified type (case-insensitive)."""
         return any(t.lower() == type_name.lower() for t in self.types)
 
-    def _has_subtype(self, subtype_name):
-        """Returns True if the card has the specified subtype (case-insensitive)."""
-        return any(s.lower() == subtype_name.lower() for s in self.subtypes)
-
     @property
     def is_artifact(self):
         """Returns True if the card is an artifact."""
@@ -534,7 +530,7 @@ class Card:
     @property
     def is_creature(self):
         """Returns True if the card is a creature or a vehicle."""
-        return self._has_type('creature') or self._has_subtype('vehicle')
+        return self._has_type('creature') or any(s.lower() == 'vehicle' for s in self.subtypes)
 
     @property
     def is_planeswalker(self):
