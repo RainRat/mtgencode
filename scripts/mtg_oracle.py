@@ -190,18 +190,7 @@ Example Usage:
     total_matches = len(display_cards)
 
     if not args.quiet:
-        header_title = "SEARCH RESULTS"
-        match_count = f" ({total_matches} {'match' if total_matches == 1 else 'matches'})"
-        header_text = header_title + match_count
-
-        if use_color:
-            header_main = utils.colorize(header_title, utils.Ansi.BOLD + utils.Ansi.CYAN)
-            header_count = utils.colorize(match_count, utils.Ansi.CYAN)
-            print("  " + header_main + header_count)
-        else:
-            print("  " + header_text)
-
-        print("  " + "=" * len(header_text))
+        utils.print_header("SEARCH RESULTS", count=total_matches, use_color=use_color)
 
     # Display the cards
     for i, card in enumerate(display_cards):
@@ -212,8 +201,6 @@ Example Usage:
         indented_card = "\n".join(["  " + line for line in formatted_card.split("\n")])
         print(indented_card)
 
-    if not args.quiet:
-        utils.print_operation_summary("Search", total_matches, 0)
 
 if __name__ == "__main__":
     main()

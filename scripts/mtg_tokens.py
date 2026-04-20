@@ -209,10 +209,7 @@ Example Usage:
             print("No token definitions found in rules text.")
             return
 
-        header_text = 'EXTRACTED TOKENS'
-        if use_color:
-            header_text = utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
-        print(header_text)
+        utils.print_header("EXTRACTED TOKENS", count=len(token_list), use_color=use_color)
 
         header = ["Token Name", "P/T", "Color", "Type", "Abilities", "Count"]
         if use_color:
@@ -241,12 +238,6 @@ Example Usage:
         datalib.add_separator_row(rows)
 
         datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'l', 'l', 'l', 'r']), indent=2)
-
-        if not args.quiet:
-            summary = f"\nSuccessfully extracted {len(token_list)} unique token types from {len(cards)} cards."
-            if use_color:
-                summary = utils.colorize(summary, utils.Ansi.BOLD + utils.Ansi.GREEN)
-            print(summary, file=sys.stderr)
 
 if __name__ == "__main__":
     main()

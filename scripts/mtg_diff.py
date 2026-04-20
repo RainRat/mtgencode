@@ -214,20 +214,7 @@ def main():
     removed_color = utils.Ansi.BOLD + utils.Ansi.RED
     mod_color = utils.Ansi.BOLD + utils.Ansi.YELLOW
 
-    def print_header(text, count=None):
-        match_count = ""
-        if count is not None:
-            match_count = f" ({count} {'match' if count == 1 else 'matches'})"
-
-        header_text = text + match_count
-
-        if use_color:
-            header_main = utils.colorize(text, utils.Ansi.BOLD + utils.Ansi.CYAN)
-            header_count = utils.colorize(match_count, utils.Ansi.CYAN)
-            print("  " + header_main + header_count)
-        else:
-            print("  " + header_text)
-        print("  " + "=" * len(header_text))
+    print_header = lambda text, count=None: utils.print_header(text, count=count, use_color=use_color)
 
     print_header("SUMMARY")
     total_distinct = len(map1.keys() | map2.keys())

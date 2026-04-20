@@ -736,6 +736,45 @@ def print_operation_summary(op_name, success_count, fail_count, quiet=False):
         print(footer, file=sys.stderr)
 
 
+def print_header(title, count=None, use_color=False, file=None, indent=2):
+    """
+    Prints a standardized, colorized CLI header with an '=' separator line.
+
+    Args:
+        title (str): The main title text.
+        count (int or str, optional): A count to display next to the title.
+                                     If int, formatted as " (N match[es])".
+        use_color (bool): Whether to use ANSI color codes.
+        file (file-like, optional): The file object to write to (defaults to sys.stdout).
+        indent (int): Number of leading spaces to indent.
+    """
+    import sys
+    if file is None:
+        file = sys.stdout
+
+    if count is None:
+        match_count_str = ""
+    elif isinstance(count, int):
+        noun = "match" if count == 1 else "matches"
+        match_count_str = f" ({count} {noun})"
+    else:
+        # Assume it's a pre-formatted string (like " (Showing 5 of 10 matches)")
+        match_count_str = str(count)
+
+    full_text_no_color = title + match_count_str
+
+    leading_indent = " " * indent
+
+    if use_color:
+        header_main = colorize(title, Ansi.BOLD + Ansi.CYAN)
+        header_count = colorize(match_count_str, Ansi.CYAN)
+        file.write(f"{leading_indent}{header_main}{header_count}\n")
+    else:
+        file.write(f"{leading_indent}{full_text_no_color}\n")
+
+    file.write(f"{leading_indent}{'=' * len(full_text_no_color)}\n")
+
+
 class NumericFilter:
     """
     Parses and evaluates numerical filters.
