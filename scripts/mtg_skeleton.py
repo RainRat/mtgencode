@@ -16,10 +16,18 @@ import cardlib
 def main():
     parser = argparse.ArgumentParser(
         description="Generate a 'Design Skeleton' (Set Skeleton) for a card dataset, bucketing by type and CMC.",
-        epilog='''
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
 The Design Skeleton helps you understand the mechanical curve and balance of your set.
 It displays a 2D grid of card types (Creature, Instant, etc.) vs. mana costs (CMC 0-7+).
-'''
+
+Usage Examples:
+  # Generate skeleton for a dataset
+  python3 scripts/mtg_skeleton.py data/AllPrintings.json --set MOM
+
+  # Analyze the curve of a specific color identity
+  python3 scripts/mtg_skeleton.py data/AllPrintings.json --identity "W"
+"""
     )
 
     # Group: Input / Output

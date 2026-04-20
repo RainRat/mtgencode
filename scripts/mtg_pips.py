@@ -40,10 +40,18 @@ def get_pip_counts(card, include_text=False):
 def main():
     parser = argparse.ArgumentParser(
         description="Analyze the distribution of mana symbols (pips) in a dataset.",
-        epilog='''
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
 This tool counts mana symbols from casting costs and (optionally) rules text.
 It provides a breakdown of each symbol's frequency across the filtered card pool.
-'''
+
+Usage Examples:
+  # Analyze pip distribution for a set
+  python3 scripts/mtg_pips.py data/AllPrintings.json --set MOM
+
+  # Include pips found in rules text (e.g. activation costs)
+  python3 scripts/mtg_pips.py data/AllPrintings.json --set MOM --include-text
+"""
     )
 
     # Group: Input / Output

@@ -134,7 +134,27 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description="Convert Magic: The Gathering card data into text for AI training.")
+    parser = argparse.ArgumentParser(
+        description="Convert Magic: The Gathering card data into text for AI training.",
+        epilog="""
+Usage Examples:
+  # Basic encoding from JSON
+  python3 encode.py data/AllPrintings.json encoded_output.txt --verbose
+
+  # Convert a Cockatrice XML database to encoded text
+  python3 encode.py my_database.xml encoded_output.txt
+
+  # Process only Goblin creatures
+  python3 encode.py data/AllPrintings.json --grep "Goblin" --grep "Creature"
+
+  # Process only rare cards, excluding those with "Infect" in their name
+  python3 encode.py data/AllPrintings.json --rarity rare --exclude-name "Infect"
+
+  # Encode cards from a specific decklist to create a customized training set
+  python3 encode.py data/AllPrintings.json --deck-filter my_deck.txt encoded_deck.txt
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')

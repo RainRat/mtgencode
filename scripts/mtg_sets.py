@@ -106,7 +106,18 @@ def display_sets(sets, use_color=False):
     datalib.printrows(datalib.padrows(rows, aligns=['l', 'l', 'l', 'l', 'r']), indent=2)
 
 def main():
-    parser = argparse.ArgumentParser(description="List and filter sets in an MTGJSON file.")
+    parser = argparse.ArgumentParser(
+        description="List and filter sets in an MTGJSON file.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # List all sets in a dataset
+  python3 scripts/mtg_sets.py data/AllPrintings.json
+
+  # Find sets with "Masters" in their name or code
+  python3 scripts/mtg_sets.py data/AllPrintings.json --grep "Masters"
+"""
+    )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')

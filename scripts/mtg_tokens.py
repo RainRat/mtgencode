@@ -108,15 +108,15 @@ def extract_tokens_from_text(text):
 def main():
     parser = argparse.ArgumentParser(
         description="Extract and summarize token definitions from Magic: The Gathering rules text.",
-        epilog='''
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
 Example Usage:
   # List all tokens found in a specific set
   python3 scripts/mtg_tokens.py data/AllPrintings.json --set MOM
 
   # Export all token definitions to a JSON file
   python3 scripts/mtg_tokens.py data/AllPrintings.json --json > tokens.json
-''',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+""",
     )
 
     # Group: Input / Output

@@ -17,7 +17,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Search and display card details in a human-readable format. "
                     "Optimized for quick lookup with fuzzy name matching.",
-        epilog='''
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
 Example Usage:
   # Lookup a specific card by name
   python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizzly Bears"
@@ -27,8 +28,7 @@ Example Usage:
 
   # Use fuzzy matching for misspelled names
   python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizly Beers"
-''',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+""",
     )
 
     # Group: Input / Output
