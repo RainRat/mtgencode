@@ -45,3 +45,4 @@ Key utility scripts for dataset analysis:
 *   `scripts/mtg_subset.py`: Creates filtered subsets of MTGJSON files.
 *   `scripts/mtg_lexicon.py`: Analyzes color-characteristic vocabulary.
 *   `scripts/mtg_tokens.py`: Extracts and summarizes token definitions from rules text.
+*   `scripts/mtg_complexity.py`: Analyzes and ranks cards by design complexity.

@@ -527,6 +527,49 @@ class Card:
         return any(s.lower() == subtype_name.lower() for s in self.subtypes)
 
     @property
+    def total_words(self):
+        """Returns the total number of words in the rules text (including B-sides)."""
+        count = len(self.text_words)
+        if self.bside:
+            count += self.bside.total_words
+        return count
+
+    @property
+    def total_lines(self):
+        """Returns the total number of lines in the rules text (including B-sides)."""
+        count = len(self.text_lines)
+        if self.bside:
+            count += self.bside.total_lines
+        return count
+
+    @property
+    def complexity_score(self):
+        """
+        Calculates a heuristic Complexity Score for the card.
+        Heuristic:
+        - Words: 1 pt each
+        - Lines: 5 pts each
+        - Mechanics: 8 pts each
+        - Color Identity: 3 pts per color
+        - X-cost/effect: +10
+        - Multi-faced: +25
+        """
+        score = self.total_words
+        score += self.total_lines * 5
+        score += len(self.mechanics) * 8
+        score += len(self.color_identity) * 3
+
+        # X-cost/effect
+        if 'X-Cost/Effect' in self.mechanics:
+            score += 10
+
+        # Multi-faced bonus
+        if self.bside:
+            score += 25
+
+        return score
+
+    @property
     def is_artifact(self):
         """Returns True if the card is an artifact."""
         return self._has_type('artifact')

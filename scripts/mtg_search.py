@@ -39,6 +39,7 @@ FIELD_MAP = {
     'number': {'header': 'Num', 'align': 'r', 'aliases': ['collector_number', 'num']},
     'pack': {'header': 'Pack', 'align': 'r', 'aliases': ['pack_id']},
     'box': {'header': 'Box', 'align': 'r', 'aliases': ['box_id']},
+    'complexity': {'header': 'Complexity', 'align': 'r', 'aliases': ['score']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
@@ -132,6 +133,11 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return str(getattr(card, 'pack_id', ""))
     elif canon == 'box':
         return str(getattr(card, 'box_id', ""))
+    elif canon == 'complexity':
+        res = card.complexity_score
+        if ansi_color:
+            res = utils.colorize(str(res), utils.Ansi.BOLD + (utils.Ansi.RED if res > 50 else utils.Ansi.GREEN))
+        return str(res)
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color)
     elif canon == 'encoded':
