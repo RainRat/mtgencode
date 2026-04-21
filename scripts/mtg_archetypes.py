@@ -124,7 +124,7 @@ Usage Examples:
             pass
 
     # Filter out empty archetypes or those with too few cards
-    active_pairs = [p for p in pairs if len(archetypes[p]) >= args.min_cards]
+    active_pairs = [p for p in pairs if len(archetypes[p]) >= max(1, args.min_cards)]
 
     if not active_pairs:
         if not args.quiet:
