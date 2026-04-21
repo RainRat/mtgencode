@@ -486,6 +486,7 @@ class Datamine:
                     self.pie_mechanics[group][m] = self.pie_mechanics[group].get(m, 0) + 1
 
         self.avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
+        self.avg_complexity = sum(c.complexity_score for c in self.cards) / len(self.cards) if self.cards else 0
 
         # Calculate average P/T
         p_vals = [v for v in map(utils.from_unary_single, (c.pt_p for c in self.cards)) if v is not None]
@@ -561,6 +562,11 @@ class Datamine:
         if use_color:
             avg_cmc_str = utils.colorize(avg_cmc_str, utils.Ansi.BOLD + utils.Ansi.GREEN)
         print('  ' + avg_cmc_str)
+        avg_complexity_str = 'Average Complexity: {:.2f}'.format(self.avg_complexity)
+        if use_color:
+            avg_complexity_str = utils.colorize(avg_complexity_str, utils.Ansi.BOLD + utils.Ansi.GREEN)
+        print('  ' + avg_complexity_str)
+
         _print_breakdown('Breakdown by CMC:', self.by_cmc, len(self.allcards), use_color,
                          vsize=cmcsize, reverse=False, sort_key=lambda x: float(x))
         _print_breakdown('Popular mana costs:', self.by_cost, len(self.allcards), use_color,
@@ -801,6 +807,7 @@ class Datamine:
                 'textlines_min': min(self.by_textlines),
                 'textlines_max': max(self.by_textlines),
                 'avg_cmc': self.avg_cmc,
+                'avg_complexity': self.avg_complexity,
                 'avg_power': self.avg_power,
                 'avg_toughness': self.avg_toughness,
             }
