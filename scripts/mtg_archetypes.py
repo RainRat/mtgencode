@@ -29,7 +29,8 @@ Usage Examples:
 
   # Compare mechanics of a generated dataset against archetypes
   python3 scripts/mtg_archetypes.py generated_cards.txt
-'''
+''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     # Group: Input / Output
