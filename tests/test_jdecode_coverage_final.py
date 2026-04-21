@@ -82,19 +82,15 @@ class TestJDecodeCoverageFinal(unittest.TestCase):
 
     def test_process_json_srcs_invalid_logging(self):
         # Line 739-741: print invalid card
-        card = MagicMock(spec=cardlib.Card)
-        card.valid = False
-        card.parsed = True
-        card.types = []
+        # A card with types but no P/T (if creature) is invalid but parsed.
+        # It also needs a rarity or it will set parsed=False in cardlib.py
+        json_srcs = {"bad card": [{"name": "bad card", "types": ["Creature"], "rarity": "Common"}]}
 
-        json_srcs = {"bad card": [{"name": "bad card"}]}
-
-        with patch('lib.jdecode._find_best_candidate', return_value=(0, card)):
-            with patch('sys.stderr', new=io.StringIO()) as fake_err:
-                jdecode._process_json_srcs(json_srcs, set(), verbose=True, linetrans=True,
-                                           exclude_sets=lambda x: False, exclude_types=lambda x: False,
-                                           exclude_layouts=lambda x: False, report_fobj=None)
-                self.assertIn("Invalid card: bad card", fake_err.getvalue())
+        with patch('sys.stderr', new=io.StringIO()) as fake_err:
+            jdecode._process_json_srcs(json_srcs, set(), verbose=True, linetrans=True,
+                                       exclude_sets=lambda x: False, exclude_types=lambda x: False,
+                                       exclude_layouts=lambda x: False, report_fobj=None)
+            self.assertIn("Invalid card: bad card", fake_err.getvalue())
 
     def test_mtg_open_file_verbose_formats(self):
         # Lines 995, 1005, 1015: Verbose output for specific formats
