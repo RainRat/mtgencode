@@ -44,7 +44,8 @@ def get_functional_key(card):
 def main():
     parser = argparse.ArgumentParser(
         description="Identify and group 'functional reprints' (cards with different names but identical stats and abilities).",
-        epilog='''
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
 Functional reprints are identified by comparing:
   - Mana Cost
   - Type Line (Supertypes, Types, Subtypes)
@@ -60,8 +61,7 @@ Usage Examples:
 
   # Find functional reprints of Goblins
   python3 scripts/mtg_functional.py data/AllPrintings.json --grep "Goblin"
-''',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+"""
     )
 
     # Group: Input / Output

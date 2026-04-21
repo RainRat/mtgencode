@@ -731,7 +731,24 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description="Turn AI-generated text back into readable Magic cards, images, or data files.")
+    parser = argparse.ArgumentParser(
+        description="Turn AI-generated text back into readable Magic cards, images, or data files.",
+        epilog="""
+Usage Examples:
+  # View decoded cards in your terminal
+  python3 decode.py encoded_output.txt
+
+  # Save to a file (the format is detected from the file extension)
+  python3 decode.py encoded_output.txt my_cards.html
+
+  # Generate a file for Magic Set Editor
+  python3 decode.py encoded_output.txt my_set.mse-set
+
+  # Encode 10 cards and view them immediately
+  python3 encode.py data/AllPrintings.json --limit 10 | python3 decode.py -
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')

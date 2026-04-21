@@ -100,7 +100,27 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Show statistics, design budget analysis, mechanical profiling, and details about a Magic: The Gathering card dataset.")
+    parser = argparse.ArgumentParser(
+        description="Show statistics, design budget analysis, mechanical profiling, and details about a Magic: The Gathering card dataset.",
+        epilog="""
+Usage Examples:
+  # View statistics for the entire official dataset
+  python3 scripts/summarize.py data/AllPrintings.json
+
+  # View statistics for your encoded output
+  python3 scripts/summarize.py encoded_output.txt
+
+  # Show extra details and unusual cards (outliers)
+  python3 scripts/summarize.py encoded_output.txt -x
+
+  # Save statistics to a file (JSON format is auto-detected)
+  python3 scripts/summarize.py encoded_output.txt summary.json
+
+  # Find all creatures with power 5 or greater
+  python3 scripts/summarize.py data/AllPrintings.json --pow ">=5"
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')

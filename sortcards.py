@@ -387,7 +387,18 @@ def cli():
         description="""Sort Magic cards into groups (like color or type) and format them for sharing on forums.
 
 Supports any encoding format supported by encode.py/decode.py.""",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Basic sorting
+  python3 sortcards.py data/AllPrintings.json sorted_output.txt
+
+  # Sort encoded cards with filters and sampling
+  python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "Elf"
+
+  # Encode, sort, and save to a file
+  python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - sorted_cards.txt
+"""
     )
 
     # Group: Input / Output

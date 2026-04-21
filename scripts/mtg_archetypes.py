@@ -18,7 +18,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Profile the 10 primary two-color archetypes in a card dataset. "
                     "Identifies signpost cards, mechanical themes, and curve statistics for each pair.",
-        epilog='''
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
 Two-color archetypes analyzed:
   Allied: WU (Azorius), UB (Dimir), BR (Rakdos), RG (Gruul), GW (Selesnya)
   Enemy: WB (Orzhov), UR (Izzet), BG (Golgari), RW (Boros), GU (Simic)
@@ -29,7 +30,7 @@ Usage Examples:
 
   # Compare mechanics of a generated dataset against archetypes
   python3 scripts/mtg_archetypes.py generated_cards.txt
-'''
+"""
     )
 
     # Group: Input / Output

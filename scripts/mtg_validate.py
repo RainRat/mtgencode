@@ -625,7 +625,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Check Magic: The Gathering card data for rule and formatting consistency. "
                     "This script verifies that cards follow standard patterns, such as "
-                    "ensuring creatures have power and toughness, and lands have no mana cost."
+                    "ensuring creatures have power and toughness, and lands have no mana cost.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Basic validation
+  python3 scripts/mtg_validate.py encoded_output.txt
+
+  # Print details for invalid cards
+  python3 scripts/mtg_validate.py data/AllPrintings.json --dump
+"""
     )
     
     # Group: Input / Output
