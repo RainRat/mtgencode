@@ -510,22 +510,11 @@ Usage Examples:
                 else:
                     # Terminal table output
                     if displayed_matches < total_matches:
-                        match_count = f" (Showing {displayed_matches} of {total_matches} matches)"
+                        count_str = f"Showing {displayed_matches} of {total_matches} matches"
                     else:
-                        match_count = f" ({total_matches} {'match' if total_matches == 1 else 'matches'})"
+                        count_str = total_matches
 
-                    header_title = "SEARCH RESULTS"
-                    header_text = header_title + match_count
-
-                    if use_color:
-                        header_main = utils.colorize(header_title, utils.Ansi.BOLD + utils.Ansi.CYAN)
-                        header_count = utils.colorize(match_count, utils.Ansi.CYAN)
-                        output_f.write("  " + header_main + header_count + '\n')
-                    else:
-                        output_f.write("  " + header_text + '\n')
-
-                    # Always use a visible separator line for better visual hierarchy
-                    output_f.write("  " + "=" * len(header_text) + '\n')
+                    utils.print_header("SEARCH RESULTS", count=count_str, file=output_f, use_color=use_color)
 
                     aligns = []
                     for field in field_list:

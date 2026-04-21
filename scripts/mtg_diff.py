@@ -214,22 +214,7 @@ def main():
     removed_color = utils.Ansi.BOLD + utils.Ansi.RED
     mod_color = utils.Ansi.BOLD + utils.Ansi.YELLOW
 
-    def print_header(text, count=None):
-        match_count = ""
-        if count is not None:
-            match_count = f" ({count} {'match' if count == 1 else 'matches'})"
-
-        header_text = text + match_count
-
-        if use_color:
-            header_main = utils.colorize(text, utils.Ansi.BOLD + utils.Ansi.CYAN)
-            header_count = utils.colorize(match_count, utils.Ansi.CYAN)
-            print("  " + header_main + header_count)
-        else:
-            print("  " + header_text)
-        print("  " + "=" * len(header_text))
-
-    print_header("SUMMARY")
+    utils.print_header("SUMMARY", use_color=use_color)
     total_distinct = len(map1.keys() | map2.keys())
     unchanged_count = len(map1.keys() & map2.keys()) - len(modified)
 
@@ -267,7 +252,7 @@ def main():
         return
 
     if removed:
-        print_header("REMOVED CARDS", len(removed))
+        utils.print_header("REMOVED CARDS", count=len(removed), use_color=use_color)
         for c in removed:
             name = c.name
             if use_color:
@@ -276,7 +261,7 @@ def main():
         print()
 
     if added:
-        print_header("ADDED CARDS", len(added))
+        utils.print_header("ADDED CARDS", count=len(added), use_color=use_color)
         for c in added:
             name = c.name
             if use_color:
@@ -285,7 +270,7 @@ def main():
         print()
 
     if modified:
-        print_header("MODIFIED CARDS", len(modified))
+        utils.print_header("MODIFIED CARDS", count=len(modified), use_color=use_color)
         for c, diffs in modified:
             name = c.name
             if use_color:
