@@ -194,8 +194,8 @@ Usage Examples:
         ])
 
     # Display results
-    print(utils.colorize("ARCHETYPE PROFILING", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) if use_color else "=== ARCHETYPE PROFILING ===")
-    print(f"Total cards analyzed: {total_cards}\n")
+    utils.print_header("ARCHETYPE PROFILING", use_color=use_color)
+    print(f"  Total cards analyzed: {total_cards}\n")
 
     datalib.add_separator_row(rows)
     datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'l', 'l', 'r', 'r']), indent=2)

@@ -209,10 +209,7 @@ Example Usage:
             print("No token definitions found in rules text.")
             return
 
-        header_text = 'EXTRACTED TOKENS'
-        if use_color:
-            header_text = utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
-        print(header_text)
+        utils.print_header("EXTRACTED TOKENS", count=len(token_list), use_color=use_color)
 
         header = ["Token Name", "P/T", "Color", "Type", "Abilities", "Count"]
         if use_color:

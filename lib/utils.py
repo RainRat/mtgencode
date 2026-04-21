@@ -697,6 +697,38 @@ def visible_len(s):
     """Returns the length of a string without ANSI escape sequences."""
     return len(_ansi_escape_re.sub('', s))
 
+
+def print_header(text, count=None, file=None, use_color=None):
+    """
+    Prints a standardized, colorized header for CLI reports.
+    Indented 2 spaces, with a Bold Cyan title and a separator line.
+    """
+    import sys
+    if file is None:
+        file = sys.stdout
+
+    if use_color is None:
+        use_color = file.isatty() if hasattr(file, 'isatty') else False
+
+    match_count = ""
+    if count is not None:
+        if isinstance(count, int):
+            match_count = f" ({count} {'match' if count == 1 else 'matches'})"
+        else:
+            match_count = f" ({count})"
+
+    header_text = text + match_count
+
+    if use_color:
+        header_main = colorize(text, Ansi.BOLD + Ansi.CYAN)
+        header_count = colorize(match_count, Ansi.CYAN)
+        print("  " + header_main + header_count, file=file)
+    else:
+        print("  " + header_text, file=file)
+
+    print("  " + "=" * len(header_text), file=file)
+
+
 def print_operation_summary(op_name, success_count, fail_count, quiet=False):
     """Prints a standardized, colorized summary of a CLI operation to stderr."""
     if quiet:
