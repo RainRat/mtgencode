@@ -588,6 +588,41 @@ class Card:
 
         return "".join(sorted(list(colors)))
 
+    @property
+    def total_words(self):
+        """Returns the total word count of the card's rules text, including b-sides."""
+        count = len(self.text_words)
+        if self.bside:
+            count += self.bside.total_words
+        return count
+
+    @property
+    def total_lines(self):
+        """Returns the total number of lines in the card's rules text, including b-sides."""
+        count = len(self.text_lines)
+        if self.bside:
+            count += self.bside.total_lines
+        return count
+
+    @property
+    def complexity_score(self):
+        """Calculates a heuristic complexity score for the card."""
+        # Word Count + (Lines * 5) + (Mechanics * 8) + (Color Identity * 3)
+        score = self.total_words
+        score += self.total_lines * 5
+        score += len(self.mechanics) * 8
+        score += len(self.color_identity) * 3
+
+        # Bonus for X-costs
+        if 'X-Cost/Effect' in self.mechanics:
+            score += 10
+
+        # Bonus for multi-faced cards
+        if self.bside:
+            score += 25
+
+        return score
+
     def get_type_line(self, separator='\u2014'):
         """Returns a formatted type line string (e.g., 'Legendary Creature — Human Warrior')."""
         supertypes = [titlecase(transforms.name_unpass_1_dashes(s)) for s in self.__dict__[field_supertypes]]
