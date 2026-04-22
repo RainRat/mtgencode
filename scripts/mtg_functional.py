@@ -193,10 +193,7 @@ Usage Examples:
                     print("No functional reprints found.", file=sys.stderr)
                 return
 
-            header_text = 'FUNCTIONAL REPRINT GROUPS'
-            if use_color:
-                header_text = utils.colorize(header_text, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
-            output_f.write(header_text + '\n')
+            utils.print_header("FUNCTIONAL REPRINT GROUPS", count=len(reprint_groups), file=output_f, use_color=use_color)
 
             rows = []
             header = ["Names", "Cost", "Type", "Stats"]
@@ -230,10 +227,8 @@ Usage Examples:
             output_f.close()
 
     if not args.quiet:
-        summary = f"\nFound {len(reprint_groups)} groups of functional reprints ({len(cards)} total cards processed)."
-        if use_color:
-            summary = utils.colorize(summary, utils.Ansi.BOLD + utils.Ansi.GREEN)
-        print(summary, file=sys.stderr)
+        utils.print_operation_summary("Functional check", len(reprint_groups), 0)
+
 
 if __name__ == "__main__":
     main()
