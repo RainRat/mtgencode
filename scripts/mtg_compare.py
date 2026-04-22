@@ -65,20 +65,34 @@ def format_delta(val, base_val, is_percent=False, use_color=False, reverse_color
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Compare statistics of multiple Magic: The Gathering card datasets side-by-side."
+        description="Compare statistics of multiple card datasets side-by-side. "
+                    "This is useful for evaluating how well a generated dataset matches "
+                    "the characteristics of official Magic data.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Compare official data vs generated cards
+  python3 scripts/mtg_compare.py data/AllPrintings.json generated.txt
+
+  # Compare multiple sets side-by-side
+  python3 scripts/mtg_compare.py --set MOM --set ONE data/AllPrintings.json
+
+  # Compare only rare creatures across two files
+  python3 scripts/mtg_compare.py --rarity rare --grep "Creature" file1.json file2.json
+"""
     )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infiles', nargs='+',
-                        help='Input card data files to compare (JSON, CSV, encoded text, etc.).')
+                        help='Input card data files to compare (JSON, CSV, XML, encoded text, etc.).')
 
     # Group: Content Formatting
     enc_group = parser.add_argument_group('Content Formatting')
     enc_group.add_argument('--nolabel', action='store_true',
-                        help="Input file does not have field labels (like '|cost|' or '|text|').")
+                        help="Input files do not have field labels (like '|cost|' or '|text|').")
     enc_group.add_argument('--nolinetrans', action='store_true',
-                        help='Input file does not use automatic line reordering.')
+                        help='Input files do not use automatic line reordering.')
 
     # Group: Data Processing
     proc_group = parser.add_argument_group('Data Processing')
