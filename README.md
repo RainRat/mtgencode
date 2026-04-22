@@ -614,11 +614,31 @@ python3 scripts/mtg_complexity.py data/AllPrintings.json --set MOM --limit 10
 # Compare average complexity between rarities
 python3 scripts/mtg_complexity.py data/AllPrintings.json --rarity common --rarity rare
 ```
+
 *   **Options:**
     *   `-n LIMIT`, `--limit LIMIT`: Number of top complex cards to show in the table (Default: 20).
     *   `--json`: Output results in structured JSON format.
     *   `--csv`: Output results in CSV format.
     *   Supports standard **Advanced Filtering** flags (`--grep`, `--set`, `--rarity`, `--colors`, `--cmc`, `--mechanic`).
+
+### `mtg_curve.py`
+Analyzes and visualizes the mana curve (CMC distribution) of a card dataset or decklist. It provides a visual distribution chart, global and color-specific average CMC calculations, and a breakdown by card type.
+```bash
+# Analyze the curve of a specific set
+python3 scripts/mtg_curve.py data/AllPrintings.json --set MOM
+
+# Analyze a decklist file
+python3 scripts/mtg_curve.py my_deck.txt
+
+# See the curve for only creatures in a dataset
+python3 scripts/mtg_curve.py data/AllPrintings.json --grep-type "Creature"
+```
+*   **Options:**
+    *   `-n LIMIT`, `--limit LIMIT`: Only process the first N cards.
+    *   `--sample N`: Pick N random cards (shorthand for --shuffle --limit N).
+    *   `--booster N`: Simulate opening N booster packs and analyze their curve.
+    *   `--box N`: Simulate opening N booster boxes and analyze their curve.
+    *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_pips.py`
 Analyzes the distribution of mana symbols (pips) in a dataset. It counts symbols from casting costs and rules text (optionally via `--include-text`), supports table, JSON, and CSV output formats, and integrates with standard Advanced Filtering and simulation flags.
