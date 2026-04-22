@@ -12,7 +12,6 @@ sys.path.append(libdir)
 
 import utils
 import jdecode
-import cardlib
 import datalib
 from titlecase import titlecase
 

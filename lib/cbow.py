@@ -71,7 +71,7 @@ def makevector(vocabulary,vecs,sequence):
     #res = map(sum,[vecs[i] for i in indices])
     res = None
     for v in [vecs[i] for i in indices]:
-        if res == None:
+        if res is None:
             res = list(v)
         else:
             res = [x + y for x, y in zip(res,v)]

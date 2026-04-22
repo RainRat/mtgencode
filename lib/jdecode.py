@@ -11,7 +11,6 @@ import xml.etree.ElementTree as ET
 
 import utils
 import cardlib
-import transforms
 
 # Default Magic booster box size
 BOOSTER_BOX_SIZE = 36
@@ -594,11 +593,10 @@ def mtg_open_mse_content(content, verbose=False):
 
         # Planeswalker loyalty costs
         if d.get('loyalty'):
-            pw_abilities = []
             for j in range(1, 10):
                 cost_key = f'loyalty cost {j}'
                 if cost_key in c:
-                    cost = c[cost_key]
+                    c[cost_key]
                     # We assume abilities are separated by newlines in 'rule text'
                     # if they were exported by our to_mse
                     # But for general MSE, they might be in separate fields.

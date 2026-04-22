@@ -11,7 +11,6 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import datalib
-import cardlib
 
 def main():
     parser = argparse.ArgumentParser(
