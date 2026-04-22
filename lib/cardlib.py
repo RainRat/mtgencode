@@ -473,7 +473,27 @@ class Card:
         # placeholders to fill in with expensive distance metrics
         self.nearest_names = []
         self.nearest_cards = []
-        self._init_defaults()
+
+        # default values for all fields
+        setattr(self, field_name, '')
+        setattr(self, field_rarity, '')
+        setattr(self, field_cost, Manacost(''))
+        setattr(self, field_supertypes, [])
+        setattr(self, field_types, [])
+        setattr(self, field_subtypes, [])
+        setattr(self, field_loyalty, '')
+        setattr(self, field_pt, '')
+        setattr(self, field_pt + '_p', None)
+        setattr(self, field_pt + '_t', None)
+        setattr(self, field_text, Manatext(''))
+        setattr(self, field_text + '_lines', [])
+        setattr(self, field_text + '_words', [])
+        setattr(self, field_text + '_lines_words', [])
+        setattr(self, field_other, [])
+        # metadata for interoperability
+        self.set_code = None
+        self.number = None
+
         self.bside = None
         # format-independent view of processed input
         self.fields = None # will be reset later
@@ -805,27 +825,6 @@ class Card:
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.RED)
         return res
-
-    def _init_defaults(self):
-        # default values for all fields
-        setattr(self, field_name, '')
-        setattr(self, field_rarity, '')
-        setattr(self, field_cost, Manacost(''))
-        setattr(self, field_supertypes, [])
-        setattr(self, field_types, [])
-        setattr(self, field_subtypes, [])
-        setattr(self, field_loyalty, '')
-        setattr(self, field_pt, '')
-        setattr(self, field_pt + '_p', None)
-        setattr(self, field_pt + '_t', None)
-        setattr(self, field_text, Manatext(''))
-        setattr(self, field_text + '_lines', [])
-        setattr(self, field_text + '_words', [])
-        setattr(self, field_text + '_lines_words', [])
-        setattr(self, field_other, [])
-        # metadata for interoperability
-        self.set_code = None
-        self.number = None
 
     def _get_ansi_color(self):
         """Returns the ANSI color code for the card based on its colors and types."""
