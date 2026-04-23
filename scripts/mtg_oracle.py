@@ -4,6 +4,7 @@ import os
 import argparse
 import difflib
 import re
+import random
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -12,6 +13,7 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import cardlib
+import namediff
 
 def main():
     parser = argparse.ArgumentParser(
@@ -25,6 +27,9 @@ Example Usage:
 
   # Find all rares in a set matching a keyword
   python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --rarity rare --grep "Battle"
+
+  # Find cards mechanically similar to a specific card
+  python3 scripts/mtg_oracle.py data/AllPrintings.json "Giant Growth" --similar
 
   # Use fuzzy matching for misspelled names
   python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizly Beers"
@@ -46,6 +51,8 @@ Example Usage:
                         help="Input file does not have field labels (like '|cost|' or '|text|').")
     enc_group.add_argument('--nolinetrans', action='store_true',
                         help='Input file does not use automatic line reordering.')
+    enc_group.add_argument('--similar', action='store_true',
+                        help='Find and display cards mechanically similar to the results.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
@@ -192,6 +199,17 @@ Example Usage:
     if not args.quiet:
         utils.print_header("SEARCH RESULTS", count=total_matches, use_color=use_color)
 
+    nd = None
+    if args.similar:
+        # Load full dataset for similarity context
+        if args.verbose and not args.quiet:
+            print("Loading similarity context...", file=sys.stderr)
+
+        full_cards = jdecode.mtg_open_file(args.infile, verbose=False,
+                                          linetrans=not args.nolinetrans,
+                                          fmt_labeled=None if args.nolabel else cardlib.fmt_labeled_default)
+        nd = namediff.Namediff(verbose=args.verbose and not args.quiet, cards=full_cards)
+
     # Display the cards
     for i, card in enumerate(display_cards):
         if i > 0:
@@ -200,6 +218,31 @@ Example Usage:
         formatted_card = card.format(gatherer=args.gatherer, ansi_color=use_color)
         indented_card = "\n".join(["  " + line for line in formatted_card.split("\n")])
         print(indented_card)
+
+        if nd:
+            print()
+            sim_header = "  SIMILAR CARDS (Mechanical Similarity)"
+            if use_color:
+                sim_header = utils.colorize(sim_header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+            print(sim_header)
+            print("  " + "-" * 40)
+
+            # nearest_card returns (ratio, name)
+            # card.name is the internal lowercase name
+            results = nd.nearest_card(card, n=6)
+            # Filter out the card itself
+            similar = [r for r in results if r[1] != card.name][:5]
+
+            if similar:
+                for ratio, name in similar:
+                    # name in nd.names is already titlecased
+                    display_name = nd.names.get(name, cardlib.titlecase(name))
+                    ratio_str = f"{ratio*100:3.0f}%"
+                    if use_color:
+                        ratio_str = utils.colorize(ratio_str, utils.Ansi.GREEN)
+                    print(f"    {ratio_str}  {display_name}")
+            else:
+                print("    No similar cards found.")
 
     if not args.quiet:
         utils.print_operation_summary("Search", total_matches, 0)

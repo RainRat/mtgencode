@@ -45,9 +45,9 @@ class TestNamediff(unittest.TestCase):
     def test_f_nearest_per_thread(self):
         """Test the worker function for parallel processing."""
         worknames = ["apple", "banana"]
-        candidates = ["apple", "apricot", "banana", "bandana"]
-        # workitem tuple structure: (worknames, names, n)
-        workitem = (worknames, candidates, 1)
+        candidates = [("apple", "apple"), ("apricot", "apricot"), ("banana", "banana"), ("bandana", "bandana")]
+        # workitem tuple structure: (work_sources, target_items, n, exact_shortcut)
+        workitem = (worknames, candidates, 1, True)
 
         results = namediff.f_nearest_per_thread(workitem)
 
@@ -69,16 +69,21 @@ class TestNamediff(unittest.TestCase):
 
     def test_f_nearest(self):
         name = "Dragon"
-        candidates = ["Dragon", "Drogon", "Wagon", "Apple"]
-        matchers = [difflib.SequenceMatcher(b=c, autojunk=False) for c in candidates]
+        candidates = [("Dragon", "Dragon"), ("Drogon", "Drogon"), ("Wagon", "Wagon"), ("Apple", "Apple")]
+        matchers = [(label, difflib.SequenceMatcher(b=c, autojunk=False)) for label, c in candidates]
 
-        result = namediff.f_nearest(name, matchers, n=3)
+        # Test with exact shortcut
+        result = namediff.f_nearest(name, matchers, n=3, exact_shortcut=True)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0][1], "Dragon")
         self.assertEqual(result[0][0], 1.0)
 
+        # Test without exact shortcut
+        result = namediff.f_nearest(name, matchers, n=3, exact_shortcut=False)
+        self.assertEqual(len(result), 3)
+
         name = "Drago"
-        result = namediff.f_nearest(name, matchers, n=2)
+        result = namediff.f_nearest(name, matchers, n=2, exact_shortcut=True)
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0][1], "Dragon")
 
