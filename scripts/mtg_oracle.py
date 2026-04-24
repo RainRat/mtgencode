@@ -12,6 +12,7 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import cardlib
+import sortlib
 
 def main():
     parser = argparse.ArgumentParser(
@@ -25,6 +26,12 @@ Example Usage:
 
   # Find all rares in a set matching a keyword
   python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --rarity rare --grep "Battle"
+
+  # Find the top 3 most complex cards in a set
+  python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --sort name --limit 3
+
+  # Pick 5 random cards from a specific set
+  python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --sample 5
 
   # Use fuzzy matching for misspelled names
   python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizly Beers"
@@ -49,7 +56,7 @@ Example Usage:
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--grep', action='append',
+    filter_group.add_argument('-g', '--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
     filter_group.add_argument('--grep-name', action='append',
                         help='Only include cards whose name matches a search pattern.')
@@ -100,6 +107,21 @@ Example Usage:
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file.')
 
+    # Group: Browsing Options
+    browsing_group = parser.add_argument_group('Browsing Options')
+    browsing_group.add_argument('-n', '--limit', type=int, default=0,
+                        help='Only process the first N cards.')
+    browsing_group.add_argument('--shuffle', action='store_true',
+                        help='Shuffle the cards before processing.')
+    browsing_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random cards (shorthand for --shuffle --limit N).')
+    browsing_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
+                        help='Sort cards by a specific criterion.')
+    browsing_group.add_argument('--booster', type=int, default=0,
+                        help='Simulate opening N booster packs and search their contents.')
+    browsing_group.add_argument('--box', type=int, default=0,
+                        help='Simulate opening N booster boxes (36 packs each) and search their contents.')
+
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
     debug_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
@@ -111,6 +133,11 @@ Example Usage:
     color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # Handle --sample
+    if args.sample > 0:
+        args.shuffle = True
+        args.limit = args.sample
 
     # Determine if we should use color
     use_color = False
@@ -135,7 +162,12 @@ Example Usage:
                                   pows=args.pow, tous=args.tou, loys=args.loy,
                                   mechanics=args.mechanic,
                                   identities=args.identity, id_counts=args.id_count,
-                                  decklist_file=args.deck)
+                                  decklist_file=args.deck,
+                                  shuffle=args.shuffle,
+                                  booster=args.booster, box=args.box)
+
+    if args.sort:
+        cards = sortlib.sort_cards(cards, args.sort, quiet=args.quiet)
 
     if not cards:
         if not args.quiet:
@@ -189,8 +221,18 @@ Example Usage:
 
     total_matches = len(display_cards)
 
+    # Handle limit
+    if args.limit > 0:
+        display_cards = display_cards[:args.limit]
+    displayed_matches = len(display_cards)
+
     if not args.quiet:
-        utils.print_header("SEARCH RESULTS", count=total_matches, use_color=use_color)
+        if displayed_matches < total_matches:
+            count_str = f"Showing {displayed_matches} of {total_matches} matches"
+        else:
+            count_str = total_matches
+
+        utils.print_header("SEARCH RESULTS", count=count_str, use_color=use_color)
 
     # Display the cards
     for i, card in enumerate(display_cards):
