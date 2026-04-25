@@ -605,6 +605,20 @@ python3 scripts/mtg_archetypes.py data/AllPrintings.json --rarity uncommon --mec
     *   `--top-mechanics N`: Number of signature mechanics to show per archetype (Default: 3).
     *   Supports all standard **Advanced Filtering** flags.
 
+### `mtg_balance.py`
+Analyzes and compares the archetype balance (color pair distribution) between two or more datasets. This helps verify if a generated dataset maintains the same color identity "gravity" as its training data.
+```bash
+# Compare the balance of a generated set against an official set
+python3 scripts/mtg_balance.py data/AllPrintings.json generated.txt --set MOM
+
+# See which color pairs are over-represented in a card pool
+python3 scripts/mtg_balance.py my_cards.json
+```
+*   **Options:**
+    *   `--limit N`: Only process the first N cards from each input.
+    *   `--set`, `--rarity`: Filter inputs by set or rarity.
+    *   `--color` / `--no-color`: Enable or disable ANSI color output.
+
 ### `mtg_complexity.py`
 Analyzes the heuristic design complexity of cards in a dataset. It calculates a "Complexity Score" based on word count, line count, mechanical density, and color identity, helping designers identify "wordy" or overly complex cards.
 ```bash
