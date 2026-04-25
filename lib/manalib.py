@@ -196,7 +196,6 @@ class Manatext:
                          #utils.x_marker,
                          utils.tap_marker,
                          utils.untap_marker,
-                         utils.newline,
                          ';', ':', '"', ',', '.']
         for char in special_chars:
             text = text.replace(char, ' ' + char + ' ')
