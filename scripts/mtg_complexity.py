@@ -17,43 +17,53 @@ from titlecase import titlecase
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Analyze the heuristic design complexity of cards in a dataset.",
-        epilog='''
-Complexity Score Heuristic:
-  - Word Count (Rules Text)
-  - Line Count * 5
-  - Identified Mechanics * 8
-  - Color Identity * 3
-  - X-Cost Bonus (+10)
-  - Multi-faced Bonus (+25)
+        description="Analyze the design complexity of cards in a dataset. This tool calculates a 'Complexity Score' to help identify 'wordy' or mechanically dense cards.",
+        epilog="""
+The Complexity Score is a heuristic that measures how difficult a card is to read and understand. Higher scores indicate "wordier" cards or those with many mechanical features.
 
-Example Usage:
-  # Find the most complex cards in a set
+How the score is calculated:
+  - Each word in the rules text: +1 point
+  - Each line of rules text: +5 points
+  - Each identified mechanic (e.g., Flying, Kicker): +8 points
+  - Each color in the card's color identity: +3 points
+  - If the card has an X in its cost or effect: +10 points
+  - If the card has multiple faces (like Split or Transform cards): +25 points
+
+Usage Examples:
+  # Find the 10 most complex cards in the March of the Machine set
   python3 scripts/mtg_complexity.py data/AllPrintings.json --set MOM --limit 10
 
-  # Compare average complexity between rarities
+  # Compare the average complexity of commons vs. rares
   python3 scripts/mtg_complexity.py data/AllPrintings.json --rarity common --rarity rare
-''',
+
+  # Analyze the complexity of Blue cards with CMC 4 or more
+  python3 scripts/mtg_complexity.py data/AllPrintings.json --colors U --cmc ">=4"
+
+  # Find wordy cards that mention "Goblins"
+  python3 scripts/mtg_complexity.py data/AllPrintings.json --grep "Goblin"
+""",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data. Defaults to stdin (-).')
+                        help='Input card data (JSON, CSV, XML, or encoded text). Defaults to stdin (-).')
     io_group.add_argument('-n', '--limit', type=int, default=20,
                         help='Number of top complex cards to show in the table (Default: 20).')
-    io_group.add_argument('--json', action='store_true', help='Output results in JSON format.')
+    io_group.add_argument('--json', action='store_true', help='Output results in structured JSON format.')
     io_group.add_argument('--csv', action='store_true', help='Output results in CSV format.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--grep', action='append', help='Filter by pattern.')
-    filter_group.add_argument('--set', action='append', help='Filter by set.')
-    filter_group.add_argument('--rarity', action='append', help='Filter by rarity.')
-    filter_group.add_argument('--colors', action='append', help='Filter by colors.')
-    filter_group.add_argument('--cmc', action='append', help='Filter by CMC.')
-    filter_group.add_argument('--mechanic', action='append', help='Filter by mechanic.')
+    filter_group.add_argument('--grep', action='append',
+                              help='Only include cards matching a search pattern (checks name, typeline, and rules text).')
+    filter_group.add_argument('--set', action='append', help='Only include cards from specific sets (e.g., MOM, MRD).')
+    filter_group.add_argument('--rarity', action='append', help='Only include cards of specific rarities (e.g., common, rare).')
+    filter_group.add_argument('--colors', action='append', help='Only include cards of specific colors (W, U, B, R, G).')
+    filter_group.add_argument('--cmc', action='append',
+                              help='Only include cards with specific CMC (Mana Value). Supports inequalities (e.g., ">3") and ranges ("1-4").')
+    filter_group.add_argument('--mechanic', action='append', help='Only include cards with specific mechanics (e.g., Flying, ETB Effect).')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
