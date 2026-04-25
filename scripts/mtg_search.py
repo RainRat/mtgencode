@@ -161,19 +161,19 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Search card data and extract specific fields. It works with all supported formats (JSON, CSV, XML, or encoded text).",
+        description="Search card data and extract specific fields. It supports various input formats (JSON, JSONL, CSV, XML, MSE, ZIP, and Decklist) and can process entire directories.",
         epilog='''
 Available Fields (aliases in parentheses):
   Basic Metadata:
-    name, cost (mana, mana_cost), cmc (mv, mana_value), rarity, set (code), number (num)
+    name, cost (mana, mana_cost, manacost), cmc (mv, mana_value), rarity, set (code), number (num, collector_number)
   Types & Text:
     type (typeline), text (rules, oracle), mechanics (keywords), supertypes, types, subtypes
   Stats:
-    stats (Smart field: P/T, Loyalty, or Defense), pt (pow_tou), power (pow), toughness (tou), loyalty (def, defense)
+    stats (Smart field: P/T, Loyalty, or Defense), pt (pow_tou), power (pow), toughness (tou), loyalty (def, defense, loy)
   Color Info:
     colors, identity (ci, color_identity), id_count (identity_count)
-  Simulation & Encoding:
-    pack, box, encoded
+  Display & Simulation:
+    summary (view), complexity (score), pack, box, encoded
 
 Usage Examples:
   # List names and costs of all Goblins in a table
