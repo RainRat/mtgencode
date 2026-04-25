@@ -33,7 +33,7 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
          mechanics=None,
          identities=None, id_counts=None,
          shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None,
-         top = 10, booster = 0, sort = None, box = 0):
+         top = 10, booster = 0, sort = None, reverse_sort = False, box = 0):
 
     # Set default format to JSON if no specific output format is selected and outfile is .json
     if not json_out and oname and oname.endswith('.json'):
@@ -66,7 +66,7 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
                                   box=box)
 
     if sort:
-        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
+        cards = sortlib.sort_cards(cards, sort, reverse=reverse_sort, quiet=quiet)
 
     if limit > 0:
         cards = cards[:limit]
@@ -154,8 +154,10 @@ Usage Examples:
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'complexity', 'score'],
                         help='Sort cards by a specific criterion.')
+    proc_group.add_argument('--reverse', action='store_true',
+                        help='Reverse the sort order.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -249,5 +251,5 @@ Usage Examples:
          mechanics=args.mechanic,
          identities=args.identity, id_counts=args.id_count,
          shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck,
-         top = args.top, booster = args.booster, sort = args.sort, box = args.box)
+         top = args.top, booster = args.booster, sort = args.sort, reverse_sort = args.reverse, box = args.box)
     exit(0)

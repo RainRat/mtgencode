@@ -441,7 +441,7 @@ def main(fname, oname = None, verbose = False, dump = False,
          mechanics=None,
          identities=None, id_counts=None,
          shuffle = False, seed = None, quiet = False, decklist_file = None,
-         booster = 0, sort = None, limit = 0, use_color = None, box = 0):
+         booster = 0, sort = None, reverse_sort = False, limit = 0, use_color = None, box = 0):
 
     # Use the robust mtg_open_file for all loading and filtering.
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
@@ -465,7 +465,7 @@ def main(fname, oname = None, verbose = False, dump = False,
 
     if sort:
         import sortlib
-        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
+        cards = sortlib.sort_cards(cards, sort, reverse=reverse_sort, quiet=quiet)
 
     if limit > 0:
         cards = cards[:limit]
@@ -663,8 +663,10 @@ Usage Examples:
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'complexity', 'score'],
                         help='Sort cards by a specific criterion.')
+    proc_group.add_argument('--reverse', action='store_true',
+                        help='Reverse the sort order.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -758,5 +760,5 @@ Usage Examples:
          mechanics=args.mechanic,
          identities=args.identity, id_counts=args.id_count,
          shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, decklist_file = args.deck,
-         booster = args.booster, sort = args.sort, limit = args.limit, use_color = args.color, box = args.box)
+         booster = args.booster, sort = args.sort, reverse_sort = args.reverse, limit = args.limit, use_color = args.color, box = args.box)
     exit(0)

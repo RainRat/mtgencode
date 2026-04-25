@@ -45,8 +45,10 @@ def main():
                         help='Seed for the random number generator (Default: 1371367).')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --limit N). Shuffling is enabled unless --stable is used.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'complexity', 'score'],
                         help='Sort cards by a specific criterion (enables --stable).')
+    proc_group.add_argument('--reverse', action='store_true',
+                        help='Reverse the sort order.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -155,7 +157,7 @@ def main():
                                   decklist_file=args.deck, booster=args.booster, box=args.box)
 
     if args.sort:
-        cards = sortlib.sort_cards(cards, args.sort, quiet=args.quiet)
+        cards = sortlib.sort_cards(cards, args.sort, reverse=args.reverse, quiet=args.quiet)
 
     if args.limit > 0:
         cards = cards[:args.limit]

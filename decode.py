@@ -25,7 +25,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, nolabel = False,
          gatherer = True, for_forum = False, for_mse = False,
          creativity = False, vdump = False, html = False, text = False, table_out = False, json_out = False, jsonl_out = False, csv_out = False, md_out = False, md_table_out = False, summary_out = False, deck_out = False, xml_out = False, quiet=False,
-         report_file=None, color_arg=None, limit=0, grep=None, sort=None, vgrep=None,
+         report_file=None, color_arg=None, limit=0, grep=None, sort=None, reverse_sort=False, vgrep=None,
          grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
          grep_text=None, vgrep_text=None,
          grep_cost=None, vgrep_cost=None, grep_pt=None, vgrep_pt=None,
@@ -123,7 +123,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   booster=booster, box=box)
 
     if sort:
-        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
+        cards = sortlib.sort_cards(cards, sort, reverse=reverse_sort, quiet=quiet)
 
     if limit > 0:
         cards = cards[:limit]
@@ -824,8 +824,10 @@ Usage Examples:
                         help='Seed for the random number generator.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score'],
                         help='Sort cards by a specific criterion.')
+    proc_group.add_argument('--reverse', action='store_true',
+                        help='Reverse the sort order.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -920,7 +922,7 @@ Usage Examples:
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, table_out = args.table,
          json_out = args.json, jsonl_out = args.jsonl, csv_out = args.csv, md_out = args.md, md_table_out = args.md_table, summary_out = args.summary, deck_out = args.deck, xml_out = args.xml, quiet=args.quiet,
          report_file = args.report_failed, color_arg=args.color, limit=args.limit, grep=args.grep,
-         sort=args.sort, vgrep=args.vgrep,
+         sort=args.sort, reverse_sort=args.reverse, vgrep=args.vgrep,
          grep_name=args.grep_name, vgrep_name=args.exclude_name,
          grep_types=args.grep_type, vgrep_types=args.exclude_type,
          grep_text=args.grep_text, vgrep_text=args.exclude_text,
