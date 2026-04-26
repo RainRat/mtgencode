@@ -32,7 +32,7 @@ def sort_colors(card_set, quiet=False):
     return [colors['W'], colors['U'], colors['B'], colors['R'], colors['G'],
             colors['multi'], colors['colorless'], colors['lands']]
 
-def sort_type(card_set):
+def sort_type(card_set, reverse=False):
     """Sorts cards by their primary card type."""
     # Priority order for primary card types.
     # We maintain the order expected by existing tests for backward compatibility.
@@ -47,7 +47,7 @@ def sort_type(card_set):
         return len(sorting)
 
     # Use stable sort (Python's sorted is stable)
-    return sorted(card_set, key=type_priority)
+    return sorted(card_set, key=type_priority, reverse=reverse)
 
 def _get_numeric_sort_key(val):
     """Helper to generate a sort key for optional numeric fields (P/T, Loyalty)."""
@@ -56,23 +56,28 @@ def _get_numeric_sort_key(val):
     num = utils.from_unary_single(val)
     return (0, -num) if num is not None else (1, 0)
 
-def sort_cards(cards, criterion, quiet=False):
+def sort_cards(cards, criterion, reverse=False, quiet=False):
     """Sorts a list of cards based on the specified criterion."""
     if not criterion:
         return cards
 
     if criterion == 'name':
-        return sorted(cards, key=lambda c: c.name.lower())
+        return sorted(cards, key=lambda c: c.name.lower(), reverse=reverse)
     elif criterion == 'cmc':
-        return sorted(cards, key=lambda c: c.cost.cmc)
+        return sorted(cards, key=lambda c: c.cost.cmc, reverse=reverse)
+    elif criterion in ['complexity', 'score']:
+        return sorted(cards, key=lambda c: c.complexity_score, reverse=reverse)
     elif criterion == 'color':
         # Flatten the list of lists returned by sort_colors
         segments = sort_colors(cards, quiet=quiet)
-        return [card for segment in segments for card in segment]
+        res = [card for segment in segments for card in segment]
+        if reverse:
+            res.reverse()
+        return res
     elif criterion == 'identity':
-        return sorted(cards, key=lambda c: (len(c.color_identity), c.color_identity, c.name.lower()))
+        return sorted(cards, key=lambda c: (len(c.color_identity), c.color_identity, c.name.lower()), reverse=reverse)
     elif criterion == 'type':
-        return sort_type(cards)
+        return sort_type(cards, reverse=reverse)
     elif criterion == 'rarity':
         # Priority: Mythic > Rare > Uncommon > Common > Basic Land > Special > Other
         # Markers: Y (Mythic), A (Rare), N (Uncommon), O (Common), L (Basic Land), I (Special)
@@ -87,15 +92,15 @@ def sort_cards(cards, criterion, quiet=False):
         def get_rarity_val(card):
             r = card.rarity.upper() if card.rarity else ''
             return rarity_priority.get(r, 6)
-        return sorted(cards, key=get_rarity_val)
+        return sorted(cards, key=get_rarity_val, reverse=reverse)
     elif criterion == 'power':
-        return sorted(cards, key=lambda c: _get_numeric_sort_key(c.pt_p))
+        return sorted(cards, key=lambda c: _get_numeric_sort_key(c.pt_p), reverse=reverse)
     elif criterion == 'toughness':
-        return sorted(cards, key=lambda c: _get_numeric_sort_key(c.pt_t))
+        return sorted(cards, key=lambda c: _get_numeric_sort_key(c.pt_t), reverse=reverse)
     elif criterion == 'loyalty':
-        return sorted(cards, key=lambda c: _get_numeric_sort_key(c.loyalty))
+        return sorted(cards, key=lambda c: _get_numeric_sort_key(c.loyalty), reverse=reverse)
     elif criterion in ['pack', 'box']:
-        return sorted(cards, key=lambda c: (getattr(c, 'box_id', 0), getattr(c, 'pack_id', 0), c.name.lower()))
+        return sorted(cards, key=lambda c: (getattr(c, 'box_id', 0), getattr(c, 'pack_id', 0), c.name.lower()), reverse=reverse)
     elif criterion == 'set':
         def get_set_key(card):
             s = card.set_code.upper() if card.set_code else 'ZZZ'
@@ -106,6 +111,6 @@ def sort_cards(cards, criterion, quiet=False):
             except (ValueError, TypeError):
                 n_int = 9999
             return (s, n_int, n)
-        return sorted(cards, key=get_set_key)
+        return sorted(cards, key=get_set_key, reverse=reverse)
     else:
         return cards

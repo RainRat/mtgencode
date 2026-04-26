@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, randomize = False, nolabel = False, stable = False,
-         report_file=None, quiet=False, limit=0, grep=None, sort=None, vgrep=None,
+         report_file=None, quiet=False, limit=0, grep=None, sort=None, reverse_sort=False, vgrep=None,
          grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
          grep_text=None, vgrep_text=None,
          grep_cost=None, vgrep_cost=None, grep_pt=None, vgrep_pt=None,
@@ -87,7 +87,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   decklist_file=decklist_file, booster=booster, box=box)
 
     if sort:
-        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
+        cards = sortlib.sort_cards(cards, sort, reverse=reverse_sort, quiet=quiet)
 
     if limit > 0:
         cards = cards[:limit]
@@ -188,8 +188,10 @@ Usage Examples:
                         help='Seed for the random number generator (Default: 1371367).')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --limit N). Shuffling is enabled unless --stable is used.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score'],
                         help='Sort cards by a specific criterion (enables --stable).')
+    proc_group.add_argument('--reverse', action='store_true',
+                        help='Reverse the sort order.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -266,7 +268,7 @@ Usage Examples:
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
          stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet,
-         limit=args.limit, grep=args.grep, sort=args.sort, vgrep=args.vgrep,
+         limit=args.limit, grep=args.grep, sort=args.sort, reverse_sort=args.reverse, vgrep=args.vgrep,
          grep_name=args.grep_name, vgrep_name=args.exclude_name,
          grep_types=args.grep_type, vgrep_types=args.exclude_type,
          grep_text=args.grep_text, vgrep_text=args.exclude_text,

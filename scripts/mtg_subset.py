@@ -43,8 +43,10 @@ Example Usage:
                         help='Randomize the order of cards.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'score'],
                         help='Sort cards by a specific criterion.')
+    proc_group.add_argument('--reverse', action='store_true',
+                        help='Reverse the sort order.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
@@ -135,7 +137,7 @@ Example Usage:
 
     if args.sort:
         import sortlib
-        cards = sortlib.sort_cards(cards, args.sort, quiet=args.quiet)
+        cards = sortlib.sort_cards(cards, args.sort, reverse=args.reverse, quiet=args.quiet)
 
     if args.limit > 0:
         cards = cards[:args.limit]

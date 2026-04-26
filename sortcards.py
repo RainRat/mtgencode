@@ -246,7 +246,7 @@ def sortcards(cards, verbose=False, use_summary=False, use_markdown=False, use_c
 def main(fname, oname = None, verbose = True, encoding = 'std',
          nolinetrans = False, nolabel = False,
          use_summary = False, use_markdown = False, use_color = None, quiet = False,
-         limit = 0, grep = None, sort = None, vgrep = None,
+         limit = 0, grep = None, sort = None, reverse_sort = False, vgrep = None,
          grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
          grep_text=None, vgrep_text=None,
          grep_cost=None, vgrep_cost=None, grep_pt=None, vgrep_pt=None,
@@ -298,7 +298,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   booster=booster, box=box)
 
     if sort:
-        cards = sortlib.sort_cards(cards, sort, quiet=quiet)
+        cards = sortlib.sort_cards(cards, sort, reverse=reverse_sort, quiet=quiet)
 
     if limit > 0:
         cards = cards[:limit]
@@ -424,8 +424,10 @@ Usage Examples:
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score'],
                         help='Sort cards by a specific criterion.')
+    proc_group.add_argument('--reverse', action='store_true',
+                        help='Reverse the sort order.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Randomize the order of cards before sorting.')
     proc_group.add_argument('--seed', type=int,
@@ -530,7 +532,7 @@ Usage Examples:
     main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, nolabel = args.nolabel,
          use_summary = args.summary, use_markdown = args.md, use_color = args.color, quiet = args.quiet,
-         limit = args.limit, grep = args.grep, sort = args.sort, vgrep = args.vgrep,
+         limit = args.limit, grep = args.grep, sort = args.sort, reverse_sort = args.reverse, vgrep = args.vgrep,
          grep_name=args.grep_name, vgrep_name=args.exclude_name,
          grep_types=args.grep_type, vgrep_types=args.exclude_type,
          grep_text=args.grep_text, vgrep_text=args.exclude_text,

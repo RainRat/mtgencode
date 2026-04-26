@@ -33,7 +33,7 @@ Example Usage:
   python3 scripts/mtg_oracle.py data/AllPrintings.json "Giant Growth" --similar
 
   # Find the top 3 most complex cards in a set
-  python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --sort name --limit 3
+  python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --sort complexity --reverse --limit 3
 
   # Pick 5 random cards from a specific set
   python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --sample 5
@@ -122,8 +122,12 @@ Example Usage:
                         help='Shuffle the cards before processing.')
     browsing_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards (shorthand for --shuffle --limit N).')
-    browsing_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box'],
+    browsing_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score'],
                         help='Sort cards by a specific criterion.')
+    browsing_group.add_argument('--reverse', action='store_true',
+                        help='Reverse the sort order.')
+    browsing_group.add_argument('--seed', type=int,
+                        help='Seed for the random number generator.')
     browsing_group.add_argument('--booster', type=int, default=0,
                         help='Simulate opening N booster packs and search their contents.')
     browsing_group.add_argument('--box', type=int, default=0,
@@ -170,11 +174,11 @@ Example Usage:
                                   mechanics=args.mechanic,
                                   identities=args.identity, id_counts=args.id_count,
                                   decklist_file=args.deck,
-                                  shuffle=args.shuffle,
+                                  shuffle=args.shuffle, seed=args.seed,
                                   booster=args.booster, box=args.box)
 
     if args.sort:
-        cards = sortlib.sort_cards(cards, args.sort, quiet=args.quiet)
+        cards = sortlib.sort_cards(cards, args.sort, reverse=args.reverse, quiet=args.quiet)
 
     if not cards:
         if not args.quiet:
