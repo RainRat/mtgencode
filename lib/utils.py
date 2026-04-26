@@ -652,8 +652,6 @@ class Ansi:
             return Ansi.BOLD + Ansi.RED
         if r_lower == 'special' or rarity == rarity_special_marker:
             return Ansi.BOLD + Ansi.MAGENTA
-        if r_lower == 'basic land' or rarity == rarity_basic_land_marker:
-            return Ansi.BOLD
         return Ansi.BOLD
 
     @staticmethod
