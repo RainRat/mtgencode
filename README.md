@@ -268,7 +268,7 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 ---
 
 ### Advanced Filtering
-Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, and `scripts/mtg_complexity.py`.
+Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, and `scripts/mtg_balance.py`.
 
 *   **Global Filters:**
     *   `--grep "pattern"`: Only include cards where the name, typeline, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
@@ -506,6 +506,9 @@ python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizly Beers"
 
 # Find cards matching specific filters
 python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --rarity rare --grep "Battle"
+
+# Find cards mechanically similar to a specific card
+python3 scripts/mtg_oracle.py data/AllPrintings.json "Giant Growth" --similar
 ```
 *   **Options:**
     *   `--gatherer`: Use modern Gatherer-style wording and formatting.
@@ -521,7 +524,7 @@ python3 scripts/mtg_search.py data/AllPrintings.json -g "Goblin" -f "name,cost" 
 # Find all mythic rares with CMC > 7 and output as JSON
 python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" -j
 ```
-*   **Fields:** `name`, `cost`, `cmc`, `colors`, `type`, `stats`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `summary` (alias `view` - provides a compact one-line string), `encoded`.
+*   **Fields:** `name`, `cost`, `cmc`, `colors`, `type`, `stats`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `summary` (alias `view` - provides a compact one-line string), `complexity` (alias `score`), `encoded`.
 *   **Output Formats:** Plain text (default), `-t` (`--table`), `--md-table` (`--mdt`), `-j` (`--json`), `--jsonl`, `--csv`, `-S` (`--summary` - outputs one summary per line).
 *   Common operations use shorthands like `-f` (for `--fields`) and `-g` (for `--grep` in this tool) to reduce friction.
 *   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
@@ -565,7 +568,7 @@ python3 scripts/mtg_lexicon.py data/AllPrintings.json --compare generated.txt
     *   `-t N`, `--top N`: Number of signature words to show per color (Default: 10).
     *   `--min-len N`: Minimum word length to include in analysis (Default: 4).
     *   `--compare FILE`: Side-by-side comparison with a second dataset.
-    *   Supports standard **Advanced Filtering** flags.
+    *   **Filtering:** Supports `--grep`, `--set`, `--rarity`, and `--mechanic`.
 
 ### `mtg_tokens.py`
 Extracts and summarizes token definitions from card rules text. This tool identifies the properties of tokens created by cards (like P/T, color, types, and abilities) and de-duplicates them to show a consolidated list.
