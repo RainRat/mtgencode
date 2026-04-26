@@ -265,6 +265,42 @@ Example Usage:
         indented_card = "\n".join(["  " + line for line in formatted_card.split("\n")])
         print(indented_card)
 
+        # Metadata Footer
+        metadata_parts = []
+        if card.set_code:
+            set_label = "SET:"
+            set_val = card.set_code.upper()
+            if card.number:
+                set_val += f" #{card.number}"
+            if use_color:
+                set_val = utils.colorize(set_val, utils.Ansi.BOLD)
+            metadata_parts.append(f"{set_label} {set_val}")
+
+        identity = card.color_identity
+        if identity:
+            id_label = "ID:"
+            id_val = identity
+            if use_color:
+                id_val = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in identity])
+            metadata_parts.append(f"{id_label} {id_val}")
+
+        score_label = "SCORE:"
+        score_val = str(card.complexity_score)
+        if use_color:
+            score_val = utils.colorize(score_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
+        metadata_parts.append(f"{score_label} {score_val}")
+
+        footer = "  [ " + " | ".join(metadata_parts) + " ]"
+        print("\n" + footer)
+
+        # Scryfall URL
+        scry_url = utils.get_scryfall_url(card.set_code, card.number)
+        if scry_url:
+            url_display = scry_url
+            if use_color:
+                url_display = utils.colorize(url_display, utils.Ansi.BLUE + utils.Ansi.UNDERLINE)
+            print("  " + url_display)
+
         if nd:
             print()
             sim_header = "  SIMILAR CARDS (Mechanical Similarity)"
