@@ -261,6 +261,38 @@ Example Usage:
         indented_card = "\n".join(["  " + line for line in formatted_card.split("\n")])
         print(indented_card)
 
+        # Metadata Footer
+        footer_parts = []
+        if card.set_code:
+            footer_parts.append(f"SET: {card.set_code.upper()}")
+        if card.number:
+            footer_parts.append(f"#{card.number}")
+
+        ci = card.color_identity
+        if ci:
+            if use_color:
+                ci_str = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in ci])
+            else:
+                ci_str = "".join(ci)
+            footer_parts.append(f"ID: {ci_str}")
+        else:
+            footer_parts.append("ID: C")
+
+        score = str(card.complexity_score)
+        if use_color:
+            score = utils.colorize(score, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
+        footer_parts.append(f"SCORE: {score}")
+
+        footer = " | ".join(footer_parts)
+        print(f"\n  [ {footer} ]")
+
+        # Scryfall URL
+        url = utils.get_scryfall_url(card.set_code, card.number)
+        if url:
+            if use_color:
+                url = utils.colorize(url, utils.Ansi.BLUE + utils.Ansi.UNDERLINE)
+            print(f"  {url}")
+
         if nd:
             print()
             sim_header = "  SIMILAR CARDS (Mechanical Similarity)"
