@@ -15,34 +15,56 @@ import cardlib
 from cardlib import RECOGNIZED_MECHANICS
 
 def main():
-    parser = argparse.ArgumentParser(description="List all recognized mechanical keywords and optionally count their frequency in a dataset.")
+    parser = argparse.ArgumentParser(
+        description="List all recognized mechanical keywords and optionally count their frequency in a dataset.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+This tool identifies mechanical features and keyword abilities (like Flying, Kicker, or ETB Effect) in card text. It can be used to see which mechanics the toolkit tracks or to analyze the mechanical profile of a dataset.
+
+Usage Examples:
+  # List all mechanics recognized by the toolkit
+  python3 scripts/mtg_mechanics.py
+
+  # Count the frequency of mechanics in a specific set
+  python3 scripts/mtg_mechanics.py data/AllPrintings.json --set MOM
+
+  # Compare mechanics between official data and AI-generated cards
+  python3 scripts/mtg_mechanics.py data/AllPrintings.json --compare generated.txt
+
+  # Find the most common mechanics in a custom card pool
+  python3 scripts/mtg_mechanics.py my_cards.json --sort count --reverse --limit 10
+
+  # Count mechanics for only rare creatures
+  python3 scripts/mtg_mechanics.py data/AllPrintings.json --rarity rare --grep "Creature"
+"""
+    )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default=None,
-                        help='Input card data (MTGJSON, Scryfall, CSV, etc.) to count mechanics. If not provided, just lists recognized mechanics.')
+                        help='Input card data (MTGJSON, Scryfall, CSV, XML, or encoded text) to analyze. If not provided, the tool just lists all recognized mechanics. Supports standard input (-).')
     io_group.add_argument('--compare', '-c',
-                        help='Optional second dataset to compare against the primary input.')
+                        help='Optional second dataset to compare against the primary input. Displays a side-by-side frequency comparison with delta indicators.')
 
     # Group: Content Formatting
     enc_group = parser.add_argument_group('Content Formatting')
     enc_group.add_argument('--nolabel', action='store_true',
-                        help="Remove field labels (like '|cost|' or '|text|') from the input.")
+                        help="Input file does not have field labels (like '|cost|' or '|text|').")
     enc_group.add_argument('--nolinetrans', action='store_true',
                         help='Input file does not use automatic line reordering.')
 
     # Group: Data Processing
     proc_group = parser.add_argument_group('Data Processing')
     proc_group.add_argument('--sort', choices=['name', 'count'], default='name',
-                        help='Sort mechanics by name or frequency count (Default: name).')
+                        help='Sort mechanics by name or frequency (Default: name).')
     proc_group.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
-    proc_group.add_argument('-n', '--max-cards', type=int, default=0, help='Only process the first N cards.')
-    proc_group.add_argument('-t', '--top', '--limit', dest='top', type=int, default=0, help='Only show the top N mechanics in the output.')
+    proc_group.add_argument('-n', '--max-cards', type=int, default=0, help='Only process the first N cards from each input.')
+    proc_group.add_argument('-t', '--top', '--limit', dest='top', type=int, default=0, help='Only show the top N mechanics in the results.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
     filter_group.add_argument('--grep', action='append',
-                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
+                        help='Only include cards matching a search pattern (checks name, typeline, rules text, cost, and stats). Use multiple times for AND logic.')
     filter_group.add_argument('--grep-name', action='append',
                         help='Only include cards whose name matches a search pattern.')
     filter_group.add_argument('--grep-type', action='append',
