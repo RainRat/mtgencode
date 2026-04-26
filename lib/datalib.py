@@ -1,5 +1,6 @@
 
 import utils
+from collections import Counter
 from cardlib import Card
 
 def get_col_widths(rows):
@@ -338,6 +339,44 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
 
     printrows(padrows(rows, aligns=['l', 'r', 'r', 'r', 'r', 'r', 'r', 'r']), indent=4)
 
+def _print_lexical_analysis(word_counts, total_words, unique_words, ttr, avg_words, use_color, vsize=20):
+    if not word_counts:
+        return
+    print()
+    print('  ' + color_line('Vocabulary & Lexicon (Word Frequency):', use_color))
+
+    metrics = [
+        ('Total Words', str(total_words)),
+        ('Unique Words', str(unique_words)),
+        ('Lexical Diversity (TTR)', f"{ttr:.3f}"),
+        ('Avg Words per Card', f"{avg_words:.2f}")
+    ]
+
+    for label, val in metrics:
+        if use_color:
+            label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+            val = utils.colorize(val, utils.Ansi.BOLD + utils.Ansi.GREEN)
+        print(f"    {label}: {val}")
+    print()
+
+    header = _colorize_header(['Word', 'Count', 'Percent', 'Frequency'], use_color)
+    rows = [header]
+
+    top_words = word_counts.most_common(vsize)
+    for word, count in top_words:
+        percent = (count / total_words * 100) if total_words > 0 else 0
+        bar = get_bar_chart(percent, use_color, color=utils.Ansi.CYAN)
+
+        rows.append([
+            word,
+            color_count(count, use_color),
+            f"{percent:5.1f}%",
+            bar
+        ])
+
+    add_separator_row(rows)
+    printrows(padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=4)
+
 class Datamine:
     # build the global indices
     def __init__(self, cards_input, search_stats=None):
@@ -351,6 +390,9 @@ class Datamine:
         # color pie indices
         self.pie_groups = {c: 0 for c in 'WUBRGAM'}
         self.pie_mechanics = {c: {} for c in 'WUBRGAM'}
+
+        # global lexical indices
+        self.global_word_counts = Counter()
 
         # global indices
         self.by_name = {}
@@ -485,8 +527,17 @@ class Datamine:
                     inc(self.by_mechanic, m, [card])
                     self.pie_mechanics[group][m] = self.pie_mechanics[group].get(m, 0) + 1
 
+                for word in card.text_words:
+                    self.global_word_counts[word] += 1
+
         self.avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
         self.avg_complexity = sum(c.complexity_score for c in self.cards) / len(self.cards) if self.cards else 0
+
+        # Lexical metrics
+        self.total_words = sum(self.global_word_counts.values())
+        self.unique_words = len(self.global_word_counts)
+        self.ttr = self.unique_words / self.total_words if self.total_words > 0 else 0
+        self.avg_words_per_card = self.total_words / len(self.cards) if self.cards else 0
 
         # Calculate average P/T
         p_vals = [v for v in map(utils.from_unary_single, (c.pt_p for c in self.cards)) if v is not None]
@@ -641,6 +692,9 @@ class Datamine:
         print('  ' + color_line(str(len(self.by_mechanic)) + ' distinct mechanical features identified', use_color))
         _print_mechanical_profile(self.mechanical_stats, len(self.allcards), use_color, vsize=vsize)
         _print_color_pie(self.pie_groups, self.pie_mechanics, self.by_mechanic, use_color, vsize=vsize)
+
+        # Lexical analysis
+        _print_lexical_analysis(self.global_word_counts, self.total_words, self.unique_words, self.ttr, self.avg_words_per_card, use_color, vsize=vsize*2)
         print()
 
     # describe outliers in the indices
@@ -812,5 +866,10 @@ class Datamine:
                 'avg_complexity': self.avg_complexity,
                 'avg_power': self.avg_power,
                 'avg_toughness': self.avg_toughness,
+                'total_words': self.total_words,
+                'unique_words': self.unique_words,
+                'ttr': self.ttr,
+                'avg_words_per_card': self.avg_words_per_card
             }
+            result['word_counts'] = {word: count for word, count in self.global_word_counts.most_common(100)}
         return result

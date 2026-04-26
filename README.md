@@ -359,7 +359,7 @@ python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "El
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `summarize.py`
-Shows statistics, design budget analysis, and mechanical profiling for your card data. It works with any card data (JSON, CSV, XML, encoded text, etc.).
+Shows statistics, design budget analysis, mechanical profiling, and lexical diversity for your card data. It works with any card data (JSON, CSV, XML, encoded text, etc.).
 ```bash
 # View statistics for the entire official dataset
 python3 scripts/summarize.py data/AllPrintings.json
