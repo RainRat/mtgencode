@@ -259,7 +259,7 @@ Example Usage:
     # Display the cards
     for i, card in enumerate(display_cards):
         if i > 0:
-            print("\n  " + "=" * 40 + "\n")
+            print("\n  " + "-" * 40 + "\n")
 
         formatted_card = card.format(gatherer=args.gatherer, ansi_color=use_color)
         indented_card = "\n".join(["  " + line for line in formatted_card.split("\n")])
@@ -290,7 +290,7 @@ Example Usage:
             score_val = utils.colorize(score_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
         metadata_parts.append(f"{score_label} {score_val}")
 
-        footer = "  [ " + " | ".join(metadata_parts) + " ]"
+        footer = "  " + " \u2022 ".join(metadata_parts)
         print("\n" + footer)
 
         # Scryfall URL

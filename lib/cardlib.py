@@ -1380,7 +1380,7 @@ class Card:
         if self.bside:
             outstr += linebreak
             if not for_html and not for_forum and not for_md:
-                divider = "~~~~ (B-Side) " + "~" * 21
+                divider = "\u2014\u2014\u2014\u2014 (B-Side) " + "\u2014" * 21
                 if ansi_color:
                     divider = utils.colorize(divider, utils.Ansi.BOLD + utils.Ansi.CYAN)
                 outstr += divider + linebreak
