@@ -51,6 +51,8 @@ summary.txt
 mechanics.txt
 loss_plot.png
 checkpoint.pt
+!testdata/*.txt
+!testdata/*.json
 !README.md
 !LICENSE
 !requirements.txt

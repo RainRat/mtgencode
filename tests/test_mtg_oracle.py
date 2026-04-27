@@ -25,7 +25,7 @@ def test_oracle_fuzzy():
 def test_oracle_grep():
     """Test oracle filtering with grep."""
     result = subprocess.run(
-        ['python3', 'scripts/mtg_oracle.py', 'tarkir_encoded.txt', '--grep', 'Invasion'],
+        ['python3', 'scripts/mtg_oracle.py', 'testdata/tarkir_encoded.txt', '--grep', 'Invasion'],
         capture_output=True, text=True
     )
     assert result.returncode == 0
