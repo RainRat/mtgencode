@@ -126,22 +126,35 @@ def analyze_lexicon(cards, top_n=10, min_len=4):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Analyze the characteristic vocabulary (lexicon) of each Magic color. "
-                    "This identifies 'signature words' that appear significantly more often "
-                    "in one color compared to the global dataset."
+        description="Analyze the characteristic vocabulary (lexicon) of each Magic color. This identifies 'signature words' that appear significantly more often in one color compared to the global dataset, helping verify the color-pie integrity of AI designs.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Analyze lexicon for a dataset
+  python3 scripts/mtg_lexicon.py data/AllPrintings.json
+
+  # Compare lexicon between official data and AI-generated cards
+  python3 scripts/mtg_lexicon.py data/AllPrintings.json --compare generated.txt
+
+  # Show top 20 signature words for the MOM set
+  python3 scripts/mtg_lexicon.py data/AllPrintings.json --set MOM --top 20
+
+  # Analyze lexicon for rare cards with specific mechanics
+  python3 scripts/mtg_lexicon.py data/AllPrintings.json --rarity rare --mechanic "Flying"
+"""
     )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (JSON, CSV, encoded text, etc.). Defaults to stdin (-).')
+                        help='Input card data (JSON, CSV, XML, or encoded text) to analyze. Supports standard input (-).')
     io_group.add_argument('--compare', '-c',
-                        help='Optional second dataset to compare against the primary input.')
+                        help='Optional second dataset to compare against the primary input. Displays a side-by-side comparison with highlighted differences.')
 
     # Group: Content Formatting
     enc_group = parser.add_argument_group('Content Formatting')
     enc_group.add_argument('--nolabel', action='store_true',
-                        help="Remove field labels (like '|cost|' or '|text|') from the input.")
+                        help="Input file does not have field labels (like '|cost|' or '|text|').")
     enc_group.add_argument('--nolinetrans', action='store_true',
                         help='Input file does not use automatic line reordering.')
 
@@ -152,7 +165,7 @@ def main():
     proc_group.add_argument('--min-len', type=int, default=4,
                         help='Minimum word length to include in analysis (Default: 4).')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
-                        help='Only process the first N cards.')
+                        help='Only process the first N cards from each input.')
 
     # Group: Filtering Options (Standard)
     filter_group = parser.add_argument_group('Filtering Options')
