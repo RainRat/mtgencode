@@ -268,7 +268,7 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 ---
 
 ### Advanced Filtering
-Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, and `scripts/mtg_balance.py`.
+Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, `scripts/mtg_balance.py`, and `scripts/mtg_pt.py`.
 
 *   **Global Filters:**
     *   `--grep "pattern"`: Only include cards where the name, typeline, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
@@ -621,6 +621,22 @@ python3 scripts/mtg_balance.py my_cards.json
     *   `--limit N`: Only process the first N cards from each input.
     *   `--set`, `--rarity`: Filter inputs by set or rarity.
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
+
+### `mtg_pt.py`
+Analyzes creature Power/Toughness distribution and combat balance. It generates a 2D "Combat Grid" mapping Power vs. Toughness and calculates orientation metrics (Aggressive vs. Defensive) to help evaluate the combat profile of a card pool.
+```bash
+# Analyze P/T distribution for a set
+python3 scripts/mtg_pt.py data/AllPrintings.json --set MOM
+
+# Analyze creature stats for a specific color combination
+python3 scripts/mtg_pt.py data/AllPrintings.json --colors UG
+```
+*   **Options:**
+    *   `-n LIMIT`, `--limit LIMIT`: Only process the first N creatures.
+    *   `--shuffle`: Randomize the order of cards before analyzing.
+    *   `--sample N`: Pick N random cards (shorthand for --shuffle --limit N).
+    *   `--color` / `--no-color`: Enable or disable ANSI color output.
+    *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_complexity.py`
 Analyzes the heuristic design complexity of cards in a dataset. It calculates a "Complexity Score" based on word count, line count, mechanical density, and color identity, helping designers identify "wordy" or overly complex cards.
