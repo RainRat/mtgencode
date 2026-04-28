@@ -55,11 +55,26 @@ def format_delta(val, base_val, is_percent=False, use_color=False, reverse_color
     res = f"{sign}{delta:.1f}{suffix}"
 
     if use_color:
-        # For stats like CMC, usually lower is "better" but it depends.
-        # For simplicity, we'll just color positive green and negative red unless reversed.
-        is_good = delta > 0 if not reverse_color else delta < 0
-        color = utils.Ansi.BOLD + (utils.Ansi.GREEN if is_good else utils.Ansi.RED)
-        res = utils.colorize(res, color)
+        # Significance thresholding to reduce visual noise
+        significant = False
+        if is_percent:
+            if abs(delta) >= 2.0:
+                significant = True
+        else:
+            if abs(base_val) > 1e-6:
+                if abs(delta) / abs(base_val) >= 0.05:
+                    significant = True
+            elif abs(delta) >= 1.0:
+                significant = True
+
+        if significant:
+            if reverse_color is None:
+                # Neutral significant change
+                color = utils.Ansi.BOLD + utils.Ansi.CYAN
+            else:
+                is_good = delta > 0 if not reverse_color else delta < 0
+                color = utils.Ansi.BOLD + (utils.Ansi.GREEN if is_good else utils.Ansi.RED)
+            res = utils.colorize(res, color)
 
     return res
 
@@ -111,7 +126,7 @@ Usage Examples:
                         help='Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land. Shuffles by default.')
     filter_group.add_argument('--box', type=int, default=0,
                         help='Simulate opening N booster boxes (36 packs each). Shuffles by default.')
-    filter_group.add_argument('--grep', action='append',
+    filter_group.add_argument('-g', '--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
     filter_group.add_argument('--grep-name', action='append',
                         help='Only include cards whose name matches a search pattern.')
@@ -241,7 +256,7 @@ Usage Examples:
 
         rows.append(row)
 
-    def add_index_percent_row(label, index_name, key, use_label_as_key=False):
+    def add_index_percent_row(label, index_name, key, use_label_as_key=False, reverse_color=False):
         row = [label]
         target_key = label if use_label_as_key else key
 
@@ -257,7 +272,7 @@ Usage Examples:
         for i in range(1, len(mines)):
             current_pct = get_pct(mines[i])
             row.append(f"{current_pct:5.1f}%")
-            row.append(format_delta(current_pct, base_pct, is_percent=True, use_color=use_color))
+            row.append(format_delta(current_pct, base_pct, is_percent=True, use_color=use_color, reverse_color=reverse_color))
 
         rows.append(row)
 
@@ -277,7 +292,7 @@ Usage Examples:
         row_count.append(delta_str)
     rows.append(row_count)
 
-    def add_count_pct_row(label, key_path):
+    def add_count_pct_row(label, key_path, reverse_color=False):
         """Helper to add a row representing a count as a percentage of its dataset's total."""
         row = [label]
         base_total = len(mines[0].allcards)
@@ -293,7 +308,7 @@ Usage Examples:
                 val = val[k]
             pct = (val / total * 100) if total > 0 else 0
             row.append(f"{pct:.1f}%")
-            row.append(format_delta(pct, base_pct, is_percent=True, use_color=use_color))
+            row.append(format_delta(pct, base_pct, is_percent=True, use_color=use_color, reverse_color=reverse_color))
         rows.append(row)
 
     add_count_pct_row("Valid %", ["counts", "valid"])
@@ -305,7 +320,7 @@ Usage Examples:
     for i in range(1, len(mines)):
         unique = (len(mines[i].by_name) / len(mines[i].allcards) * 100) if mines[i].allcards else 0
         row_unique.append(f"{unique:.1f}%")
-        row_unique.append(format_delta(unique, base_unique, is_percent=True, use_color=use_color))
+        row_unique.append(format_delta(unique, base_unique, is_percent=True, use_color=use_color, reverse_color=None))
     rows.append(row_unique)
 
     # Average Stats
@@ -317,8 +332,8 @@ Usage Examples:
     # Color Distribution
     add_separator("Colors")
     for c in 'WUBRG':
-        add_index_percent_row(f"{c} %", "by_color_inclusive", c)
-    add_index_percent_row("Colorless %", "by_color_inclusive", "A")
+        add_index_percent_row(f"{c} %", "by_color_inclusive", c, reverse_color=None)
+    add_index_percent_row("Colorless %", "by_color_inclusive", "A", reverse_color=None)
     # Fix Multi % row
     row_multi = ["Multi %"]
     def get_multi_pct(mine_obj):
@@ -330,21 +345,21 @@ Usage Examples:
     for i in range(1, len(mines)):
         multi = get_multi_pct(mines[i])
         row_multi.append(f"{multi:5.1f}%")
-        row_multi.append(format_delta(multi, base_multi, is_percent=True, use_color=use_color))
+        row_multi.append(format_delta(multi, base_multi, is_percent=True, use_color=use_color, reverse_color=None))
     rows.append(row_multi)
 
     # Type Distribution
     add_separator("Types")
     for t in ["Creature", "Instant", "Sorcery", "Enchantment", "Artifact", "Planeswalker", "Land"]:
-        add_index_percent_row(f"{t} %", "by_type_inclusive", t.lower())
+        add_index_percent_row(f"{t} %", "by_type_inclusive", t.lower(), reverse_color=None)
 
     # Rarity Distribution
     add_separator("Rarities")
     for r in ["Common", "Uncommon", "Rare", "Mythic"]:
-        add_index_percent_row(f"{r} %", "by_rarity", r.lower())
+        add_index_percent_row(f"{r} %", "by_rarity", r.lower(), reverse_color=None)
 
     # Print Table
-    print(utils.colorize("DATASET COMPARISON", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) if use_color else "=== DATASET COMPARISON ===")
+    utils.print_header("DATASET COMPARISON", use_color=use_color)
 
     datalib.add_separator_row(rows)
 
