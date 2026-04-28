@@ -268,7 +268,7 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 ---
 
 ### Advanced Filtering
-Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, and `scripts/mtg_balance.py`.
+Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, `scripts/mtg_balance.py`, and `scripts/mtg_stats.py`.
 
 *   **Global Filters:**
     *   `--grep "pattern"`: Only include cards where the name, typeline, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
@@ -281,7 +281,7 @@ Filter which cards the tool processes using search patterns, set codes, rarities
 *   **Metadata Filters:**
     > **Note:** Repeat a flag to include multiple values using **OR** logic (e.g., `--rarity rare --rarity mythic` finds both rares and mythics).
     *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets.
-    *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports full names or shorthands: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), `L` (Basic Land).
+    *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports full names or shorthands: `O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple values (OR logic).`
     *   `--colors SYMBOLS`: Only include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
     *   `--identity SYMBOLS`: Only include cards with specific colors in their color identity (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
     *   **Numerical Filters:** These flags support exact values (`5`), inequalities (`>3`, `<=2`, `!=0`), and ranges (`1-4`).
@@ -293,7 +293,7 @@ Filter which cards the tool processes using search patterns, set codes, rarities
     *   `--mechanic NAME`: Only include cards with specific mechanical features or keyword abilities (e.g., `Flying`, `Activated`, `ETB Effect`).
     *   `--deck-filter FILE` (or `--decklist-filter`): Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
 
-> **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), and `L` (Basic Land).
+> **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), and L (Basic Land).`
 
 **Examples:**
 ```bash
@@ -656,6 +656,20 @@ python3 scripts/mtg_curve.py data/AllPrintings.json --grep-type "Creature"
     *   `--booster N`: Simulate opening N booster packs and analyze their curve.
     *   `--box N`: Simulate opening N booster boxes and analyze their curve.
     *   Supports all **Advanced Filtering** flags.
+
+### `mtg_stats.py`
+Analyzes creature combat stats (Power/Toughness) and Planeswalker loyalty in a dataset. It provides a "Combat Stat Curve" (average P/T per CMC), a color-based stat breakdown, and a frequency heatmap of P/T combinations.
+```bash
+# Analyze stats for a specific set
+python3 scripts/mtg_stats.py data/AllPrintings.json --set MOM
+
+# Compare stats of rare creatures vs common creatures
+python3 scripts/mtg_stats.py data/AllPrintings.json --rarity rare --grep-type "Creature"
+```
+*   **Options:**
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports standard **Advanced Filtering** flags and simulation.
 
 ### `mtg_pips.py`
 Analyzes the distribution of mana symbols (pips) in a dataset. It counts symbols from casting costs and rules text (optionally via `--include-text`), supports table, JSON, and CSV output formats, and integrates with standard Advanced Filtering and simulation flags.
