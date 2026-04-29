@@ -268,7 +268,7 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 ---
 
 ### Advanced Filtering
-Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, `scripts/mtg_balance.py`, and `scripts/mtg_stats.py`.
+Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, `scripts/mtg_balance.py`, `scripts/mtg_mana.py`, and `scripts/mtg_stats.py`.
 
 *   **Global Filters:**
     *   `--grep "pattern"`: Only include cards where the name, typeline, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
@@ -686,6 +686,19 @@ python3 scripts/mtg_pips.py data/AllPrintings.json --set MOM --include-text
     *   `--json`: Output results in structured JSON format.
     *   `--csv`: Output results in CSV format.
     *   Supports standard **Advanced Filtering** flags and simulation.
+
+### `mtg_mana.py`
+Analyzes the mana production and color fixing infrastructure of a dataset. It identifies cards that generate mana, categorizes them (Dorks, Rocks, Lands, Rituals), and profiles the produced colors.
+```bash
+# Analyze mana production for a specific set
+python3 scripts/mtg_mana.py data/AllPrintings.json --set MOM
+
+# Compare mana production between two sets
+python3 scripts/mtg_mana.py data/SetA.json --compare data/SetB.json
+```
+*   **Options:**
+    *   `--compare FILE`: Side-by-side comparison with a second dataset.
+    *   Supports standard **Advanced Filtering** flags.
 
 ### `distances.py` & `sum.py`
 These tools allow for bulk creativity analysis of your generated cards. `distances.py` calculates the semantic and name distance between your cards and the official dataset, and `sum.py` provides a statistical summary of the results.
