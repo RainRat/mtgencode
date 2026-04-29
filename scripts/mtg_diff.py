@@ -77,23 +77,40 @@ def compare_cards(c1, c2):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Compare two Magic: The Gathering card datasets and identify additions, removals, and modifications."
+        description="Compare two Magic: The Gathering card datasets and identify additions, removals, and modifications. "
+                    "It highlights changes in mana cost, type, stats (P/T or loyalty), rules text, and rarity.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Compare two JSON datasets
+  python3 scripts/mtg_diff.py data/OldSet.json data/NewSet.json
+
+  # Compare encoded text against official data
+  python3 scripts/mtg_diff.py data/AllPrintings.json generated_cards.txt
+
+  # Only show a count summary, not detailed card diffs
+  python3 scripts/mtg_diff.py data/AllPrintings.json generated.txt --summary-only
+
+  # Filter comparison to only include cards matching a keyword
+  python3 scripts/mtg_diff.py data/OldSet.json data/NewSet.json -g "Goblin"
+""",
     )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('file1', help='The base card dataset (JSON, CSV, XML, encoded text, etc.).')
-    io_group.add_argument('file2', help='The target card dataset to compare against the base.')
+    io_group.add_argument('file1', help='Base card dataset (JSON, CSV, XML, or encoded text) to compare from.')
+    io_group.add_argument('file2', help='Target card dataset to compare against the base.')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
     proc_group.add_argument('-q', '--quiet', action='store_true', help='Suppress the progress bar.')
-    proc_group.add_argument('--summary-only', action='store_true', help='Only show a summary of changes, not detailed card diffs.')
+    proc_group.add_argument('--summary-only', action='store_true',
+                        help='Only show a count summary of additions, removals, and modifications.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--grep', action='append',
+    filter_group.add_argument('-g', '--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
     filter_group.add_argument('--grep-name', action='append',
                         help='Only include cards whose name matches a search pattern.')
