@@ -44,15 +44,16 @@ FIELD_MAP = {
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
 
+# Pre-calculate alias mapping for efficient canonicalization
+_CANONICAL_MAP = {k: k for k in FIELD_MAP}
+for k, v in FIELD_MAP.items():
+    for alias in v.get('aliases', []):
+        _CANONICAL_MAP[alias] = k
+
 def get_field_canonical_name(field):
     """Maps a field alias to its canonical name."""
     f = field.lower().strip()
-    if f in FIELD_MAP:
-        return f
-    for k, v in FIELD_MAP.items():
-        if f in v.get('aliases', []):
-            return k
-    return f
+    return _CANONICAL_MAP.get(f, f)
 
 def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
     """Extracts a specific field value from a Card object, recursing for b-sides."""
@@ -436,10 +437,6 @@ Usage Examples:
             field_list.insert(0, sf)
 
     # Field Validation
-    recognized_fields = set(FIELD_MAP.keys())
-    for k, v in FIELD_MAP.items():
-        recognized_fields.update(v.get('aliases', []))
-
     invalid_fields = [f for f in field_list if get_field_canonical_name(f) not in FIELD_MAP]
     if invalid_fields and not args.quiet:
         print(f"Warning: Unrecognized fields: {', '.join(invalid_fields)}", file=sys.stderr)
