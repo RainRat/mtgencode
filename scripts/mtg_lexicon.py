@@ -128,7 +128,22 @@ def main():
     parser = argparse.ArgumentParser(
         description="Analyze the characteristic vocabulary (lexicon) of each Magic color. "
                     "This identifies 'signature words' that appear significantly more often "
-                    "in one color compared to the global dataset."
+                    "in one color compared to the global dataset.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Analyze lexicon for the March of the Machine set
+  python3 scripts/mtg_lexicon.py data/AllPrintings.json --set MOM
+
+  # Compare official data lexicon against AI-generated cards
+  python3 scripts/mtg_lexicon.py data/AllPrintings.json --compare generated.txt
+
+  # Find signature words for rare cards matching "Goblin"
+  python3 scripts/mtg_lexicon.py data/AllPrintings.json --rarity rare -g "Goblin"
+
+  # See the top 20 signature words for Red cards
+  python3 scripts/mtg_lexicon.py data/AllPrintings.json --top 20
+"""
     )
 
     # Group: Input / Output
@@ -136,7 +151,8 @@ def main():
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input card data (JSON, CSV, encoded text, etc.). Defaults to stdin (-).')
     io_group.add_argument('--compare', '-c',
-                        help='Optional second dataset to compare against the primary input.')
+                        help='Optional second dataset to compare against the primary input. '
+                             'Displays a side-by-side frequency comparison with color-coded markers for new signature words.')
 
     # Group: Content Formatting
     enc_group = parser.add_argument_group('Content Formatting')
@@ -156,7 +172,7 @@ def main():
 
     # Group: Filtering Options (Standard)
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--grep', action='append',
+    filter_group.add_argument('-g', '--grep', action='append',
                         help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
     filter_group.add_argument('--set', action='append',
                         help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
