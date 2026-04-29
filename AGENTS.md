@@ -46,3 +46,4 @@ Key utility scripts for dataset analysis:
 *   `scripts/mtg_lexicon.py`: Analyzes color-characteristic vocabulary.
 *   `scripts/mtg_tokens.py`: Extracts and summarizes token definitions from rules text.
 *   `scripts/mtg_curve.py`: Visualizes mana curve (CMC) distribution for datasets or decklists.
+*   `scripts/mtg_stats.py`: Detailed analysis of creature combat stats (P/T) and loyalty distribution.
