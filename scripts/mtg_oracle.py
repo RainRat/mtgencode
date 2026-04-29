@@ -19,15 +19,18 @@ import sortlib
 def main():
     parser = argparse.ArgumentParser(
         description="Search and display card details in a human-readable format. "
-                    "Optimized for quick lookup with fuzzy name matching.",
+                    "Optimized for quick lookup with fuzzy name matching and smart dataset detection.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Example Usage:
-  # Lookup a specific card by name
+  # Quick lookup using the default dataset (data/AllPrintings.json)
+  python3 scripts/mtg_oracle.py "Grizzly Bears"
+
+  # Lookup a specific card in a specific file
   python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizzly Bears"
 
   # Find all rares in a set matching a keyword
-  python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --rarity rare --grep "Battle"
+  python3 scripts/mtg_oracle.py --set MOM --rarity rare --grep "Battle"
 
   # Find cards mechanically similar to a specific card
   python3 scripts/mtg_oracle.py data/AllPrintings.json "Giant Growth" --similar
@@ -46,9 +49,13 @@ Example Usage:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (JSON, CSV, encoded text, or directory). Defaults to stdin (-).')
+                        help='Input card data (JSON, CSV, encoded text, or directory). '
+                             'Defaults to stdin (-). If data/AllPrintings.json exists, it is used '
+                             'automatically when run interactively.')
     io_group.add_argument('query', nargs='?', default=None,
-                        help='Card name to look up. Supports fuzzy matching if no exact match is found.')
+                        help='Card name to look up. Supports fuzzy matching. '
+                             'If only one positional argument is provided and it is not a file, '
+                             'it is treated as the query.')
 
     # Group: Content Formatting
     enc_group = parser.add_argument_group('Content Formatting')
@@ -144,6 +151,24 @@ Example Usage:
     color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # UX Improvement: Smart positional argument handling
+    # If the user provides a single argument that isn't a file, treat it as a query
+    # and use the default dataset if available.
+    if args.infile and args.infile != '-' and not args.query:
+        if not os.path.exists(args.infile):
+            args.query = args.infile
+            args.infile = '-' # Reset to default for now
+
+    # UX Improvement: Default Dataset
+    # If we are reading from stdin but it's an interactive terminal, use AllPrintings.json if it exists.
+    # We strictly check isatty() to ensure we don't hijack piped input.
+    if args.infile == '-' and sys.stdin.isatty():
+        default_data = 'data/AllPrintings.json'
+        if os.path.exists(default_data):
+            args.infile = default_data
+            if not args.quiet:
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
 
     # Handle --sample
     if args.sample > 0:
