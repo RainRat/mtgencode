@@ -304,11 +304,10 @@ def fields_from_json(src_json, linetrans = True):
         rarity_key = rarity_val.lower() if hasattr(rarity_val, 'lower') else rarity_val
         if rarity_key in utils.json_rarity_map:
             fields[field_rarity] = [(-1, utils.json_rarity_map[rarity_key])]
-        elif rarity_val in utils.json_rarity_unmap:
-            fields[field_rarity] = [(-1, rarity_val)]
         else:
             fields[field_rarity] = [(-1, rarity_val)]
-            parsed = False
+            if rarity_val not in utils.json_rarity_unmap:
+                parsed = False
     else:
         parsed = False
 
