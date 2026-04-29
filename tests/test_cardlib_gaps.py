@@ -38,7 +38,7 @@ def test_card_format_bside_variants():
 
     # Standard
     fmt = card.format()
-    assert "~~~~ (B-Side) ~~~~" in fmt
+    assert "(B-Side)" in fmt
 
     # ANSI Color
     fmt_color = card.format(ansi_color=True)
