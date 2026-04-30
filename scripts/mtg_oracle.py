@@ -145,6 +145,19 @@ Example Usage:
 
     args = parser.parse_args()
 
+    # Smart Dataset Detection & Positional Argument Swapping
+    # If the first argument is not a valid path and we have no second argument,
+    # assume the first argument is actually the query.
+    if args.infile != '-' and not os.path.exists(args.infile) and args.query is None:
+        args.query = args.infile
+        args.infile = '-'
+
+    # If reading from stdin in an interactive terminal, default to AllPrintings.json
+    if args.infile == '-' and sys.stdin.isatty():
+        default_data = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data/AllPrintings.json')
+        if os.path.exists(default_data):
+            args.infile = default_data
+
     # Handle --sample
     if args.sample > 0:
         args.shuffle = True
