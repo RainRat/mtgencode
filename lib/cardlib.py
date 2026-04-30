@@ -302,12 +302,9 @@ def fields_from_json(src_json, linetrans = True):
         # Use lowercase for robust rarity lookup
         rarity_val = src_json['rarity']
         rarity_key = rarity_val.lower() if hasattr(rarity_val, 'lower') else rarity_val
-        if rarity_key in utils.json_rarity_map:
-            fields[field_rarity] = [(-1, utils.json_rarity_map[rarity_key])]
-        elif rarity_val in utils.json_rarity_unmap:
-            fields[field_rarity] = [(-1, rarity_val)]
-        else:
-            fields[field_rarity] = [(-1, rarity_val)]
+
+        fields[field_rarity] = [(-1, utils.json_rarity_map.get(rarity_key, rarity_val))]
+        if rarity_key not in utils.json_rarity_map and rarity_val not in utils.json_rarity_unmap:
             parsed = False
     else:
         parsed = False
