@@ -177,6 +177,12 @@ Available Fields (aliases in parentheses):
     summary (view), complexity (score), pack, box, encoded
 
 Usage Examples:
+  # Quickly search for a card name using the default dataset
+  python3 scripts/mtg_search.py "Grizzly Bears"
+
+  # Search for a card name within a specific file
+  python3 scripts/mtg_search.py "Grizzly Bears" data/AllPrintings.json
+
   # List names and costs of all Goblins in a table
   python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "name,cost" --table
 
@@ -198,7 +204,9 @@ Usage Examples:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (MTGJSON, Scryfall, CSV, XML, MSE, JSONL, ZIP, or Decklist), encoded text, or directory. Defaults to stdin (-). If stdin is a TTY, AllPrintings.json is used if available.')
+                        help='Input card data (JSON, CSV, XML, MSE, etc.) or directory. '
+                             'If this is not a valid path, it is treated as a search pattern (--grep). '
+                             'Defaults to stdin (-). If stdin is a TTY, AllPrintings.json is used.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the search results. If not provided, results print to the console. The format is automatically detected from the file extension.')
     io_group.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
@@ -309,6 +317,27 @@ Usage Examples:
                         help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # UX Improvement: Smart positional argument handling
+    # If the user provides an infile that doesn't exist, but it might be a search query,
+    # we treat it as such and default the input to stdin/AllPrintings.json.
+    if args.infile and args.infile != '-' and not os.path.exists(args.infile):
+        # If there are 2 positional arguments and the first isn't a file but the second is, swap them.
+        if args.outfile and os.path.exists(args.outfile):
+            query = args.infile
+            args.infile = args.outfile
+            args.outfile = None
+            if not args.grep:
+                args.grep = [query]
+            else:
+                args.grep.append(query)
+        # If only one argument was provided (or both don't exist), treat it as a query.
+        else:
+            if not args.grep:
+                args.grep = [args.infile]
+            else:
+                args.grep.append(args.infile)
+            args.infile = '-'
 
     # UX Improvement: Default Dataset
     # If we are reading from stdin but it's an interactive terminal, use AllPrintings.json if it exists.
