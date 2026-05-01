@@ -69,10 +69,10 @@ def test_planeswalker_negative_loyalty_to_mse():
     assert "\tloyalty cost 2: -2\n" in mse_output
 
 @pytest.mark.parametrize("pt_string, expected_p, expected_t", [
-    ("1/2", "1", "2"),
-    (" 1 / 2 ", "1", "2"),
+    ("1/2", utils.to_unary("1"), utils.to_unary("2")),
+    (" 1 / 2 ", utils.to_unary("1"), utils.to_unary("2")),
     ("*/*", "*", "*"),
-    ("*/ *+1", "*", "*+1"),
+    ("*/ *+1", "*", "*+" + utils.to_unary("1")),
 ])
 def test_pt_parsing(pt_string, expected_p, expected_t):
     card = Card({"name": "Test Creature", "types": ["Creature"], "pt": pt_string})

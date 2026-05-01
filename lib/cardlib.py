@@ -331,6 +331,8 @@ def fields_from_json(src_json, linetrans = True):
             src_types = [t.lower() for t in src_json.get('types', [])]
             if 'creature' not in src_types and 'vehicle' not in src_types:
                 p_t = ''
+        if p_t:
+            p_t = utils.to_ascii(utils.to_unary(str(p_t)))
     elif 'power' in src_json:
         p_t = utils.to_ascii(utils.to_unary(src_json['power'])) + '/' # hardcoded
         parsed_pt = False

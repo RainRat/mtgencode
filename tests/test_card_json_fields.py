@@ -47,7 +47,7 @@ def test_fields_from_json_pt_logic():
     src["pt"] = "1/1"
     parsed, valid, fields = fields_from_json(src)
     assert parsed
-    assert fields[field_pt][0][1] == "1/1"
+    assert fields[field_pt][0][1] == utils.to_unary("1") + "/" + utils.to_unary("1")
 
     src = base_json.copy()
     src["power"] = "2"

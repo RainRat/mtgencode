@@ -57,7 +57,7 @@ def test_card_pt_fallback_and_suppression():
         "rarity": "common"
     }
     card = cardlib.Card(src_creature)
-    assert card.pt == "2/2"
+    assert card.pt == utils.to_unary("2") + "/" + utils.to_unary("2")
     assert card.loyalty == ""
 
 def test_datalib_plimit_short_string():
