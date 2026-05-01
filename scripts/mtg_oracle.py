@@ -164,9 +164,16 @@ Example Usage:
     # If we are reading from stdin but it's an interactive terminal, use AllPrintings.json if it exists.
     # We strictly check isatty() to ensure we don't hijack piped input.
     if args.infile == '-' and sys.stdin.isatty():
-        default_data = 'data/AllPrintings.json'
+        # Look for the default dataset in the project root relative to this script
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        default_data = os.path.join(script_dir, '../data/AllPrintings.json')
         if os.path.exists(default_data):
             args.infile = default_data
+            if not args.quiet:
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
+        elif os.path.exists('data/AllPrintings.json'):
+            # Fallback to local path if relative join failed but current dir works
+            args.infile = 'data/AllPrintings.json'
             if not args.quiet:
                 print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
 

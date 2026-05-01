@@ -42,7 +42,7 @@ Usage Examples:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default=None,
-                        help='Input card data (MTGJSON, Scryfall, CSV, XML, or encoded text) to analyze. If not provided, the tool just lists all recognized mechanics. Supports standard input (-).')
+                        help='Input card data (MTGJSON, Scryfall, CSV, XML, or encoded text) to analyze. If not provided, it defaults to data/AllPrintings.json if available, or just lists all recognized mechanics. Supports standard input (-).')
     io_group.add_argument('--compare', '-c',
                         help='Optional second dataset to compare against the primary input. Displays a side-by-side frequency comparison with delta indicators.')
 
@@ -135,6 +135,20 @@ Usage Examples:
     color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # UX Improvement: Default Dataset
+    # If we are reading from stdin but it's an interactive terminal, use AllPrintings.json if it exists.
+    if (args.infile == '-' or args.infile is None) and sys.stdin.isatty():
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        default_data = os.path.join(script_dir, '../data/AllPrintings.json')
+        if os.path.exists(default_data):
+            args.infile = default_data
+            if not getattr(args, 'quiet', False):
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
+        elif os.path.exists('data/AllPrintings.json'):
+            args.infile = 'data/AllPrintings.json'
+            if not getattr(args, 'quiet', False):
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
 
     # Handle --sample
     if args.sample > 0:

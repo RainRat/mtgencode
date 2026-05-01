@@ -198,7 +198,7 @@ Usage Examples:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (MTGJSON, Scryfall, CSV, XML, MSE, JSONL, ZIP, or Decklist), encoded text, or directory. Defaults to stdin (-).')
+                        help='Input card data (MTGJSON, Scryfall, CSV, XML, MSE, JSONL, ZIP, or Decklist), encoded text, or directory. Defaults to stdin (-). If stdin is a TTY, AllPrintings.json is used if available.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the search results. If not provided, results print to the console. The format is automatically detected from the file extension.')
     io_group.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
@@ -309,6 +309,20 @@ Usage Examples:
                         help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # UX Improvement: Default Dataset
+    # If we are reading from stdin but it's an interactive terminal, use AllPrintings.json if it exists.
+    if args.infile == '-' and sys.stdin.isatty():
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        default_data = os.path.join(script_dir, '../data/AllPrintings.json')
+        if os.path.exists(default_data):
+            args.infile = default_data
+            if not args.quiet:
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
+        elif os.path.exists('data/AllPrintings.json'):
+            args.infile = 'data/AllPrintings.json'
+            if not args.quiet:
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
 
     # Handle --sample
     if args.sample > 0:

@@ -640,7 +640,7 @@ Usage Examples:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (JSON, CSV, XML, encoded text, or directory) to validate. Defaults to stdin (-).')
+                        help='Input card data (JSON, CSV, XML, encoded text, or directory) to validate. Defaults to stdin (-) or data/AllPrintings.json if available.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Optional path to save the validation report. If not provided, the report prints to the console.')
 
@@ -740,6 +740,20 @@ Usage Examples:
                         help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # UX Improvement: Default Dataset
+    # If we are reading from stdin but it's an interactive terminal, use AllPrintings.json if it exists.
+    if (args.infile == '-' or args.infile is None) and sys.stdin.isatty():
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        default_data = os.path.join(script_dir, '../data/AllPrintings.json')
+        if os.path.exists(default_data):
+            args.infile = default_data
+            if not getattr(args, 'quiet', False):
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
+        elif os.path.exists('data/AllPrintings.json'):
+            args.infile = 'data/AllPrintings.json'
+            if not getattr(args, 'quiet', False):
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
 
     # Handle --sample
     if args.sample > 0:

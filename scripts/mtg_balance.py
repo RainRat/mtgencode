@@ -52,8 +52,8 @@ Usage Examples:
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infiles', nargs='+',
-                        help='Input card data files (JSON, CSV, encoded text, etc.). First file is used as the baseline.')
+    io_group.add_argument('infiles', nargs='*',
+                        help='Input card data files (JSON, CSV, encoded text, etc.). First file is used as the baseline. If no files are provided and stdin is a TTY, AllPrintings.json is used if available.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -71,6 +71,20 @@ Usage Examples:
     color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # UX Improvement: Default Dataset
+    # If no files are provided (or just stdin) and it's an interactive terminal, use AllPrintings.json if it exists.
+    if (not args.infiles or args.infiles == ['-']) and sys.stdin.isatty():
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        default_data = os.path.join(script_dir, '../data/AllPrintings.json')
+        if os.path.exists(default_data):
+            args.infiles = [default_data]
+            if not args.quiet:
+                print(f"Notice: Using default dataset: {args.infiles[0]}", file=sys.stderr)
+        elif os.path.exists('data/AllPrintings.json'):
+            args.infiles = ['data/AllPrintings.json']
+            if not args.quiet:
+                print(f"Notice: Using default dataset: {args.infiles[0]}", file=sys.stderr)
 
     use_color = False
     if args.color is True:
