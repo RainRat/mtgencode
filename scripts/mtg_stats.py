@@ -61,23 +61,70 @@ Usage Examples:
     fmt_group.add_argument('--json', action='store_true', help='Generate a JSON file (Auto-detected for .json).')
     fmt_group.add_argument('--csv', action='store_true', help='Generate a CSV file (Auto-detected for .csv).')
 
-    # Group: Filtering Options (Standard)
+    # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--grep', action='append', help='Only include cards matching a search pattern.')
-    filter_group.add_argument('--vgrep', '--exclude', action='append', dest='vgrep', help='Exclude cards matching a search pattern.')
-    filter_group.add_argument('--set', action='append', help='Only include cards from specific sets.')
-    filter_group.add_argument('--rarity', action='append', help='Only include cards of specific rarities.')
-    filter_group.add_argument('--colors', action='append', help='Only include cards of specific colors.')
-    filter_group.add_argument('--identity', action='append', help='Only include cards with specific color identities.')
-    filter_group.add_argument('--cmc', action='append', help='Only include cards with specific CMC values.')
-    filter_group.add_argument('--pow', '--power', action='append', dest='pow', help='Only include cards with specific Power values.')
-    filter_group.add_argument('--tou', '--toughness', action='append', dest='tou', help='Only include cards with specific Toughness values.')
-    filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy', help='Only include cards with specific Loyalty or Defense values.')
-    filter_group.add_argument('--mechanic', action='append', help='Only include cards with specific mechanical features.')
-    filter_group.add_argument('--limit', type=int, default=0, help='Only process the first N cards.')
-    filter_group.add_argument('--shuffle', action='store_true', help='Randomize card order.')
-    filter_group.add_argument('--sample', type=int, default=0, help='Pick N random cards.')
-    filter_group.add_argument('--seed', type=int, help='Seed for random generator.')
+    filter_group.add_argument('-g', '--grep', action='append',
+                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
+    filter_group.add_argument('--grep-name', action='append',
+                        help='Only include cards whose name matches a search pattern.')
+    filter_group.add_argument('--grep-type', action='append',
+                        help='Only include cards whose typeline matches a search pattern.')
+    filter_group.add_argument('--grep-text', action='append',
+                        help='Only include cards whose rules text matches a search pattern.')
+    filter_group.add_argument('--grep-cost', action='append',
+                        help='Only include cards whose mana cost matches a search pattern.')
+    filter_group.add_argument('--grep-pt', action='append',
+                        help='Only include cards whose power/toughness matches a search pattern.')
+    filter_group.add_argument('--grep-loyalty', action='append',
+                        help='Only include cards whose loyalty/defense matches a search pattern.')
+    filter_group.add_argument('--vgrep', '--exclude', action='append',
+                        help='Skip cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for OR logic.')
+    filter_group.add_argument('--exclude-name', action='append',
+                        help='Exclude cards whose name matches a search pattern.')
+    filter_group.add_argument('--exclude-type', action='append',
+                        help='Exclude cards whose typeline matches a search pattern.')
+    filter_group.add_argument('--exclude-text', action='append',
+                        help='Exclude cards whose rules text matches a search pattern.')
+    filter_group.add_argument('--exclude-cost', action='append',
+                        help='Exclude cards whose mana cost matches a search pattern.')
+    filter_group.add_argument('--exclude-pt', action='append',
+                        help='Exclude cards whose power/toughness matches a search pattern.')
+    filter_group.add_argument('--exclude-loyalty', action='append',
+                        help='Exclude cards whose loyalty/defense matches a search pattern.')
+    filter_group.add_argument('--set', action='append',
+                        help='Only include cards from specific sets.')
+    filter_group.add_argument('--rarity', action='append',
+                        help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple values (OR logic).")
+    filter_group.add_argument('--colors', action='append',
+                        help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple values (OR logic).")
+    filter_group.add_argument('--identity', action='append',
+                        help="Only include cards with specific colors in their color identity (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple values (OR logic).")
+    filter_group.add_argument('--id-count', action='append',
+                        help='Only include cards with specific color identity counts. Supports inequalities, ranges, and multiple values (OR logic).')
+    filter_group.add_argument('--cmc', action='append',
+                        help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
+    filter_group.add_argument('--pow', '--power', action='append', dest='pow',
+                        help='Only include cards with specific Power values. Supports inequalities, ranges, and multiple values (OR logic).')
+    filter_group.add_argument('--tou', '--toughness', action='append', dest='tou',
+                        help='Only include cards with specific Toughness values. Supports inequalities, ranges, and multiple values (OR logic).')
+    filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
+                        help='Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).')
+    filter_group.add_argument('--mechanic', action='append',
+                        help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
+    filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
+                        help='Filter cards using a standard MTG decklist file.')
+    filter_group.add_argument('--booster', type=int, default=0,
+                        help='Simulate opening N booster packs and search their contents.')
+    filter_group.add_argument('--box', type=int, default=0,
+                        help='Simulate opening N booster boxes (36 packs each) and search their contents.')
+    filter_group.add_argument('-n', '--limit', type=int, default=0,
+                        help='Only process the first N cards.')
+    filter_group.add_argument('--shuffle', action='store_true',
+                        help='Shuffle the cards before processing.')
+    filter_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random cards (shorthand for --shuffle --limit N).')
+    filter_group.add_argument('--seed', type=int,
+                        help='Seed for the random number generator.')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -114,12 +161,20 @@ Usage Examples:
     # Load and filter cards
     cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose,
                                   grep=args.grep, vgrep=args.vgrep,
+                                  grep_name=args.grep_name, vgrep_name=args.exclude_name,
+                                  grep_types=args.grep_type, vgrep_types=args.exclude_type,
+                                  grep_text=args.grep_text, vgrep_text=args.exclude_text,
+                                  grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
+                                  grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
+                                  grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
                                   sets=args.set, rarities=args.rarity,
                                   colors=args.colors, cmcs=args.cmc,
                                   pows=args.pow, tous=args.tou, loys=args.loy,
                                   mechanics=args.mechanic,
-                                  identities=args.identity,
-                                  shuffle=args.shuffle, seed=args.seed)
+                                  identities=args.identity, id_counts=args.id_count,
+                                  decklist_file=args.deck,
+                                  shuffle=args.shuffle, seed=args.seed,
+                                  booster=args.booster, box=args.box)
 
     if args.limit > 0:
         cards = cards[:args.limit]
