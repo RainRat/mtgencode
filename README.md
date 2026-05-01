@@ -496,22 +496,30 @@ python3 scripts/extract_one.py data/AllPrintings.json SET_CODE "Card Name"
 ```
 
 ### `mtg_oracle.py`
-Search and display card details in a human-readable format. This tool is optimized for quick lookup and features fuzzy name matching to find cards even if you misspell them. It works with all supported input formats (JSON, CSV, XML, encoded text, etc.).
+Search and display card details in a human-readable format. This tool is optimized for quick lookup with fuzzy name matching and **Smart Dataset Detection**.
+
+**Smart Dataset Detection:**
+If you are in a terminal, the tool automatically uses `data/AllPrintings.json` if it exists. You can also skip the file path and just provide the card name—the tool will figure out that the first argument is a query if it doesn't look like a file path.
+
 ```bash
-# Lookup a specific card by name
-python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizzly Bears"
+# Quick lookup using the default dataset
+python3 scripts/mtg_oracle.py "Grizzly Bears"
 
 # Use fuzzy matching for misspelled names
-python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizly Beers"
+python3 scripts/mtg_oracle.py "Grizly Beers"
 
 # Find cards matching specific filters
-python3 scripts/mtg_oracle.py data/AllPrintings.json --set MOM --rarity rare --grep "Battle"
+python3 scripts/mtg_oracle.py --set MOM --rarity rare --grep "Battle"
 
 # Find cards mechanically similar to a specific card
-python3 scripts/mtg_oracle.py data/AllPrintings.json "Giant Growth" --similar
+python3 scripts/mtg_oracle.py "Giant Growth" --similar
 ```
 *   **Options:**
+    *   `--similar`: Find and display cards that are mechanically similar to your search results.
     *   `--gatherer`: Use modern Gatherer-style wording and formatting.
+    *   `-n`, `--limit`: Only process the first N cards.
+    *   `--sample`: Pick N random cards (shorthand for `--shuffle --limit N`).
+    *   `--sort`: Sort results by a specific criterion (e.g., `name`, `cmc`, `complexity`).
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
     *   Supports all **Advanced Filtering** flags.
 
