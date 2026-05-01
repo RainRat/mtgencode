@@ -18,7 +18,7 @@ RECOGNIZED_MECHANICS = [
     'Flying', 'Trample', 'Lifelink', 'Haste', 'Deathtouch', 'Vigilance',
     'Ward', 'Prowess', 'Menace', 'Reach', 'Flash', 'Indestructible',
     'Defender', 'Scry', 'Draw A Card', 'Mill', 'Exile', 'Token',
-    'Discard', 'Cycling', 'Convoke'
+    'Discard', 'Cycling', 'Convoke', 'Station'
 ]
 
 sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
@@ -759,6 +759,9 @@ class Card:
 
         if 'level up' in text_raw or 'level &' in text_enc:
             m.add('Leveler')
+
+        if 'station' in text_raw:
+            m.add('Station')
 
         if '%' in text_enc or '#' in text_enc or 'counter' in text_raw:
             m.add('Counters')

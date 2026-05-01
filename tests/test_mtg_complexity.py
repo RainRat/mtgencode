@@ -64,7 +64,7 @@ class TestMtgComplexity(unittest.TestCase):
                 complexity_main()
                 output = fake_out.getvalue()
                 self.assertIn("COMPLEXITY ANALYSIS", output)
-                self.assertIn("Average Complexity Score: 99.00", output)
+                self.assertIn("Average Complexity Score: 107.00", output)
                 self.assertIn("Uthros Research Craft", output)
 
     def test_complexity_cli_json(self):
@@ -73,16 +73,16 @@ class TestMtgComplexity(unittest.TestCase):
                 complexity_main()
                 output = fake_out.getvalue()
                 data = json.loads(output)
-                self.assertEqual(data['average_complexity'], 99.0)
+                self.assertEqual(data['average_complexity'], 107.0)
                 self.assertEqual(len(data['top_cards']), 1)
-                self.assertEqual(data['top_cards'][0]['complexity'], 99)
+                self.assertEqual(data['top_cards'][0]['complexity'], 107)
 
     def test_search_complexity_field(self):
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
             with patch('sys.argv', ['mtg_search.py', 'testdata/uthros.json', '--fields', 'name,complexity', '--text', '--no-color']):
                 search_main()
                 output = fake_out.getvalue()
-                self.assertIn("Uthros Research Craft | 99", output)
+                self.assertIn("Uthros Research Craft | 107", output)
 
 if __name__ == '__main__':
     unittest.main()
