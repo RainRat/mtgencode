@@ -228,7 +228,7 @@ Example Usage:
             display_cards = exact_matches
         else:
             # Fallback to partial matches
-            partial_matches = [c for c in cards if query_lower in c.name.lower()]
+            partial_matches = [c for c in cards if query_sanitized in c.name.lower()]
             if partial_matches:
                 display_cards = partial_matches
             else:
