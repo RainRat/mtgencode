@@ -113,7 +113,7 @@ def analyze_dataset(cards):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Identify and profile mana-producing cards in a dataset.",
+        description="Identify and analyze mana-producing cards in a dataset.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 This tool identifies mana producers using rules text patterns (e.g., 'Add {G}', 'any color') and intrinsic basic land types. It categorizes producers into Dorks (creatures), Rocks (artifacts), Lands, and Rituals (spells).
@@ -126,7 +126,7 @@ Usage Examples:
   python3 scripts/mtg_mana.py data/AllPrintings.json --compare generated.txt
 
   # Find only green mana-producing creatures (Mana Dorks)
-  python3 scripts/mtg_mana.py data/AllPrintings.json --colors G --grep-type "Creature"
+  python3 scripts/mtg_mana.py data/AllPrintings.json --colors G --grep "Creature"
 """
     )
 
@@ -143,20 +143,20 @@ Usage Examples:
     fmt_group_title = parser.add_argument_group('Output Format')
     fmt_group = fmt_group_title.add_mutually_exclusive_group()
     fmt_group.add_argument('--table', action='store_true', help='Generate a formatted table (Default for terminal).')
-    fmt_group.add_argument('--json', action='store_true', help='Generate a JSON file (Auto-detected for .json).')
+    fmt_group.add_argument('-j', '--json', action='store_true', help='Generate a JSON file (Auto-detected for .json).')
     fmt_group.add_argument('--csv', action='store_true', help='Generate a CSV file (Auto-detected for .csv).')
 
     # Group: Filtering Options (Standard)
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--grep', action='append', help='Only include cards matching a search pattern.')
+    filter_group.add_argument('-g', '--grep', action='append', help='Only include cards matching a search pattern.')
     filter_group.add_argument('--vgrep', '--exclude', action='append', dest='vgrep', help='Exclude cards matching a search pattern.')
     filter_group.add_argument('--set', action='append', help='Only include cards from specific sets.')
-    filter_group.add_argument('--rarity', action='append', help='Only include cards of specific rarities.')
-    filter_group.add_argument('--colors', action='append', help='Only include cards of specific colors.')
+    filter_group.add_argument('--rarity', action='append', help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthand markers (O, N, A, Y, I, L). Supports multiple values (OR logic).")
+    filter_group.add_argument('--colors', action='append', help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple values (OR logic).")
     filter_group.add_argument('--identity', action='append', help='Only include cards with specific color identities.')
-    filter_group.add_argument('--cmc', action='append', help='Only include cards with specific CMC values.')
+    filter_group.add_argument('--cmc', action='append', help="Only include cards with specific CMC (Mana Value). Supports inequalities (e.g., '>3') and ranges (e.g., '1-4').")
     filter_group.add_argument('--mechanic', action='append', help='Only include cards with specific mechanical features.')
-    filter_group.add_argument('--limit', type=int, default=0, help='Only process the first N cards.')
+    filter_group.add_argument('-n', '--limit', type=int, default=0, help='Only process the first N cards.')
     filter_group.add_argument('--shuffle', action='store_true', help='Randomize card order.')
     filter_group.add_argument('--sample', type=int, default=0, help='Pick N random cards.')
     filter_group.add_argument('--seed', type=int, help='Seed for random generator.')
