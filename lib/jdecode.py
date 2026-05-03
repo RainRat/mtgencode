@@ -812,6 +812,17 @@ def _process_text_cards(txt_cards, decklist_names, verbose, report_fobj=None):
 
     return cards, valid, invalid, unparsed
 
+def _compile_patterns(patterns, sanitize=False):
+    """
+    Helper to compile a list of regex patterns.
+    If sanitize is True, hyphens are replaced with utils.dash_marker.
+    """
+    if not patterns:
+        return []
+    if sanitize:
+        return [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in patterns]
+    return [re.compile(p, re.IGNORECASE) for p in patterns]
+
 def mtg_open_file(fname, verbose = False,
                   linetrans = True, fmt_ordered = cardlib.fmt_ordered_default,
                   fmt_labeled = cardlib.fmt_labeled_default,
@@ -1150,20 +1161,20 @@ def mtg_open_file(fname, verbose = False,
 
     if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or identities or id_counts:
         # Sanitize queries to match internal representations (hyphens are dash_marker)
-        greps = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (grep if grep else [])]
-        vgreps = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (vgrep if vgrep else [])]
-        greps_name = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (grep_name if grep_name else [])]
-        vgreps_name = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (vgrep_name if vgrep_name else [])]
-        greps_types = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (grep_types if grep_types else [])]
-        vgreps_types = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (vgrep_types if vgrep_types else [])]
-        greps_text = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (grep_text if grep_text else [])]
-        vgreps_text = [re.compile(p.replace('-', utils.dash_marker), re.IGNORECASE) for p in (vgrep_text if vgrep_text else [])]
-        greps_cost = [re.compile(p, re.IGNORECASE) for p in (grep_cost if grep_cost else [])]
-        vgreps_cost = [re.compile(p, re.IGNORECASE) for p in (vgrep_cost if vgrep_cost else [])]
-        greps_pt = [re.compile(p, re.IGNORECASE) for p in (grep_pt if grep_pt else [])]
-        vgreps_pt = [re.compile(p, re.IGNORECASE) for p in (vgrep_pt if vgrep_pt else [])]
-        greps_loyalty = [re.compile(p, re.IGNORECASE) for p in (grep_loyalty if grep_loyalty else [])]
-        vgreps_loyalty = [re.compile(p, re.IGNORECASE) for p in (vgrep_loyalty if vgrep_loyalty else [])]
+        greps = _compile_patterns(grep, sanitize=True)
+        vgreps = _compile_patterns(vgrep, sanitize=True)
+        greps_name = _compile_patterns(grep_name, sanitize=True)
+        vgreps_name = _compile_patterns(vgrep_name, sanitize=True)
+        greps_types = _compile_patterns(grep_types, sanitize=True)
+        vgreps_types = _compile_patterns(vgrep_types, sanitize=True)
+        greps_text = _compile_patterns(grep_text, sanitize=True)
+        vgreps_text = _compile_patterns(vgrep_text, sanitize=True)
+        greps_cost = _compile_patterns(grep_cost)
+        vgreps_cost = _compile_patterns(vgrep_cost)
+        greps_pt = _compile_patterns(grep_pt)
+        vgreps_pt = _compile_patterns(vgrep_pt)
+        greps_loyalty = _compile_patterns(grep_loyalty)
+        vgreps_loyalty = _compile_patterns(vgrep_loyalty)
 
         target_sets = [s.upper() for s in sets] if sets else None
         target_rarities = []
