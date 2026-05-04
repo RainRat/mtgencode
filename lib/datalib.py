@@ -77,10 +77,10 @@ def padrows(rows, aligns=None):
             padded_output_rows.append('  '.join(padded_cells).rstrip())
 
     return padded_output_rows
-def printrows(l, indent=0):
+def printrows(l, indent=0, file=None):
     pad = ' ' * indent
     for row in l:
-        print(pad + row)
+        print(pad + row, file=file)
 
 # index management helpers
 

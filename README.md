@@ -268,7 +268,7 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 ---
 
 ### Advanced Filtering
-    Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, `scripts/mtg_balance.py`, `scripts/mtg_mana.py`, `scripts/mtg_stats.py`, and `scripts/mtg_actions.py`.
+    Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, `scripts/mtg_balance.py`, `scripts/mtg_mana.py`, `scripts/mtg_stats.py`, `scripts/mtg_actions.py`, and `scripts/mtg_colorpie.py`.
 
 *   **Global Filters:**
     *   `--grep "pattern"`: Only include cards where the name, typeline, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
@@ -702,6 +702,20 @@ python3 scripts/mtg_actions.py data/AllPrintings.json --set MOM
 
 # Compare action density of different colors
 python3 scripts/mtg_actions.py data/AllPrintings.json --colors R
+```
+*   **Options:**
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports standard **Advanced Filtering** flags and simulation.
+
+### `mtg_colorpie.py`
+Analyzes the distribution of mechanical keywords (Flying, Trample, etc.) across the Magic color pie. It generates a matrix cross-referencing mechanics with color identity (W, U, B, R, G, Colorless, and Multicolored).
+```bash
+# Analyze mechanical color pie for a specific set
+python3 scripts/mtg_colorpie.py data/AllPrintings.json --set MOM
+
+# Analyze density for a specific rarity
+python3 scripts/mtg_colorpie.py data/AllPrintings.json --rarity rare
 ```
 *   **Options:**
     *   `--json`: Output results in structured JSON format.
