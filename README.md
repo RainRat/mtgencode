@@ -563,6 +563,21 @@ python3 scripts/mtg_mechanics.py data/AllPrintings.json --set MOM
     *   `--limit N`: Only show the top N mechanics.
     *   Supports standard **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
 
+### `mtg_colorpie.py`
+Generates a Mechanical Color Pie heatmap (matrix) cross-referencing mechanical keywords with Color Identity (W, U, B, R, G, Colorless, Multicolored). This is essential for verifying color-pie integrity and identifying mechanical bleeding in a set design.
+```bash
+# Analyze the color pie for a specific set
+python3 scripts/mtg_colorpie.py data/AllPrintings.json --set MOM
+
+# Compare color pie between official data and AI output
+python3 scripts/mtg_colorpie.py data/AllPrintings.json --compare generated.txt
+```
+*   **Options:**
+    *   `--compare FILE`: Side-by-side comparison with a second dataset.
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
+
 ### `mtg_lexicon.py`
 Analyzes the characteristic vocabulary (lexicon) of each Magic color. This identifies "signature words" that appear significantly more often in one color compared to others, helping verify the color-pie integrity of AI designs.
 ```bash
