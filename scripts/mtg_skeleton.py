@@ -2,6 +2,8 @@
 import sys
 import os
 import argparse
+import json
+import csv
 from collections import defaultdict
 
 # Add lib directory to path
@@ -33,7 +35,18 @@ Usage Examples:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (MTGJSON, Scryfall, CSV, XML, MSE, or encoded text). Defaults to stdin (-).')
+                        help='Input card data (MTGJSON, Scryfall, CSV, XML, MSE, or encoded text) or directory. '
+                             'If this is not a valid path, it is treated as a search pattern (--grep). '
+                             'Defaults to stdin (-). If stdin is a TTY, AllPrintings.json is used if available.')
+    io_group.add_argument('outfile', nargs='?', default=None,
+                        help='Path to save the results. If not provided, results print to the console.')
+
+    # Group: Output Format
+    fmt_group_title = parser.add_argument_group('Output Format')
+    fmt_group = fmt_group_title.add_mutually_exclusive_group()
+    fmt_group.add_argument('--table', action='store_true', help='Generate a formatted table (Default for terminal).')
+    fmt_group.add_argument('-j', '--json', action='store_true', help='Generate a JSON file (Auto-detected for .json).')
+    fmt_group.add_argument('--csv', action='store_true', help='Generate a CSV file (Auto-detected for .csv).')
 
     # Group: Data Processing
     proc_group = parser.add_argument_group('Data Processing')
@@ -48,8 +61,10 @@ Usage Examples:
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--grep', action='append', help='Only include cards matching a search pattern.')
-    filter_group.add_argument('--vgrep', '--exclude', action='append', dest='vgrep', help='Exclude cards matching a search pattern.')
+    filter_group.add_argument('-g', '--grep', action='append',
+                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
+    filter_group.add_argument('--vgrep', '--exclude', action='append', dest='vgrep',
+                        help='Skip cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for OR logic.')
     filter_group.add_argument('--set', action='append', help='Only include cards from specific sets.')
     filter_group.add_argument('--rarity', action='append', help='Only include cards of specific rarities.')
     filter_group.add_argument('--colors', action='append', help='Only include cards of specific colors.')
@@ -75,15 +90,59 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    # UX Improvement: Smart positional argument handling
+    # If the user provides an infile that doesn't exist, but it might be a search query,
+    # we treat it as such and default the input to stdin/AllPrintings.json.
+    if args.infile and args.infile != '-' and not os.path.exists(args.infile):
+        # If there are 2 positional arguments and the first isn't a file but the second is, swap them.
+        if args.outfile and os.path.exists(args.outfile):
+            query = args.infile
+            args.infile = args.outfile
+            args.outfile = None
+            if not args.grep:
+                args.grep = [query]
+            else:
+                args.grep.append(query)
+        # If only one argument was provided (or both don't exist), treat it as a query.
+        else:
+            if not args.grep:
+                args.grep = [args.infile]
+            else:
+                args.grep.append(args.infile)
+            args.infile = '-'
+
+    # UX Improvement: Default Dataset
+    # If we are reading from stdin but it's an interactive terminal, use AllPrintings.json if it exists.
+    if args.infile == '-' and sys.stdin.isatty():
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        default_data = os.path.join(script_dir, '../data/AllPrintings.json')
+        if os.path.exists(default_data):
+            args.infile = default_data
+            if not args.quiet:
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
+        elif os.path.exists('data/AllPrintings.json'):
+            args.infile = 'data/AllPrintings.json'
+            if not args.quiet:
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
+
     if args.sample > 0:
         args.shuffle = True
         args.limit = args.sample
+
+    # Format detection
+    if not (args.json or args.csv or args.table):
+        if args.outfile:
+            if args.outfile.endswith('.json'): args.json = True
+            elif args.outfile.endswith('.csv'): args.csv = True
+            else: args.table = True
+        else:
+            args.table = True
 
     # Determine if we should use color
     use_color = False
     if args.color is True:
         use_color = True
-    elif args.color is None and sys.stdout.isatty():
+    elif args.color is None and not (args.json or args.csv) and sys.stdout.isatty():
         use_color = True
 
     # Load and filter cards
@@ -134,58 +193,99 @@ Usage Examples:
         if not found_any:
             matrix["Other"][cmc] += 1
 
-    # Prepare table rows
-    header = ["Type / CMC"] + [str(c) if c < 7 else "7+" for c in cmc_buckets] + ["Total"]
-    if use_color:
-        header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
-
-    rows = [header]
-
     all_rows = tracked_types + (["Other"] if any(matrix["Other"].values()) else [])
-
     grand_total = 0
     column_totals = defaultdict(int)
 
+    # Prepare results object for JSON/CSV
+    results = {
+        'total_cards': len(cards),
+        'skeleton': []
+    }
+
     for t in all_rows:
         row_total = 0
-        row_label = t
-        if use_color:
-            color = utils.Ansi.CYAN
-            if t == "Creature": color = utils.Ansi.GREEN
-            elif t == "Land": color = utils.Ansi.BOLD
-            row_label = utils.colorize(t, color)
-
-        row = [row_label]
+        row_data = {'type': t, 'buckets': {}}
         for cmc in cmc_buckets:
             count = matrix[t][cmc]
-            row.append(datalib.color_count(count, use_color) if count > 0 else "-")
             row_total += count
             column_totals[cmc] += count
+            row_data['buckets'][str(cmc) if cmc < 7 else "7+"] = count
 
-        row.append(utils.colorize(str(row_total), utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else str(row_total))
+        row_data['total'] = row_total
         grand_total += row_total
-        rows.append(row)
+        results['skeleton'].append(row_data)
 
-    # Add separators
-    datalib.add_separator_row(rows, index=1)
-    datalib.add_separator_row(rows, index=len(rows))
+    results['column_totals'] = {str(cmc) if cmc < 7 else "7+": column_totals[cmc] for cmc in cmc_buckets}
+    results['grand_total'] = grand_total
 
-    # Add totals row
-    totals_label = "TOTAL"
-    if use_color:
-        totals_label = utils.colorize(totals_label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+    # Output
+    output_f = sys.stdout
+    if args.outfile:
+        if args.verbose:
+            print(f"Writing results to: {args.outfile}", file=sys.stderr)
+        output_f = open(args.outfile, 'w', encoding='utf-8')
 
-    totals_row = [totals_label]
-    for cmc in cmc_buckets:
-        count = column_totals[cmc]
-        totals_row.append(utils.colorize(str(count), utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else str(count))
+    try:
+        if args.json:
+            output_f.write(json.dumps(results, indent=2) + '\n')
+        elif args.csv:
+            writer = csv.writer(output_f)
+            header = ["Type"] + [str(c) if c < 7 else "7+" for c in cmc_buckets] + ["Total"]
+            writer.writerow(header)
+            for row in results['skeleton']:
+                line = [row['type']] + [row['buckets'][str(c) if c < 7 else "7+"] for c in cmc_buckets] + [row['total']]
+                writer.writerow(line)
+            totals_line = ["TOTAL"] + [column_totals[cmc] for cmc in cmc_buckets] + [grand_total]
+            writer.writerow(totals_line)
+        elif not args.quiet:
+            # Table Output
+            header = ["Type / CMC"] + [str(c) if c < 7 else "7+" for c in cmc_buckets] + ["Total"]
+            if use_color:
+                header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
 
-    totals_row.append(utils.colorize(str(grand_total), utils.Ansi.BOLD + utils.Ansi.WHITE + utils.Ansi.UNDERLINE) if use_color else str(grand_total))
-    rows.append(totals_row)
+            rows = [header]
+            for row_data in results['skeleton']:
+                t = row_data['type']
+                row_label = t
+                if use_color:
+                    color = utils.Ansi.CYAN
+                    if t == "Creature": color = utils.Ansi.GREEN
+                    elif t == "Land": color = utils.Ansi.BOLD
+                    row_label = utils.colorize(t, color)
 
-    # Print
-    print(utils.colorize("DESIGN SKELETON", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) if use_color else "=== DESIGN SKELETON ===")
-    datalib.printrows(datalib.padrows(rows, aligns=['l'] + ['r'] * (len(header) - 1)), indent=2)
+                row = [row_label]
+                for cmc in cmc_buckets:
+                    count = row_data['buckets'][str(cmc) if cmc < 7 else "7+"]
+                    row.append(datalib.color_count(count, use_color) if count > 0 else "-")
+
+                row.append(utils.colorize(str(row_data['total']), utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else str(row_data['total']))
+                rows.append(row)
+
+            # Add separators
+            datalib.add_separator_row(rows, index=1)
+            datalib.add_separator_row(rows, index=len(rows))
+
+            # Add totals row
+            totals_label = "TOTAL"
+            if use_color:
+                totals_label = utils.colorize(totals_label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+
+            totals_row = [totals_label]
+            for cmc in cmc_buckets:
+                count = column_totals[cmc]
+                totals_row.append(utils.colorize(str(count), utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else str(count))
+
+            totals_row.append(utils.colorize(str(grand_total), utils.Ansi.BOLD + utils.Ansi.WHITE + utils.Ansi.UNDERLINE) if use_color else str(grand_total))
+            rows.append(totals_row)
+
+            # Print
+            print(utils.colorize("DESIGN SKELETON", utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE) if use_color else "=== DESIGN SKELETON ===", file=output_f)
+            datalib.printrows(datalib.padrows(rows, aligns=['l'] + ['r'] * (len(header) - 1)), indent=2, file=output_f)
+
+    finally:
+        if args.outfile:
+            output_f.close()
 
     if not args.quiet:
         utils.print_operation_summary("Skeleton Analysis", grand_total, 0, quiet=args.quiet)
