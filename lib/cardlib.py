@@ -904,13 +904,13 @@ class Card:
                 self.__dict__[field_text] = mtext
                 fulltext = mtext.encode()
                 if fulltext:
-                    self.__dict__[field_text + '_lines'] = list(map(Manatext,
-                                                                    fulltext.split(utils.newline)))
+                    lines = fulltext.split(utils.newline)
+                    self.__dict__[field_text + '_lines'] = list(map(Manatext, lines))
                     self.__dict__[field_text + '_words'] = re.sub(utils.unletters_regex,
                                                                   ' ',
                                                                   fulltext.lower()).split()
                     self.__dict__[field_text + '_lines_words'] = [re.sub(
-                        utils.unletters_regex, ' ', line.lower()).split() for line in fulltext.split(utils.newline)]
+                        utils.unletters_regex, ' ', line.lower()).split() for line in lines]
             else:
                 self.valid = False
                 self.__dict__[field_other] += [(idx, '<text> ' + str(value))]
