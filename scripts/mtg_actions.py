@@ -76,9 +76,19 @@ def get_card_actions(card):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Analyze functional card effects (Removal, Protection, Buffs, etc.) in a dataset.",
+        description="Analyzes and categorizes functional card effects (Removal, Protection, Buffs, Card Advantage, and Disruption) in a dataset.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+This tool identifies how cards interact with the game state by scanning rules text for common mechanical patterns.
+It provides a high-level profile of a set's interactivity and strategic depth.
+
+Action Categories:
+  - Removal: Effects that destroy, exile, or bounce permanents.
+  - Protection: Keywords and abilities like Hexproof, Indestructible, or Ward.
+  - Buffs: Effects that increase Power/Toughness or add +1/+1 counters.
+  - Card Advantage: Drawing cards, searching libraries, or recursion.
+  - Disruption: Discard, counterspells ('uncast'), and tapping effects.
+
 Usage Examples:
   # Analyze actions for a specific set
   python3 scripts/mtg_actions.py data/AllPrintings.json --set MOM
@@ -86,40 +96,54 @@ Usage Examples:
   # Compare interaction density of Red vs Blue
   python3 scripts/mtg_actions.py data/AllPrintings.json --colors R
   python3 scripts/mtg_actions.py data/AllPrintings.json --colors U
+
+  # Find removal spells in Green with CMC 3 or less
+  python3 scripts/mtg_actions.py data/AllPrintings.json --colors G --cmc "<=3" --grep "Removal"
 """
     )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data. Defaults to stdin (-).')
+                        help='Input card data (JSON, CSV, XML, MSE, or encoded text) or directory. '
+                             'If this is not a valid path, it is treated as a search pattern (--grep). '
+                             'Defaults to stdin (-). If stdin is a TTY, AllPrintings.json is used if available.')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save results.')
+                        help='Path to save the results. If not provided, results print to the console.')
 
     # Group: Output Format
-    fmt_group = io_group.add_mutually_exclusive_group()
-    fmt_group.add_argument('--table', action='store_true', help='Generate table (Default).')
-    fmt_group.add_argument('--json', action='store_true', help='Generate JSON.')
-    fmt_group.add_argument('--csv', action='store_true', help='Generate CSV.')
+    fmt_group_title = parser.add_argument_group('Output Format')
+    fmt_group = fmt_group_title.add_mutually_exclusive_group()
+    fmt_group.add_argument('--table', action='store_true', help='Generate a formatted table (Default for terminal).')
+    fmt_group.add_argument('--json', action='store_true', help='Generate a structured JSON file (Auto-detected for .json).')
+    fmt_group.add_argument('--csv', action='store_true', help='Generate a CSV file (Auto-detected for .csv).')
 
-    # Group: Filtering Options (Standard)
+    # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('-g', '--grep', action='append', help='Pattern match cards.')
-    filter_group.add_argument('--set', action='append', help='Specific sets.')
-    filter_group.add_argument('--rarity', action='append', help='Specific rarities.')
-    filter_group.add_argument('--colors', action='append', help='Specific colors.')
-    filter_group.add_argument('--cmc', action='append', help='Specific CMC.')
-    filter_group.add_argument('--limit', type=int, default=0, help='Limit processing.')
-    filter_group.add_argument('--sample', type=int, default=0, help='Random sample.')
+    filter_group.add_argument('-g', '--grep', action='append',
+                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
+    filter_group.add_argument('--set', action='append',
+                        help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
+    filter_group.add_argument('--rarity', action='append',
+                        help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple values (OR logic).")
+    filter_group.add_argument('--colors', action='append',
+                        help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple values (OR logic).")
+    filter_group.add_argument('--cmc', action='append',
+                        help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
+    filter_group.add_argument('--limit', type=int, default=0,
+                        help='Only process the first N cards.')
+    filter_group.add_argument('--sample', type=int, default=0,
+                        help='Pick N random cards (shorthand for --shuffle --limit N).')
 
-    # Group: Logging
+    # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
-    debug_group.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
-    debug_group.add_argument('-q', '--quiet', action='store_true', help='Quiet output.')
+    debug_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
+    debug_group.add_argument('-q', '--quiet', action='store_true', help='Suppress status messages.')
 
+    # Color options
     color_group = debug_group.add_mutually_exclusive_group()
-    color_group.add_argument('--color', action='store_true', default=None, help='Force color.')
-    color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable color.')
+    color_group.add_argument('--color', action='store_true', default=None, help='Force enable ANSI color output.')
+    color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     args = parser.parse_args()
 
