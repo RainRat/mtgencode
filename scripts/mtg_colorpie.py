@@ -226,7 +226,7 @@ Usage Examples:
         use_color = True
 
     # Analysis
-    group_mechanics, group_totals, total_cards = analyze_dataset(args.infile, args.limit if hasattr(args, 'limit_val') else args)
+    group_mechanics, group_totals, total_cards = analyze_dataset(args.infile, args)
     if not group_mechanics:
         if not args.quiet:
             print("No cards found in primary dataset matching criteria.", file=sys.stderr)
