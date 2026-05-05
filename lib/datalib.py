@@ -78,9 +78,6 @@ def padrows(rows, aligns=None):
 
     return padded_output_rows
 def printrows(l, indent=0, file=None):
-    import sys
-    if file is None:
-        file = sys.stdout
     pad = ' ' * indent
     for row in l:
         print(pad + row, file=file)
