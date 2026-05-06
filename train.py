@@ -308,7 +308,28 @@ def sample(args):
     print(generated)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train a neural network to design Magic: The Gathering cards.")
+    parser = argparse.ArgumentParser(
+        description="Train a neural network to design Magic: The Gathering cards and generate new ones.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Train a new model using your encoded card data
+  python3 train.py --mode train --infile data/output.txt --epochs 20
+
+  # Resume training from a saved checkpoint
+  python3 train.py --mode train --resume --checkpoint my_model.pt
+
+  # Generate 2000 characters of new card text (Sample mode)
+  python3 train.py --mode sample --checkpoint checkpoint.pt --length 2000 > generated.txt
+
+  # Generate a specific card (Forces a Green Rare Creature named "Grizzly Bears")
+  # Note: Requires training data to be in legacy format (-e old).
+  python3 train.py --mode sample --name "grizzly bears" --types "creature" --rarity "A" --manacost "{GG}"
+
+  # Control creativity: lower temperature (0.5) for more realistic cards
+  python3 train.py --mode sample --temp 0.5
+"""
+    )
 
     # Group: General Options
     gen_group = parser.add_argument_group('General Options')
@@ -317,62 +338,66 @@ if __name__ == "__main__":
     gen_group.add_argument("--infile", type=str, default="data/output.txt",
                         help="Path to the encoded card file for training. Default: data/output.txt")
     gen_group.add_argument("--checkpoint", type=str, default="checkpoint.pt",
-                        help="File path to save or load the model. Default: checkpoint.pt")
+                        help="File path to save the model (during training) or load it (during sampling). Default: checkpoint.pt")
 
     # Group: Training Parameters
     train_group = parser.add_argument_group('Training Parameters')
     train_group.add_argument("--epochs", type=int, default=10,
-                        help="How many times the AI processes the entire dataset. Default: 10")
+                        help="The number of times the AI processes the entire dataset. More epochs usually mean better results but take longer. Default: 10")
     train_group.add_argument("--max_hours", type=float, default=0,
-                        help="Maximum number of hours to train for. Default: 0 (no limit)")
+                        help="Set a time limit for training in hours. The model will save and stop once the limit is reached. Default: 0 (no limit)")
     train_group.add_argument("--batch_size", type=int, default=64,
-                        help="Number of card fragments processed at once. Default: 64")
+                        help="The number of card fragments processed at once. Default: 64")
     train_group.add_argument("--seq_len", type=int, default=100,
-                        help="Number of characters the AI remembers when predicting the next one. Default: 100")
+                        help="The number of characters the AI looks at to predict the next one. Default: 100")
     train_group.add_argument("--hidden_size", type=int, default=256,
-                        help="The size of the AI's internal memory. Default: 256")
+                        help="The size of the AI's internal memory (number of units in the LSTM layers). Default: 256")
     train_group.add_argument("--n_layers", type=int, default=2,
                         help="The number of processing layers in the AI model. Default: 2")
     train_group.add_argument("--lr", type=float, default=0.001,
-                        help="How quickly the AI updates its knowledge. Default: 0.001")
+                        help="The learning rate. Controls how quickly the AI updates its knowledge. Default: 0.001")
     train_group.add_argument("--dropout", type=float, default=0.2,
-                        help="The percentage of information ignored during training to prevent memorization. Default: 0.2")
+                        help="The percentage of information randomly ignored during training to prevent the AI from simply memorizing the cards. Default: 0.2")
     train_group.add_argument("--resume", action="store_true",
-                        help="Continue training from the existing checkpoint.")
+                        help="Continue training from the existing checkpoint file.")
     train_group.add_argument("--randomize_fields", action="store_true",
-                        help="Randomly reorder card parts (like cost and types) during training. This helps the AI learn better.")
+                        help="Randomly reorder card parts (like cost and types) for each card during training. This helps the AI learn the relationship between fields regardless of their position.")
     train_group.add_argument("--randomize_mana", action="store_true",
-                        help="Shuffle mana symbols within costs during training.")
+                        help="Shuffle the order of mana symbols within costs during training (e.g., {W}{U} vs {U}{W}).")
     train_group.add_argument("--sample_epochs", type=int, default=0,
-                        help="Sample from the network after every N epochs. Default: 0 (disabled)")
+                        help="Show sample text from the AI after every N epochs to see its progress. Default: 0 (disabled)")
     train_group.add_argument("--plot_loss", action="store_true",
-                        help="Save a plot of the loss curve after training.")
+                        help="Save a 'loss_plot.png' image showing how the AI's error rate decreased over time.")
     train_group.add_argument("--show_time", action="store_true",
-                        help="Show wall clock time and elapsed time during training.")
+                        help="Show the current time and how long each epoch takes.")
 
     # Group: Generation Options
     sample_group = parser.add_argument_group('Generation Options')
     sample_group.add_argument("--length", type=int, default=1000,
-                        help="Number of characters to generate. Default: 1000")
+                        help="The total number of characters to generate. Default: 1000")
     sample_group.add_argument("--temp", type=float, default=0.8,
-                        help="Controls AI creativity. Higher values result in more unusual cards; lower values make it more predictable. Default: 0.8")
+                        help="Controls creativity. Higher values (e.g., 1.2) result in more unusual or 'chaotic' cards; lower values (e.g., 0.5) make the AI more predictable and 'safe'. Default: 0.8")
     sample_group.add_argument("--start_text", type=str, default="|",
-                        help="The text to start generation with. Default: '|'")
+                        help="The character or word the AI uses to begin its generation. Default: '|'")
 
     # Group: Forcing Card Attributes
-    prime_group = parser.add_argument_group('Forcing Card Attributes',
-                                          'These options force specific fields to contain your chosen text. '
-                                          'Note: These depend on the legacy encoding format (-e old).')
+    prime_group = parser.add_argument_group(
+        'Forcing Card Attributes',
+        'These options force specific fields to contain your chosen text. '
+        'IMPORTANT: This feature requires your training data to use the legacy encoding format (-e old). '
+        'The fields are inserted in this specific order: '
+        '| Name | Supertypes | Types | Loyalty/Defense | Subtypes | Rarity | P/T | Mana Cost | Rules Text (Start) | Rules Text (End) |'
+    )
     prime_group.add_argument("--name", type=str, help="Force a specific card name.")
     prime_group.add_argument("--supertypes", type=str, help="Force specific supertypes (e.g., 'Legendary').")
     prime_group.add_argument("--types", type=str, help="Force specific card types (e.g., 'Creature').")
     prime_group.add_argument("--loyalty", type=str, help="Force a specific starting loyalty or defense.")
     prime_group.add_argument("--subtypes", type=str, help="Force specific subtypes (e.g., 'Elf Warrior').")
-    prime_group.add_argument("--rarity", type=str, help="Force a specific rarity marker.")
-    prime_group.add_argument("--powertoughness", type=str, help="Force a specific Power/Toughness (e.g., '&^^/&^^').")
+    prime_group.add_argument("--rarity", type=str, help="Force a specific rarity marker (e.g., 'A' for Rare, 'O' for Common).")
+    prime_group.add_argument("--powertoughness", type=str, help="Force specific Power/Toughness (e.g., '&^^/&^^').")
     prime_group.add_argument("--manacost", type=str, help="Force a specific mana cost (e.g., '{WW}').")
-    prime_group.add_argument("--bodytext_prepend", type=str, help="Force the start of the rules text.")
-    prime_group.add_argument("--bodytext_append", type=str, help="Force text to appear at the end of the rules text.")
+    prime_group.add_argument("--bodytext_prepend", type=str, help="Force text at the very beginning of the rules text.")
+    prime_group.add_argument("--bodytext_append", type=str, help="Force text at the very end of the rules text.")
 
     args = parser.parse_args()
     
