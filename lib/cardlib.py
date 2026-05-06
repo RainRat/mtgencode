@@ -286,9 +286,9 @@ def fields_from_json(src_json, linetrans = True):
         fields[field_supertypes] = [
             (-1, list(map(lambda s: utils.to_ascii(s.lower()), src_json['supertypes'])))]
 
+    src_types = [utils.to_ascii(s.lower()) for s in src_json.get('types', [])]
     if 'types' in src_json:
-        fields[field_types] = [(-1, [utils.to_ascii(s.lower())
-                                     for s in src_json['types']])]
+        fields[field_types] = [(-1, src_types)]
     else:
         parsed = False
 
@@ -314,7 +314,6 @@ def fields_from_json(src_json, linetrans = True):
         loyalty_val = src_json.get('defense')
     # Fallback to pt for datasets that use it for loyalty/defense (like Battles)
     if loyalty_val is None:
-        src_types = [t.lower() for t in src_json.get('types', [])]
         if 'planeswalker' in src_types or 'battle' in src_types:
             loyalty_val = src_json.get('pt')
 
@@ -328,7 +327,6 @@ def fields_from_json(src_json, linetrans = True):
         # If we already used 'pt' for loyalty/defense (fallback), don't also use it as P/T
         # as that would make the card invalid in fields_check_valid() if it's not a creature.
         if p_t == loyalty_val:
-            src_types = [t.lower() for t in src_json.get('types', [])]
             if 'creature' not in src_types and 'vehicle' not in src_types:
                 p_t = ''
         if p_t:
