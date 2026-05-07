@@ -297,6 +297,8 @@ Usage Examples:
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--mechanic', action='append',
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
+    filter_group.add_argument('--similar-to',
+                        help='Only include cards mechanically similar to the specified card name.')
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file.')
     filter_group.add_argument('--booster', type=int, default=0,
@@ -379,6 +381,55 @@ Usage Examples:
     if args.sort:
         import sortlib
         cards = sortlib.sort_cards(cards, args.sort, reverse=args.reverse, quiet=args.quiet)
+
+    if args.similar_to and cards:
+        import namediff
+        # Sanitize query to match internal representations (hyphens are dash_marker)
+        query_sanitized = args.similar_to.lower().replace('-', utils.dash_marker)
+
+        # Find the target card for similarity comparison.
+        # We look in the current pool first.
+        target_card = next((c for c in cards if c.name.lower() == query_sanitized), None)
+        if not target_card:
+            # Fallback: Look for the target card in the source file without filters
+            if not args.quiet:
+                print(f"Target card '{args.similar_to}' not in filtered pool. Searching in source...", file=sys.stderr)
+
+            # We use a very targeted open call to find the card
+            target_matches = jdecode.mtg_open_file(args.infile, grep_name=[args.similar_to], verbose=False)
+            if target_matches:
+                target_card = target_matches[0]
+            else:
+                # Try partial match in the current pool as a last resort.
+                target_card = next((c for c in cards if query_sanitized in c.name.lower()), None)
+
+        if target_card:
+            # Initialize Namediff with the current pool of unique cards.
+            nd = namediff.Namediff(verbose=False, cards=cards)
+
+            # If a limit is specified, we use it for the similarity search.
+            # Otherwise we default to a reasonable number.
+            sim_limit = args.limit if args.limit > 0 else 20
+
+            # Efficiently get only the top matches
+            results = nd.nearest_card(target_card, n=sim_limit)
+
+            similar_names = [name.lower() for ratio, name in results]
+
+            # Reorder cards to match the similarity ranking, preserving duplicates if any
+            ranked_cards = []
+            for name_lower in similar_names:
+                for c in cards:
+                    if c.name.lower() == name_lower:
+                        ranked_cards.append(c)
+            cards = ranked_cards
+
+            # Clear limit as we've already applied it (or default)
+            args.limit = 0
+        else:
+            if not args.quiet:
+                print(f"Warning: Card '{args.similar_to}' not found for similarity comparison.", file=sys.stderr)
+            cards = []
 
     total_matches = len(cards)
     if args.limit > 0:
