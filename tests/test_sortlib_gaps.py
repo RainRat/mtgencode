@@ -82,3 +82,33 @@ def test_tqdm_fallback():
     if 'lib.sortlib' in sys.modules:
         del sys.modules['lib.sortlib']
     importlib.import_module('lib.sortlib')
+
+def test_sort_complexity_score():
+    c1 = cardlib.Card({"name": "Simple", "text": "Short text."})
+    c2 = cardlib.Card({"name": "Complex", "text": "This is a much longer rules text to ensure a higher complexity score."})
+
+    cards = [c2, c1]
+    sorted_cards = sortlib.sort_cards(cards, 'complexity')
+    assert sorted_cards[0].name == "simple"
+    assert sorted_cards[1].name == "complex"
+
+    sorted_cards = sortlib.sort_cards(cards, 'score')
+    assert sorted_cards[0].name == "simple"
+    assert sorted_cards[1].name == "complex"
+
+    sorted_cards = sortlib.sort_cards(cards, 'complexity', reverse=True)
+    assert sorted_cards[0].name == "complex"
+    assert sorted_cards[1].name == "simple"
+
+def test_sort_color_reverse():
+    c_w = cardlib.Card({"name": "White", "manaCost": "{W}"})
+    c_u = cardlib.Card({"name": "Blue", "manaCost": "{U}"})
+
+    cards = [c_u, c_w]
+    sorted_cards = sortlib.sort_cards(cards, 'color', reverse=False)
+    assert sorted_cards[0].name == "white"
+    assert sorted_cards[1].name == "blue"
+
+    sorted_cards = sortlib.sort_cards(cards, 'color', reverse=True)
+    assert sorted_cards[0].name == "blue"
+    assert sorted_cards[1].name == "white"
