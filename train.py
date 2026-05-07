@@ -308,7 +308,28 @@ def sample(args):
     print(generated)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train a neural network to design Magic: The Gathering cards.")
+    parser = argparse.ArgumentParser(
+        description="Train a neural network to design Magic: The Gathering cards.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # 1. Prepare your training data (Encode JSON to text)
+  python3 encode.py data/AllPrintings.json data/training_data.txt
+
+  # 2. Train the model (Requires PyTorch)
+  python3 train.py --mode train --infile data/training_data.txt --epochs 20 --randomize_fields
+
+  # 3. Generate new cards from a checkpoint
+  python3 train.py --mode sample --checkpoint checkpoint.pt --length 2000 > generated.txt
+
+  # 4. Force specific attributes during generation (Uses legacy field order)
+  # This example forces the AI to design a Legendary Creature named "Uthros":
+  python3 train.py --mode sample --name "uthros" --supertypes "legendary" --types "creature"
+
+  # 5. Decode results back to readable cards
+  python3 decode.py generated.txt decoded_cards.txt
+"""
+    )
 
     # Group: General Options
     gen_group = parser.add_argument_group('General Options')
@@ -361,18 +382,19 @@ if __name__ == "__main__":
 
     # Group: Forcing Card Attributes
     prime_group = parser.add_argument_group('Forcing Card Attributes',
-                                          'These options force specific fields to contain your chosen text. '
-                                          'Note: These depend on the legacy encoding format (-e old).')
-    prime_group.add_argument("--name", type=str, help="Force a specific card name.")
-    prime_group.add_argument("--supertypes", type=str, help="Force specific supertypes (e.g., 'Legendary').")
-    prime_group.add_argument("--types", type=str, help="Force specific card types (e.g., 'Creature').")
-    prime_group.add_argument("--loyalty", type=str, help="Force a specific starting loyalty or defense.")
-    prime_group.add_argument("--subtypes", type=str, help="Force specific subtypes (e.g., 'Elf Warrior').")
-    prime_group.add_argument("--rarity", type=str, help="Force a specific rarity marker.")
-    prime_group.add_argument("--powertoughness", type=str, help="Force a specific Power/Toughness (e.g., '&^^/&^^').")
-    prime_group.add_argument("--manacost", type=str, help="Force a specific mana cost (e.g., '{WW}').")
-    prime_group.add_argument("--bodytext_prepend", type=str, help="Force the start of the rules text.")
-    prime_group.add_argument("--bodytext_append", type=str, help="Force text to appear at the end of the rules text.")
+                                          'These options force the AI to include specific text in certain fields. '
+                                          'IMPORTANT: These flags rely on the legacy field order (-e old). '
+                                          'If you trained your model with a different encoding, these will not work correctly.')
+    prime_group.add_argument("--name", type=str, help="Force a specific card name (Field 1).")
+    prime_group.add_argument("--supertypes", type=str, help="Force specific supertypes (Field 2, e.g., 'legendary').")
+    prime_group.add_argument("--types", type=str, help="Force specific card types (Field 3, e.g., 'creature').")
+    prime_group.add_argument("--loyalty", type=str, help="Force a specific loyalty or defense (Field 4).")
+    prime_group.add_argument("--subtypes", type=str, help="Force specific subtypes (Field 5, e.g., 'elf warrior').")
+    prime_group.add_argument("--rarity", type=str, help="Force a specific rarity marker (Field 6, e.g., 'O', 'A').")
+    prime_group.add_argument("--powertoughness", type=str, help="Force a specific Power/Toughness (Field 7, e.g., '&^^/&^^').")
+    prime_group.add_argument("--manacost", type=str, help="Force a specific mana cost (Field 8, e.g., '{WW}').")
+    prime_group.add_argument("--bodytext_prepend", type=str, help="Force the beginning of the rules text (Field 9).")
+    prime_group.add_argument("--bodytext_append", type=str, help="Force text to appear at the end of the rules text (Field 10).")
 
     args = parser.parse_args()
     
