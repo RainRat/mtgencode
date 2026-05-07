@@ -4,12 +4,14 @@ import json
 import tempfile
 import difflib
 import sys
+from unittest.mock import patch
 
 # Ensure lib is in path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 
 import namediff
 import cardlib
+import utils
 
 class TestNamediff(unittest.TestCase):
     def test_list_split(self):
@@ -86,6 +88,10 @@ class TestNamediff(unittest.TestCase):
         result = namediff.f_nearest(name, matchers, n=2, exact_shortcut=True)
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0][1], "Dragon")
+
+    def test_f_nearest_no_matchers(self):
+        """Test f_nearest with empty matchers list."""
+        self.assertEqual(namediff.f_nearest("name", [], 3), [])
 
     def test_namediff_integration(self):
         test_data = {
@@ -196,6 +202,170 @@ class TestNamediff(unittest.TestCase):
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
+
+    def test_namediff_verbose_and_duplicates(self):
+        """Test Namediff with verbose=True and duplicate card names."""
+        test_data = {
+            "data": {
+                "TST": {
+                    "name": "Test Set",
+                    "code": "TST",
+                    "type": "core",
+                    "cards": [
+                        {
+                            "name": "Fire",
+                            "number": "1a",
+                            "types": ["Instant"],
+                            "bside": {
+                                "name": "Fire", # Same name as parent
+                                "number": "1b",
+                                "types": ["Instant"]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        fd, tmp_path = tempfile.mkstemp(suffix='.json', text=True)
+        try:
+            with os.fdopen(fd, 'w') as f:
+                json.dump(test_data, f)
+
+            from io import StringIO
+            captured_output = StringIO()
+            original_stdout = sys.stdout
+            try:
+                sys.stdout = captured_output
+                nd = namediff.Namediff(verbose=True, json_fname=tmp_path)
+            finally:
+                sys.stdout = original_stdout
+
+            output = captured_output.getvalue()
+
+            self.assertIn("Setting up namediff...", output)
+            self.assertIn("Duplicate name fire, ignoring.", output)
+            self.assertIn("... Done.", output)
+
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    def test_namediff_codes_mapping(self):
+        """Test that codes are correctly mapped."""
+        test_data = {
+            "data": {
+                "TST": {
+                    "name": "Test Set",
+                    "code": "TST",
+                    "type": "core",
+                    "magicCardsInfoCode": "tstcode",
+                    "cards": [
+                        {
+                            "name": "Fireball",
+                            "number": "1",
+                            "types": ["Sorcery"]
+                        }
+                    ]
+                }
+            }
+        }
+
+        fd, tmp_path = tempfile.mkstemp(suffix='.json', text=True)
+        try:
+            with os.fdopen(fd, 'w') as f:
+                json.dump(test_data, f)
+
+            nd = namediff.Namediff(verbose=False, json_fname=tmp_path)
+
+            self.assertIn("fireball", nd.codes)
+            self.assertEqual(nd.codes["fireball"], "tstcode/1.jpg")
+
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    def test_nearest_par_tqdm_fallback(self):
+        """Test nearest_par when tqdm is not available."""
+        test_data = {
+            "data": {
+                "TST": {
+                    "name": "Test Set",
+                    "code": "TST",
+                    "type": "core",
+                    "cards": [
+                        {"name": "Fireball", "number": "1", "types": ["Sorcery"]}
+                    ]
+                }
+            }
+        }
+
+        fd, tmp_path = tempfile.mkstemp(suffix='.json', text=True)
+        try:
+            with os.fdopen(fd, 'w') as f:
+                json.dump(test_data, f)
+
+            nd = namediff.Namediff(verbose=False, json_fname=tmp_path)
+
+            with patch.dict(sys.modules, {'tqdm': None}):
+                res = nd.nearest_par(["firebal"], n=1, threads=1)
+                self.assertEqual(len(res), 1)
+                self.assertEqual(res[0][0][1], "fireball")
+
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    def test_namediff_from_cards(self):
+        """Test Namediff initialization from a list of Card objects."""
+        card1 = cardlib.Card({
+            "name": "Fireball",
+            "manaCost": "{R}",
+            "types": ["Sorcery"],
+            "setCode": "TST",
+            "number": "1"
+        })
+        card2 = cardlib.Card({
+            "name": "Iceball",
+            "manaCost": "{U}",
+            "types": ["Sorcery"],
+            "bside": {
+                "name": "Snowball",
+                "manaCost": "{S}",
+                "types": ["Sorcery"]
+            }
+        })
+
+        from io import StringIO
+        captured_output = StringIO()
+        original_stdout = sys.stdout
+        try:
+            sys.stdout = captured_output
+            nd = namediff.Namediff(verbose=True, cards=[card1, card2])
+        finally:
+            sys.stdout = original_stdout
+
+        output = captured_output.getvalue()
+        self.assertIn("Initializing from provided card list.", output)
+
+        self.assertIn("fireball", nd.names)
+        self.assertIn("iceball", nd.names)
+        self.assertIn("snowball", nd.names)
+        self.assertEqual(nd.codes["fireball"], "TST/1.jpg")
+
+    def test_nearest_card_par_tqdm_fallback(self):
+        """Test nearest_card_par when tqdm is not available."""
+        card = cardlib.Card({
+            "name": "Fireball",
+            "manaCost": "{R}",
+            "types": ["Sorcery"]
+        })
+        nd = namediff.Namediff(verbose=False, cards=[card])
+
+        with patch.dict(sys.modules, {'tqdm': None}):
+            res = nd.nearest_card_par([card], n=1, threads=1)
+            self.assertEqual(len(res), 1)
+            self.assertEqual(res[0][0][1], "fireball")
 
 if __name__ == '__main__':
     unittest.main()
