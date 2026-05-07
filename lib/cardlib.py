@@ -18,7 +18,13 @@ RECOGNIZED_MECHANICS = [
     'Flying', 'Trample', 'Lifelink', 'Haste', 'Deathtouch', 'Vigilance',
     'Ward', 'Prowess', 'Menace', 'Reach', 'Flash', 'Indestructible',
     'Defender', 'Scry', 'Draw A Card', 'Mill', 'Exile', 'Token',
-    'Discard', 'Cycling', 'Convoke', 'Station'
+    'Discard', 'Cycling', 'Convoke', 'Station',
+    'Flashback', 'Madness', 'Affinity', 'Delve', 'Dredge', 'Storm',
+    'Poison', 'Infect', 'Proliferate', 'Protection', 'Shroud', 'Hexproof',
+    'Phasing', 'Entwine', 'Buyback', 'Cascade', 'Exalted', 'Unearth',
+    'Bestow', 'Monstrosity', 'Dash', 'Awaken', 'Surge', 'Investigate',
+    'Surveil', 'Amass', 'Foretell', 'Learn', 'Toxic', 'Backup',
+    'Incubate', 'Discover'
 ]
 
 sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
@@ -773,7 +779,18 @@ class Card:
             ('reach', 'Reach'), ('flash', 'Flash'), ('indestructible', 'Indestructible'),
             ('defender', 'Defender'), ('scry', 'Scry'), ('draw a card', 'Draw A Card'),
             ('mill', 'Mill'), ('exile', 'Exile'), (r'tokens?', 'Token'),
-            ('discard', 'Discard'), ('cycling', 'Cycling'), ('convoke', 'Convoke')
+            ('discard', 'Discard'), ('cycling', 'Cycling'), ('convoke', 'Convoke'),
+            ('flashback', 'Flashback'), ('madness', 'Madness'), ('affinity', 'Affinity'),
+            ('delve', 'Delve'), ('dredge', 'Dredge'), ('storm', 'Storm'),
+            ('poison', 'Poison'), ('infect', 'Infect'), ('proliferate', 'Proliferate'),
+            ('protection from', 'Protection'), ('shroud', 'Shroud'), ('hexproof', 'Hexproof'),
+            ('phasing', 'Phasing'), ('entwine', 'Entwine'), ('buyback', 'Buyback'),
+            ('cascade', 'Cascade'), ('exalted', 'Exalted'), ('unearth', 'Unearth'),
+            ('bestow', 'Bestow'), ('monstrosity', 'Monstrosity'), ('dash', 'Dash'),
+            ('awaken', 'Awaken'), ('surge', 'Surge'), ('investigate', 'Investigate'),
+            ('surveil', 'Surveil'), ('amass', 'Amass'), ('foretell', 'Foretell'),
+            ('learn', 'Learn'), ('toxic', 'Toxic'), ('backup', 'Backup'),
+            ('incubate', 'Incubate'), ('discover', 'Discover')
         ]
 
         for pattern, label in keywords:

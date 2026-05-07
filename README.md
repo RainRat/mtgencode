@@ -268,7 +268,7 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 ---
 
 ### Advanced Filtering
-    Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, `scripts/mtg_balance.py`, `scripts/mtg_mana.py`, `scripts/mtg_stats.py`, and `scripts/mtg_actions.py`.
+    Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, `scripts/mtg_balance.py`, `scripts/mtg_mana.py`, `scripts/mtg_stats.py`, `scripts/mtg_actions.py`, and `scripts/mtg_synergy.py`.
 
 *   **Global Filters:**
     *   `--grep "pattern"`: Only include cards where the name, typeline, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
@@ -292,6 +292,22 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
         *   `--loy VALUE` (or `--loyalty`, `--defense`): Filter by Loyalty or Defense.
     *   `--mechanic NAME`: Only include cards with specific mechanical features or keyword abilities (e.g., `Flying`, `Activated`, `ETB Effect`).
     *   `--deck-filter FILE` (or `--decklist-filter`): Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
+
+### `mtg_synergy.py`
+Analyzes mechanical synergy and co-occurrence in a card dataset. It identifies which mechanics (like Flying, Kicker, or Flashback) are frequently paired together on the same cards and calculates a 'Synergy Score' (Lift) to measure how much more often they appear together than expected by chance.
+```bash
+# Analyze synergy for a specific set
+python3 scripts/mtg_synergy.py data/AllPrintings.json --set MOM
+
+# Find synergistic pairs in AI designs with at least 5 occurrences
+python3 scripts/mtg_synergy.py generated.txt --min-freq 5
+```
+*   **Options:**
+    *   `--min-freq N`: Minimum co-occurrences required to report a pair (Default: 2).
+    *   `--top N`: Show the top N synergistic pairs (Default: 20).
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 > **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), and L (Basic Land).`
 
