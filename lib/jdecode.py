@@ -20,43 +20,20 @@ def _split_csv_row(row):
     Detects the ' // ' separator in CSV fields and parses a row into
     a nested dictionary structure for multi-faced cards.
     """
-    # Canonical CSV fields
-    fields = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'pt', 'rarity']
-
-    # Normalize row keys (support manaCost vs mana_cost)
-    normalized_row = {
-        'name': row.get('name', ''),
-        'mana_cost': row.get('mana_cost', row.get('manaCost', '')),
-        'type': row.get('type', ''),
-        'subtypes': row.get('subtypes', ''),
-        'text': row.get('text', ''),
-        'pt': row.get('pt', ''),
-        'rarity': row.get('rarity', ''),
-    }
-
-    # Handle explicit power/toughness/loyalty/defense columns if present
-    if not normalized_row['pt']:
-        if row.get('power') and row.get('toughness'):
-            normalized_row['pt'] = f"{row['power']}/{row['toughness']}"
-        elif row.get('loyalty'):
-            normalized_row['pt'] = row['loyalty']
-        elif row.get('defense'):
-            normalized_row['pt'] = row['defense']
-
     # Check for ' // ' separator in Name, Cost, or Type (likely indicator of multi-face)
-    is_multi = any(' // ' in normalized_row[f] for f in ['name', 'mana_cost', 'type'])
+    is_multi = any(' // ' in str(row.get(f, '')) for f in ['name', 'mana_cost', 'manaCost', 'type'])
 
     if not is_multi:
-        return normalized_row
+        return row
 
-    # Split fields
+    # Split all fields
     front_row = {}
     back_row = {}
 
-    for field in fields:
-        val = normalized_row.get(field, '')
-        if ' // ' in val:
-            parts = val.split(' // ', 1)
+    for field, val in row.items():
+        val_str = str(val) if val is not None else ""
+        if ' // ' in val_str:
+            parts = val_str.split(' // ', 1)
             front_row[field] = parts[0]
             back_row[field] = parts[1]
         else:
@@ -71,9 +48,11 @@ def _csv_row_to_dict(row):
     """Converts a normalized CSV row into an MTGJSON-style dictionary."""
     card_dict = {
         'name': row.get('name', ''),
-        'manaCost': row.get('mana_cost', ''),
+        'manaCost': row.get('mana_cost', row.get('manaCost', '')),
         'text': row.get('text', '').replace('\\n', '\n'),
         'rarity': row.get('rarity', ''),
+        'setCode': row.get('set', row.get('setCode', '')),
+        'number': row.get('number', ''),
     }
 
     # Split type into supertypes and types
@@ -89,6 +68,16 @@ def _csv_row_to_dict(row):
 
     # P/T and Loyalty
     pt = row.get('pt', '')
+    if not pt:
+        power = row.get('power')
+        toughness = row.get('toughness')
+        if power and toughness:
+            pt = f"{power}/{toughness}"
+        elif row.get('loyalty'):
+            pt = row.get('loyalty')
+        elif row.get('defense'):
+            pt = row.get('defense')
+
     if '/' in pt:
         p, t = pt.split('/', 1)
         card_dict['power'] = p.strip()
