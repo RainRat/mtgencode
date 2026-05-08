@@ -127,17 +127,23 @@ Usage Examples:
 
   # Find only green mana-producing creatures (Mana Dorks)
   python3 scripts/mtg_mana.py data/AllPrintings.json --colors G --grep-type "Creature"
+
+  # Quickly find mana producers using the default dataset
+  python3 scripts/mtg_mana.py "Lotus"
 """
     )
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (JSON, CSV, XML, or encoded text). Defaults to stdin (-) or data/AllPrintings.json if available.')
+                        help='Input card data (JSON, CSV, XML, MSE, or encoded text) or directory. '
+                             'If this is not a valid path, it is treated as a search pattern (--grep). '
+                             'Defaults to stdin (-). If stdin is a TTY, AllPrintings.json is used if available.')
     io_group.add_argument('--compare', '-c',
                         help='Optional second dataset to compare against the primary input.')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save results. If not provided, results print to the console.')
+                        help='Path to save the results. If not provided, results print to the console. '
+                             'The format is automatically detected from the file extension (.json or .csv).')
 
     # Group: Output Format
     fmt_group_title = parser.add_argument_group('Output Format')
