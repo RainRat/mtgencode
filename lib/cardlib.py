@@ -32,13 +32,43 @@ sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 # but we still need to capitalize the first english component of an activation
 # cost that starts with symbols, such as {2U}, *R*emove a +1/+1 counter from @: etc.
 def cap(s):
-    # Find the first letter and capitalize it
-    for i, char in enumerate(s):
+    # Find the first letter and capitalize it.
+    # To handle MTG sentences that start with mana symbols (e.g. {2U}, remove...)
+    # we also capitalize the first letter found outside of any delimiters.
+    if not s:
+        return s
+
+    chars = list(s)
+    # 1. Capitalize the first letter overall
+    for i, char in enumerate(chars):
         if char.isalpha():
-            return s[:i] + char.upper() + s[i+1:]
+            chars[i] = char.upper()
+            break
         if char in [utils.this_marker, utils.reserved_marker]:
-            return s
-    return s
+            break
+
+    # 2. Find the first letter outside of delimiters {} and []
+    i = 0
+    while i < len(s):
+        if s[i] == utils.mana_open_delimiter:
+            end = s.find(utils.mana_close_delimiter, i)
+            if end != -1:
+                i = end + 1
+                continue
+        if s[i] == utils.choice_open_delimiter:
+            end = s.find(utils.choice_close_delimiter, i)
+            if end != -1:
+                i = end + 1
+                continue
+
+        if s[i].isalpha():
+            chars[i] = s[i].upper()
+            break
+        if s[i] in [utils.this_marker, utils.reserved_marker]:
+            break
+        i += 1
+
+    return "".join(chars)
 # This function is used during decoding to apply sentence-style capitalization
 # while newline markers are still present.
 def sentencecase(s):
