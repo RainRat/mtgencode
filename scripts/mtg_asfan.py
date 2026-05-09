@@ -4,7 +4,6 @@ import os
 import argparse
 import json
 import csv
-import re
 from collections import Counter, defaultdict
 
 # Add lib directory to path
@@ -14,7 +13,6 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import datalib
-import cardlib
 
 # Standard Booster distribution: 10 Commons, 3 Uncommons, 1 Rare/Mythic, 1 Basic Land
 BOOSTER_SLOTS = {

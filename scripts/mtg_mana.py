@@ -5,7 +5,7 @@ import argparse
 import json
 import csv
 import re
-from collections import defaultdict, Counter
+from collections import Counter
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -14,7 +14,6 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import datalib
-import cardlib
 
 def get_produced_colors(card):
     """
