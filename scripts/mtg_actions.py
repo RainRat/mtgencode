@@ -18,6 +18,9 @@ import cardlib
 
 # Categorization patterns
 # These look for functional "actions" in rules text.
+# Patterns include variants for both plain text and the project's internal
+# encoded unary format (e.g. using & and ^ for numbers) to ensure the
+# tool works on both raw and processed datasets.
 ACTION_CATEGORIES = {
     'Removal': [
         r'\bdestroy\b',
@@ -98,7 +101,8 @@ Usage Examples:
   python3 scripts/mtg_actions.py data/AllPrintings.json --colors U
 
   # Find removal spells in Green with CMC 3 or less
-  python3 scripts/mtg_actions.py data/AllPrintings.json --colors G --cmc "<=3" --grep "Removal"
+  # (Note: --grep filters by card text/name, not action category)
+  python3 scripts/mtg_actions.py data/AllPrintings.json --colors G --cmc "<=3" --grep "destroy"
 """
     )
 
