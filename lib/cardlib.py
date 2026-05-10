@@ -659,6 +659,26 @@ class Card:
         return count
 
     @property
+    def display_name(self):
+        """Returns the card name formatted for display (titlecased and unpassed)."""
+        return titlecase(transforms.name_unpass_1_dashes(self.name))
+
+    @property
+    def display_supertypes(self):
+        """Returns a list of titlecased, unpassed supertypes."""
+        return [titlecase(transforms.name_unpass_1_dashes(s)) for s in self.supertypes]
+
+    @property
+    def display_types(self):
+        """Returns a list of titlecased, unpassed types."""
+        return [titlecase(transforms.name_unpass_1_dashes(t)) for t in self.types]
+
+    @property
+    def display_subtypes(self):
+        """Returns a list of titlecased, unpassed subtypes."""
+        return [titlecase(transforms.name_unpass_1_dashes(s)) for s in self.subtypes]
+
+    @property
     def complexity_score(self):
         """Calculates a heuristic complexity score for the card."""
         # Word Count + (Lines * 5) + (Mechanics * 8) + (Color Identity * 3)
@@ -679,17 +699,15 @@ class Card:
 
     def get_type_line(self, separator='\u2014'):
         """Returns a formatted type line string (e.g., 'Legendary Creature — Human Warrior')."""
-        supertypes = [titlecase(transforms.name_unpass_1_dashes(s)) for s in self.__dict__[field_supertypes]]
-        types = [titlecase(transforms.name_unpass_1_dashes(t)) for t in self.__dict__[field_types]]
-        res = ' '.join(supertypes + types)
-        if self.__dict__[field_subtypes]:
-            res += f' {separator} ' + ' '.join([titlecase(transforms.name_unpass_1_dashes(s)) for s in self.__dict__[field_subtypes]])
+        res = ' '.join(self.display_supertypes + self.display_types)
+        if self.display_subtypes:
+            res += f' {separator} ' + ' '.join(self.display_subtypes)
         return res
 
     def _get_single_face_display_data(self, ansi_color=False, include_text=False):
         """Helper to get standardized display fields for a single face of the card."""
         # Name
-        name = titlecase(self.name)
+        name = self.display_name
         if ansi_color:
             name = utils.colorize(name, self._get_ansi_color())
 
@@ -1226,7 +1244,7 @@ class Card:
             rarity_indicator = f'{indicator} '
 
         # Name
-        cardname = titlecase(transforms.name_unpass_1_dashes(self.name))
+        cardname = self.display_name
         if ansi_color:
             color = self._get_ansi_color()
             cardname = utils.colorize(cardname, color)
@@ -1292,7 +1310,7 @@ class Card:
         if for_html:
             outstr += '<div class="card-text">\n'
 
-        cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
+        cardname = self.display_name
 
         if vdump and not cardname:
             cardname = '_NONAME_'
@@ -1483,8 +1501,7 @@ class Card:
         d = {}
 
         # Name
-        cardname = titlecase(transforms.name_unpass_1_dashes(self.name))
-        d['name'] = cardname
+        d['name'] = self.display_name
 
         # Mana Cost
         if not self.cost.none:
@@ -1495,10 +1512,10 @@ class Card:
             d['rarity'] = self.rarity_name
 
         # Types
-        d['supertypes'] = [titlecase(transforms.name_unpass_1_dashes(s)) for s in self.supertypes]
-        d['types'] = [titlecase(transforms.name_unpass_1_dashes(t)) for t in self.types]
+        d['supertypes'] = self.display_supertypes
+        d['types'] = self.display_types
         if self.subtypes:
-            d['subtypes'] = [titlecase(transforms.name_unpass_1_dashes(s)) for s in self.subtypes]
+            d['subtypes'] = self.display_subtypes
 
         # Power / Toughness
         pt_str = self._get_pt_display(include_parens=False)
@@ -1567,8 +1584,7 @@ class Card:
 
         outstr += 'card:\n'
 
-        cardname = titlecase(transforms.name_unpass_1_dashes(self.__dict__[field_name]))
-        outstr += '\tname: ' + cardname + '\n'
+        outstr += '\tname: ' + self.display_name + '\n'
 
         if self.rarity:
             outstr += '\trarity: ' + self.rarity_name.lower() + '\n'
@@ -1578,12 +1594,12 @@ class Card:
                        + self.__dict__[field_cost].format().replace('{','').replace('}','') 
                        + '\n')
 
-        outstr += '\tsuper type: ' + ' '.join(self.__dict__[field_supertypes] 
-                                              + self.__dict__[field_types]).title() + '\n'
-        if self.__dict__[field_subtypes]:
+        outstr += '\tsuper type: ' + ' '.join(self.display_supertypes + self.display_types) + '\n'
+
+        if self.display_subtypes:
             outstr += ('\tsub type:')
-            for subtype in self.__dict__[field_subtypes]:
-                outstr += ' ' + titlecase(subtype)
+            for subtype in self.display_subtypes:
+                outstr += ' ' + subtype
             outstr += '\n'
 
         if self.__dict__[field_pt]:
@@ -1604,10 +1620,7 @@ class Card:
 
             outstr += '\tstylesheet: new-split\n'
 
-            cardname2 = titlecase(transforms.name_unpass_1_dashes(
-                self.bside.__dict__[field_name]))
-
-            outstr += '\tname 2: ' + cardname2 + '\n'
+            outstr += '\tname 2: ' + self.bside.display_name + '\n'
             if self.bside.rarity:
                 outstr += '\trarity 2: ' + self.bside.rarity_name.lower() + '\n'
 
@@ -1617,13 +1630,11 @@ class Card:
                            .replace('{','').replace('}','')
                            + '\n')
 
-            outstr += ('\tsuper type 2: ' 
-                       + ' '.join(self.bside.__dict__[field_supertypes] 
-                                  + self.bside.__dict__[field_types]).title() + '\n')
+            outstr += '\tsuper type 2: ' + ' '.join(self.bside.display_supertypes + self.bside.display_types) + '\n'
 
-            if self.bside.__dict__[field_subtypes]:
+            if self.bside.display_subtypes:
                 outstr += ('\tsub type 2: ' 
-                           + ' '.join(self.bside.__dict__[field_subtypes]).title() + '\n')
+                           + ' '.join(self.bside.display_subtypes) + '\n')
 
             if self.bside.__dict__[field_pt]:
                 ptstring2 = utils.from_unary(self.bside.__dict__[field_pt]).split('/')
@@ -1737,7 +1748,7 @@ class Card:
         """Returns a Cockatrice XML <card> block representation of the card."""
 
         def get_fields(card):
-            name = titlecase(card.name)
+            name = card.display_name
             mana_cost = card.cost.format().replace('{', '').replace('}', '')
 
             typeline = card.get_type_line()
