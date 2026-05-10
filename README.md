@@ -555,19 +555,31 @@ python3 scripts/mtg_oracle.py "Giant Growth" --similar
     *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_search.py`
-Search card data (JSON, encoded text, etc.) and extract specific fields. This is useful for dataset exploration and creating lightweight card listings.
-```bash
-# List names and costs of all Goblins in a formatted table
-python3 scripts/mtg_search.py data/AllPrintings.json -g "Goblin" -f "name,cost" -t
+Search card data (JSON, encoded text, etc.) and extract specific fields. This tool is optimized for dataset exploration, creating lightweight card listings, and bulk field extraction.
 
-# Find all mythic rares with CMC > 7 and output as JSON
-python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" -j
+**Smart Dataset Detection:**
+If you are in a terminal, the tool automatically uses `data/AllPrintings.json` if it exists. You can also skip the file path and just provide a name—the tool will swap arguments if the first one doesn't look like a file path.
+
+```bash
+# Quickly search for a card name using the default dataset
+python3 scripts/mtg_search.py "Grizzly Bears"
+
+# List names and costs of all Goblins in a table
+python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "name,cost" --table
+
+# Find cards mechanically similar to a specific card
+python3 scripts/mtg_search.py --similar-to "Giant Growth" --limit 5
+
+# Find all mythic rares with CMC > 7 and save to a JSON file
+python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" mythics.json
 ```
-*   **Fields:** `name`, `cost`, `cmc`, `colors`, `type`, `stats`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `summary` (alias `view` - provides a compact one-line string), `complexity` (alias `score`), `encoded`.
-*   **Output Formats:** Plain text (default), `-t` (`--table`), `--md-table` (`--mdt`), `-j` (`--json`), `--jsonl`, `--csv`, `-S` (`--summary` - outputs one summary per line).
-*   Common operations use shorthands like `-f` (for `--fields`) and `-g` (for `--grep` in this tool) to reduce friction.
-*   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
-*   **Note:** The `box` and `pack` fields are automatically included in the output when simulation flags (`--booster` or `--box`) are used.
+*   **Fields:** `name`, `cost`, `cmc`, `colors`, `type`, `stats`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `summary` (alias `view`), `complexity` (alias `score`), `encoded`.
+*   **Output Formats:** Plain text (default), `-t` (`--table`), `--md-table` (`--mdt`), `-j` (`--json`), `--jsonl`, `--csv`, `-S` (`--summary`).
+*   **Options:**
+    *   `--similar-to NAME`: Find and rank cards by mechanical similarity to the specified card.
+    *   `-n`, `--limit N`: Only process the first N cards.
+    *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+    *   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
 
 ### `mtg_subset.py`
 Creates a filtered subset of an MTGJSON file while preserving its structure. This is useful for creating specialized training datasets or lightweight card databases without losing set-level metadata.
