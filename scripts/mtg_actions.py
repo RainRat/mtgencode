@@ -14,7 +14,6 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import datalib
-import cardlib
 
 # Categorization patterns
 # These look for functional "actions" in rules text.

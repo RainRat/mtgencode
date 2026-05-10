@@ -1,8 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock
-import sys
-import os
-import json
+from unittest.mock import patch
 import io
 from scripts.mtg_actions import get_card_actions, main
 from lib.cardlib import Card
