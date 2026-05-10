@@ -2,6 +2,8 @@
 import sys
 import os
 import argparse
+import json
+import csv
 import re
 from collections import Counter, defaultdict
 
@@ -150,9 +152,18 @@ Usage Examples:
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input card data (JSON, CSV, encoded text, etc.). Defaults to stdin (-).')
+    io_group.add_argument('outfile', nargs='?', default=None,
+                        help='Optional path to save the results. If not provided, results print to the console.')
     io_group.add_argument('--compare', '-c',
                         help='Optional second dataset to compare against the primary input. '
                              'Displays a side-by-side frequency comparison with color-coded markers for new signature words.')
+
+    # Group: Output Format
+    fmt_group_title = parser.add_argument_group('Output Format')
+    fmt_group = fmt_group_title.add_mutually_exclusive_group()
+    fmt_group.add_argument('--table', action='store_true', help='Generate a formatted table for terminal view (Default).')
+    fmt_group.add_argument('-j', '--json', action='store_true', help='Generate a structured JSON file (Auto-detected for .json).')
+    fmt_group.add_argument('--csv', action='store_true', help='Generate a CSV file (Auto-detected for .csv).')
 
     # Group: Content Formatting
     enc_group = parser.add_argument_group('Content Formatting')
@@ -190,11 +201,20 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    # Auto-detect format from extension
+    if not (args.json or args.csv or args.table):
+        if args.outfile:
+            if args.outfile.endswith('.json'): args.json = True
+            elif args.outfile.endswith('.csv'): args.csv = True
+            else: args.table = True
+        else:
+            args.table = True
+
     # Determine if we should use color
     use_color = False
     if args.color is True:
         use_color = True
-    elif args.color is None and sys.stdout.isatty():
+    elif args.color is None and not (args.json or args.csv) and sys.stdout.isatty():
         use_color = True
 
     def load_cards(path):
@@ -218,49 +238,85 @@ Usage Examples:
         print(f"Insufficient card text in {args.infile} for analysis.", file=sys.stderr)
         return
 
-    title = "COLOR LEXICON ANALYSIS (Signature Words)"
-    if use_color:
-        title = utils.colorize(title, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
-    print(f"\n=== {title} ===")
-    print("Words ranked by 'Distinctiveness' (Relative frequency vs global average).\n")
-
-    header = ["Color", "Signature Words", "Vocab Size"]
-    if use_color:
-        header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
-
-    rows = [header]
-
-    color_labels = {
-        'W': 'White', 'U': 'Blue', 'B': 'Black', 'R': 'Red', 'G': 'Green',
-        'M': 'Multi', 'A': 'Colorless'
-    }
-
-    for c in 'WUBRGMA':
-        if c not in stats1:
-            continue
-
-        label = color_labels[c]
-        if use_color:
-            label = utils.colorize(label, utils.Ansi.get_color_color(c))
-
-        words = stats1[c]['top']
-        word_str = ", ".join(words)
-        vocab_size = str(stats1[c]['total'])
-
-        rows.append([label, word_str, vocab_size])
-
-    datalib.add_separator_row(rows)
-
-    datalib.printrows(datalib.padrows(rows, aligns=['l', 'l', 'r']), indent=2)
-
+    stats2 = None
+    cards2 = []
     if args.compare:
         cards2 = load_cards(args.compare)
         if cards2:
             stats2 = analyze_lexicon(cards2, top_n=args.top, min_len=args.min_len)
             if not stats2:
                 print(f"\nInsufficient card text in {args.compare} for comparison.", file=sys.stderr)
-            else:
-                print(f"\n=== COMPARISON: {os.path.basename(args.compare)} ===")
+
+    # Output preparation
+    output_f = sys.stdout
+    if args.outfile:
+        if args.verbose:
+            print(f"Writing results to: {args.outfile}", file=sys.stderr)
+        output_f = open(args.outfile, 'w', encoding='utf-8')
+
+    color_labels = {
+        'W': 'White', 'U': 'Blue', 'B': 'Black', 'R': 'Red', 'G': 'Green',
+        'M': 'Multi', 'A': 'Colorless'
+    }
+
+    try:
+        if args.json:
+            results = {
+                'primary': stats1,
+                'comparison': stats2 if stats2 else None
+            }
+            output_f.write(json.dumps(results, indent=2) + '\n')
+
+        elif args.csv:
+            writer = csv.writer(output_f)
+            header = ["Dataset", "Color", "Word", "Rank", "Frequency", "Distinctiveness"]
+            writer.writerow(header)
+
+            def write_stats(stats, label_prefix):
+                for c in 'WUBRGMA':
+                    if c not in stats: continue
+                    color_name = color_labels[c]
+                    for i, word in enumerate(stats[c]['top']):
+                        freq = stats[c]['freq'][word]
+                        score = stats[c]['scores'][word]
+                        writer.writerow([label_prefix, color_name, word, i+1, freq, f"{score:.4f}"])
+
+            write_stats(stats1, "primary")
+            if stats2:
+                write_stats(stats2, "comparison")
+
+        else: # --table
+            title = "COLOR LEXICON ANALYSIS (Signature Words)"
+            if use_color:
+                title = utils.colorize(title, utils.Ansi.BOLD + utils.Ansi.CYAN + utils.Ansi.UNDERLINE)
+            print(f"\n=== {title} ===", file=output_f)
+            print("Words ranked by 'Distinctiveness' (Relative frequency vs global average).\n", file=output_f)
+
+            header = ["Color", "Signature Words", "Vocab Size"]
+            if use_color:
+                header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+
+            rows = [header]
+
+            for c in 'WUBRGMA':
+                if c not in stats1:
+                    continue
+
+                label = color_labels[c]
+                if use_color:
+                    label = utils.colorize(label, utils.Ansi.get_color_color(c))
+
+                words = stats1[c]['top']
+                word_str = ", ".join(words)
+                vocab_size = str(stats1[c]['total'])
+
+                rows.append([label, word_str, vocab_size])
+
+            datalib.add_separator_row(rows)
+            datalib.printrows(datalib.padrows(rows, aligns=['l', 'l', 'r']), indent=2, file=output_f)
+
+            if stats2:
+                print(f"\n=== COMPARISON: {os.path.basename(args.compare)} ===", file=output_f)
 
                 c_rows = [header]
                 for c in 'WUBRGMA':
@@ -286,9 +342,14 @@ Usage Examples:
                     c_rows.append([label, word_str, vocab_size])
 
                 datalib.add_separator_row(c_rows)
-                datalib.printrows(datalib.padrows(c_rows, aligns=['l', 'l', 'r']), indent=2)
+                datalib.printrows(datalib.padrows(c_rows, aligns=['l', 'l', 'r']), indent=2, file=output_f)
 
-    utils.print_operation_summary("Lexicon Analysis", len(cards1) + (len(cards2) if args.compare else 0), 0, quiet=args.quiet)
+    finally:
+        if args.outfile:
+            output_f.close()
+
+    if not args.quiet:
+        utils.print_operation_summary("Lexicon Analysis", len(cards1) + (len(cards2) if args.compare else 0), 0, quiet=args.quiet)
 
 if __name__ == "__main__":
     main()
