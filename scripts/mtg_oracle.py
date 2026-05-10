@@ -125,6 +125,8 @@ Example Usage:
     browsing_group = parser.add_argument_group('Browsing Options')
     browsing_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
+    browsing_group.add_argument('-f', '--full', action='store_true',
+                        help='Always display full card details, even for multiple matches.')
     browsing_group.add_argument('--shuffle', action='store_true',
                         help='Shuffle the cards before processing.')
     browsing_group.add_argument('--sample', type=int, default=0,
@@ -277,86 +279,95 @@ Example Usage:
 
         utils.print_header("SEARCH RESULTS", count=count_str, use_color=use_color)
 
-    nd = None
-    if args.similar:
-        # Load full dataset for similarity context
-        if args.verbose and not args.quiet:
-            print("Loading similarity context...", file=sys.stderr)
+    # UX Improvement: Smart View
+    # If multiple cards are found, we show high-density summaries.
+    # If exactly one card is found, we show the full details.
+    use_summary = len(display_cards) > 1 and not args.full
 
-        full_cards = jdecode.mtg_open_file(args.infile, verbose=False,
-                                          linetrans=not args.nolinetrans,
-                                          fmt_labeled=None if args.nolabel else cardlib.fmt_labeled_default)
-        nd = namediff.Namediff(verbose=args.verbose and not args.quiet, cards=full_cards)
+    if use_summary:
+        for card in display_cards:
+            print("  " + card.summary(ansi_color=use_color))
+    else:
+        nd = None
+        if args.similar:
+            # Load full dataset for similarity context
+            if args.verbose and not args.quiet:
+                print("Loading similarity context...", file=sys.stderr)
 
-    # Display the cards
-    for i, card in enumerate(display_cards):
-        if i > 0:
-            print("\n  " + "-" * 40 + "\n")
+            full_cards = jdecode.mtg_open_file(args.infile, verbose=False,
+                                              linetrans=not args.nolinetrans,
+                                              fmt_labeled=None if args.nolabel else cardlib.fmt_labeled_default)
+            nd = namediff.Namediff(verbose=args.verbose and not args.quiet, cards=full_cards)
 
-        formatted_card = card.format(gatherer=args.gatherer, ansi_color=use_color)
-        indented_card = "\n".join(["  " + line for line in formatted_card.split("\n")])
-        print(indented_card)
+        # Display the cards (Full View)
+        for i, card in enumerate(display_cards):
+            if i > 0:
+                print("\n  " + "-" * 40 + "\n")
 
-        # Metadata Footer
-        metadata_parts = []
-        if card.set_code:
-            set_label = "SET:"
-            set_val = card.set_code.upper()
-            if card.number:
-                set_val += f" #{card.number}"
+            formatted_card = card.format(gatherer=args.gatherer, ansi_color=use_color)
+            indented_card = "\n".join(["  " + line for line in formatted_card.split("\n")])
+            print(indented_card)
+
+            # Metadata Footer
+            metadata_parts = []
+            if card.set_code:
+                set_label = "SET:"
+                set_val = card.set_code.upper()
+                if card.number:
+                    set_val += f" #{card.number}"
+                if use_color:
+                    set_val = utils.colorize(set_val, utils.Ansi.BOLD)
+                metadata_parts.append(f"{set_label} {set_val}")
+
+            identity = card.color_identity
+            if identity:
+                id_label = "ID:"
+                id_val = identity
+                if use_color:
+                    id_val = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in identity])
+                metadata_parts.append(f"{id_label} {id_val}")
+
+            score_label = "SCORE:"
+            score_val = str(card.complexity_score)
             if use_color:
-                set_val = utils.colorize(set_val, utils.Ansi.BOLD)
-            metadata_parts.append(f"{set_label} {set_val}")
+                score_val = utils.colorize(score_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
+            metadata_parts.append(f"{score_label} {score_val}")
 
-        identity = card.color_identity
-        if identity:
-            id_label = "ID:"
-            id_val = identity
-            if use_color:
-                id_val = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in identity])
-            metadata_parts.append(f"{id_label} {id_val}")
+            footer = "  " + " \u2022 ".join(metadata_parts)
+            print("\n" + footer)
 
-        score_label = "SCORE:"
-        score_val = str(card.complexity_score)
-        if use_color:
-            score_val = utils.colorize(score_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
-        metadata_parts.append(f"{score_label} {score_val}")
+            # Scryfall URL
+            scry_url = utils.get_scryfall_url(card.set_code, card.number)
+            if scry_url:
+                url_display = scry_url
+                if use_color:
+                    url_display = utils.colorize(url_display, utils.Ansi.BLUE + utils.Ansi.UNDERLINE)
+                print("  " + url_display)
 
-        footer = "  " + " \u2022 ".join(metadata_parts)
-        print("\n" + footer)
+            if nd:
+                print()
+                sim_header = "  SIMILAR CARDS (Mechanical Similarity)"
+                if use_color:
+                    sim_header = utils.colorize(sim_header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                print(sim_header)
+                print("  " + "-" * 40)
 
-        # Scryfall URL
-        scry_url = utils.get_scryfall_url(card.set_code, card.number)
-        if scry_url:
-            url_display = scry_url
-            if use_color:
-                url_display = utils.colorize(url_display, utils.Ansi.BLUE + utils.Ansi.UNDERLINE)
-            print("  " + url_display)
+                # nearest_card returns (ratio, name)
+                # card.name is the internal lowercase name
+                results = nd.nearest_card(card, n=6)
+                # Filter out the card itself
+                similar = [r for r in results if r[1] != card.name][:5]
 
-        if nd:
-            print()
-            sim_header = "  SIMILAR CARDS (Mechanical Similarity)"
-            if use_color:
-                sim_header = utils.colorize(sim_header, utils.Ansi.BOLD + utils.Ansi.CYAN)
-            print(sim_header)
-            print("  " + "-" * 40)
-
-            # nearest_card returns (ratio, name)
-            # card.name is the internal lowercase name
-            results = nd.nearest_card(card, n=6)
-            # Filter out the card itself
-            similar = [r for r in results if r[1] != card.name][:5]
-
-            if similar:
-                for ratio, name in similar:
-                    # name in nd.names is already titlecased
-                    display_name = nd.names.get(name, cardlib.titlecase(name))
-                    ratio_str = f"{ratio*100:3.0f}%"
-                    if use_color:
-                        ratio_str = utils.colorize(ratio_str, utils.Ansi.GREEN)
-                    print(f"    {ratio_str}  {display_name}")
-            else:
-                print("    No similar cards found.")
+                if similar:
+                    for ratio, name in similar:
+                        # name in nd.names is already titlecased
+                        display_name = nd.names.get(name, cardlib.titlecase(name))
+                        ratio_str = f"{ratio*100:3.0f}%"
+                        if use_color:
+                            ratio_str = utils.colorize(ratio_str, utils.Ansi.GREEN)
+                        print(f"    {ratio_str}  {display_name}")
+                else:
+                    print("    No similar cards found.")
 
     if not args.quiet:
         utils.print_operation_summary("Search", total_matches, 0)
