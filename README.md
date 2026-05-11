@@ -324,6 +324,21 @@ python3 scripts/mtg_synergy.py generated.txt --min-freq 5
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
+### `mtg_types.py`
+Generates a Type vs. Color heatmap (matrix) cross-referencing card types with Color Identity (W, U, B, R, G, Colorless, Multicolored). This is essential for verifying color-pie balance and archetypal distribution in a set.
+```bash
+# Analyze the type/color distribution of a specific set
+python3 scripts/mtg_types.py data/AllPrintings.json --set MOM
+
+# Compare distribution between official data and AI designs
+python3 scripts/mtg_types.py data/AllPrintings.json --compare generated.txt
+```
+*   **Options:**
+    *   `--compare FILE`: Side-by-side comparison with a second dataset.
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
+
 > **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), and L (Basic Land).`
 
 **Examples:**
