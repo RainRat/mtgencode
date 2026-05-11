@@ -387,7 +387,7 @@ Usage Examples:
                             if delta > 0.5: delta_str = utils.colorize(delta_str, utils.Ansi.GREEN)
                             elif delta < -0.5: delta_str = utils.colorize(delta_str, utils.Ansi.RED)
                         row.append(delta_str)
-                    except:
+                    except (ValueError, TypeError):
                         row.append("-")
                 rows.append(row)
 
