@@ -52,8 +52,8 @@ def extract_tokens_from_text(text):
         # Remaining parts are likely types
         # This is very simplified but works for standard tokens
         types = color_and_types
-        for c in ['white', 'blue', 'black', 'red', 'green', 'colorless', 'multi']:
-             types = re.sub(c, '', types, flags=re.IGNORECASE)
+        for c in ['white', 'blue', 'black', 'red', 'green', 'colorless', 'multi', 'and', ',']:
+             types = re.sub(r'\b' + c + r'\b' if c.isalpha() else re.escape(c), '', types, flags=re.IGNORECASE)
         types = " ".join([t.capitalize() for t in types.split()])
 
         # Final name construction
