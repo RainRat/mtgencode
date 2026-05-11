@@ -284,9 +284,9 @@ Example Usage:
         utils.print_header("SEARCH RESULTS", count=count_str, use_color=use_color)
 
     # UX Improvement: Smart View
-    # If multiple cards are found, we show high-density summaries.
-    # If exactly one card is found, we show the full details.
-    use_summary = len(display_cards) > 1 and not args.full
+    # If multiple distinct cards are found, we show high-density summaries.
+    # If only one distinct card is found (even if multiple printings), we show full details.
+    use_summary = len(set(c.name.lower() for c in display_cards)) > 1 and not args.full
 
     if use_summary:
         for card in display_cards:
