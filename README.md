@@ -10,37 +10,34 @@ This project helps you turn Magic: The Gathering card data into a format that AI
 
 ## Installation
 
-You can run this project using Docker (easier) or install it directly on your computer.
+Use Docker for the easiest setup. It installs everything automatically.
 
-### Option 1: Docker (Recommended)
-This method installs all dependencies automatically.
-
+### Option 1: Use Docker (Recommended)
 *   **Linux/macOS:** Run `./docker-interactive.sh`
 *   **Windows:** Run `./docker-interactive.bat`
 
-### Option 2: Local Installation
-If you prefer to run it directly on your machine:
+### Option 2: Install on your computer
+Follow these steps if you want to run the tool directly on your machine:
 
-1.  **Check Prerequisites:**
-    You need Python 3.9 or newer. If you don't have it, download it from [python.org](https://www.python.org/).
-    Check your version by running:
+1.  **Install Python:**
+    Download Python 3.9 or newer from [python.org](https://www.python.org/).
+    Check your version:
     ```bash
     python3 --version
     ```
 
-2.  **Get the Code:**
+2.  **Download this project:**
     ```bash
     git clone https://github.com/billzorn/mtgencode.git
     cd mtgencode
     ```
 
-3.  **Install Libraries:**
+3.  **Install required libraries:**
     ```bash
     python3 -m pip install -r requirements.txt
     ```
 
-4.  **Download Language Data:**
-    This tool uses the NLTK library for processing text. Run this command to download the required data:
+4.  **Download text processing data:**
     ```bash
     python3 -m nltk.downloader punkt punkt_tab
     ```
@@ -192,33 +189,33 @@ python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - so
 
 ## Understanding the Encoded Format
 
-When you run `encode.py`, the cards are converted into a specialized text format. This format uses symbols and "unary" numbers to help the AI learn card patterns more easily. AI models often find regular card text confusing, so we simplify it into a language they can better understand.
+The `encode.py` tool converts cards into a specialized text format. This format uses symbols and "counting" numbers to help the AI learn patterns. Regular card text is often too complex for AI models, so we simplify it.
 
 ### Multi-Faced Cards
-Multi-faced cards (Splits, Transforms, or Battles) are represented as discrete blocks separated by a single newline character (`\n`).
+Multi-faced cards (like Split or Transform cards) are written as separate blocks of text.
 
 ### Special Markers
 | Symbol | Description | Example |
 | :--- | :--- | :--- |
-| `\|` | Separates card parts (like Name, Cost, or Type). | `\|5creature\|4legendary\|` |
-| `@` | Represents the card's own name. | `@ gets +&^/+&^` |
-| `\` | Indicates a new line of rules text. | `Flying\Trample` |
-| `~` | Replaces a dash (e.g., in type lines). | `Enchantment~Aura` |
-| `=` | Separates options in a choice or modal ability. | `[&^ = Option A = Option B]` |
-| `%` | Represents a counter (like a +1/+1 or Charge counter). | `Put a % counter on @` |
-| `[` `]` | Groups multiple choices or options together. | `[&^ = Option A = Option B]` |
-| `{ }` | Mana symbols (symbols are doubled, e.g., `{WW}`). | `{GG}` |
+| `\|` | Separates parts of a card (like Name, Cost, or Type). | `\|5creature\|4legendary\|` |
+| `@` | Replaces the card's name. | `@ gets +&^/+&^` |
+| `\` | Starts a new line of text. | `Flying\Trample` |
+| `~` | Replaces a dash (used in type lines). | `Enchantment~Aura` |
+| `=` | Separates options in a list of choices. | `[&^ = Option A = Option B]` |
+| `%` | Replaces the word "counter" (like a +1/+1 counter). | `Put a % counter on @` |
+| `[` `]` | Groups multiple choices together. | `[&^ = Option A = Option B]` |
+| `{ }` | Mana symbols. Single letters are doubled (e.g., `{WW}`). | `{GG}` |
 | `T` | The Tap symbol. | `T: Add {GG}` |
 | `Q` | The Untap symbol. | `Q: Untap @` |
-| `uncast` | Replaces the verb "counter" (to avoid confusion with counters). | `uncast target spell` |
+| `uncast` | Replaces the word "counter" when it means to cancel a spell. | `uncast target spell` |
 
-### Unary Numbers
-To help the AI learn how to count, numbers are written as a sequence of symbols instead of digits.
-*   **The Start (`&`)**: This symbol marks the beginning of a number.
-*   **The Count (`^`)**: Each `^` symbol represents 1.
-*   **Zero (`&`)**: A start marker by itself represents zero.
-*   **Limit**: Standard counts only go up to 20 (`&^^^^^^^^^^^^^^^^^^^^`).
-*   **Large Numbers**: Specific large values are written as words to keep the text short:
+### Counting Numbers (Unary)
+To help the AI learn how to count, we write numbers as a sequence of symbols instead of using digits.
+*   **Start marker (`&`)**: Marks the beginning of a number.
+*   **Count marker (`^`)**: Each symbol represents 1.
+*   **Zero (`&`)**: A start marker by itself means zero.
+*   **Limit**: Numbers only go up to 20 (`&^^^^^^^^^^^^^^^^^^^^`).
+*   **Large Numbers**: We write common large numbers as words to keep the text short:
     *   25 = `twenty~five`
     *   30 = `thirty`
     *   40 = `forty`
@@ -234,7 +231,7 @@ To help the AI learn how to count, numbers are written as a sequence of symbols 
 | 2 | `&^^` |
 | 5 | `&^^^^^` |
 
-> **Note for Mana Costs:** Inside mana symbols `{ }`, the start marker `&` is omitted and only the count `^` is used for generic mana. Additionally, single-letter mana symbols are doubled (e.g., `{2}{R}` is encoded as `{^^RR}`).
+> **Note for Mana Costs:** Inside mana symbols `{ }`, we skip the `&` marker. We only use `^` for generic mana.
 
 ### Rarity Markers
 Rarity is encoded using a single-letter marker. These markers are often the second letter of the rarity name (to avoid collision with mana symbols like `C` for Colorless).
@@ -268,30 +265,30 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 ---
 
 ### Advanced Filtering
-    Filter which cards the tool processes using search patterns, set codes, rarities, or even decklist files. These flags work across `encode.py`, `decode.py`, `sortcards.py`, `splitcards.py`, `scripts/summarize.py`, `scripts/mtg_validate.py`, `scripts/mtg_search.py`, `scripts/mtg_oracle.py`, `scripts/mtg_subset.py`, `scripts/mtg_lexicon.py`, `scripts/mtg_tokens.py`, `scripts/mtg_mechanics.py`, `scripts/mtg_diff.py`, `scripts/mtg_functional.py`, `scripts/mtg_skeleton.py`, `scripts/mtg_pips.py`, `scripts/mtg_complexity.py`, `scripts/mtg_curve.py`, `scripts/mtg_archetypes.py`, `scripts/mtg_balance.py`, `scripts/mtg_mana.py`, `scripts/mtg_stats.py`, `scripts/mtg_actions.py`, `scripts/mtg_asfan.py`, and `scripts/mtg_synergy.py`.
+Filter cards using search patterns, set codes, rarities, or decklist files. These flags work across most tools in this project.
 
 *   **Global Filters:**
-    *   `--grep "pattern"`: Only include cards where the name, typeline, rules text, mana cost, or stats (P/T, loyalty, or defense) match the search pattern. Use multiple `--grep` flags for **AND** logic (all patterns must match).
-    *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the search pattern (checks name, typeline, rules text, mana cost, and stats). Use multiple flags for **OR** logic (matching any pattern excludes the card).
+    *   `--grep "pattern"`: Include cards that match the search pattern. The tool checks name, type, rules text, cost, and stats. Use multiple `--grep` flags to require all patterns to match.
+    *   `--vgrep "pattern"` (or `--exclude`): Skip cards that match the search pattern. Use multiple flags to skip cards that match any of the patterns.
 *   **Field-Specific Filters:**
-    *   `--grep-name`, `--grep-type`, `--grep-text`: Only include cards where the specific field matches the search pattern.
-    *   `--grep-cost`, `--grep-pt`, `--grep-loyalty`: Only include cards whose mana cost, power/toughness, or loyalty/defense matches the search pattern.
+    *   `--grep-name`, `--grep-type`, `--grep-text`: Include cards where the specific field matches the search pattern.
+    *   `--grep-cost`, `--grep-pt`, `--grep-loyalty`: Include cards where the mana cost, power/toughness, or loyalty/defense matches the search pattern.
     *   `--exclude-name`, `--exclude-type`, `--exclude-text`: Skip cards where the specific field matches the search pattern.
-    *   `--exclude-cost`, `--exclude-pt`, `--exclude-loyalty`: Skip cards whose mana cost, power/toughness, or loyalty/defense matches the search pattern.
+    *   `--exclude-cost`, `--exclude-pt`, `--exclude-loyalty`: Skip cards where the mana cost, power/toughness, or loyalty/defense matches the search pattern.
 *   **Metadata Filters:**
-    > **Note:** Repeat a flag to include multiple values using **OR** logic (e.g., `--rarity rare --rarity mythic` finds both rares and mythics).
-    *   `--set CODE`: Only include cards from specific sets (e.g., `MOM`, `MRD`). Supports multiple sets.
-    *   `--rarity NAME`: Only include cards of specific rarities (e.g., `common`, `rare`). Supports full names or shorthands: `O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple values (OR logic).`
-    *   `--colors SYMBOLS`: Only include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
-    *   `--identity SYMBOLS`: Only include cards with specific colors in their color identity (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
+    > **Note:** Use a flag multiple times to include multiple values (e.g., `--rarity rare --rarity mythic` finds both rares and mythics).
+    *   `--set CODE`: Include cards from specific sets (e.g., `MOM`, `MRD`).
+    *   `--rarity NAME`: Include cards of specific rarities (e.g., `common`, `rare`). You can use full names or shorthands: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), or `L` (Basic Land).
+    *   `--colors SYMBOLS`: Include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
+    *   `--identity SYMBOLS`: Include cards with specific colors in their color identity.
     *   **Numerical Filters:** These flags support exact values (`5`), inequalities (`>3`, `<=2`, `!=0`), and ranges (`1-4`).
         *   `--id-count VALUE`: Filter by the number of colors in a card's color identity.
-        *   `--cmc VALUE`: Filter by Converted Mana Cost (Mana Value).
-        *   `--pow VALUE` (or `--power`): Filter by Power.
-        *   `--tou VALUE` (or `--toughness`): Filter by Toughness.
-        *   `--loy VALUE` (or `--loyalty`, `--defense`): Filter by Loyalty or Defense.
-    *   `--mechanic NAME`: Only include cards with specific mechanical features or keyword abilities (e.g., `Flying`, `Activated`, `ETB Effect`).
-    *   `--deck-filter FILE` (or `--decklist-filter`): Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
+        *   `--cmc VALUE`: Filter by mana value (Converted Mana Cost).
+        *   `--pow VALUE`: Filter by Power.
+        *   `--tou VALUE`: Filter by Toughness.
+        *   `--loy VALUE`: Filter by Loyalty or Defense.
+    *   `--mechanic NAME`: Include cards with specific keyword abilities or features (e.g., `Flying`, `Activated`, `ETB Effect`).
+    *   `--deck-filter FILE`: Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
 
 ### `mtg_asfan.py`
 Calculates "As-Fan" (As fanned) statistics for a card dataset. As-Fan represents the average number of cards with a certain characteristic (like a specific color, type, or mechanic) a player can expect to see in a single 15-card booster pack.
@@ -309,17 +306,17 @@ python3 scripts/mtg_asfan.py data/AllPrintings.json --compare generated.txt
     *   Supports standard **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 ### `mtg_synergy.py`
-Analyzes mechanical synergy and co-occurrence in a card dataset. It identifies which mechanics (like Flying, Kicker, or Flashback) are frequently paired together on the same cards and calculates a 'Synergy Score' (Lift) to measure how much more often they appear together than expected by chance.
+Analyzes how different mechanics (like Flying, Kicker, or Flashback) appear together on the same cards. It identifies frequent pairings and calculates a 'Lift Score' to measure if these mechanics appear together more often than expected by chance.
 ```bash
-# Analyze synergy for a specific set
+# Analyze co-occurrence for a specific set
 python3 scripts/mtg_synergy.py data/AllPrintings.json --set MOM
 
-# Find synergistic pairs in AI designs with at least 5 occurrences
+# Find frequent pairings in AI designs with at least 5 occurrences
 python3 scripts/mtg_synergy.py generated.txt --min-freq 5
 ```
 *   **Options:**
     *   `--min-freq N`: Minimum co-occurrences required to report a pair (Default: 2).
-    *   `--top N`: Show the top N synergistic pairs (Default: 20).
+    *   `--top N`: Show the top N pairings (Default: 20).
     *   `--json`: Output results in structured JSON format.
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
@@ -390,7 +387,7 @@ python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "El
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `summarize.py`
-Shows statistics, design budget analysis, mechanical profiling, and lexical diversity for your card data. It works with any card data (JSON, CSV, XML, encoded text, etc.).
+Shows statistics and reports on mechanics and word variety for your card data. It works with any card data (JSON, CSV, XML, encoded text, etc.).
 ```bash
 # View statistics for the entire official dataset
 python3 scripts/summarize.py data/AllPrintings.json
@@ -607,7 +604,7 @@ python3 scripts/mtg_mechanics.py data/AllPrintings.json --set MOM
     *   Supports standard **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
 
 ### `mtg_colorpie.py`
-Generates a Mechanical Color Pie heatmap (matrix) cross-referencing mechanical keywords with Color Identity (W, U, B, R, G, Colorless, Multicolored). This is essential for verifying color-pie integrity and identifying mechanical bleeding in a set design.
+Generates a Color Pie chart that shows which mechanics appear in each color. This helps you check if colors are using the correct mechanics or if some mechanics are appearing where they shouldn't.
 ```bash
 # Analyze the color pie for a specific set
 python3 scripts/mtg_colorpie.py data/AllPrintings.json --set MOM
@@ -622,7 +619,7 @@ python3 scripts/mtg_colorpie.py data/AllPrintings.json --compare generated.txt
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 ### `mtg_lexicon.py`
-Analyzes the characteristic vocabulary (lexicon) of each Magic color. This identifies "signature words" that appear significantly more often in one color compared to others, helping verify the color-pie integrity of AI designs.
+Analyzes the words used for each Magic color. It identifies "signature words" that appear much more often in one color than others. This helps you check if AI designs follow the correct color patterns.
 ```bash
 # Analyze lexicon for a dataset
 python3 scripts/mtg_lexicon.py data/AllPrintings.json
@@ -661,7 +658,7 @@ python3 scripts/mtg_skeleton.py data/AllPrintings.json --identity "W"
 *   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
 
 ### `mtg_archetypes.py`
-Profiles the 10 primary two-color archetypes in a dataset. It identifies "signpost" uncommons, signature mechanical themes, and curve statistics for each color pair.
+Analyzes the 10 primary two-color pairs in a dataset. It identifies the most important cards and themes for each color combination.
 ```bash
 # Analyze archetypes in a specific set
 python3 scripts/mtg_archetypes.py data/AllPrintings.json --set MOM
@@ -675,7 +672,7 @@ python3 scripts/mtg_archetypes.py data/AllPrintings.json --rarity uncommon --mec
     *   Supports all standard **Advanced Filtering** flags.
 
 ### `mtg_balance.py`
-Analyzes and compares the archetype balance (color pair distribution) between two or more datasets. This helps verify if a generated dataset maintains the same color identity "gravity" as its training data.
+Analyzes and compares how color pairs are distributed between datasets. This helps you see if a generated dataset matches the color balance of the original training data.
 ```bash
 # Compare the balance of a generated set against an official set
 python3 scripts/mtg_balance.py data/AllPrintings.json generated.txt --set MOM
