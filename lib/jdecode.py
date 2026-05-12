@@ -55,16 +55,25 @@ def _csv_row_to_dict(row):
         'number': row.get('number', ''),
     }
 
-    # Split type into supertypes and types
+    # Split type into supertypes, types, and subtypes
     full_type = row.get('type', '')
-    supertypes, types = utils.split_types(full_type)
+    supertypes, types, subtypes = utils.parse_type_line(full_type)
     card_dict['supertypes'] = supertypes
     card_dict['types'] = types
 
-    # Subtypes
-    subtypes = row.get('subtypes', '')
+    # Subtypes from separate field (if present)
+    extra_subtypes = row.get('subtypes', '')
+    if extra_subtypes:
+        subtypes.extend(extra_subtypes.split())
     if subtypes:
-        card_dict['subtypes'] = subtypes.split()
+        # Filter duplicates while preserving order
+        seen = set()
+        unique_subtypes = []
+        for s in subtypes:
+            if s not in seen:
+                unique_subtypes.append(s)
+                seen.add(s)
+        card_dict['subtypes'] = unique_subtypes
 
     # P/T and Loyalty
     pt = row.get('pt', '')
