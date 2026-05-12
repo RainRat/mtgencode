@@ -155,12 +155,16 @@ Example Usage:
     args = parser.parse_args()
 
     # UX Improvement: Smart positional argument handling
-    # If the user provides a single argument that isn't a file, treat it as a query
-    # and use the default dataset if available.
-    if args.infile and args.infile != '-' and not args.query:
-        if not os.path.exists(args.infile):
+    # If the user provides an infile that doesn't exist, but it might be a search query,
+    # we treat it as such and default the input to stdin/AllPrintings.json.
+    if args.infile and args.infile != '-' and not os.path.exists(args.infile):
+        # If there are 2 positional arguments and the first isn't a file but the second is, swap them.
+        if args.query and os.path.exists(args.query):
+            args.infile, args.query = args.query, args.infile
+        # If only one argument was provided, treat it as a query.
+        elif not args.query:
             args.query = args.infile
-            args.infile = '-' # Reset to default for now
+            args.infile = '-'
 
     # UX Improvement: Default Dataset
     # If we are reading from stdin but it's an interactive terminal, use AllPrintings.json if it exists.
