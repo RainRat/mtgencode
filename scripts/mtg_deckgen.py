@@ -34,7 +34,7 @@ def pick_cards_with_curve(pool, target_count, curve=None):
     for c in pool:
         try:
             cmc = int(float(c.cost.cmc))
-        except:
+        except (ValueError, TypeError):
             cmc = 0
         by_cmc[cmc].append(c)
         
