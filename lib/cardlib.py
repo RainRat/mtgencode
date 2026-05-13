@@ -24,8 +24,30 @@ RECOGNIZED_MECHANICS = [
     'Phasing', 'Entwine', 'Buyback', 'Cascade', 'Exalted', 'Unearth',
     'Bestow', 'Monstrosity', 'Dash', 'Awaken', 'Surge', 'Investigate',
     'Surveil', 'Amass', 'Foretell', 'Learn', 'Toxic', 'Backup',
-    'Incubate', 'Discover'
+    'Incubate', 'Discover', 'First Strike', 'Double Strike'
 ]
+
+# Heuristic weights for calculating power rating
+KEYWORD_WEIGHTS = {
+    'Flying': 1.5,
+    'Trample': 1.0,
+    'Lifelink': 1.0,
+    'Haste': 0.5,
+    'Deathtouch': 1.5,
+    'Vigilance': 0.5,
+    'Menace': 1.0,
+    'Reach': 0.5,
+    'Flash': 0.5,
+    'Indestructible': 3.0,
+    'Hexproof': 2.5,
+    'Ward': 1.5,
+    'Prowess': 1.0,
+    'Defender': -1.0,
+    'Infect': 2.0,
+    'Toxic': 1.0,
+    'Double Strike': 3.0,
+    'First Strike': 1.5,
+}
 
 sent_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 # This could be made smarter - MSE will capitalize for us after :,
@@ -697,6 +719,37 @@ class Card:
 
         return score
 
+    @property
+    def power_rating(self):
+        """Calculates a heuristic power rating for creatures relative to their CMC."""
+        if not self.is_creature:
+            return 0.0
+
+        p = utils.from_unary_single(self.pt_p)
+        t = utils.from_unary_single(self.pt_t)
+
+        # Default to 0 if non-numeric (X, *, etc.)
+        p_val = float(p) if isinstance(p, (int, float)) else 0.0
+        t_val = float(t) if isinstance(t, (int, float)) else 0.0
+
+        score = p_val + t_val
+
+        # Add keyword bonuses
+        face_mechanics = self.get_face_mechanics()
+        for m in face_mechanics:
+            score += KEYWORD_WEIGHTS.get(m, 0.0)
+
+        # Adjust for CMC
+        # Formula: (P + T + Keywords) / (2 * max(1, CMC))
+        # A "Vanilla" 2/2 for 2 has a rating of (2+2)/(2*2) = 1.0
+        cmc = self.cost.cmc
+        rating = score / (2 * max(1, cmc))
+
+        if self.bside:
+            rating = max(rating, self.bside.power_rating)
+
+        return round(rating, 3)
+
     def get_type_line(self, separator='\u2014'):
         """Returns a formatted type line string (e.g., 'Legendary Creature — Human Warrior')."""
         res = ' '.join(self.display_supertypes + self.display_types)
@@ -830,6 +883,7 @@ class Card:
             ('flashback', 'Flashback'), ('madness', 'Madness'), ('affinity', 'Affinity'),
             ('delve', 'Delve'), ('dredge', 'Dredge'), ('storm', 'Storm'),
             ('poison', 'Poison'), ('infect', 'Infect'), ('proliferate', 'Proliferate'),
+            ('first strike', 'First Strike'), ('double strike', 'Double Strike'),
             ('protection from', 'Protection'), ('shroud', 'Shroud'), ('hexproof', 'Hexproof'),
             ('phasing', 'Phasing'), ('entwine', 'Entwine'), ('buyback', 'Buyback'),
             ('cascade', 'Cascade'), ('exalted', 'Exalted'), ('unearth', 'Unearth'),

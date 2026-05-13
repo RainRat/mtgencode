@@ -67,6 +67,8 @@ def sort_cards(cards, criterion, reverse=False, quiet=False):
         return sorted(cards, key=lambda c: c.cost.cmc, reverse=reverse)
     elif criterion in ['complexity', 'score']:
         return sorted(cards, key=lambda c: c.complexity_score, reverse=reverse)
+    elif criterion in ['rating', 'power_rating']:
+        return sorted(cards, key=lambda c: c.power_rating, reverse=reverse)
     elif criterion == 'color':
         # Flatten the list of lists returned by sort_colors
         segments = sort_colors(cards, quiet=quiet)

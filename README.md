@@ -290,6 +290,21 @@ Filter cards using search patterns, set codes, rarities, or decklist files. Thes
     *   `--mechanic NAME`: Include cards with specific keyword abilities or features (e.g., `Flying`, `Activated`, `ETB Effect`).
     *   `--deck-filter FILE`: Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
 
+### `mtg_power.py`
+Analyzes the creature power balance and curve efficiency in a dataset. It calculates a 'Power Rating' relative to CMC to identify outliers (cards that are significantly above or below the expected power curve for their cost).
+```bash
+# Find the most efficient creatures in a specific set
+python3 scripts/mtg_power.py data/AllPrintings.json --set MOM --limit 10
+
+# Compare average creature efficiency across rarities
+python3 scripts/mtg_power.py data/AllPrintings.json --rarity common --rarity rare
+
+# Export balance analysis to JSON
+python3 scripts/mtg_power.py generated_cards.txt --json
+```
+*   **Metric:** A rating of 1.0 represents a standard "Vanilla" 2/2 for 2 mana. Keywords like Flying or Indestructible increase the rating.
+*   **Options:** Supports `--json`, `--csv`, and all standard **Advanced Filtering** flags.
+
 ### `mtg_asfan.py`
 Calculates "As-Fan" (As fanned) statistics for a card dataset. As-Fan represents the average number of cards with a certain characteristic (like a specific color, type, or mechanic) a player can expect to see in a single 15-card booster pack.
 ```bash
