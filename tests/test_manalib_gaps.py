@@ -6,7 +6,6 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../lib')))
 
 from manalib import Manacost, Manatext
-import utils
 
 def test_manacost_initialization_delimiters():
     # Coverage for lines 53-54

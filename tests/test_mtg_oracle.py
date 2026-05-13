@@ -1,5 +1,4 @@
 import subprocess
-import os
 
 def test_oracle_basic():
     """Test basic oracle lookup with exact match."""

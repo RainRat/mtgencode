@@ -13,7 +13,6 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import datalib
-import cardlib
 
 def get_numeric_stats(card):
     """Extracts power, toughness, and loyalty as floats if possible."""

@@ -1,9 +1,5 @@
 import subprocess
 import json
-import csv
-import io
-import os
-import pytest
 
 def test_functional_basic(tmp_path):
     """Test basic functional reprint detection."""

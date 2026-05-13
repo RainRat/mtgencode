@@ -1,5 +1,4 @@
 
-import pytest
 import sys
 import os
 
@@ -7,8 +6,6 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
 
 from datalib import Datamine, get_col_widths, padrows, get_bar_chart, _print_mechanical_profile, _print_breakdown, _print_color_pie
-from cardlib import Card
-import utils
 
 def test_get_col_widths_empty():
     # Line 10 coverage

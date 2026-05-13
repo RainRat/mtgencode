@@ -3,7 +3,6 @@ import pytest
 import os
 import struct
 import tempfile
-import numpy as np
 from cbow import CBOW, read_vector_file, f_nearest, f_nearest_per_thread
 from cardlib import Card
 

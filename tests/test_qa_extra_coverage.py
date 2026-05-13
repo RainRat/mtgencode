@@ -1,5 +1,3 @@
-import pytest
-import re
 from lib.cardlib import Card, fields_from_json
 from lib import utils
 

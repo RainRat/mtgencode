@@ -9,7 +9,6 @@ sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), 'lib'))
 
 from scripts.mtg_balance import get_archetype_counts, main as balance_main
-import scripts.mtg_balance
 
 class TestMtgBalance(unittest.TestCase):
 

@@ -1,5 +1,4 @@
 import subprocess
-import pytest
 import json
 
 def test_stats_basic():

@@ -2,8 +2,6 @@ import subprocess
 import json
 import csv
 import io
-import os
-import pytest
 
 def test_search_basic():
     """Test basic searching with grep."""

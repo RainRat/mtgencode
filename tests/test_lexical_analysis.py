@@ -1,6 +1,4 @@
-import pytest
 from lib.datalib import Datamine
-from lib.cardlib import Card
 
 def test_lexical_analysis_metrics():
     # Create mock cards with specific text

@@ -3,7 +3,6 @@ import sys
 import os
 import json
 import argparse
-import re
 from collections import defaultdict
 
 # Add lib directory to path

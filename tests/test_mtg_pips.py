@@ -2,7 +2,6 @@ import subprocess
 import json
 import csv
 import io
-import os
 
 def test_mtg_pips_basic():
     """Test basic pip distribution output."""

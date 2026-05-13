@@ -287,7 +287,7 @@ def train(args):
             plt.ylabel('Average Loss')
             plt.grid(True)
             plt.savefig('loss_plot.png')
-            print(f"Loss plot saved to loss_plot.png")
+            print("Loss plot saved to loss_plot.png")
         except Exception as e:
             print(f"Could not plot loss: {e}")
 

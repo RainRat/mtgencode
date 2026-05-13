@@ -4,7 +4,6 @@ import os
 import argparse
 import difflib
 import re
-import random
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')

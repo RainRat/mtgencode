@@ -11,7 +11,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 import namediff
 import cardlib
-import utils
 
 class TestNamediff(unittest.TestCase):
     def test_list_split(self):

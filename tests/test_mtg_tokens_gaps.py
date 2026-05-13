@@ -3,7 +3,6 @@ import os
 import json
 from unittest.mock import patch, MagicMock
 from io import StringIO
-import pytest
 
 # Add lib directory to path
 libdir = os.path.join(os.getcwd(), 'lib')

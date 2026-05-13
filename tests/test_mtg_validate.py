@@ -1,6 +1,5 @@
 import sys
 import os
-import pytest
 
 # Add lib and scripts directories to the path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')

@@ -1,8 +1,5 @@
-import json
 import io
-import sys
 from unittest.mock import patch, MagicMock
-import pytest
 from scripts import mtg_diff
 
 def run_diff(args, input_data1, input_data2, isatty=False):

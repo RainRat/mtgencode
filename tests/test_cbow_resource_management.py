@@ -4,7 +4,6 @@ import os
 import struct
 import sys
 import tempfile
-import multiprocessing
 from unittest.mock import patch, MagicMock
 
 # Adjust path to import lib

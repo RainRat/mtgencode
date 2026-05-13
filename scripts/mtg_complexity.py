@@ -13,7 +13,6 @@ import utils
 import jdecode
 import datalib
 import cardlib
-from titlecase import titlecase
 
 def main():
     parser = argparse.ArgumentParser(

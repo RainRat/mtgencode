@@ -1,5 +1,4 @@
 from datalib import Datamine, padrows, get_bar_chart
-import utils
 from cardlib import Card
 
 def test_padrows_center_alignment():

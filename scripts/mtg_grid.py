@@ -13,7 +13,6 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import datalib
-import cardlib
 from cardlib import RECOGNIZED_MECHANICS
 
 DIMENSIONS = {
@@ -195,7 +194,7 @@ Usage Examples:
 
     if not cards:
         if not args.quiet:
-            print(f"No cards found matching criteria.", file=sys.stderr)
+            print("No cards found matching criteria.", file=sys.stderr)
         return
 
     # Dimensions

@@ -11,7 +11,6 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import datalib
-import cardlib
 
 def get_archetype_counts(cards):
     """Counts cards associated with each of the 10 primary color pairs."""

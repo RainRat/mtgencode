@@ -1,5 +1,4 @@
 import subprocess
-import pytest
 
 def test_curve_basic():
     """Test basic mana curve analysis."""

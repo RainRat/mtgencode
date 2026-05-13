@@ -1,7 +1,5 @@
 import io
-import sys
 from unittest.mock import patch, MagicMock
-import pytest
 from lib import utils, cardlib, datalib, transforms
 
 def test_print_header_coverage():

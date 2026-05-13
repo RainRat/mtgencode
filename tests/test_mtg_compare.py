@@ -9,8 +9,6 @@ sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), 'lib'))
 
 from scripts.mtg_compare import format_delta, main as compare_main
-import scripts.mtg_compare
-import utils
 
 class TestMtgCompare(unittest.TestCase):
 

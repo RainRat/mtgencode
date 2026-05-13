@@ -2,7 +2,7 @@
 import sys
 import os
 import argparse
-from collections import Counter, defaultdict
+from collections import Counter
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -11,7 +11,6 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import datalib
-import cardlib
 from titlecase import titlecase
 
 def main():

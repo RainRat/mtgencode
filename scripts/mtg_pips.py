@@ -13,7 +13,6 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import datalib
-import cardlib
 
 def get_pip_counts(card, include_text=False):
     """Counts mana pips (symbols) for a card, optionally including rules text."""

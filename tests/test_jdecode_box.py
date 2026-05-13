@@ -1,10 +1,8 @@
-import pytest
 import sys
 import os
 from unittest.mock import MagicMock
 import tempfile
 import json
-import copy
 
 # Ensure lib is in path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))

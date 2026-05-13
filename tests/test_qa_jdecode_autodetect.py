@@ -1,14 +1,13 @@
 import unittest
 import sys
 import os
-import io
 import tempfile
 import shutil
 from unittest.mock import patch, MagicMock
 
 # Ensure lib is in path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from lib import jdecode, utils, cardlib
+from lib import jdecode, cardlib
 
 class TestJDecodeAutodetectQA(unittest.TestCase):
     def setUp(self):

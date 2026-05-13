@@ -8,7 +8,6 @@ import csv
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
 import jdecode
-import cardlib
 import utils
 
 def main():
