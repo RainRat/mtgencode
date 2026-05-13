@@ -519,6 +519,25 @@ python3 scripts/mtg_functional.py data/AllPrintings.json --grep "Goblin"
     *   `--dedupe`: Output a JSON file containing the full dataset with functional duplicates removed.
     *   Supports standard **Advanced Filtering** flags.
 
+### `mtg_deckgen.py`
+Generates a complete Magic deck from a card pool. It supports Commander (EDH) and Standard formats, automatically handling commander color identity filtering and basic land distribution.
+```bash
+# Generate a Commander deck with a random commander from a pool
+python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander
+
+# Generate a Commander deck with a specific commander
+python3 scripts/mtg_deckgen.py data/AllPrintings.json --commander "Atraxa, Praetors' Voice"
+
+# Generate a Standard deck from a pool
+python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard
+```
+*   **Options:**
+    *   `--format {commander,standard}`: Choose the deck format (Default: commander).
+    *   `--commander NAME`: Specify a legendary creature to use as your commander.
+    *   `--creatures N`, `--spells N`, `--lands N`: Override the target number of cards for each category.
+    *   `--curve "1:5,2:10,..."`: Override the target mana curve for creatures.
+    *   `--outfile FILE`: Save the decklist to a file instead of printing to the console.
+
 ### `json2csv.py`, `csv2json.py` & `combinejson.py`
 Used for integrating custom cards into your dataset. These scripts let you export existing cards to CSV, convert spreadsheets to JSON, and merge them with official data. See [CUSTOM.md](CUSTOM.md) for a full guide.
 ```bash
