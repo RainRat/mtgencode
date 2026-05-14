@@ -73,12 +73,32 @@ def pick_cards_with_curve(pool, target_count, curve=None):
 def main():
     parser = argparse.ArgumentParser(
         description="Generate a complete MTG deck from a card pool.",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Generate a Commander deck with a random commander from a pool
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander
+
+  # Generate a Commander deck with a specific commander
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --commander "Atraxa, Praetors' Voice"
+
+  # Generate a Standard deck from a pool
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard
+
+  # Override deck composition (e.g., more lands, fewer creatures)
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --creatures 20 --spells 30 --lands 40
+
+  # Override mana curve for creatures (Format: "CMC:Count,CMC:Count,...")
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --curve "1:5,2:10,3:10,4:8,5:5,6+:5"
+
+  # Save the decklist to a file
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --outfile my_deck.txt
+"""
     )
 
     parser.add_argument('infile', help='Input card data (JSON, CSV, XML, encoded text).')
-    parser.add_argument('--format', choices=['commander', 'standard', 'draft'], default='commander', help='Deck format.')
-    parser.add_argument('--commander', help='Specific legendary creature to use as commander (exact name).')
+    parser.add_argument('--format', choices=['commander', 'standard'], default='commander', help='Deck format (Default: commander).')
+    parser.add_argument('--commander', help='Specific legendary creature to use as commander (case-insensitive).')
     
     # Distribution overrides
     parser.add_argument('--creatures', type=int, help='Override target number of creatures.')
