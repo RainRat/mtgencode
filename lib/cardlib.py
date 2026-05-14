@@ -496,7 +496,10 @@ def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep, linetrans =
             valid = valid and fval.valid
             addf(fields, fname, (idx, fval))
         elif fname in [field_supertypes, field_types, field_subtypes]:
-            addf(fields, fname, (idx, textfield.split()))
+            vals = [utils.to_ascii(s.lower()) for s in textfield.split()]
+            if fname == field_subtypes:
+                vals = [v.replace('"', "'").replace('-', utils.dash_marker) for v in vals]
+            addf(fields, fname, (idx, vals))
         else:
             addf(fields, fname, (idx, textfield))
 
