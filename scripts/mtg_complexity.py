@@ -4,6 +4,7 @@ import os
 import argparse
 import json
 import csv
+from collections import defaultdict
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -211,21 +212,16 @@ Usage Examples:
     avg_score = total_score / len(cards)
 
     # Averages by Rarity
-    rarity_stats = {}
+    rarity_stats = defaultdict(list)
     for c in cards:
-        r = c.rarity_name
-        if r not in rarity_stats:
-            rarity_stats[r] = []
-        rarity_stats[r].append(c.complexity_score)
+        rarity_stats[c.rarity_name].append(c.complexity_score)
 
     rarity_avg = {r: sum(scores)/len(scores) for r, scores in rarity_stats.items()}
 
     # Averages by Color Identity
-    color_stats = {}
+    color_stats = defaultdict(list)
     for c in cards:
         ci = c.color_identity if c.color_identity else 'A'
-        if ci not in color_stats:
-            color_stats[ci] = []
         color_stats[ci].append(c.complexity_score)
 
     color_avg = {ci: sum(scores)/len(scores) for ci, scores in color_stats.items()}
@@ -277,7 +273,7 @@ Usage Examples:
 
         # Top Cards Table
         output_f.write(f"  {datalib.color_line('Top Complex Cards:', use_color)}\n")
-        header = ['Name', 'Score', 'Rarity', 'Type']
+        header = ['Name', 'Score', 'ID', 'Rarity', 'Type']
         if use_color:
             header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
 
@@ -291,19 +287,26 @@ Usage Examples:
             if use_color:
                 score = utils.colorize(score, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
 
+            identity = c.color_identity if c.color_identity else 'A'
+            if use_color:
+                identity = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in identity])
+
             rarity = c.rarity_name
             if use_color:
                 rarity = utils.colorize(rarity, utils.Ansi.get_rarity_color(rarity))
 
-            rows.append([name, score, rarity, c.get_type_line()])
+            rows.append([name, score, identity, rarity, c.get_type_line()])
 
         datalib.add_separator_row(rows)
-        datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'l', 'l']), indent=4, file=output_f)
+        datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'l', 'l', 'l']), indent=4, file=output_f)
         output_f.write('\n')
+
+        # Baseline for bar scaling
+        max_avg = max(list(rarity_avg.values()) + list(color_avg.values())) if rarity_avg or color_avg else 1.0
 
         # Rarity Averages Table
         output_f.write(f"  {datalib.color_line('Average Complexity by Rarity:', use_color)}\n")
-        rarity_header = ['Rarity', 'Avg Score', 'Count']
+        rarity_header = ['Rarity', 'Avg Score', 'Count', 'Distribution']
         if use_color:
             rarity_header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in rarity_header]
 
@@ -314,12 +317,56 @@ Usage Examples:
 
         for r in sorted_rarities:
             display_r = r
+            rarity_color = None
             if use_color:
-                display_r = utils.colorize(r, utils.Ansi.get_rarity_color(r))
-            r_rows.append([display_r, f"{rarity_avg[r]:.2f}", str(len(rarity_stats[r]))])
+                rarity_color = utils.Ansi.get_rarity_color(r)
+                display_r = utils.colorize(r, rarity_color)
+
+            avg = rarity_avg[r]
+            bar = datalib.get_bar_chart(avg / max_avg * 100, use_color, color=rarity_color)
+            r_rows.append([display_r, f"{avg:.2f}", str(len(rarity_stats[r])), bar])
 
         datalib.add_separator_row(r_rows)
-        datalib.printrows(datalib.padrows(r_rows, aligns=['l', 'r', 'r']), indent=4, file=output_f)
+        datalib.printrows(datalib.padrows(r_rows, aligns=['l', 'r', 'r', 'l']), indent=4, file=output_f)
+        output_f.write('\n')
+
+        # Color Identity Averages Table
+        output_f.write(f"  {datalib.color_line('Average Complexity by Color Identity:', use_color)}\n")
+        color_header = ['ID', 'Avg Score', 'Count', 'Distribution']
+        if use_color:
+            color_header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in color_header]
+
+        c_rows = [color_header]
+
+        def color_sort_key(ci):
+            order = {'W': 0, 'U': 1, 'B': 2, 'R': 3, 'G': 4, 'A': 5}
+            if len(ci) == 1 and ci in order:
+                return (0, order[ci])
+            return (1, ci)
+
+        sorted_identities = sorted(color_avg.keys(), key=color_sort_key)
+
+        for ci in sorted_identities:
+            display_ci = ci
+            if use_color:
+                display_ci = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in ci])
+
+            avg = color_avg[ci]
+            # Use the first color's color for the bar, or YELLOW for multi/colorless
+            bar_color = None
+            if use_color:
+                if len(ci) == 1:
+                    bar_color = utils.Ansi.get_color_color(ci)
+                elif ci == 'A':
+                    bar_color = utils.Ansi.CYAN
+                else:
+                    bar_color = utils.Ansi.YELLOW
+
+            bar = datalib.get_bar_chart(avg / max_avg * 100, use_color, color=bar_color)
+            c_rows.append([display_ci, f"{avg:.2f}", str(len(color_stats[ci])), bar])
+
+        datalib.add_separator_row(c_rows)
+        datalib.printrows(datalib.padrows(c_rows, aligns=['l', 'r', 'r', 'l']), indent=4, file=output_f)
         output_f.write('\n')
 
     finally:
