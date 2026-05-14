@@ -351,6 +351,24 @@ python3 scripts/mtg_types.py data/AllPrintings.json --compare generated.txt
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
+### `mtg_subtypes.py`
+Analyzes the distribution of card subtypes (like Creature types, Artifact types, or Spell types) in a dataset. It identifies the most popular subtypes and calculates 'Signature' subtypes for each color identity (types that appear significantly more often in one color than others).
+```bash
+# Analyze subtypes for the March of the Machine set
+python3 scripts/mtg_subtypes.py data/AllPrintings.json --set MOM
+
+# See the top 20 signature subtypes for each color
+python3 scripts/mtg_subtypes.py data/AllPrintings.json --top 20
+
+# Export subtype analysis to JSON
+python3 scripts/mtg_subtypes.py data/AllPrintings.json --json > subtypes.json
+```
+*   **Options:**
+    *   `-t N`, `--top N`: Number of entries to show in tables (Default: 10).
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
+
 > **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), and L (Basic Land).`
 
 **Examples:**
