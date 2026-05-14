@@ -40,6 +40,7 @@ FIELD_MAP = {
     'pack': {'header': 'Pack', 'align': 'r', 'aliases': ['pack_id']},
     'box': {'header': 'Box', 'align': 'r', 'aliases': ['box_id']},
     'complexity': {'header': 'Score', 'align': 'r', 'aliases': ['score']},
+    'rating': {'header': 'Rating', 'align': 'r', 'aliases': ['power_rating']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
@@ -139,6 +140,11 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
         return res
+    elif canon == 'rating':
+        res = str(card.power_rating)
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.RED)
+        return res
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color)
     elif canon == 'encoded':
@@ -174,7 +180,7 @@ Available Fields (aliases in parentheses):
   Color Info:
     colors, identity (ci, color_identity), id_count (identity_count)
   Display & Simulation:
-    summary (view), complexity (score), pack, box, encoded
+    summary (view), complexity (score), rating (power_rating), pack, box, encoded
 
 Usage Examples:
   # Quickly search for a card name using the default dataset
@@ -240,7 +246,7 @@ Usage Examples:
                         help='Shuffle the cards before processing.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards (shorthand for --shuffle --limit N).')
-    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score'],
+    proc_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--reverse', action='store_true',
                         help='Reverse the sort order.')
