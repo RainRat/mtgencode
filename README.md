@@ -623,6 +623,21 @@ python3 scripts/mtg_subset.py data/AllPrintings.json tiny.json --rarity rare --g
 ```
 *   Supports all **Advanced Filtering** flags and sorting.
 
+### `mtg_grid.py`
+Provides a generic 2D cross-tabulation tool for card datasets. This allows you to cross-reference attributes like color, rarity, type, cmc, power, toughness, and mechanic to see how they are distributed.
+```bash
+# Analyze Card Type vs Color Identity for a specific set
+python3 scripts/mtg_grid.py type color --set MOM
+
+# Analyze Rarity vs CMC for the whole dataset
+python3 scripts/mtg_grid.py rarity cmc data/AllPrintings.json
+```
+*   **Dimensions:** `color`, `rarity`, `type`, `cmc`, `power`, `toughness`, `loyalty`, `mechanic`.
+*   **Options:**
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
+
 ### `mtg_mechanics.py`
 Lists all mechanical keywords (e.g., Flying, Trample, Ward) recognized by the toolkit and can calculate their frequency in a dataset. This is useful for seeing which keywords are currently tracked or for analyzing the mechanical profile of a set.
 ```bash
