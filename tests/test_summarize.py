@@ -9,7 +9,7 @@ import json
 sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), 'lib'))
 
-from scripts.summarize import main as summarize_main
+from scripts.summarize import summarize_data as summarize_main
 from lib.cardlib import Card
 
 class TestSummarize(unittest.TestCase):
