@@ -221,11 +221,19 @@ Usage Examples:
         
         decklist = []
         
-        for i in range(creatures_target):
-            decklist.append(random.choice(c_sample).name.title())
+        if creatures_target > 0:
+            if not c_sample:
+                print("Warning: No creatures found in pool for standard deck.", file=sys.stderr)
+            else:
+                for i in range(creatures_target):
+                    decklist.append(random.choice(c_sample).name.title())
             
-        for i in range(spells_target):
-            decklist.append(random.choice(s_sample).name.title())
+        if spells_target > 0:
+            if not s_sample:
+                print("Warning: No non-creature spells found in pool for standard deck.", file=sys.stderr)
+            else:
+                for i in range(spells_target):
+                    decklist.append(random.choice(s_sample).name.title())
             
         grouped = defaultdict(int)
         for name in decklist:
