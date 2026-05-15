@@ -6,3 +6,5 @@ scipy
 titlecase
 torch
 matplotlib
+transformers
+accelerate
