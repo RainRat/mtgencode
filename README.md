@@ -264,7 +264,8 @@ If you don't use the `--nolabel` flag, each field is prefixed with a number for 
 
 ---
 
-### Advanced Filtering
+## Advanced Filtering
+
 Filter cards using search patterns, set codes, rarities, or decklist files. These flags work across most tools in this project.
 
 *   **Global Filters:**
@@ -289,85 +290,6 @@ Filter cards using search patterns, set codes, rarities, or decklist files. Thes
         *   `--loy VALUE`: Filter by Loyalty or Defense.
     *   `--mechanic NAME`: Include cards with specific keyword abilities or features (e.g., `Flying`, `Activated`, `ETB Effect`).
     *   `--deck-filter FILE`: Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
-
-### `mtg_power.py`
-Analyzes the creature power balance and curve efficiency in a dataset. It calculates a 'Power Rating' relative to CMC to identify outliers (cards that are significantly above or below the expected power curve for their cost).
-```bash
-# Find the most efficient creatures in a specific set
-python3 scripts/mtg_power.py data/AllPrintings.json --set MOM --limit 10
-
-# Compare average creature efficiency across rarities
-python3 scripts/mtg_power.py data/AllPrintings.json --rarity common --rarity rare
-
-# Export balance analysis to JSON
-python3 scripts/mtg_power.py generated_cards.txt --json
-```
-*   **Metric:** A rating of 1.0 represents a standard "Vanilla" 2/2 for 2 mana. Keywords like Flying or Indestructible increase the rating.
-*   **Options:** Supports `--json`, `--csv`, and all standard **Advanced Filtering** flags.
-
-### `mtg_asfan.py`
-Calculates "As-Fan" (As fanned) statistics for a card dataset. As-Fan represents the average number of cards with a certain characteristic (like a specific color, type, or mechanic) a player can expect to see in a single 15-card booster pack.
-```bash
-# Analyze As-Fan for a specific set
-python3 scripts/mtg_asfan.py data/AllPrintings.json --set MOM
-
-# Compare As-Fan of a generated set vs official data
-python3 scripts/mtg_asfan.py data/AllPrintings.json --compare generated.txt
-```
-*   **Options:**
-    *   `--compare FILE`: Side-by-side comparison with a second dataset.
-    *   `--json`: Output results in structured JSON format.
-    *   `--csv`: Output results in CSV format.
-    *   Supports standard **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
-
-### `mtg_synergy.py`
-Analyzes how different mechanics (like Flying, Kicker, or Flashback) appear together on the same cards. It identifies frequent pairings and calculates a 'Lift Score' to measure if these mechanics appear together more often than expected by chance.
-```bash
-# Analyze co-occurrence for a specific set
-python3 scripts/mtg_synergy.py data/AllPrintings.json --set MOM
-
-# Find frequent pairings in AI designs with at least 5 occurrences
-python3 scripts/mtg_synergy.py generated.txt --min-freq 5
-```
-*   **Options:**
-    *   `--min-freq N`: Minimum co-occurrences required to report a pair (Default: 2).
-    *   `--top N`: Show the top N pairings (Default: 20).
-    *   `--json`: Output results in structured JSON format.
-    *   `--csv`: Output results in CSV format.
-    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
-
-### `mtg_types.py`
-Generates a Type vs. Color heatmap (matrix) cross-referencing card types with Color Identity (W, U, B, R, G, Colorless, Multicolored). This is essential for verifying color-pie balance and archetypal distribution in a set.
-```bash
-# Analyze the type/color distribution of a specific set
-python3 scripts/mtg_types.py data/AllPrintings.json --set MOM
-
-# Compare distribution between official data and AI designs
-python3 scripts/mtg_types.py data/AllPrintings.json --compare generated.txt
-```
-*   **Options:**
-    *   `--compare FILE`: Side-by-side comparison with a second dataset.
-    *   `--json`: Output results in structured JSON format.
-    *   `--csv`: Output results in CSV format.
-    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
-
-### `mtg_subtypes.py`
-Analyzes the distribution of card subtypes (like Creature types, Artifact types, or Spell types) in a dataset. It identifies the most popular subtypes and calculates 'Signature' subtypes for each color identity (types that appear significantly more often in one color than others).
-```bash
-# Analyze subtypes for the March of the Machine set
-python3 scripts/mtg_subtypes.py data/AllPrintings.json --set MOM
-
-# See the top 20 signature subtypes for each color
-python3 scripts/mtg_subtypes.py data/AllPrintings.json --top 20
-
-# Export subtype analysis to JSON
-python3 scripts/mtg_subtypes.py data/AllPrintings.json --json > subtypes.json
-```
-*   **Options:**
-    *   `-t N`, `--top N`: Number of entries to show in tables (Default: 10).
-    *   `--json`: Output results in structured JSON format.
-    *   `--csv`: Output results in CSV format.
-    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 > **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), and L (Basic Land).`
 
@@ -587,6 +509,85 @@ python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard
     *   `--creatures N`, `--spells N`, `--lands N`: Override the target number of cards for each category.
     *   `--curve "1:5,2:10,..."`: Override the target mana curve for creatures.
     *   `--outfile FILE`: Save the decklist to a file instead of printing to the console.
+
+### `mtg_power.py`
+Analyzes the creature power balance and curve efficiency in a dataset. It calculates a 'Power Rating' relative to CMC to identify outliers (cards that are significantly above or below the expected power curve for their cost).
+```bash
+# Find the most efficient creatures in a specific set
+python3 scripts/mtg_power.py data/AllPrintings.json --set MOM --limit 10
+
+# Compare average creature efficiency across rarities
+python3 scripts/mtg_power.py data/AllPrintings.json --rarity common --rarity rare
+
+# Export balance analysis to JSON
+python3 scripts/mtg_power.py generated_cards.txt --json
+```
+*   **Metric:** A rating of 1.0 represents a standard "Vanilla" 2/2 for 2 mana. Keywords like Flying or Indestructible increase the rating.
+*   **Options:** Supports `--json`, `--csv`, and all standard **Advanced Filtering** flags.
+
+### `mtg_asfan.py`
+Calculates "As-Fan" (As fanned) statistics for a card dataset. As-Fan represents the average number of cards with a certain characteristic (like a specific color, type, or mechanic) a player can expect to see in a single 15-card booster pack.
+```bash
+# Analyze As-Fan for a specific set
+python3 scripts/mtg_asfan.py data/AllPrintings.json --set MOM
+
+# Compare As-Fan of a generated set vs official data
+python3 scripts/mtg_asfan.py data/AllPrintings.json --compare generated.txt
+```
+*   **Options:**
+    *   `--compare FILE`: Side-by-side comparison with a second dataset.
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports standard **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
+
+### `mtg_synergy.py`
+Analyzes how different mechanics (like Flying, Kicker, or Flashback) appear together on the same cards. It identifies frequent pairings and calculates a 'Lift Score' to measure if these mechanics appear together more often than expected by chance.
+```bash
+# Analyze co-occurrence for a specific set
+python3 scripts/mtg_synergy.py data/AllPrintings.json --set MOM
+
+# Find frequent pairings in AI designs with at least 5 occurrences
+python3 scripts/mtg_synergy.py generated.txt --min-freq 5
+```
+*   **Options:**
+    *   `--min-freq N`: Minimum co-occurrences required to report a pair (Default: 2).
+    *   `--top N`: Show the top N pairings (Default: 20).
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
+
+### `mtg_types.py`
+Generates a Type vs. Color heatmap (matrix) cross-referencing card types with Color Identity (W, U, B, R, G, Colorless, Multicolored). This is essential for verifying color-pie balance and archetypal distribution in a set.
+```bash
+# Analyze the type/color distribution of a specific set
+python3 scripts/mtg_types.py data/AllPrintings.json --set MOM
+
+# Compare distribution between official data and AI designs
+python3 scripts/mtg_types.py data/AllPrintings.json --compare generated.txt
+```
+*   **Options:**
+    *   `--compare FILE`: Side-by-side comparison with a second dataset.
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
+
+### `mtg_subtypes.py`
+Analyzes the distribution of card subtypes (like Creature types, Artifact types, or Spell types) in a dataset. It identifies the most popular subtypes and calculates 'Signature' subtypes for each color identity (types that appear significantly more often in one color than others).
+```bash
+# Analyze subtypes for the March of the Machine set
+python3 scripts/mtg_subtypes.py data/AllPrintings.json --set MOM
+
+# See the top 20 signature subtypes for each color
+python3 scripts/mtg_subtypes.py data/AllPrintings.json --top 20
+
+# Export subtype analysis to JSON
+python3 scripts/mtg_subtypes.py data/AllPrintings.json --json > subtypes.json
+```
+*   **Options:**
+    *   `-t N`, `--top N`: Number of entries to show in tables (Default: 10).
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 ### `json2csv.py`, `csv2json.py` & `combinejson.py`
 Used for integrating custom cards into your dataset. These scripts let you export existing cards to CSV, convert spreadsheets to JSON, and merge them with official data. See [CUSTOM.md](CUSTOM.md) for a full guide.
