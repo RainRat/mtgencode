@@ -481,6 +481,23 @@ python3 scripts/mtg_validate.py data/AllPrintings.json --dump
     *   `-q`, `--quiet`: Suppress the progress bar.
     *   Supports all **Advanced Filtering** flags.
 
+### `mtg_llm_validate.py`
+Validates the mechanical integrity of cards using a local Large Language Model (LLM). This tool asks the AI to judge if a card's text follows Magic's rules logic and provides a reason for its decision.
+```bash
+# Validate cards in a file using the default model (TinyLlama)
+python3 scripts/mtg_llm_validate.py generated_cards.txt
+
+# Validate specific cards and output valid ones to a JSON file
+python3 scripts/mtg_llm_validate.py generated.txt --grep "Grizzly Bears" --only-valid --json > valid.json
+```
+*   **Requirements:** Requires `transformers`, `torch`, and `accelerate` (installed via `requirements.txt`).
+*   **Options:**
+    *   `--model MODEL`: The HuggingFace model to use (Default: `TinyLlama/TinyLlama-1.1B-Chat-v1.0`).
+    *   `--device DEVICE`: Device to run on (`cuda`, `cpu`, or `mps`).
+    *   `--batch-size N`: Number of cards to process at once.
+    *   `--only-valid`: Filter output to only include cards the LLM judged as valid.
+    *   Supports all **Advanced Filtering** flags and multiple output formats (`--json`, `--csv`, `--table`).
+
 ### `mtg_sets.py`
 Lists and filters sets in an MTGJSON file. This is useful for seeing which sets are available in a large dataset like `AllPrintings.json`.
 ```bash
