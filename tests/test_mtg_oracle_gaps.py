@@ -31,12 +31,23 @@ class TestMtgOracleGaps(unittest.TestCase):
         self.assertIn("Artifact - Spacecraft", out)
         self.assertIn("Station 3+", out)
 
-    def test_main_fuzzy_match(self):
+    def test_main_fuzzy_match_auto_fulfillment(self):
         code, out, err = self.run_main(['testdata/uthros.json', 'Uthrrs', '--no-color'])
         self.assertEqual(code, 0)
-        self.assertIn("Card 'Uthrrs' not found.", out)
-        self.assertIn("Did you mean:", out)
-        self.assertIn("- Uthros Research Craft", out)
+        self.assertIn("Uthros Research Craft", out)
+        self.assertIn("Notice: Card 'Uthrrs' not found. Showing best match: Uthros Research Craft", err)
+
+    def test_main_fuzzy_match_multiple_suggestions(self):
+        # Use testdata/ which has multiple cards
+        # Mock get_close_matches to return two keys that definitely exist in search_map
+        # when processing testdata/
+        with patch('scripts.mtg_oracle.difflib.get_close_matches',
+                   return_value=['uthros research craft', 'invasion of tarkir']):
+            code, out, err = self.run_main(['testdata/', 'Zzzzz', '--no-color'])
+            self.assertIn("Card 'Zzzzz' not found.", out)
+            self.assertIn("Did you mean:", out)
+            self.assertIn("- Uthros Research Craft", out)
+            self.assertIn("- Invasion of Tarkir", out)
 
     def test_main_fuzzy_match_no_suggestions(self):
         code, out, err = self.run_main(['testdata/uthros.json', 'Zzzzzzzzzzzz', '--no-color'])
@@ -140,6 +151,21 @@ class TestMtgOracleGaps(unittest.TestCase):
         code, out, err = self.run_main(['testdata/uthros.json'], stdout_isatty=True)
         self.assertEqual(code, 0)
         self.assertIn("\x1b[", out)
+
+    def test_main_shorthand_flags(self):
+        # Test -s (similar) and -G (gatherer)
+        # We just check if they are accepted and trigger the right logic
+        with patch('scripts.mtg_oracle.namediff.Namediff') as mock_nd:
+            code, out, err = self.run_main(['testdata/uthros.json', 'Uthros', '-s', '-G', '--no-color', '--verbose'])
+            self.assertEqual(code, 0)
+            # gatherer=True effects:
+            # 1. Rarity in parens on first line
+            self.assertIn("Uthros Research Craft {2}{U} (rare)", out)
+            # 2. P/T on typeline with em-dash
+            self.assertIn("Artifact \u2014 Spacecraft (0/8)", out)
+            # 3. Counters unpassed to "charge"
+            self.assertIn("charge counter", out)
+            self.assertTrue(mock_nd.called)
 
 if __name__ == '__main__':
     unittest.main()

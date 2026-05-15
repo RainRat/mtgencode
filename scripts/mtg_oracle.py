@@ -58,13 +58,13 @@ Example Usage:
 
     # Group: Content Formatting
     enc_group = parser.add_argument_group('Content Formatting')
-    enc_group.add_argument('--gatherer', action='store_true',
+    enc_group.add_argument('-G', '--gatherer', action='store_true',
                         help='Use modern Gatherer-style wording and formatting.')
     enc_group.add_argument('--nolabel', action='store_true',
                         help="Input file does not have field labels (like '|cost|' or '|text|').")
     enc_group.add_argument('--nolinetrans', action='store_true',
                         help='Input file does not use automatic line reordering.')
-    enc_group.add_argument('--similar', action='store_true',
+    enc_group.add_argument('-s', '--similar', action='store_true',
                         help='Find and display cards mechanically similar to the results.')
 
     # Group: Filtering Options (Standard across tools)
@@ -253,7 +253,23 @@ Example Usage:
 
                 matches = difflib.get_close_matches(query_lower, list(search_map.keys()), n=3, cutoff=0.7)
 
-                if not args.quiet:
+                # UX Improvement: Fuzzy auto-fulfillment
+                # If we find exactly one distinct card suggestion, we automatically show it.
+                distinct_suggestions = {}
+                for m in matches:
+                    suggestion = search_map[m]
+                    distinct_suggestions[suggestion.lower()] = suggestion
+
+                if len(distinct_suggestions) == 1:
+                    suggestion_name = list(distinct_suggestions.values())[0]
+                    suggestion_sanitized = suggestion_name.lower().replace('-', utils.dash_marker)
+                    display_cards = [c for c in cards if c.name.lower() == suggestion_sanitized]
+                    if not args.quiet:
+                        notice = f"Notice: Card '{args.query}' not found. Showing best match: {suggestion_name}"
+                        if use_color:
+                            notice = utils.colorize(notice, utils.Ansi.YELLOW)
+                        print(notice, file=sys.stderr)
+                elif not args.quiet:
                     print(f"Card '{args.query}' not found.")
                     if matches:
                         print("Did you mean:")
@@ -263,7 +279,9 @@ Example Usage:
                             if suggestion not in seen_suggestions:
                                 print(f"  - {suggestion}")
                                 seen_suggestions.add(suggestion)
-                return
+                    return
+                else:
+                    return
     else:
         display_cards = cards
 
