@@ -21,19 +21,19 @@ except ImportError:
     def tqdm(iterable, **kwargs):
         return iterable
 
-def main(fname, verbose = True, outliers = False, dump_all = False,
-         nolinetrans = False, nolabel = False,
-         grep = None, use_color = None, limit = 0, json_out = False, vgrep = None,
-         grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
-         grep_text=None, vgrep_text=None,
-         grep_cost=None, vgrep_cost=None, grep_pt=None, vgrep_pt=None,
-         grep_loyalty=None, vgrep_loyalty=None,
-         sets = None, rarities = None, colors=None, cmcs=None,
-         pows=None, tous=None, loys=None,
-         mechanics=None,
-         identities=None, id_counts=None,
-         shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None,
-         top = 10, booster = 0, sort = None, reverse_sort = False, box = 0):
+def summarize_data(fname, verbose = True, outliers = False, dump_all = False,
+                   nolinetrans = False, nolabel = False,
+                   grep = None, use_color = None, limit = 0, json_out = False, vgrep = None,
+                   grep_name=None, vgrep_name=None, grep_types=None, vgrep_types=None,
+                   grep_text=None, vgrep_text=None,
+                   grep_cost=None, vgrep_cost=None, grep_pt=None, vgrep_pt=None,
+                   grep_loyalty=None, vgrep_loyalty=None,
+                   sets = None, rarities = None, colors=None, cmcs=None,
+                   pows=None, tous=None, loys=None,
+                   mechanics=None,
+                   identities=None, id_counts=None,
+                   shuffle = False, seed = None, quiet = False, oname = None, decklist_file = None,
+                   top = 10, booster = 0, sort = None, reverse_sort = False, box = 0):
 
     # Set default format to JSON if no specific output format is selected and outfile is .json
     if not json_out and oname and oname.endswith('.json'):
@@ -99,7 +99,7 @@ def main(fname, verbose = True, outliers = False, dump_all = False,
             output_f.close()
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(
         description="Show statistics, design budget analysis, mechanical profiling, and details about a Magic: The Gathering card dataset.",
         epilog="""
@@ -274,19 +274,22 @@ Usage Examples:
         args.shuffle = True
         args.limit = args.sample
 
-    main(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all,
-         nolinetrans = args.nolinetrans, nolabel = args.nolabel,
-         grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep,
-         grep_name=args.grep_name, vgrep_name=args.exclude_name,
-         grep_types=args.grep_type, vgrep_types=args.exclude_type,
-         grep_text=args.grep_text, vgrep_text=args.exclude_text,
-         grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
-         grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
-         grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
-         sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
-         pows=args.pow, tous=args.tou, loys=args.loy,
-         mechanics=args.mechanic,
-         identities=args.identity, id_counts=args.id_count,
-         shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck,
-         top = args.top, booster = args.booster, sort = args.sort, reverse_sort = args.reverse, box = args.box)
-    exit(0)
+    summarize_data(args.infile, verbose = args.verbose, outliers = args.outliers, dump_all = args.all,
+                   nolinetrans = args.nolinetrans, nolabel = args.nolabel,
+                   grep = args.grep, use_color = args.color, limit = args.limit, json_out = args.json, vgrep = args.vgrep,
+                   grep_name=args.grep_name, vgrep_name=args.exclude_name,
+                   grep_types=args.grep_type, vgrep_types=args.exclude_type,
+                   grep_text=args.grep_text, vgrep_text=args.exclude_text,
+                   grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
+                   grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
+                   grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
+                   sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
+                   pows=args.pow, tous=args.tou, loys=args.loy,
+                   mechanics=args.mechanic,
+                   identities=args.identity, id_counts=args.id_count,
+                   shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, oname = args.outfile, decklist_file = args.deck,
+                   top = args.top, booster = args.booster, sort = args.sort, reverse_sort = args.reverse, box = args.box)
+
+
+if __name__ == '__main__':
+    main()
