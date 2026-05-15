@@ -725,28 +725,27 @@ class Card:
     @property
     def power_rating(self):
         """Calculates a heuristic power rating for creatures relative to their CMC."""
-        if not self.is_creature:
-            return 0.0
+        rating = 0.0
+        if self.is_creature:
+            p = utils.from_unary_single(self.pt_p)
+            t = utils.from_unary_single(self.pt_t)
 
-        p = utils.from_unary_single(self.pt_p)
-        t = utils.from_unary_single(self.pt_t)
+            # Default to 0 if non-numeric (X, *, etc.)
+            p_val = float(p) if isinstance(p, (int, float)) else 0.0
+            t_val = float(t) if isinstance(t, (int, float)) else 0.0
 
-        # Default to 0 if non-numeric (X, *, etc.)
-        p_val = float(p) if isinstance(p, (int, float)) else 0.0
-        t_val = float(t) if isinstance(t, (int, float)) else 0.0
+            score = p_val + t_val
 
-        score = p_val + t_val
+            # Add keyword bonuses
+            face_mechanics = self.get_face_mechanics()
+            for m in face_mechanics:
+                score += KEYWORD_WEIGHTS.get(m, 0.0)
 
-        # Add keyword bonuses
-        face_mechanics = self.get_face_mechanics()
-        for m in face_mechanics:
-            score += KEYWORD_WEIGHTS.get(m, 0.0)
-
-        # Adjust for CMC
-        # Formula: (P + T + Keywords) / (2 * max(1, CMC))
-        # A "Vanilla" 2/2 for 2 has a rating of (2+2)/(2*2) = 1.0
-        cmc = self.cost.cmc
-        rating = score / (2 * max(1, cmc))
+            # Adjust for CMC
+            # Formula: (P + T + Keywords) / (2 * max(1, CMC))
+            # A "Vanilla" 2/2 for 2 has a rating of (2+2)/(2*2) = 1.0
+            cmc = self.cost.cmc
+            rating = score / (2 * max(1, cmc))
 
         if self.bside:
             rating = max(rating, self.bside.power_rating)
