@@ -11,15 +11,15 @@ def test_oracle_basic():
     assert 'Artifact - Spacecraft' in result.stdout
 
 def test_oracle_fuzzy():
-    """Test oracle fuzzy matching suggestions."""
+    """Test oracle fuzzy matching auto-fulfillment."""
     result = subprocess.run(
         ['python3', 'scripts/mtg_oracle.py', 'testdata/uthros.json', 'Uthrss'],
         capture_output=True, text=True
     )
     assert result.returncode == 0
-    assert "Card 'Uthrss' not found." in result.stdout
-    assert "Did you mean:" in result.stdout
-    assert "- Uthros" in result.stdout
+    assert "Card 'Uthrss' not found." in result.stderr
+    assert "Showing best match: Uthros Research Craft" in result.stderr
+    assert "Uthros Research Craft" in result.stdout
 
 def test_oracle_grep():
     """Test oracle filtering with grep."""
