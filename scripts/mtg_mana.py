@@ -73,10 +73,10 @@ def get_produced_colors(card):
 
 def get_category(card):
     """Categorizes a mana producer."""
-    if card.is_creature: return "Dork"
-    if card.is_artifact: return "Rock"
+    if card.is_creature: return "Creature"
+    if card.is_artifact: return "Artifact"
     if card.is_land: return "Land"
-    if card.is_instant or card.is_sorcery: return "Ritual"
+    if card.is_instant or card.is_sorcery: return "Spell"
     return "Other"
 
 def analyze_dataset(cards):
@@ -115,7 +115,7 @@ def main():
         description="Identify and profile mana-producing cards in a dataset.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-This tool identifies mana producers using rules text patterns (e.g., 'Add {G}', 'any color') and intrinsic basic land types. It categorizes producers into Dorks (creatures), Rocks (artifacts), Lands, and Rituals (spells).
+This tool identifies mana producers using rules text patterns (e.g., 'Add {G}', 'any color') and intrinsic basic land types. It categorizes producers into Creatures, Artifacts, Lands, and Spells.
 
 Usage Examples:
   # Analyze mana production for a specific set
@@ -124,7 +124,7 @@ Usage Examples:
   # Compare mana fixing between official data and AI-generated cards
   python3 scripts/mtg_mana.py data/AllPrintings.json --compare generated.txt
 
-  # Find only green mana-producing creatures (Mana Dorks)
+  # Find only green mana-producing creatures
   python3 scripts/mtg_mana.py data/AllPrintings.json --colors G --grep-type "Creature"
 
   # Quickly find mana producers using the default dataset
@@ -409,7 +409,7 @@ Usage Examples:
                 c_header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in c_header]
 
             c_rows = [c_header]
-            for cat in ["Dork", "Rock", "Land", "Ritual", "Other"]:
+            for cat in ["Creature", "Artifact", "Land", "Spell", "Other"]:
                 p1 = stats1['categories'][cat] / stats1['total_cards'] * 100
                 row = [cat, f"{p1:5.1f}%"]
                 if stats2:
