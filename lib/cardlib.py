@@ -611,7 +611,7 @@ class Card:
 
     def _has_type(self, type_name):
         """Returns True if the card has the specified type (case-insensitive)."""
-        return any(t.lower() == type_name.lower() for t in self.types)
+        return type_name.lower() in self.types
 
     @property
     def is_artifact(self):
@@ -621,7 +621,7 @@ class Card:
     @property
     def is_creature(self):
         """Returns True if the card is a creature or a vehicle."""
-        return self._has_type('creature') or any(s.lower() == 'vehicle' for s in self.subtypes)
+        return self._has_type('creature') or 'vehicle' in self.subtypes
 
     @property
     def is_planeswalker(self):
@@ -861,7 +861,7 @@ class Card:
         if 'uncast' in text_raw:
             m.add('Uncast')
 
-        if 'equipment' in [t.lower() for t in self.subtypes] or 'equip' in text_raw:
+        if 'equipment' in self.subtypes or 'equip' in text_raw:
             m.add('Equipment')
 
         if 'level up' in text_raw or 'level &' in text_enc:

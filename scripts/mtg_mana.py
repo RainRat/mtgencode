@@ -24,7 +24,7 @@ def get_produced_colors(card):
 
     # 1. Intrinsic basic land production (even if text is empty)
     # Check both types and subtypes for basic land types
-    all_types = [t.lower() for t in card.types + card.subtypes]
+    all_types = card.types + card.subtypes
     if 'plains' in all_types: produced.add('W')
     if 'island' in all_types: produced.add('U')
     if 'swamp' in all_types: produced.add('B')
