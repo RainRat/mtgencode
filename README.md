@@ -510,6 +510,23 @@ python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard
     *   `--curve "1:5,2:10,..."`: Override the target mana curve for creatures.
     *   `--outfile FILE`: Save the decklist to a file instead of printing to the console.
 
+### `mtg_manabase.py`
+Recommends a basic land distribution (Mana Base) for a decklist or card dataset. It analyzes the mana pips in casting costs and suggests a proportional count of basic lands (Plains, Islands, Swamps, Mountains, Forests, and Wastes) to meet those requirements.
+```bash
+# Analyze a decklist and recommend 24 lands
+python3 scripts/mtg_manabase.py my_deck.txt --lands 24
+
+# Calculate a mana base for a specific set (40-card Limited deck)
+python3 scripts/mtg_manabase.py data/AllPrintings.json --set MOM --lands 17
+
+# Include activation costs in the pip analysis
+python3 scripts/mtg_manabase.py my_deck.txt --include-text
+```
+*   **Options:**
+    *   `--lands N`: Target number of basic lands to recommend (Default: 24).
+    *   `--include-text`: Include mana symbols found in rules text (e.g., activation costs).
+    *   Supports all **Advanced Filtering** flags.
+
 ### `mtg_power.py`
 Analyzes the creature power balance and curve efficiency in a dataset. It calculates a 'Power Rating' relative to CMC to identify outliers (cards that are significantly above or below the expected power curve for their cost).
 ```bash
