@@ -4,6 +4,8 @@ import os
 import argparse
 import json
 import re
+import urllib.request
+import urllib.error
 from contextlib import redirect_stdout
 
 # Add lib directory to path
@@ -32,26 +34,88 @@ except ImportError:
 
 DEFAULT_MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
-def get_prompt(card):
-    """Formats a card for LLM judgment."""
+def get_prompt_messages(card):
+    """Formats a card into system and user messages for chat completion APIs."""
     card_str = card.format(gatherer=True)
-    # Using a chat-style prompt template for TinyLlama
-    prompt = (
-        "<|system|>\n"
-        "You are an expert Magic: The Gathering rules judge. Your task is to evaluate the mechanical validity of custom cards. "
-        "A card is INVALID if it uses non-existent game terms, has nonsensical costs, or violates core rules logic. "
-        "A card is VALID if it follows MTG rules conventions, even if it is unique or powerful.\n\n"
-        "Respond strictly in this format:\n"
-        "JUDGMENT: VALID or INVALID\n"
-        "REASON: [One sentence explanation]\n"
-        "<|user|>\n"
-        f"Evaluate this card:\n{card_str}\n"
-        "<|assistant|>\n"
-    )
+    return [
+        {
+            "role": "system",
+            "content": (
+                "You are an expert Magic: The Gathering rules judge. Your task is to evaluate the mechanical validity of custom cards. "
+                "A card is INVALID if it uses non-existent game terms, has nonsensical costs, or violates core rules logic. "
+                "A card is VALID if it follows MTG rules conventions, even if it is unique or powerful.\n\n"
+                "Respond strictly in this format:\n"
+                "JUDGMENT: VALID or INVALID\n"
+                "REASON: [One sentence explanation]"
+            )
+        },
+        {
+            "role": "user",
+            "content": f"Evaluate this card:\n{card_str}"
+        }
+    ]
+
+def get_prompt(card):
+    """Formats a card for LLM judgment (TinyLlama specific string format)."""
+    messages = get_prompt_messages(card)
+    prompt = f"<|system|>\n{messages[0]['content']}\n<|user|>\n{messages[1]['content']}\n<|assistant|>\n"
     return prompt
 
-def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, verbose=False):
+def parse_llm_response(text, card):
+    """Extracts the judgment and reason from the LLM response text."""
+    judgment_match = re.search(r'JUDGMENT:\s*(VALID|INVALID)', text, re.IGNORECASE)
+    reason_match = re.search(r'REASON:\s*(.*)', text, re.IGNORECASE)
+
+    judgment = judgment_match.group(1).upper() if judgment_match else "UNKNOWN"
+    reason = reason_match.group(1).strip() if reason_match else "Reason not found in LLM response."
+
+    return {
+        'card': card,
+        'judgment': judgment,
+        'reason': reason
+    }
+
+def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, verbose=False, provider='transformers', api_url=None, api_key=None):
     """Processes cards through the LLM for validation."""
+    if provider == 'api':
+        if not api_url:
+            print("Error: --api-url is required when using the 'api' provider.", file=sys.stderr)
+            sys.exit(1)
+
+        results = []
+        for i in tqdm(range(len(cards)), disable=quiet or len(cards) < 2, desc="LLM API Validation"):
+            card = cards[i]
+            messages = get_prompt_messages(card)
+
+            payload = {
+                "model": model_name,
+                "messages": messages,
+                "temperature": 0.0,
+                "max_tokens": 100
+            }
+
+            headers = {"Content-Type": "application/json"}
+            if api_key:
+                headers["Authorization"] = f"Bearer {api_key}"
+
+            req = urllib.request.Request(api_url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
+            try:
+                with urllib.request.urlopen(req) as response:
+                    response_data = json.loads(response.read().decode('utf-8'))
+
+                content = response_data.get('choices', [{}])[0].get('message', {}).get('content', '')
+                parsed = parse_llm_response(content, card)
+                results.append(parsed)
+            except Exception as e:
+                if verbose:
+                    print(f"\nError calling API for card '{card.name}': {e}", file=sys.stderr)
+                results.append({
+                    'card': card,
+                    'judgment': 'UNKNOWN',
+                    'reason': f"API Error: {e}"
+                })
+        return results
+
     if not HAS_TRANSFORMERS:
         print("Error: The 'transformers' and 'torch' libraries are required for LLM validation.", file=sys.stderr)
         print("Install them with: pip install transformers torch", file=sys.stderr)
@@ -130,17 +194,8 @@ def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, ver
             else:
                 response = full_text.strip()
 
-            judgment_match = re.search(r'JUDGMENT:\s*(VALID|INVALID)', response, re.IGNORECASE)
-            reason_match = re.search(r'REASON:\s*(.*)', response, re.IGNORECASE)
-
-            judgment = judgment_match.group(1).upper() if judgment_match else "UNKNOWN"
-            reason = reason_match.group(1).strip() if reason_match else "Reason not found in LLM response."
-
-            results.append({
-                'card': batch[j],
-                'judgment': judgment,
-                'reason': reason
-            })
+            parsed = parse_llm_response(response, batch[j])
+            results.append(parsed)
 
     return results
 
@@ -150,14 +205,17 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
-  # Validate cards in a file using the default model
+  # Validate cards in a file using the default local Transformers model
   python3 scripts/mtg_llm_validate.py generated_cards.txt
 
   # Validate specific cards by name
   python3 scripts/mtg_llm_validate.py --grep "Grizzly Bears"
 
-  # Use a different model and output valid cards to a JSON file
-  python3 scripts/mtg_llm_validate.py generated.txt --model "microsoft/phi-2" --json > valid.json
+  # Use an external API (e.g. OpenRouter)
+  python3 scripts/mtg_llm_validate.py generated.txt --provider api --api-url "https://openrouter.ai/api/v1/chat/completions" --model "meta-llama/llama-3-8b-instruct" --api-key "YOUR_KEY"
+
+  # Use a local Ollama API
+  python3 scripts/mtg_llm_validate.py generated.txt --provider api --api-url "http://localhost:11434/v1/chat/completions" --model "llama3" --json > valid.json
 """
     )
 
@@ -177,6 +235,12 @@ Usage Examples:
     if HAS_TRANSFORMERS and torch.cuda.is_available():
         default_device = 'cuda'
 
+    model_group.add_argument('--provider', choices=['transformers', 'api'], default='transformers',
+                        help='The backend provider to use. (Default: transformers).')
+    model_group.add_argument('--api-url', default=None,
+                        help='The URL for the API endpoint (e.g., http://localhost:11434/v1/chat/completions for Ollama). Required if --provider is api.')
+    model_group.add_argument('--api-key', default=None,
+                        help='Optional Bearer token for API authentication (e.g., for OpenRouter or OpenAI).')
     model_group.add_argument('--device', default=default_device,
                         help='Device to run the model on (cuda, cpu, mps). Default: cuda if available.')
     model_group.add_argument('--batch-size', type=int, default=1,
@@ -246,7 +310,10 @@ Usage Examples:
         device=args.device,
         batch_size=args.batch_size,
         quiet=args.quiet,
-        verbose=args.verbose
+        verbose=args.verbose,
+        provider=args.provider,
+        api_url=args.api_url,
+        api_key=args.api_key
     )
 
     if args.only_valid:

@@ -111,5 +111,41 @@ class TestMtgLlmValidate(unittest.TestCase):
         self.assertIn("Valid Card", output)
         self.assertNotIn("Invalid Card", output)
 
+
+    @patch('urllib.request.urlopen')
+    @patch('jdecode.mtg_open_file')
+    def test_main_api_provider(self, mock_open_file, mock_urlopen):
+        mock_card = MagicMock(spec=cardlib.Card)
+        mock_card.name = "API Card"
+        mock_card.format.return_value = "API rules"
+        mock_card.to_dict.return_value = {"name": "API Card"}
+        mock_open_file.return_value = [mock_card]
+
+        # Mock the HTTP response for the API
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({
+            "choices": [{
+                "message": {
+                    "content": "JUDGMENT: VALID\nREASON: API Reason"
+                }
+            }]
+        }).encode('utf-8')
+        # __enter__ and __exit__ for the context manager
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = None
+        mock_urlopen.return_value = mock_response
+
+        stdout = io.StringIO()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()):
+            with patch('sys.argv', ['mtg_llm_validate.py', 'dummy.txt', '--provider', 'api', '--api-url', 'http://fake.api/v1/chat/completions', '--json']):
+                mtg_llm_validate.main()
+
+        output = stdout.getvalue()
+        data = json.loads(output)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['name'], "API Card")
+        self.assertEqual(data[0]['llm_judgment'], "VALID")
+        self.assertEqual(data[0]['llm_reason'], "API Reason")
+
 if __name__ == '__main__':
     unittest.main()
