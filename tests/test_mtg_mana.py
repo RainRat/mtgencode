@@ -32,7 +32,7 @@ class TestMtgMana(unittest.TestCase):
         self.assertEqual(mtg_mana.get_produced_colors(card_volcanic), {'U', 'R'})
 
     def test_get_produced_colors_text(self):
-        # Mana Dork
+        # Mana Creature
         card_elf = cardlib.Card({
             'name': 'Llanowar Elves',
             'types': ['Creature'],
@@ -40,7 +40,7 @@ class TestMtgMana(unittest.TestCase):
         })
         self.assertEqual(mtg_mana.get_produced_colors(card_elf), {'G'})
 
-        # Mana Rock
+        # Mana Artifact
         card_sol_ring = cardlib.Card({
             'name': 'Sol Ring',
             'types': ['Artifact'],
@@ -57,21 +57,21 @@ class TestMtgMana(unittest.TestCase):
         self.assertEqual(mtg_mana.get_produced_colors(card_lotus), {'Any'})
 
     def test_get_category(self):
-        # Dork
+        # Creature
         c = cardlib.Card({'name': 'Elf', 'types': ['Creature']})
-        self.assertEqual(mtg_mana.get_category(c), 'Dork')
+        self.assertEqual(mtg_mana.get_category(c), 'Creature')
 
-        # Rock
+        # Artifact
         c = cardlib.Card({'name': 'Ring', 'types': ['Artifact']})
-        self.assertEqual(mtg_mana.get_category(c), 'Rock')
+        self.assertEqual(mtg_mana.get_category(c), 'Artifact')
 
         # Land
         c = cardlib.Card({'name': 'Forest', 'types': ['Land']})
         self.assertEqual(mtg_mana.get_category(c), 'Land')
 
-        # Ritual
+        # Spell
         c = cardlib.Card({'name': 'Ritual', 'types': ['Instant']})
-        self.assertEqual(mtg_mana.get_category(c), 'Ritual')
+        self.assertEqual(mtg_mana.get_category(c), 'Spell')
 
     def test_analyze_dataset(self):
         cards = [
@@ -84,7 +84,7 @@ class TestMtgMana(unittest.TestCase):
         self.assertEqual(stats['total_cards'], 3)
         self.assertEqual(stats['producer_count'], 3)
         self.assertEqual(stats['categories']['Land'], 2)
-        self.assertEqual(stats['categories']['Dork'], 1)
+        self.assertEqual(stats['categories']['Creature'], 1)
         self.assertEqual(stats['colors']['G'], 2)
         self.assertEqual(stats['colors']['U'], 1)
 

@@ -821,7 +821,7 @@ python3 scripts/mtg_curve.py data/AllPrintings.json --grep-type "Creature"
     *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_mana.py`
-Identifies mana-producing cards using rules text patterns (e.g., 'Add {G}', 'any color') and intrinsic basic land types. It categorizes producers into Dorks (creatures), Rocks (artifacts), Lands, and Rituals (spells), profiles produced colors, and identifies color-fixing density.
+Identifies mana-producing cards using rules text patterns (e.g., 'Add {G}', 'any color') and intrinsic basic land types. It categorizes producers into Creatures, Artifacts, Lands, and Spells, profiles produced colors, and identifies color-fixing density.
 ```bash
 # Analyze mana production for a specific set
 python3 scripts/mtg_mana.py data/AllPrintings.json --set MOM
