@@ -15,6 +15,167 @@ import cardlib
 import namediff
 import sortlib
 
+def build_search_map(cards):
+    """Builds a mapping of searchable names to original card names for fuzzy matching."""
+    search_map = {}
+    for c in cards:
+        unpassed_name = c.name.replace(utils.dash_marker, '-')
+        search_map[c.name.lower()] = cardlib.titlecase(unpassed_name)
+        for word in unpassed_name.split():
+            if len(word) > 3:
+                # Strip punctuation for word-based fuzzy matching
+                clean_word = re.sub(r'[^a-zA-Z0-9]', '', word).lower()
+                if clean_word and clean_word not in search_map:
+                    search_map[clean_word] = cardlib.titlecase(unpassed_name)
+    return search_map
+
+def perform_search(cards, query, search_map, quiet=False, use_color=False):
+    """Performs exact, partial, and fuzzy matching for a card name query."""
+    if not query:
+        return cards
+
+    # Sanitize query to match internal representations (hyphens are dash_marker)
+    query_sanitized = query.lower().replace('-', utils.dash_marker)
+    query_lower = query.lower()
+
+    exact_matches = [c for c in cards if c.name.lower() == query_sanitized]
+    if exact_matches:
+        return exact_matches
+
+    # Fallback to partial matches
+    partial_matches = [c for c in cards if query_sanitized in c.name.lower()]
+    if partial_matches:
+        return partial_matches
+
+    # Fallback to fuzzy suggestions
+    matches = difflib.get_close_matches(query_lower, list(search_map.keys()), n=3, cutoff=0.7)
+
+    # Fuzzy auto-fulfillment
+    distinct_suggestions = {}
+    for m in matches:
+        suggestion = search_map[m]
+        distinct_suggestions[suggestion.lower()] = suggestion
+
+    if len(distinct_suggestions) == 1:
+        suggestion_name = list(distinct_suggestions.values())[0]
+        suggestion_sanitized = suggestion_name.lower().replace('-', utils.dash_marker)
+        display_cards = [c for c in cards if c.name.lower() == suggestion_sanitized]
+        if not quiet:
+            notice = f"Notice: Card '{query}' not found. Showing best match: {suggestion_name}"
+            if use_color:
+                notice = utils.colorize(notice, utils.Ansi.YELLOW)
+            print(notice, file=sys.stderr)
+        return display_cards
+
+    if not quiet:
+        print(f"Card '{query}' not found.")
+        if matches:
+            print("Did you mean:")
+            seen_suggestions = set()
+            for m in matches:
+                suggestion = search_map[m]
+                if suggestion not in seen_suggestions:
+                    print(f"  - {suggestion}")
+                    seen_suggestions.add(suggestion)
+    return []
+
+def display_card_results(display_cards, args, use_color, nd=None):
+    """Displays a list of cards in either summary or full detail view."""
+    if not display_cards:
+        return
+
+    total_matches = len(display_cards)
+    displayed_matches = total_matches
+    if args.limit > 0:
+        display_cards = display_cards[:args.limit]
+        displayed_matches = len(display_cards)
+
+    if not args.quiet:
+        count_str = str(total_matches)
+        if displayed_matches < total_matches:
+            count_str = f"Showing {displayed_matches} of {total_matches} matches"
+        utils.print_header("SEARCH RESULTS", count=count_str, use_color=use_color)
+
+    # UX Improvement: Smart View
+    # If multiple distinct cards are found, we show high-density summaries.
+    # If only one distinct card is found (even if multiple printings), we show full details.
+    use_summary = len(set(c.name.lower() for c in display_cards)) > 1 and not args.full
+
+    if use_summary:
+        for card in display_cards:
+            print("  " + card.summary(ansi_color=use_color))
+    else:
+        # Display the cards (Full View)
+        for i, card in enumerate(display_cards):
+            if i > 0:
+                print("\n  " + "-" * 40 + "\n")
+
+            formatted_card = card.format(gatherer=args.gatherer, ansi_color=use_color)
+            indented_card = "\n".join(["  " + line for line in formatted_card.split("\n")])
+            print(indented_card)
+
+            # Metadata Footer
+            metadata_parts = []
+            if card.set_code:
+                set_label = "SET:"
+                set_val = card.set_code.upper()
+                if card.number:
+                    set_val += f" #{card.number}"
+                if use_color:
+                    set_val = utils.colorize(set_val, utils.Ansi.BOLD)
+                metadata_parts.append(f"{set_label} {set_val}")
+
+            identity = card.color_identity
+            if identity:
+                id_label = "ID:"
+                id_val = identity
+                if use_color:
+                    id_val = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in identity])
+                metadata_parts.append(f"{id_label} {id_val}")
+
+            score_label = "SCORE:"
+            score_val = str(card.complexity_score)
+            if use_color:
+                score_val = utils.colorize(score_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
+            metadata_parts.append(f"{score_label} {score_val}")
+
+            footer = "  " + " \u2022 ".join(metadata_parts)
+            print("\n" + footer)
+
+            # Scryfall URL
+            scry_url = utils.get_scryfall_url(card.set_code, card.number)
+            if scry_url:
+                url_display = scry_url
+                if use_color:
+                    url_display = utils.colorize(url_display, utils.Ansi.BLUE + utils.Ansi.UNDERLINE)
+                print("  " + url_display)
+
+            if nd:
+                print()
+                sim_header = "  SIMILAR CARDS (Mechanical Similarity)"
+                if use_color:
+                    sim_header = utils.colorize(sim_header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                print(sim_header)
+                print("  " + "-" * 40)
+
+                # nearest_card returns (ratio, name)
+                results = nd.nearest_card(card, n=6)
+                # Filter out the card itself
+                similar = [r for r in results if r[1] != card.name][:5]
+
+                if similar:
+                    for ratio, name in similar:
+                        display_name = nd.names.get(name, cardlib.titlecase(name))
+                        ratio_str = f"{ratio*100:3.0f}%"
+                        if use_color:
+                            ratio_str = utils.colorize(ratio_str, utils.Ansi.GREEN)
+                        print(f"    {ratio_str}  {display_name}")
+                else:
+                    print("    No similar cards found.")
+
+    if not args.quiet:
+        utils.print_operation_summary("Search", total_matches, 0)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Search and display card details in a human-readable format. "
@@ -42,6 +203,9 @@ Example Usage:
 
   # Use fuzzy matching for misspelled names
   python3 scripts/mtg_oracle.py data/AllPrintings.json "Grizly Beers"
+
+  # Enter interactive mode
+  python3 scripts/mtg_oracle.py -i
 """,
     )
 
@@ -122,6 +286,8 @@ Example Usage:
 
     # Group: Browsing Options
     browsing_group = parser.add_argument_group('Browsing Options')
+    browsing_group.add_argument('-i', '--interactive', action='store_true',
+                        help='Enter interactive mode for repeated queries.')
     browsing_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
     browsing_group.add_argument('-f', '--full', action='store_true',
@@ -222,176 +388,93 @@ Example Usage:
             print("No cards found matching the criteria.", file=sys.stderr)
         return
 
-    # If query is provided, perform name-based filtering
+    # Build search map for fuzzy matching
+    search_map = build_search_map(cards)
+
+    nd = None
+    if args.similar:
+        # Load full dataset for similarity context
+        if args.verbose and not args.quiet:
+            print("Loading similarity context...", file=sys.stderr)
+
+        full_cards = jdecode.mtg_open_file(args.infile, verbose=False,
+                                          linetrans=not args.nolinetrans,
+                                          fmt_labeled=None if args.nolabel else cardlib.fmt_labeled_default)
+        nd = namediff.Namediff(verbose=args.verbose and not args.quiet, cards=full_cards)
+
+    # Initial search if query was provided
     if args.query:
-        # Sanitize query to match internal representations (hyphens are dash_marker)
-        query_sanitized = args.query.lower().replace('-', utils.dash_marker)
-        query_lower = args.query.lower()
-        exact_matches = [c for c in cards if c.name.lower() == query_sanitized]
+        display_cards = perform_search(cards, args.query, search_map, quiet=args.quiet, use_color=use_color)
+        display_card_results(display_cards, args, use_color, nd=nd)
+    elif not args.interactive:
+        display_card_results(cards, args, use_color, nd=nd)
 
-        if exact_matches:
-            display_cards = exact_matches
-        else:
-            # Fallback to partial matches
-            partial_matches = [c for c in cards if query_sanitized in c.name.lower()]
-            if partial_matches:
-                display_cards = partial_matches
-            else:
-                # Fallback to fuzzy suggestions
-                # Build a mapping of searchable names (full names and significant words)
-                # to the actual card objects for suggesting and matching.
-                search_map = {}
-                for c in cards:
-                    unpassed_name = c.name.replace(utils.dash_marker, '-')
-                    search_map[c.name.lower()] = cardlib.titlecase(unpassed_name)
-                    for word in unpassed_name.split():
-                        if len(word) > 3:
-                            # Strip punctuation for word-based fuzzy matching
-                            clean_word = re.sub(r'[^a-zA-Z0-9]', '', word).lower()
-                            if clean_word and clean_word not in search_map:
-                                search_map[clean_word] = cardlib.titlecase(unpassed_name)
+    if args.interactive:
+        # High-density header for interactive mode
+        if not args.quiet:
+            print(f"\nEntering interactive mode. Type 'q' or 'exit' to quit.")
+            print(f"Searching within {len(cards)} cards.")
 
-                matches = difflib.get_close_matches(query_lower, list(search_map.keys()), n=3, cutoff=0.7)
+        prompt = "oracle> "
+        if use_color:
+            prompt = utils.colorize(prompt, utils.Ansi.BOLD + utils.Ansi.CYAN)
 
-                # UX Improvement: Fuzzy auto-fulfillment
-                # If we find exactly one distinct card suggestion, we automatically show it.
-                distinct_suggestions = {}
-                for m in matches:
-                    suggestion = search_map[m]
-                    distinct_suggestions[suggestion.lower()] = suggestion
+        # Store original card pool for resetting
+        original_cards = cards
+        current_cards = cards
+        current_search_map = search_map
 
-                if len(distinct_suggestions) == 1:
-                    suggestion_name = list(distinct_suggestions.values())[0]
-                    suggestion_sanitized = suggestion_name.lower().replace('-', utils.dash_marker)
-                    display_cards = [c for c in cards if c.name.lower() == suggestion_sanitized]
+        while True:
+            try:
+                query = input(prompt).strip()
+                if not query:
+                    # Show current pool status and a few cards if no query
+                    display_card_results(current_cards, args, use_color, nd=nd)
+                    continue
+
+                if query.lower() in ['q', 'quit', 'exit']:
+                    break
+
+                # Simple command support (help)
+                if query.lower() in ['h', 'help', '?', '/help']:
+                    print("\nCommands:")
+                    print("  q, quit, exit : Close interactive mode")
+                    print("  h, help, ?    : Show this help")
+                    print("  /reset        : Reset all filters to the original dataset")
+                    print("  /filter [tag] : Filter the current pool by a search pattern (e.g. /filter Goblin)")
+                    print("  /view         : List the cards in the current pool (up to limit)")
+                    print("  [name]        : Search for a card by name (supports fuzzy)")
+                    print(f"\nCurrent pool: {len(current_cards)} cards.")
+                    print()
+                    continue
+
+                if query.lower() == '/view':
+                    display_card_results(current_cards, args, use_color, nd=nd)
+                    continue
+
+                if query.lower() == '/reset':
+                    current_cards = original_cards
+                    current_search_map = build_search_map(current_cards)
                     if not args.quiet:
-                        notice = f"Notice: Card '{args.query}' not found. Showing best match: {suggestion_name}"
-                        if use_color:
-                            notice = utils.colorize(notice, utils.Ansi.YELLOW)
-                        print(notice, file=sys.stderr)
-                elif not args.quiet:
-                    print(f"Card '{args.query}' not found.")
-                    if matches:
-                        print("Did you mean:")
-                        seen_suggestions = set()
-                        for m in matches:
-                            suggestion = search_map[m]
-                            if suggestion not in seen_suggestions:
-                                print(f"  - {suggestion}")
-                                seen_suggestions.add(suggestion)
-                    return
-                else:
-                    return
-    else:
-        display_cards = cards
+                        print(f"Reset filters. Pool size: {len(current_cards)} cards.")
+                    continue
 
-    total_matches = len(display_cards)
+                if query.lower().startswith('/filter '):
+                    pattern = query[8:].strip()
+                    if pattern:
+                        p = re.compile(pattern, re.IGNORECASE)
+                        current_cards = [c for c in current_cards if c.search(p)]
+                        current_search_map = build_search_map(current_cards)
+                        if not args.quiet:
+                            print(f"Filtered pool by '{pattern}'. Pool size: {len(current_cards)} cards.")
+                    continue
 
-    # Handle limit
-    if args.limit > 0:
-        display_cards = display_cards[:args.limit]
-    displayed_matches = len(display_cards)
-
-    if not args.quiet:
-        if displayed_matches < total_matches:
-            count_str = f"Showing {displayed_matches} of {total_matches} matches"
-        else:
-            count_str = total_matches
-
-        utils.print_header("SEARCH RESULTS", count=count_str, use_color=use_color)
-
-    # UX Improvement: Smart View
-    # If multiple distinct cards are found, we show high-density summaries.
-    # If only one distinct card is found (even if multiple printings), we show full details.
-    use_summary = len(set(c.name.lower() for c in display_cards)) > 1 and not args.full
-
-    if use_summary:
-        for card in display_cards:
-            print("  " + card.summary(ansi_color=use_color))
-    else:
-        nd = None
-        if args.similar:
-            # Load full dataset for similarity context
-            if args.verbose and not args.quiet:
-                print("Loading similarity context...", file=sys.stderr)
-
-            full_cards = jdecode.mtg_open_file(args.infile, verbose=False,
-                                              linetrans=not args.nolinetrans,
-                                              fmt_labeled=None if args.nolabel else cardlib.fmt_labeled_default)
-            nd = namediff.Namediff(verbose=args.verbose and not args.quiet, cards=full_cards)
-
-        # Display the cards (Full View)
-        for i, card in enumerate(display_cards):
-            if i > 0:
-                print("\n  " + "-" * 40 + "\n")
-
-            formatted_card = card.format(gatherer=args.gatherer, ansi_color=use_color)
-            indented_card = "\n".join(["  " + line for line in formatted_card.split("\n")])
-            print(indented_card)
-
-            # Metadata Footer
-            metadata_parts = []
-            if card.set_code:
-                set_label = "SET:"
-                set_val = card.set_code.upper()
-                if card.number:
-                    set_val += f" #{card.number}"
-                if use_color:
-                    set_val = utils.colorize(set_val, utils.Ansi.BOLD)
-                metadata_parts.append(f"{set_label} {set_val}")
-
-            identity = card.color_identity
-            if identity:
-                id_label = "ID:"
-                id_val = identity
-                if use_color:
-                    id_val = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in identity])
-                metadata_parts.append(f"{id_label} {id_val}")
-
-            score_label = "SCORE:"
-            score_val = str(card.complexity_score)
-            if use_color:
-                score_val = utils.colorize(score_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
-            metadata_parts.append(f"{score_label} {score_val}")
-
-            footer = "  " + " \u2022 ".join(metadata_parts)
-            print("\n" + footer)
-
-            # Scryfall URL
-            scry_url = utils.get_scryfall_url(card.set_code, card.number)
-            if scry_url:
-                url_display = scry_url
-                if use_color:
-                    url_display = utils.colorize(url_display, utils.Ansi.BLUE + utils.Ansi.UNDERLINE)
-                print("  " + url_display)
-
-            if nd:
+                display_cards = perform_search(current_cards, query, current_search_map, quiet=args.quiet, use_color=use_color)
+                display_card_results(display_cards, args, use_color, nd=nd)
+                print() # Add spacing between queries
+            except (KeyboardInterrupt, EOFError):
                 print()
-                sim_header = "  SIMILAR CARDS (Mechanical Similarity)"
-                if use_color:
-                    sim_header = utils.colorize(sim_header, utils.Ansi.BOLD + utils.Ansi.CYAN)
-                print(sim_header)
-                print("  " + "-" * 40)
-
-                # nearest_card returns (ratio, name)
-                # card.name is the internal lowercase name
-                results = nd.nearest_card(card, n=6)
-                # Filter out the card itself
-                similar = [r for r in results if r[1] != card.name][:5]
-
-                if similar:
-                    for ratio, name in similar:
-                        # name in nd.names is already titlecased
-                        display_name = nd.names.get(name, cardlib.titlecase(name))
-                        ratio_str = f"{ratio*100:3.0f}%"
-                        if use_color:
-                            ratio_str = utils.colorize(ratio_str, utils.Ansi.GREEN)
-                        print(f"    {ratio_str}  {display_name}")
-                else:
-                    print("    No similar cards found.")
-
-    if not args.quiet:
-        utils.print_operation_summary("Search", total_matches, 0)
+                break
 
 if __name__ == "__main__":
     main()
