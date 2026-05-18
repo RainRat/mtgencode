@@ -880,6 +880,23 @@ python3 scripts/mtg_actions.py data/AllPrintings.json --colors R
     *   `--csv`: Output results in CSV format.
     *   Supports standard **Advanced Filtering** flags and simulation.
 
+### `mtg_costs.py`
+Analyzes the intensity and complexity of mana costs in a dataset. It calculates "Color Intensity" (colored pips relative to CMC) and profiles the distribution of pip counts (Single, Double, Triple, or Heavy).
+```bash
+# Analyze cost intensity for a specific set
+python3 scripts/mtg_costs.py data/AllPrintings.json --set MOM
+
+# Find the 20 most mana-intensive cards (outliers)
+python3 scripts/mtg_costs.py data/AllPrintings.json --limit 20
+```
+*   **Metrics:**
+    *   **Color Intensity:** The ratio of colored pips to CMC. High intensity indicates a more difficult-to-cast card.
+    *   **Pip Distribution:** Shows how many cards fall into "Double-pip" or "Triple-pip" categories.
+*   **Options:**
+    *   `-n LIMIT`, `--limit N`: Number of top intensity outliers to show (Default: 20).
+    *   `--json`, `--csv`: Structured data output formats.
+    *   Supports all **Advanced Filtering** flags.
+
 ### `mtg_pips.py`
 Analyzes the distribution of mana symbols (pips) in a dataset. It counts symbols from casting costs and rules text (optionally via `--include-text`), supports table, JSON, and CSV output formats, and integrates with standard Advanced Filtering and simulation flags.
 ```bash
