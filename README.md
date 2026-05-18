@@ -246,7 +246,7 @@ Rarity is encoded using a single-letter marker. These markers are often the seco
 | `L` | Basic Land | **L**and |
 
 ### Field Labels
-If you don't use the `--nolabel` flag, each field is prefixed with a number for easier identification:
+If you don't use the `--nolabel` flag, each field is prefixed with a number for easier identification. By default (in the `std` encoding), the fields appear in this sequence: Types (5), Supertypes (4), Subtypes (6), Loyalty/Defense (7), Power/Toughness (8), Rules Text (9), Mana Cost (3), Rarity (0), and finally Name (1).
 
 | Label | Card Part | Example |
 | :--- | :--- | :--- |
