@@ -437,64 +437,6 @@ Usage Examples:
                 print(f"Warning: Card '{args.similar_to}' not found for similarity comparison.", file=sys.stderr)
             cards = []
 
-    total_matches = len(cards)
-    if args.limit > 0:
-        cards = cards[:args.limit]
-    displayed_matches = len(cards)
-
-    if total_matches == 0 and not args.quiet:
-        print("No cards found matching the criteria.", file=sys.stderr)
-
-        # Fallback to fuzzy suggestions for name-based lookups
-        if args.infile != '-' and (args.grep or args.grep_name):
-            # Relax the name-based filters to get a candidate pool
-            candidate_cards = jdecode.mtg_open_file(
-                args.infile, verbose=False,
-                grep=None, vgrep=args.vgrep,
-                grep_name=None, vgrep_name=args.exclude_name,
-                grep_types=args.grep_type, vgrep_types=args.exclude_type,
-                grep_text=args.grep_text, vgrep_text=args.exclude_text,
-                grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
-                grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
-                grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
-                sets=args.set, rarities=args.rarity,
-                colors=args.colors, cmcs=args.cmc,
-                pows=args.pow, tous=args.tou, loys=args.loy,
-                mechanics=args.mechanic,
-                identities=args.identity, id_counts=args.id_count,
-                decklist_file=args.deck,
-                booster=args.booster, box=args.box,
-                shuffle=False
-            )
-
-            if candidate_cards:
-                # Build a mapping of searchable names (full names and significant words)
-                search_map = {}
-                for c in candidate_cards:
-                    unpassed_name = c.name.replace(utils.dash_marker, '-')
-                    search_map[c.name.lower()] = titlecase(unpassed_name)
-                    for word in unpassed_name.split():
-                        if len(word) > 3:
-                            # Strip punctuation for word-based fuzzy matching
-                            clean_word = re.sub(r'[^a-zA-Z0-9]', '', word).lower()
-                            if clean_word and clean_word not in search_map:
-                                search_map[clean_word] = titlecase(unpassed_name)
-
-                queries = []
-                if args.grep: queries.extend(args.grep)
-                if args.grep_name: queries.extend(args.grep_name)
-
-                suggestions = set()
-                for q in queries:
-                    matches = difflib.get_close_matches(q.lower(), list(search_map.keys()), n=3, cutoff=0.7)
-                    for m in matches:
-                        suggestions.add(search_map[m])
-
-                if suggestions:
-                    print("Did you mean:", file=sys.stderr)
-                    for s in sorted(list(suggestions)):
-                        print(f"  - {s}", file=sys.stderr)
-
     # Set default format if none chosen
     if not (args.text or args.table or args.md_table or args.json or args.jsonl or args.csv or args.summary):
         if args.outfile:
@@ -521,6 +463,93 @@ Usage Examples:
     multi_sep = " // "
     if args.table or args.md_table:
         multi_sep = "\n"
+
+    total_matches = len(cards)
+    if args.limit > 0:
+        cards = cards[:args.limit]
+    displayed_matches = len(cards)
+
+    if total_matches == 0 and not args.quiet:
+        # Fallback to fuzzy suggestions for name-based lookups
+        if args.infile != '-' and (args.grep or args.grep_name):
+            # Relax the name-based filters to get a candidate pool
+            candidate_cards = jdecode.mtg_open_file(
+                args.infile, verbose=False,
+                grep=None, vgrep=args.vgrep,
+                grep_name=None, vgrep_name=args.exclude_name,
+                grep_types=args.grep_type, vgrep_types=args.exclude_type,
+                grep_text=args.grep_text, vgrep_text=args.exclude_text,
+                grep_cost=args.grep_cost, vgrep_cost=args.exclude_cost,
+                grep_pt=args.grep_pt, vgrep_pt=args.exclude_pt,
+                grep_loyalty=args.grep_loyalty, vgrep_loyalty=args.exclude_loyalty,
+                sets=args.set, rarities=args.rarity,
+                colors=args.colors, cmcs=args.cmc,
+                pows=args.pow, tous=args.tou, loys=args.loy,
+                mechanics=args.mechanic,
+                identities=args.identity, id_counts=args.id_count,
+                decklist_file=args.deck,
+                booster=args.booster, box=args.box,
+                shuffle=False
+            )
+
+            if candidate_cards:
+                # Build a mapping of searchable names (full names and significant words)
+                # Maps searchable keys to tuples of (Display Name, Internal Name)
+                search_map = {}
+                for c in candidate_cards:
+                    unpassed_name = c.name.replace(utils.dash_marker, '-')
+                    disp_name = titlecase(unpassed_name)
+                    val = (disp_name, c.name)
+                    search_map[c.name.lower()] = val
+                    for word in unpassed_name.split():
+                        if len(word) > 3:
+                            # Strip punctuation for word-based fuzzy matching
+                            clean_word = re.sub(r'[^a-zA-Z0-9]', '', word).lower()
+                            if clean_word and clean_word not in search_map:
+                                search_map[clean_word] = val
+
+                queries = []
+                if args.grep: queries.extend(args.grep)
+                if args.grep_name: queries.extend(args.grep_name)
+
+                # Use a dict for suggestions to map display name to internal name
+                # This ensures we can recover the exact internal name for auto-fulfillment
+                # while deduplicating by display name.
+                suggestions_map = {}
+                for q in queries:
+                    matches = difflib.get_close_matches(q.lower(), list(search_map.keys()), n=3, cutoff=0.7)
+                    for m in matches:
+                        disp, internal = search_map[m]
+                        suggestions_map[disp] = internal
+
+                # UX Improvement: Fuzzy auto-fulfillment (Terminal only)
+                if len(suggestions_map) == 1 and sys.stdout.isatty():
+                    suggestion_disp = list(suggestions_map.keys())[0]
+                    suggestion_internal = suggestions_map[suggestion_disp]
+
+                    cards = [c for c in candidate_cards if c.name == suggestion_internal]
+                    total_matches = len(cards)
+                    if args.limit > 0:
+                        cards = cards[:args.limit]
+                    displayed_matches = len(cards)
+
+                    query_str = queries[0] if queries else "your query"
+                    notice = f"Notice: Card '{query_str}' not found. Showing best match: {suggestion_disp}"
+                    if use_color:
+                        notice = utils.colorize(notice, utils.Ansi.YELLOW)
+                    print(notice, file=sys.stderr)
+                elif suggestions_map:
+                    print("No cards found matching the criteria.", file=sys.stderr)
+                    print("Did you mean:", file=sys.stderr)
+                    for s in sorted(list(suggestions_map.keys())):
+                        display_s = s
+                        if use_color:
+                            display_s = utils.colorize(s, utils.Ansi.CYAN)
+                        print(f"  - {display_s}", file=sys.stderr)
+                else:
+                    print("No cards found matching the criteria.", file=sys.stderr)
+        else:
+            print("No cards found matching the criteria.", file=sys.stderr)
 
     # Process output
     field_list = [f.strip() for f in args.fields.split(',')]
