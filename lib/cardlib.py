@@ -611,11 +611,17 @@ class Card:
 
     def _has_type(self, type_name):
         """Returns True if the card has the specified type (case-insensitive)."""
-        return any(t.lower() == type_name.lower() for t in self.types)
+        tn = type_name.lower()
+        if tn in self.types:
+            return True
+        return any(t.lower() == tn for t in self.types)
 
     def _has_subtype(self, subtype_name):
         """Returns True if the card has the specified subtype (case-insensitive)."""
-        return any(s.lower() == subtype_name.lower() for s in self.subtypes)
+        sn = subtype_name.lower()
+        if sn in self.subtypes:
+            return True
+        return any(s.lower() == sn for s in self.subtypes)
 
     @property
     def is_artifact(self):
