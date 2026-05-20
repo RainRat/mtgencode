@@ -89,6 +89,8 @@ class TestMtgCompare(unittest.TestCase):
                     self.assertIn("DATASET COMPARISON", output)
                     self.assertIn("Total Cards", output)
                     self.assertIn("Avg CMC", output)
+                    self.assertIn("Avg Complexity", output)
+                    self.assertIn("Avg Rating", output)
                     self.assertIn("1.0", output)
 
     def test_compare_main_two_files(self):
@@ -151,8 +153,9 @@ class TestMtgCompare(unittest.TestCase):
                     compare_main()
                     output = fake_out.getvalue()
                     self.assertIn("DATASET COMPARISON", output)
-                    self.assertIn("base.json", output)
-                    self.assertIn("target.json", output)
+                    # File extensions are now stripped in headers
+                    self.assertIn("base", output)
+                    self.assertIn("target", output)
                     self.assertIn("Avg CMC", output)
                     # Base CMC 2.0, Target CMC 4.0, Delta +2.0
                     self.assertIn("2.0", output)
