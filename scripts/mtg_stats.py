@@ -388,7 +388,7 @@ Usage Examples:
                         bar
                     ])
                 datalib.add_separator_row(d_rows)
-                datalib.printrows(datalib.padrows(d_rows, aligns=['l', 'r', 'r', 'l']), indent=4)
+                datalib.printrows(datalib.padrows(d_rows, aligns=['l', 'r', 'r', 'l']), indent=4, file=output_f)
                 print("", file=output_f)
             else:
                 print("  No creatures found for combat stat analysis.", file=output_f)

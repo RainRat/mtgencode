@@ -256,7 +256,7 @@ Usage Examples:
                 title += " (INCLUDES RULES TEXT)"
 
             utils.print_header(title, use_color=use_color, file=output_f)
-            datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
+            datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2, file=output_f)
 
     finally:
         if args.outfile:
