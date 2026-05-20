@@ -749,7 +749,7 @@ class Card:
 
             # Adjust for CMC
             # Formula: (P + T + Keywords) / (2 * max(1, CMC))
-            # A "Vanilla" 2/2 for 2 has a rating of (2+2)/(2*2) = 1.0
+            # A basic 2/2 creature for 2 mana has a rating of (2+2)/(2*2) = 1.0
             cmc = self.cost.cmc
             rating = score / (2 * max(1, cmc))
 

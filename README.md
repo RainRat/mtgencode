@@ -551,7 +551,7 @@ python3 scripts/mtg_power.py data/AllPrintings.json --rarity common --rarity rar
 # Export balance analysis to JSON
 python3 scripts/mtg_power.py generated_cards.txt --json
 ```
-*   **Metric:** A rating of 1.0 represents a standard "Vanilla" 2/2 for 2 mana. Keywords like Flying or Indestructible increase the rating.
+*   **Metric:** A rating of 1.0 represents a basic 2/2 creature with no abilities for 2 mana. Keywords like Flying or Indestructible increase the rating.
 *   **Options:** Supports `--json`, `--csv`, and all standard **Advanced Filtering** flags.
 
 ### `mtg_asfan.py`

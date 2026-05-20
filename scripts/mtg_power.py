@@ -22,7 +22,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 The Power Rating is a heuristic that evaluates a creature's combat efficiency.
-A "Vanilla" 2/2 for 2 mana has a rating of 1.0.
+A basic 2/2 creature (no abilities) for 2 mana has a rating of 1.0.
 
 How the rating is calculated:
   - Base Score: Power + Toughness
