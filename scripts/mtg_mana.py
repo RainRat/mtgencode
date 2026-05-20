@@ -59,7 +59,7 @@ def get_produced_colors(card):
             'white': 'W', 'blue': 'U', 'black': 'B', 'red': 'R', 'green': 'G', 'colorless': 'C'
         }
         for color_name, char in color_map.items():
-            if re.search(r'[Aa]dd\s+(?:one|two|three|X)\s+' + color_name, text):
+            if re.search(r'[Aa]dd\s+(?:one|two|three|[Xx])\s+' + color_name, text):
                 produced.add(char)
 
     # Recursive check for b-sides (e.g. flip/transform mana producers)
