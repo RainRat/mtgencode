@@ -637,6 +637,17 @@ Extracts a single card from the massive `AllPrintings.json` file. This is useful
 python3 scripts/extract_one.py data/AllPrintings.json SET_CODE "Card Name"
 ```
 
+### `mtg_forge.py`
+Forges a new card or modifies ("reforges") an existing one using command-line arguments. This is useful for quickly creating custom cards for testing or adding to a dataset.
+```bash
+# Create a card from scratch and view it
+python3 scripts/mtg_forge.py --name "Jules" --cost "{U}{R}" --type "Legendary Creature" --pt "2/2" --text "T: Draw a card." | python3 decode.py
+
+# Reforge an existing card (modifying stats and name)
+python3 scripts/mtg_forge.py --base "Grizzly Bears" --pt "3/3" --name "Super Bears"
+```
+*   **Options:** Supports `--name`, `--cost`, `--type`, `--text`, `--pt`, `--loyalty`, `--rarity`, and `--set`. Output formats include `--json` (Default), `--encoded`, and `--summary`.
+
 ### `mtg_oracle.py`
 Search and display card details in a human-readable format. This tool is optimized for quick lookup with fuzzy name matching and **Smart Dataset Detection**.
 
