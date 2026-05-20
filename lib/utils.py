@@ -146,6 +146,8 @@ def to_unary(s, warn = False):
 def from_unary(s):
     def replace_unary(match):
         n = match.group(0)
+        if n in _unary_exceptions_inv:
+            return str(_unary_exceptions_inv[n])
         i = (len(n) - len(unary_marker)) // len(unary_counter)
         return str(i)
 
@@ -416,7 +418,9 @@ mana_json_regex = (re.escape(mana_json_open_delimiter) + '['
                + ']+' + re.escape(mana_json_close_delimiter))
 
 number_decimal_regex = r'[0123456789]+'
-number_unary_regex = re.escape(unary_marker) + re.escape(unary_counter) + '*'
+# Sort keys by length descending to match longest first
+_exception_patterns = [re.escape(v) for v in sorted(_unary_exceptions_inv.keys(), key=len, reverse=True)]
+number_unary_regex = '(?:' + '|'.join(_exception_patterns + [re.escape(unary_marker) + re.escape(unary_counter) + '*']) + ')'
 # Pre-compile for performance
 _number_decimal_re = re.compile(number_decimal_regex)
 _number_unary_re = re.compile(number_unary_regex)
