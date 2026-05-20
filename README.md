@@ -852,6 +852,20 @@ python3 scripts/mtg_mana.py data/AllPrintings.json --compare generated.txt
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and simulation.
 
+### `mtg_costs.py`
+Analyzes the mana cost intensity (colored pips relative to CMC) and color commitment (distribution of Single, Double, Triple pips) in a dataset. This helps designers identify 'pip-heavy' outliers and ensure the set's requirements match its intended archetypes.
+```bash
+# Analyze cost intensity for a set
+python3 scripts/mtg_costs.py data/AllPrintings.json --set MOM
+
+# Find the most mana-intensive cards in a dataset
+python3 scripts/mtg_costs.py data/AllPrintings.json --limit 20
+```
+*   **Options:**
+    *   `--json`: Output results in structured JSON format.
+    *   `--csv`: Output results in CSV format.
+    *   Supports standard **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
+
 ### `mtg_stats.py`
 Analyzes creature combat stats (Power/Toughness) and Planeswalker loyalty in a dataset. It provides a "Combat Stat Curve" (average P/T per CMC), a color-based stat breakdown, and a frequency heatmap of P/T combinations.
 ```bash
