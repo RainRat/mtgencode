@@ -24,12 +24,12 @@ def get_produced_colors(card):
 
     # 1. Intrinsic basic land production (even if text is empty)
     # Check both types and subtypes for basic land types
-    if card._has_subtype('plains') or card._has_type('plains'): produced.add('W')
-    if card._has_subtype('island') or card._has_type('island'): produced.add('U')
-    if card._has_subtype('swamp') or card._has_type('swamp'): produced.add('B')
-    if card._has_subtype('mountain') or card._has_type('mountain'): produced.add('R')
-    if card._has_subtype('forest') or card._has_type('forest'): produced.add('G')
-    if card._has_subtype('wastes') or card._has_type('wastes'): produced.add('C')
+    land_types = {
+        'plains': 'W', 'island': 'U', 'swamp': 'B', 'mountain': 'R', 'forest': 'G', 'wastes': 'C'
+    }
+    for land_type, color in land_types.items():
+        if card._has_subtype(land_type) or card._has_type(land_type):
+            produced.add(color)
 
     # 2. Check for rules text patterns
     text = card.get_text(force_unpass=True).lower()
