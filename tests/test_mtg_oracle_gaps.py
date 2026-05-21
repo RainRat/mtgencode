@@ -6,12 +6,12 @@ import os
 
 sys.path.append(os.getcwd())
 
-from scripts.mtg_oracle import main as oracle_main
+from scripts.mtg_query import main as oracle_main
 
 class TestMtgOracleGaps(unittest.TestCase):
 
     def run_main(self, args, stdin_isatty=False, stdin_content=None, stdout_isatty=False):
-        with patch('sys.argv', ['mtg_oracle.py'] + args):
+        with patch('sys.argv', ['mtg_query.py', 'oracle'] + args):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
                 with patch('sys.stderr', new=io.StringIO()) as fake_err:
                     with patch('sys.stdin', new=io.StringIO(stdin_content or "")):
@@ -41,7 +41,7 @@ class TestMtgOracleGaps(unittest.TestCase):
         # Use testdata/ which has multiple cards
         # Mock get_close_matches to return two keys that definitely exist in search_map
         # when processing testdata/
-        with patch('scripts.mtg_oracle.difflib.get_close_matches',
+        with patch('scripts.mtg_query.difflib.get_close_matches',
                    return_value=['uthros research craft', 'invasion of tarkir']):
             code, out, err = self.run_main(['testdata/', 'Zzzzz', '--no-color'])
             self.assertIn("Card 'Zzzzz' not found.", out)
@@ -72,7 +72,7 @@ class TestMtgOracleGaps(unittest.TestCase):
             return False
 
         with patch('os.path.exists', side_effect=mocked_exists):
-            with patch('scripts.mtg_oracle.jdecode.mtg_open_file', return_value=[]) as mock_open:
+            with patch('scripts.mtg_query.jdecode.mtg_open_file', return_value=[]) as mock_open:
                 code, out, err = self.run_main(['-'], stdin_isatty=True)
                 self.assertIn("Using default dataset", err)
                 self.assertTrue(any('AllPrintings.json' in str(call) for call in mock_open.call_args_list))
@@ -155,7 +155,7 @@ class TestMtgOracleGaps(unittest.TestCase):
     def test_main_shorthand_flags(self):
         # Test -s (similar) and -G (gatherer)
         # We just check if they are accepted and trigger the right logic
-        with patch('scripts.mtg_oracle.namediff.Namediff') as mock_nd:
+        with patch('scripts.mtg_query.namediff.Namediff') as mock_nd:
             code, out, err = self.run_main(['testdata/uthros.json', 'Uthros', '-s', '-G', '--no-color', '--verbose'])
             self.assertEqual(code, 0)
             # gatherer=True effects:

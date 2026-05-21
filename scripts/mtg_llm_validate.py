@@ -30,6 +30,7 @@ try:
     import torch
     HAS_TRANSFORMERS = True
 except ImportError:
+    pipeline = None
     HAS_TRANSFORMERS = False
 
 DEFAULT_MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"

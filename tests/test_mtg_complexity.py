@@ -11,7 +11,7 @@ sys.path.append(os.path.join(os.getcwd(), 'lib'))
 
 from cardlib import Card
 from scripts.mtg_complexity import main as complexity_main
-from scripts.mtg_search import main as search_main
+from scripts.mtg_query import main as search_main
 
 class TestMtgComplexity(unittest.TestCase):
 
@@ -79,7 +79,7 @@ class TestMtgComplexity(unittest.TestCase):
 
     def test_search_complexity_field(self):
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_search.py', 'testdata/uthros.json', '--fields', 'name,complexity', '--text', '--no-color']):
+            with patch('sys.argv', ['mtg_query.py', 'search', 'testdata/uthros.json', '--fields', 'name,complexity', '--text', '--no-color']):
                 search_main()
                 output = fake_out.getvalue()
                 self.assertIn("Uthros Research Craft | 107", output)

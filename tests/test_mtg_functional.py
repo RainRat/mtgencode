@@ -31,7 +31,7 @@ def test_functional_basic(tmp_path):
             }
         ], f)
 
-    cmd = ["python3", "scripts/mtg_functional.py", str(test_file), "--no-color"]
+    cmd = ["python3", "scripts/mtg_query.py", "functional", str(test_file), "--no-color"]
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 0
     assert "FUNCTIONAL REPRINT GROUPS (1 match)" in result.stdout
@@ -63,7 +63,7 @@ def test_functional_no_match(tmp_path):
             }
         ], f)
 
-    cmd = ["python3", "scripts/mtg_functional.py", str(test_file), "--no-color"]
+    cmd = ["python3", "scripts/mtg_query.py", "functional", str(test_file), "--no-color"]
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert "No functional reprints found." in result.stderr
 
@@ -76,7 +76,7 @@ def test_functional_json_output(tmp_path):
             {"name": "B", "manaCost": "{W}", "types": ["Creature"], "power": "1", "toughness": "1"}
         ], f)
 
-    cmd = ["python3", "scripts/mtg_functional.py", str(test_file), "--json"]
+    cmd = ["python3", "scripts/mtg_query.py", "functional", str(test_file), "--json"]
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 0
     data = json.loads(result.stdout)

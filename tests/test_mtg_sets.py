@@ -10,14 +10,14 @@ import tempfile
 sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), 'lib'))
 
-from scripts.mtg_sets import main as sets_main
+from scripts.mtg_query import main as sets_main
 
 class TestMtgSets(unittest.TestCase):
 
     def test_sets_basic(self):
         """Test basic listing of sets."""
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_sets.py', 'testdata/tarkir.json', '--no-color']):
+            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--no-color']):
                 sets_main()
                 output = fake_out.getvalue()
                 self.assertIn("AVAILABLE SETS", output)
@@ -27,13 +27,13 @@ class TestMtgSets(unittest.TestCase):
     def test_sets_grep(self):
         """Test filtering sets by name/code."""
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_sets.py', 'testdata/tarkir.json', '--grep', 'CUS', '--no-color']):
+            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--grep', 'CUS', '--no-color']):
                 sets_main()
                 output = fake_out.getvalue()
                 self.assertIn("CUS", output)
 
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_sets.py', 'testdata/tarkir.json', '--grep', 'NONEXISTENT', '--no-color']):
+            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--grep', 'NONEXISTENT', '--no-color']):
                 sets_main()
                 output = fake_out.getvalue()
                 self.assertNotIn("CUS", output)
@@ -41,7 +41,7 @@ class TestMtgSets(unittest.TestCase):
     def test_sets_summarize(self):
         """Test the --summarize flag for profiling cards in sets."""
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_sets.py', 'testdata/tarkir.json', '--summarize', '--no-color']):
+            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--summarize', '--no-color']):
                 sets_main()
                 output = fake_out.getvalue()
                 self.assertIn("SET SUMMARY", output)
@@ -51,7 +51,7 @@ class TestMtgSets(unittest.TestCase):
     def test_sets_view(self):
         """Test the --view flag for listing cards in sets."""
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_sets.py', 'testdata/tarkir.json', '--view', '--no-color']):
+            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--view', '--no-color']):
                 sets_main()
                 output = fake_out.getvalue()
                 self.assertIn("CARD LIST", output)
@@ -61,14 +61,14 @@ class TestMtgSets(unittest.TestCase):
         """Test sorting and limiting flags."""
         # Limit 1
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_sets.py', 'testdata/tarkir.json', '--limit', '1', '--no-color']):
+            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--limit', '1', '--no-color']):
                 sets_main()
                 output = fake_out.getvalue()
                 self.assertIn("AVAILABLE SETS (1 match)", output)
 
         # Shuffle and sample
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_sets.py', 'testdata/tarkir.json', '--sample', '1', '--no-color']):
+            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--sample', '1', '--no-color']):
                 sets_main()
                 output = fake_out.getvalue()
                 self.assertIn("AVAILABLE SETS (1 match)", output)
@@ -76,7 +76,7 @@ class TestMtgSets(unittest.TestCase):
         # Sorting
         for sort_key in ['code', 'name', 'type', 'count']:
              with patch('sys.stdout', new=io.StringIO()) as fake_out:
-                with patch('sys.argv', ['mtg_sets.py', 'testdata/tarkir.json', '--sort', sort_key, '--reverse', '--no-color']):
+                with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--sort', sort_key, '--reverse', '--no-color']):
                     sets_main()
                     output = fake_out.getvalue()
                     self.assertIn("AVAILABLE SETS", output)
@@ -88,7 +88,7 @@ class TestMtgSets(unittest.TestCase):
 
         try:
             with patch('sys.stdout', new=io.StringIO()):
-                with patch('sys.argv', ['mtg_sets.py', 'testdata/tarkir.json', tf_path, '--no-color']):
+                with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', tf_path, '--no-color']):
                     sets_main()
 
             with open(tf_path, 'r') as f:
@@ -102,7 +102,7 @@ class TestMtgSets(unittest.TestCase):
     def test_sets_error_handling(self):
         """Test behavior with invalid files."""
         with patch('sys.stderr', new=io.StringIO()) as fake_err:
-            with patch('sys.argv', ['mtg_sets.py', 'nonexistent.json']):
+            with patch('sys.argv', ['mtg_query.py', 'sets', 'nonexistent.json']):
                 with self.assertRaises(SystemExit):
                     sets_main()
                 self.assertIn("Error loading", fake_err.getvalue())
@@ -124,7 +124,7 @@ class TestMtgSets(unittest.TestCase):
 
         try:
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
-                with patch('sys.argv', ['mtg_sets.py', tf_path, '--no-color']):
+                with patch('sys.argv', ['mtg_query.py', 'sets', tf_path, '--no-color']):
                     sets_main()
                     output = fake_out.getvalue()
                     self.assertIn("Test Set", output)
@@ -143,7 +143,7 @@ class TestMtgSets(unittest.TestCase):
         mock_stdout.write.side_effect = captured_output.write
 
         with patch('sys.stdout', mock_stdout):
-            with patch('sys.argv', ['mtg_sets.py', 'testdata/tarkir.json', '--color']):
+            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--color']):
                 sets_main()
                 output = captured_output.getvalue()
                 self.assertIn("\033[", output)

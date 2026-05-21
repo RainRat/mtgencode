@@ -8,17 +8,17 @@ import json
 # Add project root to sys.path
 sys.path.append(os.getcwd())
 
-from scripts.mtg_search import main as search_main
+from scripts.mtg_query import main as query_main
 
 class TestMtgSearchGaps(unittest.TestCase):
 
     def run_main(self, args, stdin_content=None):
-        with patch('sys.argv', ['mtg_search.py'] + args):
+        with patch('sys.argv', ['mtg_query.py', 'search'] + args):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
                 with patch('sys.stderr', new=io.StringIO()) as fake_err:
                     with patch('sys.stdin', new=io.StringIO(stdin_content or "")):
                         try:
-                            search_main()
+                            query_main()
                             code = 0
                         except SystemExit as e:
                             code = e.code if isinstance(e.code, int) else 0
@@ -78,14 +78,14 @@ class TestMtgSearchGaps(unittest.TestCase):
 
     def test_invalid_field_canonicalization(self):
         # Test get_field_value with an unknown field
-        from scripts.mtg_search import get_field_value
+        from scripts.mtg_query import get_field_value
         from lib.cardlib import Card
         card = Card({"name": "Test"})
         val = get_field_value(card, "invalid_field")
         self.assertEqual(val, "")
 
     def test_get_field_value_pt_variants(self):
-        from scripts.mtg_search import get_field_value
+        from scripts.mtg_query import get_field_value
         from lib.cardlib import Card
         card = Card({"name": "Test", "power": "2", "toughness": "3", "types": ["Creature"]})
         self.assertEqual(get_field_value(card, "power"), "2")
@@ -93,7 +93,7 @@ class TestMtgSearchGaps(unittest.TestCase):
         self.assertEqual(get_field_value(card, "pt"), "2/3")
 
     def test_get_field_value_loyalty(self):
-        from scripts.mtg_search import get_field_value
+        from scripts.mtg_query import get_field_value
         from lib.cardlib import Card
         card = Card({"name": "Test", "loyalty": "5", "types": ["Planeswalker"]})
         self.assertEqual(get_field_value(card, "loyalty"), "5")
