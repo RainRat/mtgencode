@@ -589,23 +589,24 @@ def mtg_open_mse_content(content, verbose=False):
         if subtypes:
             d['subtypes'] = subtypes.split()
 
-        # Planeswalker loyalty costs
-        if d.get('loyalty'):
-            for j in range(1, 10):
-                cost_key = f'loyalty cost {j}'
-                if cost_key in c:
-                    c[cost_key]
-                    # We assume abilities are separated by newlines in 'rule text'
-                    # if they were exported by our to_mse
-                    # But for general MSE, they might be in separate fields.
-                    # Our to_mse puts them all in 'rule text'.
-                    pass
-            # Reconstructing PW text from loyalty costs and rule text is hard in general
-            # but if it was exported by us, the costs are missing from 'rule text'.
-            # However, Card.fields_from_json handles 'text' which should contain the costs.
-            # So if we want it to work with our encoder, we should probably
-            # try to put the costs back into the text if they are separate.
-            # But wait, MSE's 'rule text' for PWs in our to_mse HAS the costs stripped.
+        # Reconstruct Planeswalker loyalty costs in text if present
+        if 'loyalty cost 1' in c:
+            text_lines = d['text'].split('\n')
+            reconstructed_lines = []
+            l_idx = 1
+            for line in text_lines:
+                # Skip empty lines that might have been preserved
+                if not line.strip():
+                    reconstructed_lines.append(line)
+                    continue
+
+                l_key = f'loyalty cost {l_idx}'
+                if l_key in c:
+                    reconstructed_lines.append(f"{c[l_key]}: {line}")
+                    l_idx += 1
+                else:
+                    reconstructed_lines.append(line)
+            d['text'] = '\n'.join(reconstructed_lines)
 
         # Handle split card (B-side)
         if 'name 2' in c:
