@@ -2,7 +2,7 @@ Always run `pytest` from the repository root before submitting changes, unless i
 
 This project was originally written for Python 2. You may update code to use Python 3.10 idiom as you encounter it.
 
-You may be provided with a .json for a full set, downloaded from mtgjson.com to debug processing a specific type of card. Still they are quite large, don't try to load the whole thing into LLM context, nor create a test that involves verifying every card. The .json will be removed from the repository after the bug is fixed. Copy only the specific card you need for a test, using a program like scripts/extract_one.py or a custom process.
+You may be provided with a .json for a full set, downloaded from mtgjson.com to debug processing a specific type of card. Still they are quite large, don't try to load the whole thing into LLM context, nor create a test that involves verifying every card. The .json will be removed from the repository after the bug is fixed. Copy only the specific card you need for a test, using a program like `scripts/mtg_query.py extract` or a custom process.
 
 ## Docker Usage
 
@@ -41,7 +41,7 @@ This will create a file containing the raw data for any cards that could not be 
 ## Toolkit Utilities
 
 Key utility scripts for dataset analysis:
-*   `scripts/mtg_search.py`: Comprehensive card searching and field extraction.
+*   `scripts/mtg_query.py search`: Comprehensive card searching and field extraction.
 *   `scripts/mtg_subset.py`: Creates filtered subsets of MTGJSON files.
 *   `scripts/mtg_lexicon.py`: Analyzes color-characteristic vocabulary.
 *   `scripts/mtg_tokens.py`: Extracts and summarizes token definitions from rules text.

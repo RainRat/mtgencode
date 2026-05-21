@@ -323,7 +323,7 @@ python3 encode.py data/AllPrintings.json --deck-filter my_deck.txt encoded_deck.
 python3 scripts/summarize.py data/AllPrintings.json --pow ">=5"
 
 # Find rare cards with CMC between 2 and 4
-python3 scripts/mtg_search.py data/AllPrintings.json --rarity rare --cmc "2-4"
+python3 scripts/mtg_query.py search data/AllPrintings.json --rarity rare --cmc "2-4"
 ```
 
 ---
@@ -432,26 +432,86 @@ python3 scripts/mtg_llm_validate.py generated.txt --grep "Grizzly Bears" --only-
     *   `--only-valid`: Filter output to only include cards the LLM judged as valid.
     *   Supports all **Advanced Filtering** flags and multiple output formats (`--json`, `--csv`, `--table`).
 
-### `mtg_sets.py`
-Lists and filters sets in an MTGJSON file. This is useful for seeing which sets are available in a large dataset like `AllPrintings.json`.
+
+### `mtg_query.py`
+A unified tool for searching, extracting, and listing card data. It consolidates several previous scripts into a single interface using subcommands.
+
+#### **Commands:**
+*   `search`: Search card data and extract specific fields.
+*   `oracle`: Look up a card by name and display its full rules text.
+*   `sets`: List and filter sets in an MTGJSON file.
+*   `functional`: Identify and group functional reprints.
+*   `extract`: Extract a single card object from a large JSON database.
+
+---
+
+#### **Subcommand: `search`**
+Optimized for dataset exploration and bulk field extraction. Supports **Smart Dataset Detection** (automatically uses `data/AllPrintings.json` if available).
+
 ```bash
-# List all sets in a dataset
-python3 scripts/mtg_sets.py data/AllPrintings.json
+# Quickly search for a card name
+python3 scripts/mtg_query.py search "Grizzly Bears"
+
+# List names and costs of all Goblins in a table
+python3 scripts/mtg_query.py search data/AllPrintings.json --grep "Goblin" --fields "name,cost" --table
+
+# Find all mythic rares with CMC > 7 and save to a JSON file
+python3 scripts/mtg_query.py search data/AllPrintings.json --rarity mythic --cmc ">7" mythics.json
+```
+*   **Fields:** `name`, `cost`, `cmc`, `type`, `stats`, `rarity`, `text`, `mechanics`, `set`, `complexity`, etc.
+*   **Formats:** `--table`, `--md-table`, `--json`, `--jsonl`, `--csv`, `--summary`.
+
+---
+
+#### **Subcommand: `oracle`**
+Quick human-readable card lookup with fuzzy matching and smart defaults.
+
+```bash
+# Quick lookup (fuzzy matching supported)
+python3 scripts/mtg_query.py oracle "Grizly Beers"
+
+# Find cards matching specific filters
+python3 scripts/mtg_query.py oracle --set MOM --rarity rare --grep "Battle"
+
+# Find cards mechanically similar to a specific card
+python3 scripts/mtg_query.py oracle "Giant Growth" --similar
+```
+
+---
+
+#### **Subcommand: `sets`**
+Lists and filters sets.
+
+```bash
+# List all sets
+python3 scripts/mtg_query.py sets
 
 # Find sets with "Masters" in their name or code
-python3 scripts/mtg_sets.py data/AllPrintings.json --grep "Masters"
+python3 scripts/mtg_query.py sets --grep "Masters"
 ```
-*   **Options:**
-    *   `-n LIMIT`, `--limit LIMIT`: Only process the first N sets.
-    *   `--shuffle`: Randomize the order of sets before listing.
-    *   `--sample N`: Pick N random sets (shorthand for `--shuffle --limit N`).
-    *   `--summarize`: Show statistics and mechanical profiling for the cards in the filtered sets.
-    *   `--view`: Display a compact list of all cards in the filtered sets.
-    *   `-t TOP`, `--top TOP`: Limit the number of entries in breakdown tables (used with `--summarize`).
-    *   `--sort {code,name,type,date,count}`: Sort sets by a specific criterion (Default: date).
-    *   `--reverse`: Reverse the sort order.
-    *   `--grep PATTERN`: Only include sets matching a search pattern (checks name and code). Use multiple times for AND logic.
-    *   `--color` / `--no-color`: Enable or disable ANSI color output.
+*   **Options:** `--summarize` (stats profile), `--view` (card list), `--sort`.
+
+---
+
+#### **Subcommand: `functional`**
+Identifies 'functional reprints' (different name, same mechanics).
+
+```bash
+# List all functional reprints
+python3 scripts/mtg_query.py functional
+
+# Create a deduplicated dataset
+python3 scripts/mtg_query.py functional --dedupe unique_cards.json
+```
+
+---
+
+#### **Subcommand: `extract`**
+Extracts a single card object for debugging or testing.
+
+```bash
+python3 scripts/mtg_query.py extract data/AllPrintings.json MOM "Invasion of Tarkir"
+```
 
 ### `mtg_diff.py`
 Compares two card datasets and identifies additions, removals, and modifications. It highlights changes in cost, type, stats, text, and rarity.
@@ -482,25 +542,6 @@ python3 scripts/mtg_compare.py --set MOM --set ONE data/AllPrintings.json
     *   `--shuffle`: Randomize cards before analysis.
     *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
-    *   Supports standard **Advanced Filtering** flags.
-
-### `mtg_functional.py`
-Identifies and groups 'functional reprints' (cards with different names but identical mana costs, types, stats, and rules text).
-```bash
-# List all functional reprints in a dataset
-python3 scripts/mtg_functional.py data/AllPrintings.json
-
-# Create a deduplicated dataset (one card per functional group)
-python3 scripts/mtg_functional.py data/AllPrintings.json --dedupe unique_cards.json
-
-# Find functional reprints of Goblins
-python3 scripts/mtg_functional.py data/AllPrintings.json --grep "Goblin"
-```
-*   **Options:**
-    *   `--table`: Display groups in a formatted table (Default).
-    *   `--json`: Output groups as JSON.
-    *   `--csv`: Output groups as CSV.
-    *   `--dedupe`: Output a JSON file containing the full dataset with functional duplicates removed.
     *   Supports standard **Advanced Filtering** flags.
 
 ### `mtg_deckgen.py`
@@ -631,12 +672,6 @@ python3 scripts/csv2json.py my_cards.csv my_cards.json
 python3 scripts/combinejson.py data/AllPrintings.json my_cards.json AllCards.json
 ```
 
-### `extract_one.py`
-Extracts a single card from the massive `AllPrintings.json` file. This is useful for testing a specific card without loading the entire dataset.
-```bash
-python3 scripts/extract_one.py data/AllPrintings.json SET_CODE "Card Name"
-```
-
 ### `mtg_forge.py`
 Forges a new card or modifies ("reforges") an existing one using command-line arguments. This is useful for quickly creating custom cards for testing or adding to a dataset.
 ```bash
@@ -647,61 +682,6 @@ python3 scripts/mtg_forge.py --name "Jules" --cost "{U}{R}" --type "Legendary Cr
 python3 scripts/mtg_forge.py --base "Grizzly Bears" --pt "3/3" --name "Super Bears"
 ```
 *   **Options:** Supports `--name`, `--cost`, `--type`, `--text`, `--pt`, `--loyalty`, `--rarity`, and `--set`. Output formats include `--json` (Default), `--encoded`, and `--summary`.
-
-### `mtg_oracle.py`
-Search and display card details in a human-readable format. This tool is optimized for quick lookup with fuzzy name matching and **Smart Dataset Detection**.
-
-**Smart Dataset Detection:**
-If you are in a terminal, the tool automatically uses `data/AllPrintings.json` if it exists. You can also skip the file path and just provide the card name—the tool will figure out that the first argument is a query if it doesn't look like a file path.
-
-```bash
-# Quick lookup using the default dataset
-python3 scripts/mtg_oracle.py "Grizzly Bears"
-
-# Use fuzzy matching for misspelled names
-python3 scripts/mtg_oracle.py "Grizly Beers"
-
-# Find cards matching specific filters
-python3 scripts/mtg_oracle.py --set MOM --rarity rare --grep "Battle"
-
-# Find cards mechanically similar to a specific card
-python3 scripts/mtg_oracle.py "Giant Growth" --similar
-```
-*   **Options:**
-    *   `--similar`: Find and display cards that are mechanically similar to your search results.
-    *   `--gatherer`: Use modern Gatherer-style wording and formatting.
-    *   `-n`, `--limit`: Only process the first N cards.
-    *   `--sample`: Pick N random cards (shorthand for `--shuffle --limit N`).
-    *   `--sort`: Sort results by a specific criterion (e.g., `name`, `cmc`, `complexity`).
-    *   `--color` / `--no-color`: Enable or disable ANSI color output.
-    *   Supports all **Advanced Filtering** flags.
-
-### `mtg_search.py`
-Search card data (JSON, encoded text, etc.) and extract specific fields. This tool is optimized for dataset exploration, creating lightweight card listings, and bulk field extraction.
-
-**Smart Dataset Detection:**
-If you are in a terminal, the tool automatically uses `data/AllPrintings.json` if it exists. You can also skip the file path and just provide a name—the tool will swap arguments if the first one doesn't look like a file path.
-
-```bash
-# Quickly search for a card name using the default dataset
-python3 scripts/mtg_search.py "Grizzly Bears"
-
-# List names and costs of all Goblins in a table
-python3 scripts/mtg_search.py data/AllPrintings.json --grep "Goblin" --fields "name,cost" --table
-
-# Find cards mechanically similar to a specific card
-python3 scripts/mtg_search.py --similar-to "Giant Growth" --limit 5
-
-# Find all mythic rares with CMC > 7 and save to a JSON file
-python3 scripts/mtg_search.py data/AllPrintings.json --rarity mythic --cmc ">7" mythics.json
-```
-*   **Fields:** `name`, `cost`, `cmc`, `colors`, `type`, `stats`, `supertypes`, `types`, `subtypes`, `pt`, `power`, `toughness`, `loyalty`, `text`, `rarity`, `mechanics`, `identity`, `id_count`, `set`, `number`, `pack`, `box`, `summary` (alias `view`), `complexity` (alias `score`), `encoded`.
-*   **Output Formats:** Plain text (default), `-t` (`--table`), `--md-table` (`--mdt`), `-j` (`--json`), `--jsonl`, `--csv`, `-S` (`--summary`).
-*   **Options:**
-    *   `--similar-to NAME`: Find and rank cards by mechanical similarity to the specified card.
-    *   `-n`, `--limit N`: Only process the first N cards.
-    *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
-    *   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
 
 ### `mtg_subset.py`
 Creates a filtered subset of an MTGJSON file while preserving its structure. This is useful for creating specialized training datasets or lightweight card databases without losing set-level metadata.
