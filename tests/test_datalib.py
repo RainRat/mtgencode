@@ -237,9 +237,9 @@ def test_pt_ranking_outliers(capsys):
     dm.outliers()
     captured = capsys.readouterr()
     output = captured.out
-    # Note: outliers use utils.from_unary for display, which returns the exception label (e.g. "twenty~five")
-    assert "Largest creature power: twenty~five" in output
-    assert "Largest creature toughness: twenty~five" in output
+    # Note: outliers use utils.from_unary for display, which now correctly returns "25"
+    assert "Largest creature power: 25" in output
+    assert "Largest creature toughness: 25" in output
 
 def test_datamine_to_dict(datamine_instance):
     result = datamine_instance.to_dict()
