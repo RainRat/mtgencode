@@ -86,7 +86,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
-  # Compare official data vs generated cards
+  # Compare official data vs generated cards (automatically uses AllPrintings.json as baseline)
+  python3 scripts/mtg_compare.py generated.txt
+
+  # Compare two datasets explicitly
   python3 scripts/mtg_compare.py data/AllPrintings.json generated.txt
 
   # Compare multiple sets side-by-side
@@ -191,6 +194,17 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    # UX Improvement: Smart Baseline Detection
+    # If only one input file is provided and it's not the default dataset,
+    # automatically prepend AllPrintings.json as a baseline if it exists.
+    if len(args.infiles) == 1 and args.infiles[0] != '-' and not args.infiles[0].endswith('AllPrintings.json'):
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        default_data = os.path.join(script_dir, '../data/AllPrintings.json')
+        if os.path.exists(default_data):
+            args.infiles.insert(0, default_data)
+        elif os.path.exists('data/AllPrintings.json'):
+            args.infiles.insert(0, 'data/AllPrintings.json')
+
     if args.sample > 0:
         args.shuffle = True
         args.limit = args.sample
@@ -216,7 +230,15 @@ Usage Examples:
     base_data = base_mine.to_dict()
 
     # Header row
-    filenames = [os.path.basename(f)[:15] for f in args.infiles]
+    filenames = []
+    for f in args.infiles:
+        name = os.path.basename(f)
+        for ext in ['.json', '.csv', '.txt', '.jsonl', '.xml', '.mse-set']:
+            if name.endswith(ext):
+                name = name[:-len(ext)]
+                break
+        filenames.append(name[:15])
+
     header = ["Metric", filenames[0]]
     for i in range(1, len(filenames)):
         header.append(filenames[i])
@@ -328,6 +350,8 @@ Usage Examples:
     add_metric_row("Avg CMC", ["stats", "avg_cmc"], reverse_color=True)
     add_metric_row("Avg Power", ["stats", "avg_power"])
     add_metric_row("Avg Toughness", ["stats", "avg_toughness"])
+    add_metric_row("Avg Complexity", ["stats", "avg_complexity"], reverse_color=True)
+    add_metric_row("Avg Rating", ["stats", "avg_power_rating"])
 
     # Color Distribution
     add_separator("Colors")

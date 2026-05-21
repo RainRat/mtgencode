@@ -532,6 +532,7 @@ class Datamine:
 
         self.avg_cmc = sum(c.cost.cmc for c in self.cards) / len(self.cards) if self.cards else 0
         self.avg_complexity = sum(c.complexity_score for c in self.cards) / len(self.cards) if self.cards else 0
+        self.avg_rating = sum(c.power_rating for c in self.cards) / len(self.cards) if self.cards else 0
 
         # Lexical metrics
         self.total_words = sum(self.global_word_counts.values())
@@ -864,6 +865,7 @@ class Datamine:
                 'textlines_max': max(self.by_textlines),
                 'avg_cmc': self.avg_cmc,
                 'avg_complexity': self.avg_complexity,
+                'avg_power_rating': self.avg_rating,
                 'avg_power': self.avg_power,
                 'avg_toughness': self.avg_toughness,
                 'total_words': self.total_words,
