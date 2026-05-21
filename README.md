@@ -311,7 +311,7 @@ Filter cards using search patterns, set codes, rarities, or decklist files. Thes
 python3 encode.py data/AllPrintings.json --grep "Goblin" --grep "Creature"
 
 # Find only legendary artifacts from the MOM set
-python3 scripts/summarize.py data/AllPrintings.json --grep "Legendary" --grep "Artifact" --set MOM
+python3 scripts/mtg_analyze.py summary data/AllPrintings.json --grep "Legendary" --grep "Artifact" --set MOM
 
 # Process only rare cards, excluding those with "Infect" in their name
 python3 encode.py data/AllPrintings.json --rarity rare --exclude-name "Infect"
@@ -320,7 +320,7 @@ python3 encode.py data/AllPrintings.json --rarity rare --exclude-name "Infect"
 python3 encode.py data/AllPrintings.json --deck-filter my_deck.txt encoded_deck.txt
 
 # Find all creatures with power 5 or greater
-python3 scripts/summarize.py data/AllPrintings.json --pow ">=5"
+python3 scripts/mtg_analyze.py summary data/AllPrintings.json --pow ">=5"
 
 # Find rare cards with CMC between 2 and 4
 python3 scripts/mtg_query.py search data/AllPrintings.json --rarity rare --cmc "2-4"
@@ -368,20 +368,20 @@ python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "El
 *   `--md`, `--markdown`: Output in Markdown format with collapsible sections.
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
-### `summarize.py`
+### `mtg_analyze.py summary`
 Shows statistics and reports on mechanics and word variety for your card data. It works with any card data (JSON, CSV, XML, encoded text, etc.).
 ```bash
 # View statistics for the entire official dataset
-python3 scripts/summarize.py data/AllPrintings.json
+python3 scripts/mtg_analyze.py summary data/AllPrintings.json
 
 # View statistics for your encoded output
-python3 scripts/summarize.py encoded_output.txt
+python3 scripts/mtg_analyze.py summary encoded_output.txt
 
 # Show extra details and unusual cards (outliers)
-python3 scripts/summarize.py encoded_output.txt -x
+python3 scripts/mtg_analyze.py summary encoded_output.txt -x
 
 # Save statistics to a file (JSON format is auto-detected)
-python3 scripts/summarize.py encoded_output.txt summary.json
+python3 scripts/mtg_analyze.py summary encoded_output.txt summary.json
 ```
 *   **Options:**
     *   `-x`, `--outliers`: Show extra details and unusual cards.
@@ -527,14 +527,14 @@ python3 scripts/mtg_diff.py data/AllPrintings.json generated_cards.txt
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
     *   Supports all **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
 
-### `mtg_compare.py`
+### `mtg_analyze.py compare`
 Provides a side-by-side statistical comparison of two or more card datasets. This is useful for evaluating how well a generated dataset matches the characteristics of official Magic data.
 ```bash
 # Compare official data vs generated cards
-python3 scripts/mtg_compare.py data/AllPrintings.json generated.txt
+python3 scripts/mtg_analyze.py compare data/AllPrintings.json generated.txt
 
 # Compare multiple sets
-python3 scripts/mtg_compare.py --set MOM --set ONE data/AllPrintings.json
+python3 scripts/mtg_analyze.py compare --set MOM --set ONE data/AllPrintings.json
 ```
 *   **Comparison includes:** Card counts, validity, uniqueness, average stats (CMC, P/T), and percentage distributions for colors, types, and rarities.
 *   **Options:**
@@ -580,29 +580,29 @@ python3 scripts/mtg_manabase.py my_deck.txt --include-text
     *   `--include-text`: Include mana symbols found in rules text (e.g., activation costs).
     *   Supports all **Advanced Filtering** flags.
 
-### `mtg_power.py`
+### `mtg_analyze.py power`
 Analyzes the creature power balance and curve efficiency in a dataset. It calculates a 'Power Rating' relative to CMC to identify outliers (cards that are significantly above or below the expected power curve for their cost).
 ```bash
 # Find the most efficient creatures in a specific set
-python3 scripts/mtg_power.py data/AllPrintings.json --set MOM --limit 10
+python3 scripts/mtg_analyze.py power data/AllPrintings.json --set MOM --limit 10
 
 # Compare average creature efficiency across rarities
-python3 scripts/mtg_power.py data/AllPrintings.json --rarity common --rarity rare
+python3 scripts/mtg_analyze.py power data/AllPrintings.json --rarity common --rarity rare
 
 # Export balance analysis to JSON
-python3 scripts/mtg_power.py generated_cards.txt --json
+python3 scripts/mtg_analyze.py power generated_cards.txt --json
 ```
 *   **Metric:** A rating of 1.0 represents a basic 2/2 creature with no abilities for 2 mana. Keywords like Flying or Indestructible increase the rating.
 *   **Options:** Supports `--json`, `--csv`, and all standard **Advanced Filtering** flags.
 
-### `mtg_asfan.py`
+### `mtg_analyze.py asfan`
 Calculates "As-Fan" (As fanned) statistics for a card dataset. As-Fan represents the average number of cards with a certain characteristic (like a specific color, type, or mechanic) a player can expect to see in a single 15-card booster pack.
 ```bash
 # Analyze As-Fan for a specific set
-python3 scripts/mtg_asfan.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py asfan data/AllPrintings.json --set MOM
 
 # Compare As-Fan of a generated set vs official data
-python3 scripts/mtg_asfan.py data/AllPrintings.json --compare generated.txt
+python3 scripts/mtg_analyze.py asfan data/AllPrintings.json --compare generated.txt
 ```
 *   **Options:**
     *   `--compare FILE`: Side-by-side comparison with a second dataset.
@@ -610,14 +610,14 @@ python3 scripts/mtg_asfan.py data/AllPrintings.json --compare generated.txt
     *   `--csv`: Output results in CSV format.
     *   Supports standard **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
-### `mtg_synergy.py`
+### `mtg_analyze.py synergy`
 Analyzes how different mechanics (like Flying, Kicker, or Flashback) appear together on the same cards. It identifies frequent pairings and calculates a 'Lift Score' to measure if these mechanics appear together more often than expected by chance.
 ```bash
 # Analyze co-occurrence for a specific set
-python3 scripts/mtg_synergy.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py synergy data/AllPrintings.json --set MOM
 
 # Find frequent pairings in AI designs with at least 5 occurrences
-python3 scripts/mtg_synergy.py generated.txt --min-freq 5
+python3 scripts/mtg_analyze.py synergy generated.txt --min-freq 5
 ```
 *   **Options:**
     *   `--min-freq N`: Minimum co-occurrences required to report a pair (Default: 2).
@@ -626,14 +626,14 @@ python3 scripts/mtg_synergy.py generated.txt --min-freq 5
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
-### `mtg_types.py`
+### `mtg_analyze.py types`
 Generates a Type vs. Color heatmap (matrix) cross-referencing card types with Color Identity (W, U, B, R, G, Colorless, Multicolored). This is essential for verifying color-pie balance and archetypal distribution in a set.
 ```bash
 # Analyze the type/color distribution of a specific set
-python3 scripts/mtg_types.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py types data/AllPrintings.json --set MOM
 
 # Compare distribution between official data and AI designs
-python3 scripts/mtg_types.py data/AllPrintings.json --compare generated.txt
+python3 scripts/mtg_analyze.py types data/AllPrintings.json --compare generated.txt
 ```
 *   **Options:**
     *   `--compare FILE`: Side-by-side comparison with a second dataset.
@@ -641,17 +641,17 @@ python3 scripts/mtg_types.py data/AllPrintings.json --compare generated.txt
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
-### `mtg_subtypes.py`
+### `mtg_analyze.py subtypes`
 Analyzes the distribution of card subtypes (like Creature types, Artifact types, or Spell types) in a dataset. It identifies the most popular subtypes and calculates 'Signature' subtypes for each color identity (types that appear significantly more often in one color than others).
 ```bash
 # Analyze subtypes for the March of the Machine set
-python3 scripts/mtg_subtypes.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py subtypes data/AllPrintings.json --set MOM
 
 # See the top 20 signature subtypes for each color
-python3 scripts/mtg_subtypes.py data/AllPrintings.json --top 20
+python3 scripts/mtg_analyze.py subtypes data/AllPrintings.json --top 20
 
 # Export subtype analysis to JSON
-python3 scripts/mtg_subtypes.py data/AllPrintings.json --json > subtypes.json
+python3 scripts/mtg_analyze.py subtypes data/AllPrintings.json --json > subtypes.json
 ```
 *   **Options:**
     *   `-t N`, `--top N`: Number of entries to show in tables (Default: 10).
@@ -694,14 +694,14 @@ python3 scripts/mtg_subset.py data/AllPrintings.json tiny.json --rarity rare --g
 ```
 *   Supports all **Advanced Filtering** flags and sorting.
 
-### `mtg_grid.py`
+### `mtg_analyze.py grid`
 Provides a generic 2D cross-tabulation tool for card datasets. This allows you to cross-reference attributes like color, rarity, type, cmc, power, toughness, and mechanic to see how they are distributed.
 ```bash
 # Analyze Card Type vs Color Identity for a specific set
-python3 scripts/mtg_grid.py type color --set MOM
+python3 scripts/mtg_analyze.py grid type color --set MOM
 
 # Analyze Rarity vs CMC for the whole dataset
-python3 scripts/mtg_grid.py rarity cmc data/AllPrintings.json
+python3 scripts/mtg_analyze.py grid rarity cmc data/AllPrintings.json
 ```
 *   **Dimensions:** `color`, `rarity`, `type`, `cmc`, `power`, `toughness`, `loyalty`, `mechanic`.
 *   **Options:**
@@ -709,28 +709,28 @@ python3 scripts/mtg_grid.py rarity cmc data/AllPrintings.json
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
-### `mtg_mechanics.py`
+### `mtg_analyze.py mechanics`
 Lists all mechanical keywords (e.g., Flying, Trample, Ward) recognized by the toolkit and can calculate their frequency in a dataset. This is useful for seeing which keywords are currently tracked or for analyzing the mechanical profile of a set.
 ```bash
 # List all recognized mechanics
-python3 scripts/mtg_mechanics.py
+python3 scripts/mtg_analyze.py mechanics
 
 # Count frequency of mechanics in a dataset
-python3 scripts/mtg_mechanics.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py mechanics data/AllPrintings.json --set MOM
 ```
 *   **Options:**
     *   `--sort {name,count}`: Sort results by name or frequency.
     *   `--limit N`: Only show the top N mechanics.
     *   Supports standard **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
 
-### `mtg_colorpie.py`
+### `mtg_analyze.py colorpie`
 Generates a Color Pie chart that shows which mechanics appear in each color. This helps you check if colors are using the correct mechanics or if some mechanics are appearing where they shouldn't.
 ```bash
 # Analyze the color pie for a specific set
-python3 scripts/mtg_colorpie.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py colorpie data/AllPrintings.json --set MOM
 
 # Compare color pie between official data and AI output
-python3 scripts/mtg_colorpie.py data/AllPrintings.json --compare generated.txt
+python3 scripts/mtg_analyze.py colorpie data/AllPrintings.json --compare generated.txt
 ```
 *   **Options:**
     *   `--compare FILE`: Side-by-side comparison with a second dataset.
@@ -738,14 +738,14 @@ python3 scripts/mtg_colorpie.py data/AllPrintings.json --compare generated.txt
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
-### `mtg_lexicon.py`
+### `mtg_analyze.py lexicon`
 Analyzes the words used for each Magic color. It identifies "signature words" that appear much more often in one color than others. This helps you check if AI designs follow the correct color patterns.
 ```bash
 # Analyze lexicon for a dataset
-python3 scripts/mtg_lexicon.py data/AllPrintings.json
+python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json
 
 # Compare lexicon between official data and AI output
-python3 scripts/mtg_lexicon.py data/AllPrintings.json --compare generated.txt
+python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
 ```
 *   **Options:**
     *   `-t N`, `--top N`: Number of signature words to show per color (Default: 10).
@@ -753,52 +753,52 @@ python3 scripts/mtg_lexicon.py data/AllPrintings.json --compare generated.txt
     *   `--compare FILE`: Side-by-side comparison with a second dataset.
     *   **Filtering:** Supports `--grep`, `--set`, `--rarity`, and `--mechanic`.
 
-### `mtg_tokens.py`
+### `mtg_analyze.py tokens`
 Extracts and summarizes token definitions from card rules text. This tool identifies the properties of tokens created by cards (like P/T, color, types, and abilities) and de-duplicates them to show a consolidated list.
 ```bash
 # List all unique tokens found in a dataset
-python3 scripts/mtg_tokens.py data/AllPrintings.json
+python3 scripts/mtg_analyze.py tokens data/AllPrintings.json
 
 # Extract tokens from a specific set and output to JSON
-python3 scripts/mtg_tokens.py data/AllPrintings.json --set MOM --json
+python3 scripts/mtg_analyze.py tokens data/AllPrintings.json --set MOM --json
 ```
 *   **Options:**
     *   `--json`: Output results in structured JSON format.
     *   Supports standard **Advanced Filtering** flags (`--grep`, `--set`, `--rarity`).
 
-### `mtg_skeleton.py`
+### `mtg_analyze.py skeleton`
 Generates a "Design Skeleton" (Set Skeleton) for a dataset, bucketing cards by their type and CMC (Converted Mana Cost). This provides a high-level view of the mechanical curve and balance of a set.
 ```bash
 # Generate skeleton for a dataset
-python3 scripts/mtg_skeleton.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py skeleton data/AllPrintings.json --set MOM
 
 # Analyze the curve of a specific color identity
-python3 scripts/mtg_skeleton.py data/AllPrintings.json --identity "W"
+python3 scripts/mtg_analyze.py skeleton data/AllPrintings.json --identity "W"
 ```
 *   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
 
-### `mtg_archetypes.py`
+### `mtg_analyze.py archetypes`
 Analyzes the 10 primary two-color pairs in a dataset. It identifies the most important cards and themes for each color combination.
 ```bash
 # Analyze archetypes in a specific set
-python3 scripts/mtg_archetypes.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py archetypes data/AllPrintings.json --set MOM
 
 # Filter analysis by specific mechanics or rarities
-python3 scripts/mtg_archetypes.py data/AllPrintings.json --rarity uncommon --mechanic "Flying"
+python3 scripts/mtg_analyze.py archetypes data/AllPrintings.json --rarity uncommon --mechanic "Flying"
 ```
 *   **Options:**
     *   `--min-cards N`: Minimum number of cards required to profile an archetype (Default: 5).
     *   `--top-mechanics N`: Number of signature mechanics to show per archetype (Default: 3).
     *   Supports all standard **Advanced Filtering** flags.
 
-### `mtg_balance.py`
+### `mtg_analyze.py balance`
 Analyzes and compares how color pairs are distributed between datasets. This helps you see if a generated dataset matches the color balance of the original training data.
 ```bash
 # Compare the balance of a generated set against an official set
-python3 scripts/mtg_balance.py data/AllPrintings.json generated.txt --set MOM
+python3 scripts/mtg_analyze.py balance data/AllPrintings.json generated.txt --set MOM
 
 # See which color pairs are over-represented in a card pool
-python3 scripts/mtg_balance.py my_cards.json
+python3 scripts/mtg_analyze.py balance my_cards.json
 ```
 *   **Options:**
     *   `--limit N`: Only process the first N cards from each input.
@@ -821,17 +821,17 @@ python3 scripts/mtg_complexity.py data/AllPrintings.json --rarity common --rarit
     *   `--csv`: Output results in CSV format.
     *   Supports standard **Advanced Filtering** flags (`--grep`, `--set`, `--rarity`, `--colors`, `--cmc`, `--mechanic`).
 
-### `mtg_curve.py`
+### `mtg_analyze.py curve`
 Analyzes and visualizes the mana curve (CMC distribution) of a card dataset or decklist. It provides a visual distribution chart, global and color-specific average CMC calculations, and a breakdown by card type.
 ```bash
 # Analyze the curve of a specific set
-python3 scripts/mtg_curve.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py curve data/AllPrintings.json --set MOM
 
 # Analyze a decklist file
-python3 scripts/mtg_curve.py my_deck.txt
+python3 scripts/mtg_analyze.py curve my_deck.txt
 
 # See the curve for only creatures in a dataset
-python3 scripts/mtg_curve.py data/AllPrintings.json --grep-type "Creature"
+python3 scripts/mtg_analyze.py curve data/AllPrintings.json --grep-type "Creature"
 ```
 *   **Options:**
     *   `-n LIMIT`, `--limit LIMIT`: Only process the first N cards.
@@ -840,14 +840,14 @@ python3 scripts/mtg_curve.py data/AllPrintings.json --grep-type "Creature"
     *   `--box N`: Simulate opening N booster boxes and analyze their curve.
     *   Supports all **Advanced Filtering** flags.
 
-### `mtg_mana.py`
+### `mtg_analyze.py mana`
 Identifies mana-producing cards using rules text patterns (e.g., 'Add {G}', 'any color') and intrinsic basic land types. It categorizes producers into Creatures, Artifacts, Lands, and Spells, profiles produced colors, and identifies color-fixing density.
 ```bash
 # Analyze mana production for a specific set
-python3 scripts/mtg_mana.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py mana data/AllPrintings.json --set MOM
 
 # Compare mana fixing between official data and AI output
-python3 scripts/mtg_mana.py data/AllPrintings.json --compare generated.txt
+python3 scripts/mtg_analyze.py mana data/AllPrintings.json --compare generated.txt
 ```
 *   **Options:**
     *   `--compare FILE`: Side-by-side comparison with a second dataset.
@@ -855,56 +855,56 @@ python3 scripts/mtg_mana.py data/AllPrintings.json --compare generated.txt
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and simulation.
 
-### `mtg_costs.py`
+### `mtg_analyze.py costs`
 Analyzes the mana cost intensity (colored pips relative to CMC) and color commitment (distribution of Single, Double, Triple pips) in a dataset. This helps designers identify 'pip-heavy' outliers and ensure the set's requirements match its intended archetypes.
 ```bash
 # Analyze cost intensity for a set
-python3 scripts/mtg_costs.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py costs data/AllPrintings.json --set MOM
 
 # Find the most mana-intensive cards in a dataset
-python3 scripts/mtg_costs.py data/AllPrintings.json --limit 20
+python3 scripts/mtg_analyze.py costs data/AllPrintings.json --limit 20
 ```
 *   **Options:**
     *   `--json`: Output results in structured JSON format.
     *   `--csv`: Output results in CSV format.
     *   Supports standard **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
-### `mtg_stats.py`
+### `mtg_analyze.py stats`
 Analyzes creature combat stats (Power/Toughness) and Planeswalker loyalty in a dataset. It provides a "Combat Stat Curve" (average P/T per CMC), a color-based stat breakdown, and a frequency heatmap of P/T combinations.
 ```bash
 # Analyze stats for a specific set
-python3 scripts/mtg_stats.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py stats data/AllPrintings.json --set MOM
 
 # Compare stats of rare creatures vs common creatures
-python3 scripts/mtg_stats.py data/AllPrintings.json --rarity rare --grep-type "Creature"
+python3 scripts/mtg_analyze.py stats data/AllPrintings.json --rarity rare --grep-type "Creature"
 ```
 *   **Options:**
     *   `--json`: Output results in structured JSON format.
     *   `--csv`: Output results in CSV format.
     *   Supports standard **Advanced Filtering** flags and simulation.
 
-### `mtg_actions.py`
+### `mtg_analyze.py actions`
 Analyzes and categorizes functional card effects (Removal, Protection, Buffs, Card Advantage, and Disruption) in a dataset. This tool identifies how cards interact with the game state, providing a profile of a set's interactivity.
 ```bash
 # Analyze actions for a specific set
-python3 scripts/mtg_actions.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py actions data/AllPrintings.json --set MOM
 
 # Compare action density of different colors
-python3 scripts/mtg_actions.py data/AllPrintings.json --colors R
+python3 scripts/mtg_analyze.py actions data/AllPrintings.json --colors R
 ```
 *   **Options:**
     *   `--json`: Output results in structured JSON format.
     *   `--csv`: Output results in CSV format.
     *   Supports standard **Advanced Filtering** flags and simulation.
 
-### `mtg_pips.py`
+### `mtg_analyze.py pips`
 Analyzes the distribution of mana symbols (pips) in a dataset. It counts symbols from casting costs and rules text (optionally via `--include-text`), supports table, JSON, and CSV output formats, and integrates with standard Advanced Filtering and simulation flags.
 ```bash
 # Analyze pip distribution for a set
-python3 scripts/mtg_pips.py data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py pips data/AllPrintings.json --set MOM
 
 # Include pips found in rules text (e.g. activation costs)
-python3 scripts/mtg_pips.py data/AllPrintings.json --set MOM --include-text
+python3 scripts/mtg_analyze.py pips data/AllPrintings.json --set MOM --include-text
 ```
 *   **Options:**
     *   `--include-text`: Include mana symbols found in rules text.
@@ -960,7 +960,7 @@ python3 scripts/splitcards.py data/AllPrintings.json --outputs rb_train.txt rb_v
 
 **Example for importing a Cockatrice XML database:**
 ```bash
-python3 scripts/summarize.py my_custom_set.xml
+python3 scripts/mtg_analyze.py summary my_custom_set.xml
 ```
 
 ---

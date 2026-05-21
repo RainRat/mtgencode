@@ -8,7 +8,7 @@ import csv
 
 # Add scripts directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
-import mtg_skeleton
+import scripts.mtg_analyze as mtg_analyze
 
 class TestMTGSkeleton(unittest.TestCase):
 
@@ -36,9 +36,9 @@ class TestMTGSkeleton(unittest.TestCase):
     def test_basic_skeleton_table(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_skeleton.py', 'dummy.json', '--no-color']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json', '--no-color']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn("DESIGN SKELETON", output)
@@ -52,9 +52,9 @@ class TestMTGSkeleton(unittest.TestCase):
     def test_json_output(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_skeleton.py', 'dummy.json', '--json', '--quiet']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json', '--json', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
 
         output_data = json.loads(mock_stdout.getvalue())
         self.assertEqual(output_data['total_cards'], 3)
@@ -74,9 +74,9 @@ class TestMTGSkeleton(unittest.TestCase):
     def test_csv_output(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_skeleton.py', 'dummy.json', '--csv', '--quiet']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json', '--csv', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         reader = csv.reader(io.StringIO(output))
@@ -92,9 +92,9 @@ class TestMTGSkeleton(unittest.TestCase):
     def test_file_output_auto_detect_json(self, mock_file, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_skeleton.py', 'dummy.json', 'output.json', '--quiet']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json', 'output.json', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
 
         mock_file.assert_called_with('output.json', 'w', encoding='utf-8')
         handle = mock_file()
@@ -106,9 +106,9 @@ class TestMTGSkeleton(unittest.TestCase):
     def test_no_cards_found(self, mock_stderr, mock_open_file):
         mock_open_file.return_value = []
 
-        test_args = ['mtg_skeleton.py', 'dummy.json']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
 
         self.assertIn("No cards found", mock_stderr.getvalue())
 
@@ -119,7 +119,7 @@ class TestMTGSkeleton(unittest.TestCase):
         mock_open_file.return_value = self.mock_cards
 
         test_args = [
-            'mtg_skeleton.py', 'dummy.json',
+            'mtg_analyze.py', 'dummy.json',
             '--set', 'MOM', '--rarity', 'rare', '-g', 'flying',
             '--cmc', '3', '--colors', 'W', '--identity', 'WU',
             '--pow', '2', '--tou', '2', '--loy', '3',
@@ -127,7 +127,7 @@ class TestMTGSkeleton(unittest.TestCase):
             '--shuffle', '--seed', '42', '--limit', '10'
         ]
         with patch('sys.argv', test_args), patch('sys.stdout', new_callable=io.StringIO):
-            mtg_skeleton.main()
+            mtg_analyze.main()
 
         kwargs = mock_open_file.call_args[1]
         self.assertEqual(kwargs['sets'], ['MOM'])
@@ -152,9 +152,9 @@ class TestMTGSkeleton(unittest.TestCase):
         mock_exists.side_effect = lambda p: p == 'data/AllPrintings.json' # Default exists, but 'MOM' doesn't
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_skeleton.py', 'MOM', '--quiet']
+        test_args = ['mtg_analyze.py', 'skeleton', 'MOM', '--quiet']
         with patch('sys.argv', test_args), patch('sys.stdout', new_callable=io.StringIO):
-            mtg_skeleton.main()
+            mtg_analyze.main()
 
         mock_open_file.assert_called()
         self.assertEqual(mock_open_file.call_args[1]['grep'], ['MOM'])
@@ -164,9 +164,9 @@ class TestMTGSkeleton(unittest.TestCase):
     def test_operation_summary(self, mock_summary, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_skeleton.py', 'dummy.json']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json']
         with patch('sys.argv', test_args), patch('sys.stdout', new_callable=io.StringIO):
-            mtg_skeleton.main()
+            mtg_analyze.main()
 
         mock_summary.assert_called_with("Skeleton Analysis", 3, 0, quiet=False)
 
@@ -176,27 +176,27 @@ class TestMTGSkeleton(unittest.TestCase):
         mock_open_file.return_value = self.mock_cards
 
         # Test quiet
-        test_args = ['mtg_skeleton.py', 'dummy.json', '--quiet']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
         self.assertEqual(mock_stdout.getvalue(), "")
 
         mock_stdout.truncate(0)
         mock_stdout.seek(0)
 
         # Test verbose
-        test_args = ['mtg_skeleton.py', 'dummy.json', '--verbose', '--no-color']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json', '--verbose', '--no-color']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
         self.assertIn("DESIGN SKELETON", mock_stdout.getvalue())
 
     @patch('jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_sample_flag(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
-        test_args = ['mtg_skeleton.py', 'dummy.json', '--sample', '2', '--quiet']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json', '--sample', '2', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
 
         # Verify limit and shuffle were passed
         kwargs = mock_open_file.call_args[1]
@@ -211,9 +211,9 @@ class TestMTGSkeleton(unittest.TestCase):
         mock_exists.side_effect = lambda p: p == 'existing_file.json'
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_skeleton.py', 'query', 'existing_file.json', '--quiet']
+        test_args = ['mtg_analyze.py', 'skeleton', 'query', 'existing_file.json', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
 
         self.assertEqual(mock_open_file.call_args[0][0], 'existing_file.json')
         self.assertEqual(mock_open_file.call_args[1]['grep'], ['query'])
@@ -223,10 +223,10 @@ class TestMTGSkeleton(unittest.TestCase):
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_color_output_enabled(self, mock_stdout, mock_open_file, mock_isatty):
         mock_open_file.return_value = self.mock_cards
-        test_args = ['mtg_skeleton.py', 'dummy.json']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json']
         # Force color detection by mocking isatty
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
         # If color was used, we should see ANSI escape codes
         self.assertIn("\033[", mock_stdout.getvalue())
 
@@ -234,9 +234,9 @@ class TestMTGSkeleton(unittest.TestCase):
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_force_color(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
-        test_args = ['mtg_skeleton.py', 'dummy.json', '--color']
+        test_args = ['mtg_analyze.py', 'skeleton', 'dummy.json', '--color']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
         self.assertIn("\033[", mock_stdout.getvalue())
 
     @patch('os.path.exists', return_value=False)
@@ -244,9 +244,9 @@ class TestMTGSkeleton(unittest.TestCase):
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_smart_positional_args_query_only(self, mock_stdout, mock_open_file, mock_exists):
         mock_open_file.return_value = self.mock_cards
-        test_args = ['mtg_skeleton.py', 'query', '--quiet']
+        test_args = ['mtg_analyze.py', 'skeleton', 'query', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
         self.assertEqual(mock_open_file.call_args[1]['grep'], ['query'])
 
     @patch('sys.stdin.isatty', return_value=True)
@@ -256,9 +256,9 @@ class TestMTGSkeleton(unittest.TestCase):
     def test_default_dataset_detection(self, mock_stdout, mock_open_file, mock_exists, mock_isatty):
         mock_exists.side_effect = lambda p: p.endswith('AllPrintings.json')
         mock_open_file.return_value = self.mock_cards
-        test_args = ['mtg_skeleton.py', '--quiet']
+        test_args = ['mtg_analyze.py', 'skeleton', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_skeleton.main()
+            mtg_analyze.main()
         self.assertIn('AllPrintings.json', mock_open_file.call_args[0][0])
 
 if __name__ == '__main__':

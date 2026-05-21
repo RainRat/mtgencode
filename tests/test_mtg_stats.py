@@ -12,7 +12,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(current_dir, '../scripts'))
 sys.path.append(os.path.join(current_dir, '../lib'))
 
-import mtg_stats
+import scripts.mtg_analyze as mtg_analyze
 import cardlib
 import utils
 
@@ -44,8 +44,8 @@ class TestMtgStats(unittest.TestCase):
 
         stdout = io.StringIO()
         stderr = io.StringIO()
-        with patch('sys.stdout', stdout), patch('sys.stderr', stderr), patch('sys.argv', ['mtg_stats.py', 'dummy.json', '--no-color']):
-            mtg_stats.main()
+        with patch('sys.stdout', stdout), patch('sys.stderr', stderr), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', '--no-color']):
+            mtg_analyze.main()
 
         output = stdout.getvalue()
         self.assertIn("COMBAT STAT ANALYSIS", output)
@@ -63,8 +63,8 @@ class TestMtgStats(unittest.TestCase):
         mock_open_file.return_value = [card]
 
         stdout = io.StringIO()
-        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', '--json']):
-            mtg_stats.main()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', '--json']):
+            mtg_analyze.main()
 
         output = stdout.getvalue()
         data = json.loads(output)
@@ -80,8 +80,8 @@ class TestMtgStats(unittest.TestCase):
         mock_open_file.return_value = [card]
 
         stdout = io.StringIO()
-        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', '--csv']):
-            mtg_stats.main()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', '--csv']):
+            mtg_analyze.main()
 
         output = stdout.getvalue()
         reader = csv.DictReader(io.StringIO(output))
@@ -102,8 +102,8 @@ class TestMtgStats(unittest.TestCase):
         mock_open_file.return_value = [card]
 
         stdout = io.StringIO()
-        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', '--no-color']):
-            mtg_stats.main()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', '--no-color']):
+            mtg_analyze.main()
 
         output = stdout.getvalue()
         self.assertIn("Loyalty Stats (Planeswalkers/Battles):", output)
@@ -118,8 +118,8 @@ class TestMtgStats(unittest.TestCase):
         mock_open_file.return_value = [card_neg, card_huge]
 
         stdout = io.StringIO()
-        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', '--no-color']):
-            mtg_stats.main()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', '--no-color']):
+            mtg_analyze.main()
 
         output = stdout.getvalue()
         self.assertIn("0       1.00       1.00      1", output) # Negative CMC buckets to 0
@@ -137,8 +137,8 @@ class TestMtgStats(unittest.TestCase):
 
         stdout = io.StringIO()
         # Test explicit --color (hits line 193)
-        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', '--color']):
-            mtg_stats.main()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', '--color']):
+            mtg_analyze.main()
 
         output = stdout.getvalue()
         self.assertIn("\x1b[91m2.00\x1b[0m", output)
@@ -146,9 +146,9 @@ class TestMtgStats(unittest.TestCase):
 
         # Test auto-color via isatty (hits line 195)
         stdout = io.StringIO()
-        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json']):
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json']):
             with patch.object(stdout, 'isatty', return_value=True):
-                mtg_stats.main()
+                mtg_analyze.main()
         output = stdout.getvalue()
         self.assertIn("\x1b[91m2.00\x1b[0m", output)
 
@@ -159,8 +159,8 @@ class TestMtgStats(unittest.TestCase):
         mock_open_file.return_value = [card]
 
         stdout = io.StringIO()
-        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', '--no-color']):
-            mtg_stats.main()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', '--no-color']):
+            mtg_analyze.main()
 
         self.assertIn("No creatures found for combat stat analysis.", stdout.getvalue())
 
@@ -169,8 +169,8 @@ class TestMtgStats(unittest.TestCase):
         mock_open_file.return_value = []
 
         stderr = io.StringIO()
-        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', stderr), patch('sys.argv', ['mtg_stats.py', 'dummy.json']):
-            mtg_stats.main()
+        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', stderr), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json']):
+            mtg_analyze.main()
 
         self.assertIn("No cards found matching the criteria.", stderr.getvalue())
 
@@ -181,8 +181,8 @@ class TestMtgStats(unittest.TestCase):
         mock_open_file.return_value = [card]
 
         # Test .json detection
-        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', 'out.json']):
-            mtg_stats.main()
+        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', 'out.json']):
+            mtg_analyze.main()
 
         # Verify it wrote JSON
         handle = mock_file()
@@ -194,8 +194,8 @@ class TestMtgStats(unittest.TestCase):
 
         mock_file.reset_mock()
         # Test .csv detection
-        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', 'out.csv']):
-            mtg_stats.main()
+        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', 'out.csv']):
+            mtg_analyze.main()
 
         handle = mock_file()
         written_data = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -203,8 +203,8 @@ class TestMtgStats(unittest.TestCase):
 
         # Test unknown extension (should default to table)
         mock_file.reset_mock()
-        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', 'out.txt', '--verbose']):
-            mtg_stats.main()
+        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', 'out.txt', '--verbose']):
+            mtg_analyze.main()
 
         handle = mock_file()
         written_data = "".join(call.args[0] for call in handle.write.call_args_list)
@@ -216,12 +216,12 @@ class TestMtgStats(unittest.TestCase):
         mock_open_file.return_value = cards
 
         # Test --limit
-        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', '--limit', '2']):
-            mtg_stats.main()
+        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', '--limit', '2']):
+            mtg_analyze.main()
 
         # Test --sample (which sets shuffle=True and limit=N)
-        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'dummy.json', '--sample', '3']):
-            mtg_stats.main()
+        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'dummy.json', '--sample', '3']):
+            mtg_analyze.main()
 
     @patch('jdecode.mtg_open_file')
     def test_smart_positional_args(self, mock_open_file):
@@ -231,8 +231,8 @@ class TestMtgStats(unittest.TestCase):
             mock_exists.side_effect = lambda x: x == 'real.json'
 
             # Test args.grep = [query] (hits line 152)
-            with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'Grizzly', 'real.json']):
-                mtg_stats.main()
+            with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'Grizzly', 'real.json']):
+                mtg_analyze.main()
 
             mock_open_file.assert_called()
             args, kwargs = mock_open_file.call_args
@@ -241,16 +241,16 @@ class TestMtgStats(unittest.TestCase):
 
             # Test grep.append(query) (hits line 154)
             mock_open_file.reset_mock()
-            with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'Grizzly', 'real.json', '--grep', 'Bear']):
-                mtg_stats.main()
+            with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'Grizzly', 'real.json', '--grep', 'Bear']):
+                mtg_analyze.main()
             args, kwargs = mock_open_file.call_args
             self.assertEqual(kwargs['grep'], ['Bear', 'Grizzly'])
 
             # Case where both are queries (should default to stdin/AllPrintings)
             mock_exists.side_effect = lambda x: False
             mock_open_file.reset_mock()
-            with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'Grizzly', '--grep', 'Creature']):
-                mtg_stats.main()
+            with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'Grizzly', '--grep', 'Creature']):
+                mtg_analyze.main()
 
             args, kwargs = mock_open_file.call_args
             self.assertEqual(args[0], '-')
@@ -258,8 +258,8 @@ class TestMtgStats(unittest.TestCase):
 
             # Case where only one arg and it's a query
             mock_open_file.reset_mock()
-            with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', 'Bear']):
-                mtg_stats.main()
+            with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', 'Bear']):
+                mtg_analyze.main()
             args, kwargs = mock_open_file.call_args
             self.assertEqual(args[0], '-')
             self.assertEqual(kwargs['grep'], ['Bear'])
@@ -271,23 +271,23 @@ class TestMtgStats(unittest.TestCase):
                 # Mock it so the FIRST exists check (script-relative) is True
                 mock_exists.side_effect = lambda x: 'AllPrintings.json' in x and 'app/scripts' in x
 
-                with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py']):
-                    mtg_stats.main()
+                with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py']):
+                    mtg_analyze.main()
 
                 mock_open_file.assert_called()
 
                 # Mock it so the SECOND exists check (local data/) is True (hits lines 173-175)
                 mock_exists.side_effect = lambda x: x == 'data/AllPrintings.json'
                 mock_open_file.reset_mock()
-                with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py']):
-                    mtg_stats.main()
+                with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py']):
+                    mtg_analyze.main()
                 self.assertEqual(mock_open_file.call_args[0][0], 'data/AllPrintings.json')
 
                 # Mock it so AllPrintings.json doesn't exist
                 mock_exists.side_effect = lambda x: False
                 mock_open_file.reset_mock()
-                with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_stats.py', '-q']):
-                    mtg_stats.main()
+                with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats', '-q']):
+                    mtg_analyze.main()
                 # Should still call with '-' but without default dataset
                 mock_open_file.assert_called()
                 self.assertEqual(mock_open_file.call_args[0][0], '-')

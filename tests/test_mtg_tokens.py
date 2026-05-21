@@ -3,14 +3,14 @@ import json
 import os
 
 def test_mtg_tokens_basic():
-    """Test the mtg_tokens.py script with a sample dataset."""
+    """Test the mtg_analyze.py script with a sample dataset."""
     test_file = "testdata/token_test.json"
     if not os.path.exists(test_file):
         # Create it if it doesn't exist (though it should from previous steps)
         pass
 
     # Run the script and capture output
-    cmd = ["python3", "scripts/mtg_tokens.py", test_file, "--json"]
+    cmd = ["python3", "scripts/mtg_analyze.py", test_file, "--json"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode == 0
@@ -31,11 +31,11 @@ def test_mtg_tokens_basic():
     assert soldier_token['count'] == 2
 
 def test_mtg_tokens_filtering():
-    """Test filtering in mtg_tokens.py."""
+    """Test filtering in mtg_analyze.py."""
     test_file = "testdata/token_test.json"
 
     # Filter for only cards with "Beast" in name
-    cmd = ["python3", "scripts/mtg_tokens.py", test_file, "--grep", "Beast", "--json"]
+    cmd = ["python3", "scripts/mtg_analyze.py", test_file, "--grep", "Beast", "--json"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode == 0

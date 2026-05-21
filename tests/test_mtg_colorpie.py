@@ -9,7 +9,7 @@ from io import StringIO
 sys.path.append(os.path.join(os.path.dirname(__file__), '../lib'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
 
-import mtg_colorpie
+import scripts.mtg_analyze as mtg_analyze
 import cardlib
 
 @pytest.fixture
@@ -40,19 +40,19 @@ def sample_cards():
 def test_get_color_group():
     card = MagicMock()
     card.color_identity = "W"
-    assert mtg_colorpie.get_color_group(card) == "W"
+    assert mtg_analyze.get_color_group(card) == "W"
 
     card.color_identity = "WUBRG"
-    assert mtg_colorpie.get_color_group(card) == "M"
+    assert mtg_analyze.get_color_group(card) == "M"
 
     card.color_identity = ""
-    assert mtg_colorpie.get_color_group(card) == "A"
+    assert mtg_analyze.get_color_group(card) == "A"
 
 def test_mtg_colorpie_main_basic(sample_cards):
     with patch('jdecode.mtg_open_file', return_value=sample_cards), \
          patch('sys.stdout', new=StringIO()) as fake_out, \
-         patch('sys.argv', ['mtg_colorpie.py', 'dummy.json', '--no-color']):
-        mtg_colorpie.main()
+         patch('sys.argv', ['mtg_analyze.py', 'colorpie', 'dummy.json', '--no-color']):
+        mtg_analyze.main()
         output = fake_out.getvalue()
         assert "MECHANICAL COLOR PIE" in output
         assert "Flying" in output
@@ -62,8 +62,8 @@ def test_mtg_colorpie_main_basic(sample_cards):
 def test_mtg_colorpie_json(sample_cards):
     with patch('jdecode.mtg_open_file', return_value=sample_cards), \
          patch('sys.stdout', new=StringIO()) as fake_out, \
-         patch('sys.argv', ['mtg_colorpie.py', 'dummy.json', '--json']):
-        mtg_colorpie.main()
+         patch('sys.argv', ['mtg_analyze.py', 'colorpie', 'dummy.json', '--json']):
+        mtg_analyze.main()
         output = fake_out.getvalue()
         data = json.loads(output)
         assert "primary" in data
@@ -77,8 +77,8 @@ def test_mtg_colorpie_json(sample_cards):
 def test_mtg_colorpie_compare(sample_cards):
     with patch('jdecode.mtg_open_file', side_effect=[sample_cards, sample_cards]), \
          patch('sys.stdout', new=StringIO()) as fake_out, \
-         patch('sys.argv', ['mtg_colorpie.py', 'dummy1.json', '--compare', 'dummy2.json', '--no-color']):
-        mtg_colorpie.main()
+         patch('sys.argv', ['mtg_analyze.py', 'colorpie', 'dummy1.json', '--compare', 'dummy2.json', '--no-color']):
+        mtg_analyze.main()
         output = fake_out.getvalue()
         assert "MECHANICAL COLOR PIE (COMPARISON)" in output
         assert "Flying" in output

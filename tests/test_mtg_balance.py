@@ -8,7 +8,7 @@ import os
 sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), 'lib'))
 
-from scripts.mtg_balance import get_archetype_counts, main as balance_main
+from scripts.mtg_analyze import get_archetype_counts, main as balance_main
 
 class TestMtgBalance(unittest.TestCase):
 
@@ -78,9 +78,9 @@ class TestMtgBalance(unittest.TestCase):
         card.color_identity = "UW"
         card.name = "Test Card"
 
-        with patch('scripts.mtg_balance.jdecode.mtg_open_file', return_value=[card]):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[card]):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
-                with patch('sys.argv', ['mtg_balance.py', 'test.json', '--no-color']):
+                with patch('sys.argv', ['mtg_analyze.py', 'balance', 'test.json', '--no-color']):
                     balance_main()
                     output = fake_out.getvalue()
                     self.assertIn("ARCHETYPE BALANCE COMPARISON", output)
@@ -99,9 +99,9 @@ class TestMtgBalance(unittest.TestCase):
                 return [card1]
             return [card2]
 
-        with patch('scripts.mtg_balance.jdecode.mtg_open_file', side_effect=mock_open):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', side_effect=mock_open):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
-                with patch('sys.argv', ['mtg_balance.py', 'base.json', 'target.json', '--no-color']):
+                with patch('sys.argv', ['mtg_analyze.py', 'balance', 'base.json', 'target.json', '--no-color']):
                     balance_main()
                     output = fake_out.getvalue()
                     self.assertIn("Baseline: base.json (1 cards)", output)
@@ -111,16 +111,16 @@ class TestMtgBalance(unittest.TestCase):
 
     def test_balance_main_filtering_args(self):
         # We just want to make sure these arguments are passed to mtg_open_file
-        with patch('scripts.mtg_balance.jdecode.mtg_open_file', return_value=[]) as mock_open:
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[]) as mock_open:
             with patch('sys.stderr', new=io.StringIO()):
-                with patch('sys.argv', ['mtg_balance.py', 'test.json', '--set', 'MOM', '--rarity', 'rare', '--limit', '10']):
+                with patch('sys.argv', ['mtg_analyze.py', 'balance', 'test.json', '--set', 'MOM', '--rarity', 'rare', '--limit', '10']):
                     balance_main()
                     mock_open.assert_called_with('test.json', verbose=False, sets=['MOM'], rarities=['rare'])
 
     def test_balance_main_no_cards(self):
-        with patch('scripts.mtg_balance.jdecode.mtg_open_file', return_value=[]):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[]):
             with patch('sys.stderr', new=io.StringIO()) as fake_err:
-                with patch('sys.argv', ['mtg_balance.py', 'empty.json']):
+                with patch('sys.argv', ['mtg_analyze.py', 'balance', 'empty.json']):
                     balance_main()
                     self.assertIn("Warning: No cards found in empty.json", fake_err.getvalue())
 
@@ -134,9 +134,9 @@ class TestMtgBalance(unittest.TestCase):
         captured_output = io.StringIO()
         mock_stdout.write.side_effect = captured_output.write
 
-        with patch('scripts.mtg_balance.jdecode.mtg_open_file', return_value=[card]):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[card]):
             with patch('sys.stdout', mock_stdout):
-                with patch('sys.argv', ['mtg_balance.py', 'test.json', '--color']):
+                with patch('sys.argv', ['mtg_analyze.py', 'balance', 'test.json', '--color']):
                     balance_main()
                     output = captured_output.getvalue()
                     self.assertIn("\033[", output)
@@ -159,9 +159,9 @@ class TestMtgBalance(unittest.TestCase):
         captured_output = io.StringIO()
         mock_stdout.write.side_effect = captured_output.write
 
-        with patch('scripts.mtg_balance.jdecode.mtg_open_file', side_effect=mock_open):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', side_effect=mock_open):
             with patch('sys.stdout', mock_stdout):
-                with patch('sys.argv', ['mtg_balance.py', 'base.json', 'target.json', '--color']):
+                with patch('sys.argv', ['mtg_analyze.py', 'balance', 'base.json', 'target.json', '--color']):
                     balance_main()
                     output = captured_output.getvalue()
                     # Check for green (+100.0%) and red (-100.0%)
@@ -180,10 +180,10 @@ class TestMtgBalance(unittest.TestCase):
         captured_output = io.StringIO()
         mock_stdout.write.side_effect = captured_output.write
 
-        with patch('scripts.mtg_balance.jdecode.mtg_open_file', return_value=[card]):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[card]):
             with patch('sys.stdout', mock_stdout):
                 # No --color or --no-color flag
-                with patch('sys.argv', ['mtg_balance.py', 'test.json']):
+                with patch('sys.argv', ['mtg_analyze.py', 'balance', 'test.json']):
                     balance_main()
                     output = captured_output.getvalue()
                     self.assertIn("\033[", output)
@@ -192,17 +192,17 @@ class TestMtgBalance(unittest.TestCase):
         card = MagicMock()
         card.color_identity = "UW"
 
-        with patch('scripts.mtg_balance.jdecode.mtg_open_file', return_value=[card]):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[card]):
             # Quiet should suppress summary
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
-                with patch('sys.argv', ['mtg_balance.py', 'test.json', '--quiet']):
+                with patch('sys.argv', ['mtg_analyze.py', 'balance', 'test.json', '--quiet']):
                     balance_main()
                     self.assertNotIn("Operation Summary", fake_out.getvalue())
 
             # Verbose should pass verbose=True to mtg_open_file
-            with patch('scripts.mtg_balance.jdecode.mtg_open_file', return_value=[card]) as mock_open:
+            with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[card]) as mock_open:
                 with patch('sys.stdout', new=io.StringIO()):
-                    with patch('sys.argv', ['mtg_balance.py', 'test.json', '--verbose']):
+                    with patch('sys.argv', ['mtg_analyze.py', 'balance', 'test.json', '--verbose']):
                         balance_main()
                         mock_open.assert_called()
                         self.assertEqual(mock_open.call_args[1]['verbose'], True)

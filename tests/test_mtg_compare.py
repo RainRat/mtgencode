@@ -8,7 +8,7 @@ import os
 sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), 'lib'))
 
-from scripts.mtg_compare import format_delta, main as compare_main
+from scripts.mtg_analyze import format_delta, main as compare_main
 
 class TestMtgCompare(unittest.TestCase):
 
@@ -81,9 +81,9 @@ class TestMtgCompare(unittest.TestCase):
         card1.color_identity = "W"
         card1.complexity_score = 10
 
-        with patch('scripts.mtg_compare.jdecode.mtg_open_file', return_value=[card1]):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[card1]):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
-                with patch('sys.argv', ['mtg_compare.py', 'test.json', '--no-color']):
+                with patch('sys.argv', ['mtg_analyze.py', 'compare', 'test.json', '--no-color']):
                     compare_main()
                     output = fake_out.getvalue()
                     self.assertIn("DATASET COMPARISON", output)
@@ -147,9 +147,9 @@ class TestMtgCompare(unittest.TestCase):
                 return [card1]
             return [card2]
 
-        with patch('scripts.mtg_compare.jdecode.mtg_open_file', side_effect=mock_open):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', side_effect=mock_open):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
-                with patch('sys.argv', ['mtg_compare.py', 'base.json', 'target.json', '--no-color']):
+                with patch('sys.argv', ['mtg_analyze.py', 'compare', 'base.json', 'target.json', '--no-color']):
                     compare_main()
                     output = fake_out.getvalue()
                     self.assertIn("DATASET COMPARISON", output)
@@ -163,9 +163,9 @@ class TestMtgCompare(unittest.TestCase):
                     self.assertIn("+2.0", output)
 
     def test_compare_main_filtering_args(self):
-        with patch('scripts.mtg_compare.jdecode.mtg_open_file', return_value=[]) as mock_open:
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[]) as mock_open:
             with patch('sys.stdout', new=io.StringIO()):
-                with patch('sys.argv', ['mtg_compare.py', 'test.json', '--rarity', 'rare', '--set', 'MOM', '--limit', '5']):
+                with patch('sys.argv', ['mtg_analyze.py', 'compare', 'test.json', '--rarity', 'rare', '--set', 'MOM', '--limit', '5']):
                     compare_main()
                     # Check if args were passed to mtg_open_file
                     # get_stats_for_file is called for 'test.json'
@@ -199,10 +199,10 @@ class TestMtgCompare(unittest.TestCase):
         card.color_identity = "W"
         card.complexity_score = 10
 
-        with patch('scripts.mtg_compare.jdecode.mtg_open_file', return_value=[card]):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[card]):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
                 # Force color
-                with patch('sys.argv', ['mtg_compare.py', 'test.json', '--color']):
+                with patch('sys.argv', ['mtg_analyze.py', 'compare', 'test.json', '--color']):
                     compare_main()
                     output = fake_out.getvalue()
                     self.assertIn("\033[", output)
@@ -232,18 +232,18 @@ class TestMtgCompare(unittest.TestCase):
         card.color_identity = "W"
         card.complexity_score = 10
 
-        with patch('scripts.mtg_compare.jdecode.mtg_open_file', return_value=[card]):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[card]):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
                 # Force no color
-                with patch('sys.argv', ['mtg_compare.py', 'test.json', '--no-color']):
+                with patch('sys.argv', ['mtg_analyze.py', 'compare', 'test.json', '--no-color']):
                     compare_main()
                     output = fake_out.getvalue()
                     self.assertNotIn("\033[", output)
 
     def test_compare_main_empty_dataset(self):
-        with patch('scripts.mtg_compare.jdecode.mtg_open_file', return_value=[]):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[]):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
-                with patch('sys.argv', ['mtg_compare.py', 'empty.json', '--no-color']):
+                with patch('sys.argv', ['mtg_analyze.py', 'compare', 'empty.json', '--no-color']):
                     compare_main()
                     output = fake_out.getvalue()
                     # Should still print header and baseline row but with 0s
@@ -252,10 +252,10 @@ class TestMtgCompare(unittest.TestCase):
                     self.assertIn("0", output)
 
     def test_compare_main_sample_args(self):
-        with patch('scripts.mtg_compare.jdecode.mtg_open_file', return_value=[]):
+        with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[]):
             with patch('sys.stdout', new=io.StringIO()):
                 # Test --sample flag which sets shuffle and limit
-                with patch('sys.argv', ['mtg_compare.py', 'test.json', '--sample', '10']):
+                with patch('sys.argv', ['mtg_analyze.py', 'compare', 'test.json', '--sample', '10']):
                     compare_main()
                     # We can't easily check the internal args object without more complex patching,
                     # but we can check if it at least runs without error.

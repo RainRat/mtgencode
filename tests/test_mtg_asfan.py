@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../lib'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
 
-import mtg_asfan
+import scripts.mtg_analyze as mtg_analyze
 import cardlib
 
 class TestMtgAsfan(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestMtgAsfan(unittest.TestCase):
         ]
 
     def test_calculate_asfan_basic(self):
-        results = mtg_asfan.calculate_asfan(self.cards)
+        results = mtg_analyze.calculate_asfan(self.cards)
 
         # In this dataset:
         # Common pool (2 cards): 50% White, 50% Blue
@@ -53,7 +53,7 @@ class TestMtgAsfan(unittest.TestCase):
         self.assertAlmostEqual(results['colors'].get('C', 0), 1.0)
 
     def test_calculate_asfan_types(self):
-        results = mtg_asfan.calculate_asfan(self.cards)
+        results = mtg_analyze.calculate_asfan(self.cards)
 
         # Creature count in Common: 1/2 = 50% -> As-Fan = 0.5 * 10 = 5.0
         # Creature count in Uncommon: 1/1 = 100% -> As-Fan = 1.0 * 3 = 3.0
@@ -66,8 +66,8 @@ class TestMtgAsfan(unittest.TestCase):
     def test_main_table(self, mock_stdout, mock_open):
         mock_open.return_value = self.cards
 
-        with patch('sys.argv', ['mtg_asfan.py', 'dummy.json', '--no-color']):
-            mtg_asfan.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'asfan', 'dummy.json', '--no-color']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn("AS-FAN ANALYSIS", output)
@@ -80,8 +80,8 @@ class TestMtgAsfan(unittest.TestCase):
     def test_main_json(self, mock_stdout, mock_open):
         mock_open.return_value = self.cards
 
-        with patch('sys.argv', ['mtg_asfan.py', 'dummy.json', '--json']):
-            mtg_asfan.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'asfan', 'dummy.json', '--json']):
+            mtg_analyze.main()
 
         output = json.loads(mock_stdout.getvalue())
         self.assertIn("primary", output)
@@ -94,8 +94,8 @@ class TestMtgAsfan(unittest.TestCase):
         # First call returns primary, second returns comparison
         mock_open.side_effect = [self.cards, self.cards]
 
-        with patch('sys.argv', ['mtg_asfan.py', 'file1.json', '--compare', 'file2.json', '--no-color']):
-            mtg_asfan.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'asfan', 'file1.json', '--compare', 'file2.json', '--no-color']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn("AS-FAN ANALYSIS (COMPARISON)", output)
@@ -119,8 +119,8 @@ class TestMtgAsfan(unittest.TestCase):
         mock_isatty.return_value = True
         mock_open.return_value = self.cards
 
-        with patch('sys.argv', ['mtg_asfan.py', 'Grizzly Bears']):
-            mtg_asfan.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'asfan', 'Grizzly Bears']):
+            mtg_analyze.main()
 
         # Should have called open_file with some path that includes AllPrintings.json and grep=['Grizzly Bears']
         # We check the call args to verify

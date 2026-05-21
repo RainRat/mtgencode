@@ -11,7 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../lib'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
 
-import mtg_mana
+import scripts.mtg_analyze as mtg_analyze
 from lib.cardlib import Card
 
 class TestMtgManaGaps(unittest.TestCase):
@@ -19,20 +19,20 @@ class TestMtgManaGaps(unittest.TestCase):
     def test_get_produced_colors_wastes(self):
         # Wastes as subtype
         card = Card({'name': 'Wastes', 'types': ['Land'], 'subtypes': ['Wastes']})
-        self.assertEqual(mtg_mana.get_produced_colors(card), {'C'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card), {'C'})
 
         # Wastes as type
         card = Card({'name': 'Wastes', 'types': ['Wastes', 'Land']})
-        self.assertEqual(mtg_mana.get_produced_colors(card), {'C'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card), {'C'})
 
     def test_get_produced_colors_hybrid_and_complex(self):
         # Hybrid symbols
         card = Card({'name': 'Hybrid', 'types': ['Artifact'], 'text': '{T}: Add {W/U}.'})
-        self.assertEqual(mtg_mana.get_produced_colors(card), {'W', 'U'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card), {'W', 'U'})
 
         # Multiple symbols in one line
         card = Card({'name': 'Complex', 'types': ['Artifact'], 'text': '{T}: Add {R}{G} or {B}{B}.'})
-        self.assertEqual(mtg_mana.get_produced_colors(card), {'R', 'G', 'B'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card), {'R', 'G', 'B'})
 
     def test_get_produced_colors_older_text(self):
         patterns = [
@@ -45,45 +45,45 @@ class TestMtgManaGaps(unittest.TestCase):
         ]
         for text, color in patterns:
             card = Card({'name': 'Old Text', 'types': ['Artifact'], 'text': text})
-            self.assertEqual(mtg_mana.get_produced_colors(card), {color}, f"Failed for pattern: {text}")
+            self.assertEqual(mtg_analyze.get_produced_colors(card), {color}, f"Failed for pattern: {text}")
 
     def test_get_produced_colors_bside_recursion(self):
         # B-side produces Any
         bside_json = {'name': 'Back', 'types': ['Artifact'], 'text': '{T}: Add one mana of any color.'}
         card = Card({'name': 'Front', 'types': ['Enchantment'], 'bside': bside_json})
-        self.assertEqual(mtg_mana.get_produced_colors(card), {'Any'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card), {'Any'})
 
         # B-side produces specific color
         bside_json = {'name': 'Back', 'types': ['Land'], 'subtypes': ['Forest']}
         card = Card({'name': 'Front', 'types': ['Artifact'], 'bside': bside_json})
-        self.assertEqual(mtg_mana.get_produced_colors(card), {'G'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card), {'G'})
 
-    @patch('mtg_mana.jdecode.mtg_open_file')
+    @patch('mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_main_json_output(self, mock_stdout, mock_open):
         mock_open.return_value = [Card({'name': 'Forest', 'types': ['Land'], 'subtypes': ['Forest']})]
 
-        with patch('sys.argv', ['mtg_mana.py', '-', '--json']):
-            mtg_mana.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'mana', '-', '--json']):
+            mtg_analyze.main()
 
         result = json.loads(mock_stdout.getvalue())
         self.assertIn('primary', result)
         self.assertEqual(result['primary']['colors']['G'], 1)
 
-    @patch('mtg_mana.jdecode.mtg_open_file')
+    @patch('mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_main_csv_output(self, mock_stdout, mock_open):
         mock_open.return_value = [Card({'name': 'Forest', 'types': ['Land'], 'subtypes': ['Forest']})]
 
-        with patch('sys.argv', ['mtg_mana.py', '-', '--csv']):
-            mtg_mana.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'mana', '-', '--csv']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         reader = csv.DictReader(io.StringIO(output))
         rows = list(reader)
         self.assertTrue(any(row['Metric'] == 'Producer Count' and row['Value'] == '1' for row in rows))
 
-    @patch('mtg_mana.jdecode.mtg_open_file')
+    @patch('mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_main_compare(self, mock_stdout, mock_open):
         # First call for primary, second for comparison
@@ -92,24 +92,24 @@ class TestMtgManaGaps(unittest.TestCase):
             [Card({'name': 'Island', 'types': ['Land'], 'subtypes': ['Island']})]
         ]
 
-        with patch('sys.argv', ['mtg_mana.py', 'file1.json', '--compare', 'file2.json', '--no-color']):
-            mtg_mana.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'mana', 'file1.json', '--compare', 'file2.json', '--no-color']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn("MANA PRODUCTION ANALYSIS (COMPARISON)", output)
         self.assertIn("Delta", output)
 
-    @patch('mtg_mana.jdecode.mtg_open_file')
+    @patch('mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_main_smart_args(self, mock_stdout, mock_open):
         # Case 1: Infile doesn't exist, treated as query
         mock_open.return_value = [Card({'name': 'Lotus', 'types': ['Artifact'], 'text': 'Add any color.'})]
 
         with patch('os.path.exists', return_value=False):
-            with patch('sys.argv', ['mtg_mana.py', 'Lotus', '--no-color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mana', 'Lotus', '--no-color']):
                 # We need to mock sys.stdin.isatty to avoid it trying to load AllPrintings.json
                 with patch('sys.stdin.isatty', return_value=False):
-                    mtg_mana.main()
+                    mtg_analyze.main()
 
         # Verify grep was passed to mtg_open_file
         mock_open.assert_called_with('-', verbose=False, grep=['Lotus'], vgrep=None,
@@ -121,7 +121,7 @@ class TestMtgManaGaps(unittest.TestCase):
                                     identities=None, id_counts=None, shuffle=False, seed=None,
                                     booster=0, box=0)
 
-    @patch('mtg_mana.jdecode.mtg_open_file')
+    @patch('mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_main_color_and_charts(self, mock_stdout, mock_open):
         mock_open.return_value = [
@@ -129,8 +129,8 @@ class TestMtgManaGaps(unittest.TestCase):
             Card({'name': 'Elf', 'types': ['Creature'], 'text': '{T}: Add {G}.'})
         ]
 
-        with patch('sys.argv', ['mtg_mana.py', '-', '--color']):
-            mtg_mana.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'mana', '-', '--color']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         # Check for ANSI escape codes (simplified check)
@@ -138,13 +138,13 @@ class TestMtgManaGaps(unittest.TestCase):
         # Check for bar chart character
         self.assertIn("█", output)
 
-    @patch('mtg_mana.jdecode.mtg_open_file')
+    @patch('mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_main_empty_dataset(self, mock_stdout, mock_open):
         mock_open.return_value = []
 
-        with patch('sys.argv', ['mtg_mana.py', '-', '--quiet']):
-            mtg_mana.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'mana', '-', '--quiet']):
+            mtg_analyze.main()
 
         self.assertEqual(mock_stdout.getvalue(), "")
 

@@ -8,7 +8,7 @@ import csv
 
 # Add scripts directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
-import mtg_types
+import scripts.mtg_analyze as mtg_analyze
 
 class TestMTGTypes(unittest.TestCase):
 
@@ -42,9 +42,9 @@ class TestMTGTypes(unittest.TestCase):
     def test_basic_table_output(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_types.py', 'dummy.json', '--no-color']
+        test_args = ['mtg_analyze.py', 'types', 'dummy.json', '--no-color']
         with patch('sys.argv', test_args):
-            mtg_types.main()
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn("TYPE / COLOR DISTRIBUTION", output)
@@ -59,9 +59,9 @@ class TestMTGTypes(unittest.TestCase):
     def test_json_output(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_types.py', 'dummy.json', '--json', '--quiet']
+        test_args = ['mtg_analyze.py', 'types', 'dummy.json', '--json', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_types.main()
+            mtg_analyze.main()
 
         output_data = json.loads(mock_stdout.getvalue())
         self.assertEqual(output_data['primary']['total'], 4)
@@ -77,9 +77,9 @@ class TestMTGTypes(unittest.TestCase):
     def test_csv_output(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_types.py', 'dummy.json', '--csv', '--quiet']
+        test_args = ['mtg_analyze.py', 'types', 'dummy.json', '--csv', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_types.main()
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         reader = csv.reader(io.StringIO(output))
@@ -101,9 +101,9 @@ class TestMTGTypes(unittest.TestCase):
             self.mock_cards + [self.card_w_creature] # Add one more W creature
         ]
 
-        test_args = ['mtg_types.py', 'dummy.json', '--compare', 'comp.json', '--no-color']
+        test_args = ['mtg_analyze.py', 'types', 'dummy.json', '--compare', 'comp.json', '--no-color']
         with patch('sys.argv', test_args):
-            mtg_types.main()
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn("(COMPARISON)", output)
@@ -117,7 +117,7 @@ class TestMTGTypes(unittest.TestCase):
         mock_open_file.return_value = self.mock_cards
 
         test_args = [
-            'mtg_types.py', 'dummy.json',
+            'mtg_analyze.py', 'dummy.json',
             '--set', 'MOM', '--rarity', 'rare', '-g', 'flying',
             '--cmc', '3', '--colors', 'W', '--identity', 'WU',
             '--pow', '2', '--tou', '2', '--loy', '3',
@@ -125,7 +125,7 @@ class TestMTGTypes(unittest.TestCase):
             '--shuffle', '--seed', '42', '--limit', '10'
         ]
         with patch('sys.argv', test_args), patch('sys.stdout', new_callable=io.StringIO):
-            mtg_types.main()
+            mtg_analyze.main()
 
         kwargs = mock_open_file.call_args[1]
         self.assertEqual(kwargs['sets'], ['MOM'])
@@ -151,15 +151,15 @@ class TestMTGTypes(unittest.TestCase):
         mock_open_file.return_value = self.mock_cards
 
         # Case 1: Query only
-        test_args = ['mtg_types.py', 'Grizzly', '--quiet']
+        test_args = ['mtg_analyze.py', 'types', 'Grizzly', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_types.main()
+            mtg_analyze.main()
         self.assertEqual(mock_open_file.call_args[1]['grep'], ['Grizzly'])
 
         # Case 2: File and query
-        test_args = ['mtg_types.py', 'existing.json', 'Bears', '--quiet']
+        test_args = ['mtg_analyze.py', 'types', 'existing.json', 'Bears', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_types.main()
+            mtg_analyze.main()
         self.assertEqual(mock_open_file.call_args[0][0], 'existing.json')
         self.assertEqual(mock_open_file.call_args[1]['grep'], ['Bears'])
 
@@ -170,9 +170,9 @@ class TestMTGTypes(unittest.TestCase):
         mock_exists.side_effect = lambda p: p.endswith('AllPrintings.json')
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_types.py', '--quiet']
+        test_args = ['mtg_analyze.py', 'types', '--quiet']
         with patch('sys.argv', test_args), patch('sys.stdout', new_callable=io.StringIO):
-            mtg_types.main()
+            mtg_analyze.main()
 
         self.assertIn('AllPrintings.json', mock_open_file.call_args[0][0])
 
@@ -181,9 +181,9 @@ class TestMTGTypes(unittest.TestCase):
     def test_no_cards_found(self, mock_stderr, mock_open_file):
         mock_open_file.return_value = []
 
-        test_args = ['mtg_types.py', 'dummy.json']
+        test_args = ['mtg_analyze.py', 'types', 'dummy.json']
         with patch('sys.argv', test_args):
-            mtg_types.main()
+            mtg_analyze.main()
 
         self.assertIn("No cards found", mock_stderr.getvalue())
 

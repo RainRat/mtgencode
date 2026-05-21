@@ -8,13 +8,13 @@ import os
 sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), 'lib'))
 
-from scripts.mtg_mechanics import main as mechanics_main
+from scripts.mtg_analyze import main as mechanics_main
 
 class TestMtgMechanics(unittest.TestCase):
 
     def test_mechanics_list_only(self):
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_mechanics.py', '--no-color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mechanics', '--no-color']):
                 mechanics_main()
                 output = fake_out.getvalue()
                 self.assertIn("RECOGNIZED MECHANICS", output)
@@ -25,7 +25,7 @@ class TestMtgMechanics(unittest.TestCase):
 
     def test_mechanics_single_file(self):
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_mechanics.py', 'testdata/uthros.json', '--no-color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--no-color']):
                 mechanics_main()
                 output = fake_out.getvalue()
                 self.assertIn("MECHANICAL FREQUENCY", output)
@@ -36,7 +36,7 @@ class TestMtgMechanics(unittest.TestCase):
 
     def test_mechanics_comparison(self):
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_mechanics.py', 'testdata/uthros.json', '--compare', 'testdata/tarkir.json', '--no-color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--compare', 'testdata/tarkir.json', '--no-color']):
                 mechanics_main()
                 output = fake_out.getvalue()
                 self.assertIn("MECHANICAL COMPARISON", output)
@@ -44,14 +44,14 @@ class TestMtgMechanics(unittest.TestCase):
 
     def test_mechanics_no_matches(self):
         with patch('sys.stderr', new=io.StringIO()) as fake_err:
-            with patch('sys.argv', ['mtg_mechanics.py', 'testdata/uthros.json', '--rarity', 'common', '--no-color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--rarity', 'common', '--no-color']):
                 mechanics_main()
                 self.assertIn("No cards found", fake_err.getvalue())
 
     def test_mechanics_sorting_and_limit(self):
         # Test sort by count
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_mechanics.py', 'testdata/uthros.json', '--sort', 'count', '--limit', '1', '--no-color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--sort', 'count', '--limit', '1', '--no-color']):
                 mechanics_main()
                 output = fake_out.getvalue()
                 self.assertIn("MECHANICAL FREQUENCY", output)
@@ -60,18 +60,18 @@ class TestMtgMechanics(unittest.TestCase):
 
     def test_mechanics_grep_filter(self):
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_mechanics.py', 'testdata/uthros.json', '--grep', 'Uthros', '--no-color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--grep', 'Uthros', '--no-color']):
                 mechanics_main()
                 self.assertIn("Total Cards: 1", fake_out.getvalue())
 
         with patch('sys.stderr', new=io.StringIO()) as fake_err:
-            with patch('sys.argv', ['mtg_mechanics.py', 'testdata/uthros.json', '--grep', 'NonExistent', '--no-color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--grep', 'NonExistent', '--no-color']):
                 mechanics_main()
                 self.assertIn("No cards found", fake_err.getvalue())
 
     def test_mechanics_sample(self):
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_mechanics.py', 'testdata/uthros.json', '--sample', '1', '--no-color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--sample', '1', '--no-color']):
                 mechanics_main()
                 self.assertIn("Total Cards: 1", fake_out.getvalue())
 
@@ -84,14 +84,14 @@ class TestMtgMechanics(unittest.TestCase):
         mock_stdout.write.side_effect = captured_output.write
 
         with patch('sys.stdout', mock_stdout):
-            with patch('sys.argv', ['mtg_mechanics.py', '--color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mechanics', '--color']):
                 mechanics_main()
                 output = captured_output.getvalue()
                 self.assertIn("\033[", output)
 
     def test_mechanics_quiet(self):
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_mechanics.py', 'testdata/uthros.json', '--quiet', '--no-color']):
+            with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--quiet', '--no-color']):
                 mechanics_main()
                 output = fake_out.getvalue()
                 self.assertIn("MECHANICAL FREQUENCY", output)

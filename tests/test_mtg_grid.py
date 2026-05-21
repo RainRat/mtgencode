@@ -8,7 +8,7 @@ import csv
 
 # Add scripts directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
-import mtg_grid
+import scripts.mtg_analyze as mtg_analyze
 
 class TestMTGGrid(unittest.TestCase):
 
@@ -37,39 +37,39 @@ class TestMTGGrid(unittest.TestCase):
         self.mock_cards = [self.card1, self.card2]
 
     def test_bucket_numeric(self):
-        self.assertEqual(mtg_grid.bucket_numeric(None), None)
-        self.assertEqual(mtg_grid.bucket_numeric(0), "0")
-        self.assertEqual(mtg_grid.bucket_numeric(3), "3")
-        self.assertEqual(mtg_grid.bucket_numeric(6), "6")
-        self.assertEqual(mtg_grid.bucket_numeric(7), "7+")
-        self.assertEqual(mtg_grid.bucket_numeric(10), "7+")
-        self.assertEqual(mtg_grid.bucket_numeric(-1), "0")
-        self.assertEqual(mtg_grid.bucket_numeric("3"), "3")
-        self.assertEqual(mtg_grid.bucket_numeric(3.5), "3")
-        self.assertEqual(mtg_grid.bucket_numeric("invalid"), None)
+        self.assertEqual(mtg_analyze.bucket_numeric(None), None)
+        self.assertEqual(mtg_analyze.bucket_numeric(0), "0")
+        self.assertEqual(mtg_analyze.bucket_numeric(3), "3")
+        self.assertEqual(mtg_analyze.bucket_numeric(6), "6")
+        self.assertEqual(mtg_analyze.bucket_numeric(7), "7+")
+        self.assertEqual(mtg_analyze.bucket_numeric(10), "7+")
+        self.assertEqual(mtg_analyze.bucket_numeric(-1), "0")
+        self.assertEqual(mtg_analyze.bucket_numeric("3"), "3")
+        self.assertEqual(mtg_analyze.bucket_numeric(3.5), "3")
+        self.assertEqual(mtg_analyze.bucket_numeric("invalid"), None)
 
     def test_get_color_group(self):
-        self.assertEqual(mtg_grid.get_color_group(self.card1), "W")
-        self.assertEqual(mtg_grid.get_color_group(self.card2), "M")
+        self.assertEqual(mtg_analyze.get_color_group(self.card1), "W")
+        self.assertEqual(mtg_analyze.get_color_group(self.card2), "M")
 
         card_colorless = MagicMock()
         card_colorless.color_identity = ""
-        self.assertEqual(mtg_grid.get_color_group(card_colorless), "A")
+        self.assertEqual(mtg_analyze.get_color_group(card_colorless), "A")
 
     def test_get_card_type(self):
-        self.assertEqual(mtg_grid.get_card_type(self.card1), "Creature")
-        self.assertEqual(mtg_grid.get_card_type(self.card2), "Sorcery")
+        self.assertEqual(mtg_analyze.get_card_type(self.card1), "Creature")
+        self.assertEqual(mtg_analyze.get_card_type(self.card2), "Sorcery")
 
         card_other = MagicMock()
         card_other._has_type.return_value = False
-        self.assertEqual(mtg_grid.get_card_type(card_other), "Other")
+        self.assertEqual(mtg_analyze.get_card_type(card_other), "Other")
 
     def test_format_type(self):
-        self.assertEqual(mtg_grid.format_type("Creature", False), "Creature")
+        self.assertEqual(mtg_analyze.format_type("Creature", False), "Creature")
         # Colorized output is harder to assert exactly without ANSI constants,
         # but we can check it's different
-        self.assertNotEqual(mtg_grid.format_type("Creature", True), "Creature")
-        self.assertIn("Creature", mtg_grid.format_type("Creature", True))
+        self.assertNotEqual(mtg_analyze.format_type("Creature", True), "Creature")
+        self.assertIn("Creature", mtg_analyze.format_type("Creature", True))
 
     @patch('os.path.exists')
     @patch('jdecode.mtg_open_file')
@@ -79,9 +79,9 @@ class TestMTGGrid(unittest.TestCase):
         mock_open_file.return_value = self.mock_cards
 
         # Case 1: Query only
-        test_args = ['mtg_grid.py', 'type', 'color', 'Grizzly', '--quiet']
+        test_args = ['mtg_analyze.py', 'grid', 'type', 'color', 'Grizzly', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_grid.main()
+            mtg_analyze.main()
         self.assertEqual(mock_open_file.call_args[1]['grep'], ['Grizzly'])
 
         # Case 2: File and query (should not swap because row/col are fixed)
@@ -91,9 +91,9 @@ class TestMTGGrid(unittest.TestCase):
         #        args.grep = [args.infile]
         #        args.infile = '-'
 
-        test_args = ['mtg_grid.py', 'type', 'color', 'nonexistent.json', '--quiet']
+        test_args = ['mtg_analyze.py', 'grid', 'type', 'color', 'nonexistent.json', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_grid.main()
+            mtg_analyze.main()
         self.assertEqual(mock_open_file.call_args[1]['grep'], ['nonexistent.json'])
         self.assertEqual(mock_open_file.call_args[0][0], '-')
 
@@ -104,9 +104,9 @@ class TestMTGGrid(unittest.TestCase):
         mock_exists.side_effect = lambda p: p.endswith('AllPrintings.json')
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_grid.py', 'type', 'color', '--quiet']
+        test_args = ['mtg_analyze.py', 'grid', 'type', 'color', '--quiet']
         with patch('sys.argv', test_args), patch('sys.stdout', new_callable=io.StringIO):
-            mtg_grid.main()
+            mtg_analyze.main()
 
         self.assertIn('AllPrintings.json', mock_open_file.call_args[0][0])
 
@@ -115,9 +115,9 @@ class TestMTGGrid(unittest.TestCase):
     def test_table_output(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_grid.py', 'type', 'color', 'dummy.json', '--no-color', '--quiet']
+        test_args = ['mtg_analyze.py', 'grid', 'type', 'color', 'dummy.json', '--no-color', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_grid.main()
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn("CARD TYPE vs COLOR IDENTITY", output)
@@ -130,9 +130,9 @@ class TestMTGGrid(unittest.TestCase):
     def test_json_output(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_grid.py', 'type', 'color', 'dummy.json', '--json', '--quiet']
+        test_args = ['mtg_analyze.py', 'grid', 'type', 'color', 'dummy.json', '--json', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_grid.main()
+            mtg_analyze.main()
 
         data = json.loads(mock_stdout.getvalue())
         self.assertEqual(data['total_cards'], 2)
@@ -144,9 +144,9 @@ class TestMTGGrid(unittest.TestCase):
     def test_csv_output(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_grid.py', 'type', 'color', 'dummy.json', '--csv', '--quiet']
+        test_args = ['mtg_analyze.py', 'grid', 'type', 'color', 'dummy.json', '--csv', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_grid.main()
+            mtg_analyze.main()
 
         reader = csv.reader(io.StringIO(mock_stdout.getvalue()))
         rows = list(reader)
@@ -161,9 +161,9 @@ class TestMTGGrid(unittest.TestCase):
     def test_mechanic_dimension(self, mock_stdout, mock_open_file):
         mock_open_file.return_value = self.mock_cards
 
-        test_args = ['mtg_grid.py', 'mechanic', 'color', 'dummy.json', '--json', '--quiet']
+        test_args = ['mtg_analyze.py', 'grid', 'mechanic', 'color', 'dummy.json', '--json', '--quiet']
         with patch('sys.argv', test_args):
-            mtg_grid.main()
+            mtg_analyze.main()
 
         data = json.loads(mock_stdout.getvalue())
         # Flying (card 1) is W
@@ -180,14 +180,14 @@ class TestMTGGrid(unittest.TestCase):
         mock_open_file.return_value = self.mock_cards
 
         test_args = [
-            'mtg_grid.py', 'type', 'color', 'dummy.json',
+            'mtg_analyze.py', 'type', 'color', 'dummy.json',
             '--set', 'MOM', '--rarity', 'rare', '-g', 'flying',
             '--cmc', '3', '--colors', 'W', '--identity', 'WU',
             '--pow', '2', '--tou', '2', '--mechanic', 'Flying',
             '--limit', '10', '--quiet'
         ]
         with patch('sys.argv', test_args), patch('sys.stdout', new_callable=io.StringIO):
-            mtg_grid.main()
+            mtg_analyze.main()
 
         kwargs = mock_open_file.call_args[1]
         self.assertEqual(kwargs['sets'], ['MOM'])

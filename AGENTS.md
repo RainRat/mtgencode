@@ -43,7 +43,4 @@ This will create a file containing the raw data for any cards that could not be 
 Key utility scripts for dataset analysis:
 *   `scripts/mtg_query.py search`: Comprehensive card searching and field extraction.
 *   `scripts/mtg_subset.py`: Creates filtered subsets of MTGJSON files.
-*   `scripts/mtg_lexicon.py`: Analyzes color-characteristic vocabulary.
-*   `scripts/mtg_tokens.py`: Extracts and summarizes token definitions from rules text.
-*   `scripts/mtg_curve.py`: Visualizes mana curve (CMC) distribution for datasets or decklists.
-*   `scripts/mtg_stats.py`: Detailed analysis of creature combat stats (P/T) and loyalty distribution.
+*   `scripts/mtg_analyze.py`: Unified metric and profiling tool (summary, curve, colorpie, grid, types, skeleton, mana, pips, costs, mechanics, synergy, actions, lexicon, stats, power, archetypes, balance, asfan, tokens, subtypes, compare).

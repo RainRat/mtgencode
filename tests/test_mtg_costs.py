@@ -8,7 +8,7 @@ import os
 # Add the project root to the path
 sys.path.append(os.getcwd())
 
-import scripts.mtg_costs as mtg_costs
+import scripts.mtg_analyze as mtg_analyze
 import lib.cardlib as cardlib
 
 class TestMtgCosts(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestMtgCosts(unittest.TestCase):
             'types': ['Creature'],
             'rarity': 'common'
         })
-        cmc, pips, intensity, commitment = mtg_costs.get_cost_metrics(card)
+        cmc, pips, intensity, commitment = mtg_analyze.get_cost_metrics(card)
         self.assertEqual(cmc, 2.0)
         self.assertEqual(pips, 1)
         self.assertEqual(intensity, 0.5)
@@ -35,7 +35,7 @@ class TestMtgCosts(unittest.TestCase):
             'types': ['Creature'],
             'rarity': 'rare'
         })
-        cmc, pips, intensity, commitment = mtg_costs.get_cost_metrics(card)
+        cmc, pips, intensity, commitment = mtg_analyze.get_cost_metrics(card)
         self.assertEqual(cmc, 5.0)
         self.assertEqual(pips, 5)
         self.assertEqual(intensity, 1.0)
@@ -49,7 +49,7 @@ class TestMtgCosts(unittest.TestCase):
             'types': ['Instant'],
             'rarity': 'common'
         })
-        cmc, pips, intensity, commitment = mtg_costs.get_cost_metrics(card)
+        cmc, pips, intensity, commitment = mtg_analyze.get_cost_metrics(card)
         self.assertEqual(cmc, 2.0)
         self.assertEqual(pips, 2)
         self.assertEqual(intensity, 1.0)
@@ -63,13 +63,13 @@ class TestMtgCosts(unittest.TestCase):
             'types': ['Artifact'],
             'rarity': 'uncommon'
         })
-        cmc, pips, intensity, commitment = mtg_costs.get_cost_metrics(card)
+        cmc, pips, intensity, commitment = mtg_analyze.get_cost_metrics(card)
         self.assertEqual(cmc, 1.0)
         self.assertEqual(pips, 0)
         self.assertEqual(intensity, 0.0)
         self.assertEqual(commitment, 0)
 
-    @patch('scripts.mtg_costs.jdecode.mtg_open_file')
+    @patch('scripts.mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_main_table(self, mock_stdout, mock_open):
         # Mock cards
@@ -77,8 +77,8 @@ class TestMtgCosts(unittest.TestCase):
         c2 = cardlib.Card({'name': 'C2', 'manaCost': '{1}{U}', 'types': ['Instant'], 'rarity': 'rare'})
         mock_open.return_value = [c1, c2]
 
-        with patch('sys.argv', ['mtg_costs.py', 'dummy.json']):
-            mtg_costs.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'costs', 'dummy.json']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn('MANA COST INTENSITY ANALYSIS', output)
@@ -86,14 +86,14 @@ class TestMtgCosts(unittest.TestCase):
         self.assertIn('Single', output)
         self.assertIn('2', output)
 
-    @patch('scripts.mtg_costs.jdecode.mtg_open_file')
+    @patch('scripts.mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_main_json(self, mock_stdout, mock_open):
         c1 = cardlib.Card({'name': 'C1', 'manaCost': '{G}', 'types': ['Creature'], 'rarity': 'common'})
         mock_open.return_value = [c1]
 
-        with patch('sys.argv', ['mtg_costs.py', 'dummy.json', '--json']):
-            mtg_costs.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'costs', 'dummy.json', '--json']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         data = json.loads(output)

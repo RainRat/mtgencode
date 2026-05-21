@@ -9,7 +9,7 @@ import io
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/..')
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../scripts')
 
-from scripts.mtg_subtypes import main, analyze_subtypes, get_color_identity_group
+from scripts.mtg_analyze import main, analyze_subtypes, get_color_identity_group
 import cardlib
 
 class TestMtgSubtypes(unittest.TestCase):
@@ -87,7 +87,7 @@ class TestMtgSubtypes(unittest.TestCase):
     def test_main_table(self, mock_stdout, mock_open):
         mock_open.return_value = self.cards
 
-        with patch('sys.argv', ['mtg_subtypes.py', 'dummy.json', '--no-color']):
+        with patch('sys.argv', ['mtg_analyze.py', 'subtypes', 'dummy.json', '--no-color']):
             main()
 
         output = mock_stdout.getvalue()
@@ -104,7 +104,7 @@ class TestMtgSubtypes(unittest.TestCase):
     def test_main_json(self, mock_stdout, mock_open):
         mock_open.return_value = self.cards
 
-        with patch('sys.argv', ['mtg_subtypes.py', 'dummy.json', '--json']):
+        with patch('sys.argv', ['mtg_analyze.py', 'subtypes', 'dummy.json', '--json']):
             main()
 
         output = mock_stdout.getvalue()
@@ -118,7 +118,7 @@ class TestMtgSubtypes(unittest.TestCase):
     def test_main_csv(self, mock_stdout, mock_open):
         mock_open.return_value = self.cards
 
-        with patch('sys.argv', ['mtg_subtypes.py', 'dummy.json', '--csv']):
+        with patch('sys.argv', ['mtg_analyze.py', 'subtypes', 'dummy.json', '--csv']):
             main()
 
         output = mock_stdout.getvalue()

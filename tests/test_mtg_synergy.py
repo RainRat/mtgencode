@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../lib'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
 
-import mtg_synergy
+import scripts.mtg_analyze as mtg_analyze
 import cardlib
 
 class TestMtgSynergy(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestMtgSynergy(unittest.TestCase):
         self.cards = [self.card1, self.card2, self.card3, self.card4]
 
     def test_calculate_synergy_basic(self):
-        density_dist, ind_counts, pair_counts, synergy_results = mtg_synergy.calculate_synergy(self.cards, min_freq=1)
+        density_dist, ind_counts, pair_counts, synergy_results = mtg_analyze.calculate_synergy(self.cards, min_freq=1)
 
         # Density distribution:
         # card1: 2 (Flying, Haste)
@@ -60,11 +60,11 @@ class TestMtgSynergy(unittest.TestCase):
 
     def test_calculate_synergy_min_freq(self):
         # min_freq=2 should return no results for this dataset
-        _, _, _, synergy_results = mtg_synergy.calculate_synergy(self.cards, min_freq=2)
+        _, _, _, synergy_results = mtg_analyze.calculate_synergy(self.cards, min_freq=2)
         self.assertEqual(len(synergy_results), 0)
 
     def test_calculate_synergy_empty(self):
-        density_dist, ind_counts, pair_counts, synergy_results = mtg_synergy.calculate_synergy([], min_freq=1)
+        density_dist, ind_counts, pair_counts, synergy_results = mtg_analyze.calculate_synergy([], min_freq=1)
         self.assertEqual(density_dist, {})
         self.assertEqual(len(ind_counts), 0)
         self.assertEqual(len(pair_counts), 0)
@@ -75,8 +75,8 @@ class TestMtgSynergy(unittest.TestCase):
     def test_main_table(self, mock_stdout, mock_open):
         mock_open.return_value = self.cards
 
-        with patch('sys.argv', ['mtg_synergy.py', 'dummy.json', '--no-color', '--min-freq', '1']):
-            mtg_synergy.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'synergy', 'dummy.json', '--no-color', '--min-freq', '1']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn("MECHANICAL SYNERGY ANALYSIS", output)
@@ -89,8 +89,8 @@ class TestMtgSynergy(unittest.TestCase):
     def test_main_json(self, mock_stdout, mock_open):
         mock_open.return_value = self.cards
 
-        with patch('sys.argv', ['mtg_synergy.py', 'dummy.json', '--json', '--min-freq', '1']):
-            mtg_synergy.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'synergy', 'dummy.json', '--json', '--min-freq', '1']):
+            mtg_analyze.main()
 
         output = json.loads(mock_stdout.getvalue())
         self.assertEqual(output['total_cards'], 4)
@@ -103,8 +103,8 @@ class TestMtgSynergy(unittest.TestCase):
     def test_main_csv(self, mock_stdout, mock_open):
         mock_open.return_value = self.cards
 
-        with patch('sys.argv', ['mtg_synergy.py', 'dummy.json', '--csv', '--min-freq', '1']):
-            mtg_synergy.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'synergy', 'dummy.json', '--csv', '--min-freq', '1']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn("Mechanic 1,Mechanic 2,Count,Lift,P(A&B)", output)
@@ -124,8 +124,8 @@ class TestMtgSynergy(unittest.TestCase):
         mock_isatty.return_value = True
         mock_open.return_value = self.cards
 
-        with patch('sys.argv', ['mtg_synergy.py', 'Flying']):
-            mtg_synergy.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'synergy', 'Flying']):
+            mtg_analyze.main()
 
         self.assertTrue(mock_open.called)
         args, kwargs = mock_open.call_args
@@ -137,8 +137,8 @@ class TestMtgSynergy(unittest.TestCase):
     def test_main_no_cards(self, mock_stderr, mock_open):
         mock_open.return_value = []
 
-        with patch('sys.argv', ['mtg_synergy.py', 'dummy.json']):
-            mtg_synergy.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'synergy', 'dummy.json']):
+            mtg_analyze.main()
 
         self.assertIn("No cards found matching the criteria.", mock_stderr.getvalue())
 

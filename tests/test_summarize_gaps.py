@@ -6,12 +6,12 @@ import os
 
 sys.path.append(os.getcwd())
 
-from scripts.summarize import main as summarize_cli_main
+from scripts.mtg_analyze import main as summarize_cli_main
 
 class TestSummarizeGaps(unittest.TestCase):
 
     def run_main(self, args, stdin_isatty=False, stdout_isatty=False):
-        with patch('sys.argv', ['summarize.py'] + args):
+        with patch('sys.argv', ['mtg_analyze.py'] + args):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
                 with patch('sys.stderr', new=io.StringIO()) as fake_err:
                     with patch('sys.stdin.isatty', return_value=stdin_isatty):
@@ -23,7 +23,7 @@ class TestSummarizeGaps(unittest.TestCase):
                                 code = e.code if isinstance(e.code, int) else 0
                             return code, fake_out.getvalue(), fake_err.getvalue()
 
-    @patch('scripts.summarize.summarize_data')
+    @patch('scripts.mtg_analyze.summarize_data')
     @patch('os.path.exists', return_value=True)
     def test_cli_basic(self, mock_exists, mock_summarize):
         code, out, err = self.run_main(['test.json'])
@@ -31,7 +31,7 @@ class TestSummarizeGaps(unittest.TestCase):
         mock_summarize.assert_called_once()
         self.assertEqual(mock_summarize.call_args[0][0], 'test.json')
 
-    @patch('scripts.summarize.summarize_data')
+    @patch('scripts.mtg_analyze.summarize_data')
     def test_cli_smart_swap(self, mock_summarize):
         # First exists, second doesn't: no swap
         def side_effect(path):
@@ -68,7 +68,7 @@ class TestSummarizeGaps(unittest.TestCase):
             self.run_main(['query_only', '--grep', 'pattern1'])
             self.assertEqual(mock_summarize.call_args[1]['grep'], ['pattern1', 'query_only'])
 
-    @patch('scripts.summarize.summarize_data')
+    @patch('scripts.mtg_analyze.summarize_data')
     def test_cli_default_dataset(self, mock_summarize):
         def side_effect(path):
             if 'AllPrintings.json' in path: return True
@@ -87,21 +87,21 @@ class TestSummarizeGaps(unittest.TestCase):
             self.run_main(['-'], stdin_isatty=True)
             self.assertEqual(mock_summarize.call_args[0][0], 'data/AllPrintings.json')
 
-    @patch('scripts.summarize.summarize_data')
+    @patch('scripts.mtg_analyze.summarize_data')
     @patch('os.path.exists', return_value=True)
     def test_cli_sample_flag(self, mock_exists, mock_summarize):
         self.run_main(['test.json', '--sample', '5'])
         self.assertTrue(mock_summarize.call_args[1]['shuffle'])
         self.assertEqual(mock_summarize.call_args[1]['limit'], 5)
 
-    @patch('scripts.summarize.summarize_data')
+    @patch('scripts.mtg_analyze.summarize_data')
     @patch('os.path.exists', return_value=True)
     def test_cli_filtering_flags(self, mock_exists, mock_summarize):
         self.run_main(['test.json', '--rarity', 'common', '--rarity', 'uncommon', '--cmc', '3'])
         self.assertEqual(mock_summarize.call_args[1]['rarities'], ['common', 'uncommon'])
         self.assertEqual(mock_summarize.call_args[1]['cmcs'], ['3'])
 
-    @patch('scripts.summarize.summarize_data')
+    @patch('scripts.mtg_analyze.summarize_data')
     @patch('os.path.exists', return_value=True)
     def test_cli_grep_flags(self, mock_exists, mock_summarize):
         self.run_main(['test.json', '--grep-name', 'Elf', '--exclude-name', 'Flying'])

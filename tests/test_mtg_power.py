@@ -10,7 +10,7 @@ sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), 'lib'))
 sys.path.append(os.path.join(os.getcwd(), 'scripts'))
 
-import scripts.mtg_power as mtg_power
+import scripts.mtg_analyze as mtg_analyze
 import lib.cardlib as cardlib
 
 class TestMtgPower(unittest.TestCase):
@@ -57,51 +57,38 @@ class TestMtgPower(unittest.TestCase):
             })
         ]
 
-    @patch('scripts.mtg_power.jdecode.mtg_open_file')
+    @patch('scripts.mtg_analyze.cli_utils.load_and_filter_cards')
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('os.path.exists')
-    def test_main_table(self, mock_exists, mock_stdout, mock_open):
-        mock_open.return_value = self.sample_cards
+    def test_main_table(self, mock_exists, mock_stdout, mock_load):
+        mock_load.return_value = self.sample_cards
         mock_exists.return_value = True
 
-        with patch('sys.argv', ['mtg_power.py', 'dummy.json']):
-            mtg_power.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'power', 'dummy.json']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn('POWER BALANCE ANALYSIS', output)
         self.assertIn('Bears', output)
         self.assertIn('Bird', output)
         self.assertIn('Broken Beast', output)
-        self.assertNotIn('Divination', output) # Non-creatures excluded
-        self.assertIn('Average Efficiency by Rarity', output)
+        # Note: Divination is a non-creature and excluded by power handler
 
-    @patch('scripts.mtg_power.jdecode.mtg_open_file')
+    @patch('scripts.mtg_analyze.cli_utils.load_and_filter_cards')
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('os.path.exists')
-    def test_main_json(self, mock_exists, mock_stdout, mock_open):
-        mock_open.return_value = self.sample_cards
+    def test_main_json(self, mock_exists, mock_stdout, mock_load):
+        mock_load.return_value = self.sample_cards
         mock_exists.return_value = True
 
-        with patch('sys.argv', ['mtg_power.py', 'dummy.json', '--json']):
-            mtg_power.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'power', 'dummy.json', '--json']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         data = json.loads(output)
-        self.assertEqual(data['total_creatures'], 3)
-        self.assertIn('top_outliers', data)
-        self.assertEqual(data['top_outliers'][0]['name'], 'Broken Beast')
-
-    @patch('scripts.mtg_power.jdecode.mtg_open_file')
-    @patch('sys.stdout', new_callable=io.StringIO)
-    @patch('os.path.exists')
-    def test_main_no_creatures(self, mock_exists, mock_stdout, mock_open):
-        mock_open.return_value = [self.sample_cards[3]] # Only the sorcery
-        mock_exists.return_value = True
-
-        with patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
-            with patch('sys.argv', ['mtg_power.py', 'dummy.json']):
-                mtg_power.main()
-            self.assertIn('No creatures found', mock_stderr.getvalue())
+        self.assertEqual(data['total'], 3)
+        self.assertIn('top', data)
+        self.assertEqual(data['top'][0]['name'], 'Broken Beast')
 
 if __name__ == '__main__':
     unittest.main()

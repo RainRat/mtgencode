@@ -9,7 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../lib'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
 
-import mtg_mana
+import scripts.mtg_analyze as mtg_analyze
 import cardlib
 
 class TestMtgMana(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestMtgMana(unittest.TestCase):
             'types': ['Land'],
             'subtypes': ['Forest']
         })
-        self.assertEqual(mtg_mana.get_produced_colors(card_forest), {'G'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card_forest), {'G'})
 
         # Dual Land
         card_volcanic = cardlib.Card({
@@ -29,7 +29,7 @@ class TestMtgMana(unittest.TestCase):
             'types': ['Land'],
             'subtypes': ['Island', 'Mountain']
         })
-        self.assertEqual(mtg_mana.get_produced_colors(card_volcanic), {'U', 'R'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card_volcanic), {'U', 'R'})
 
     def test_get_produced_colors_text(self):
         # Mana Creature
@@ -38,7 +38,7 @@ class TestMtgMana(unittest.TestCase):
             'types': ['Creature'],
             'text': '{T}: Add {G}.'
         })
-        self.assertEqual(mtg_mana.get_produced_colors(card_elf), {'G'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card_elf), {'G'})
 
         # Mana Artifact
         card_sol_ring = cardlib.Card({
@@ -46,7 +46,7 @@ class TestMtgMana(unittest.TestCase):
             'types': ['Artifact'],
             'text': '{T}: Add {C}{C}.'
         })
-        self.assertEqual(mtg_mana.get_produced_colors(card_sol_ring), {'C'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card_sol_ring), {'C'})
 
         # "Any Color"
         card_lotus = cardlib.Card({
@@ -54,24 +54,24 @@ class TestMtgMana(unittest.TestCase):
             'types': ['Artifact'],
             'text': '{T}, Sacrifice @: Add three mana of any color.'
         })
-        self.assertEqual(mtg_mana.get_produced_colors(card_lotus), {'Any'})
+        self.assertEqual(mtg_analyze.get_produced_colors(card_lotus), {'Any'})
 
     def test_get_category(self):
         # Creature
         c = cardlib.Card({'name': 'Elf', 'types': ['Creature']})
-        self.assertEqual(mtg_mana.get_category(c), 'Creature')
+        self.assertEqual(mtg_analyze.get_category(c), 'Creature')
 
         # Artifact
         c = cardlib.Card({'name': 'Ring', 'types': ['Artifact']})
-        self.assertEqual(mtg_mana.get_category(c), 'Artifact')
+        self.assertEqual(mtg_analyze.get_category(c), 'Artifact')
 
         # Land
         c = cardlib.Card({'name': 'Forest', 'types': ['Land']})
-        self.assertEqual(mtg_mana.get_category(c), 'Land')
+        self.assertEqual(mtg_analyze.get_category(c), 'Land')
 
         # Spell
         c = cardlib.Card({'name': 'Ritual', 'types': ['Instant']})
-        self.assertEqual(mtg_mana.get_category(c), 'Spell')
+        self.assertEqual(mtg_analyze.get_category(c), 'Spell')
 
     def test_analyze_dataset(self):
         cards = [
@@ -79,7 +79,7 @@ class TestMtgMana(unittest.TestCase):
             cardlib.Card({'name': 'Island', 'types': ['Land'], 'subtypes': ['Island']}),
             cardlib.Card({'name': 'Elf', 'types': ['Creature'], 'text': '{T}: Add {G}.'})
         ]
-        stats, producers = mtg_mana.analyze_dataset(cards)
+        stats, producers = mtg_analyze.analyze_dataset(cards)
 
         self.assertEqual(stats['total_cards'], 3)
         self.assertEqual(stats['producer_count'], 3)
@@ -97,8 +97,8 @@ class TestMtgMana(unittest.TestCase):
         ]
 
         # Run main with a dummy file
-        with patch('sys.argv', ['mtg_mana.py', 'dummy.json', '--no-color']):
-            mtg_mana.main()
+        with patch('sys.argv', ['mtg_analyze.py', 'mana', 'dummy.json', '--no-color']):
+            mtg_analyze.main()
 
         output = mock_stdout.getvalue()
         self.assertIn("MANA PRODUCTION ANALYSIS", output)
