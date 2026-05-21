@@ -350,6 +350,8 @@ def handle_oracle(args):
 
     cards = cli_utils.load_and_filter_cards(args)
     if not cards:
+        if not args.quiet:
+            print("No cards found matching the criteria.", file=sys.stderr)
         return
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
