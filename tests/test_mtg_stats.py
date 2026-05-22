@@ -271,7 +271,7 @@ class TestMtgStats(unittest.TestCase):
                 # Mock it so the FIRST exists check (script-relative) is True
                 mock_exists.side_effect = lambda x: 'AllPrintings.json' in x and 'app/scripts' in x
 
-                with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py']):
+                with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats']):
                     mtg_analyze.main()
 
                 mock_open_file.assert_called()
@@ -279,7 +279,7 @@ class TestMtgStats(unittest.TestCase):
                 # Mock it so the SECOND exists check (local data/) is True (hits lines 173-175)
                 mock_exists.side_effect = lambda x: x == 'data/AllPrintings.json'
                 mock_open_file.reset_mock()
-                with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py']):
+                with patch('sys.stdout', io.StringIO()), patch('sys.stderr', io.StringIO()), patch('sys.argv', ['mtg_analyze.py', 'stats']):
                     mtg_analyze.main()
                 self.assertEqual(mock_open_file.call_args[0][0], 'data/AllPrintings.json')
 

@@ -59,19 +59,19 @@ class TestMtgMana(unittest.TestCase):
     def test_get_category(self):
         # Creature
         c = cardlib.Card({'name': 'Elf', 'types': ['Creature']})
-        self.assertEqual(mtg_analyze.get_category(c), 'Creature')
+        self.assertEqual(mtg_analyze.get_mana_category(c), 'Creature')
 
         # Artifact
         c = cardlib.Card({'name': 'Ring', 'types': ['Artifact']})
-        self.assertEqual(mtg_analyze.get_category(c), 'Artifact')
+        self.assertEqual(mtg_analyze.get_mana_category(c), 'Artifact')
 
         # Land
         c = cardlib.Card({'name': 'Forest', 'types': ['Land']})
-        self.assertEqual(mtg_analyze.get_category(c), 'Land')
+        self.assertEqual(mtg_analyze.get_mana_category(c), 'Land')
 
         # Spell
         c = cardlib.Card({'name': 'Ritual', 'types': ['Instant']})
-        self.assertEqual(mtg_analyze.get_category(c), 'Spell')
+        self.assertEqual(mtg_analyze.get_mana_category(c), 'Spell')
 
     def test_analyze_dataset(self):
         cards = [
@@ -79,7 +79,7 @@ class TestMtgMana(unittest.TestCase):
             cardlib.Card({'name': 'Island', 'types': ['Land'], 'subtypes': ['Island']}),
             cardlib.Card({'name': 'Elf', 'types': ['Creature'], 'text': '{T}: Add {G}.'})
         ]
-        stats, producers = mtg_analyze.analyze_dataset(cards)
+        stats = mtg_analyze.analyze_dataset(cards)
 
         self.assertEqual(stats['total_cards'], 3)
         self.assertEqual(stats['producer_count'], 3)

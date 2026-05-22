@@ -15,7 +15,7 @@ from lib.cardlib import Card
 class TestMtgPipsGaps(unittest.TestCase):
 
     def run_main(self, args, stdin_isatty=False, stdout_isatty=False, exists_side_effect=None):
-        with patch('sys.argv', ['mtg_analyze.py'] + args):
+        with patch('sys.argv', ['mtg_analyze.py', 'pips'] + args):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
                 with patch('sys.stdout.isatty', return_value=stdout_isatty):
                     with patch('sys.stderr', new=io.StringIO()) as fake_err:

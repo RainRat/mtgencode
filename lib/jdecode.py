@@ -589,23 +589,24 @@ def mtg_open_mse_content(content, verbose=False):
         if subtypes:
             d['subtypes'] = subtypes.split()
 
-        # Planeswalker loyalty costs
-        if d.get('loyalty'):
-            for j in range(1, 10):
-                cost_key = f'loyalty cost {j}'
-                if cost_key in c:
-                    c[cost_key]
-                    # We assume abilities are separated by newlines in 'rule text'
-                    # if they were exported by our to_mse
-                    # But for general MSE, they might be in separate fields.
-                    # Our to_mse puts them all in 'rule text'.
-                    pass
-            # Reconstructing PW text from loyalty costs and rule text is hard in general
-            # but if it was exported by us, the costs are missing from 'rule text'.
-            # However, Card.fields_from_json handles 'text' which should contain the costs.
-            # So if we want it to work with our encoder, we should probably
-            # try to put the costs back into the text if they are separate.
-            # But wait, MSE's 'rule text' for PWs in our to_mse HAS the costs stripped.
+        # Reconstruct Planeswalker loyalty costs in text if present
+        if 'loyalty cost 1' in c:
+            text_lines = d['text'].split('\n')
+            reconstructed_lines = []
+            l_idx = 1
+            for line in text_lines:
+                # Skip empty lines that might have been preserved
+                if not line.strip():
+                    reconstructed_lines.append(line)
+                    continue
+
+                l_key = f'loyalty cost {l_idx}'
+                if l_key in c:
+                    reconstructed_lines.append(f"{c[l_key]}: {line}")
+                    l_idx += 1
+                else:
+                    reconstructed_lines.append(line)
+            d['text'] = '\n'.join(reconstructed_lines)
 
         # Handle split card (B-side)
         if 'name 2' in c:
@@ -982,6 +983,16 @@ def mtg_open_file(fname, verbose = False,
         # Combine with cards from encoded text files
         processed_txt, _, _, _ = _process_text_cards(txt_cards, decklist_names, verbose, report_fobj=report_fobj)
         cards.extend(processed_txt)
+
+    # Single JSON File Handling
+    elif fname.endswith('.json'):
+        if verbose:
+            print('This looks like a json file: ' + fname, file=sys.stderr)
+        json_srcs, bad_sets = mtg_open_json(fname, verbose)
+
+        cards = _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                   decklist_names=decklist_names)
 
     # Single CSV File Handling
     elif fname.endswith('.csv'):

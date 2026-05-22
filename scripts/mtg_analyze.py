@@ -140,12 +140,12 @@ DIMENSIONS = {
 
 def get_produced_colors(card):
     produced = set()
-    if card._has_subtype('plains') or card._has_type('plains'): produced.add('W')
-    if card._has_subtype('island') or card._has_type('island'): produced.add('U')
-    if card._has_subtype('swamp') or card._has_type('swamp'): produced.add('B')
-    if card._has_subtype('mountain') or card._has_type('mountain'): produced.add('R')
-    if card._has_subtype('forest') or card._has_type('forest'): produced.add('G')
-    if card._has_subtype('wastes') or card._has_type('wastes'): produced.add('C')
+    land_types = {
+        'plains': 'W', 'island': 'U', 'swamp': 'B', 'mountain': 'R', 'forest': 'G', 'wastes': 'C'
+    }
+    for land_type, color in land_types.items():
+        if card._has_subtype(land_type) or card._has_type(land_type):
+            produced.add(color)
     text = card.get_text(force_unpass=True).lower()
     any_patterns = ["any color", "any chosen color", "one mana of any color", "any combination of colors"]
     if any(p in text for p in any_patterns):
@@ -341,9 +341,10 @@ def calculate_asfan(cards):
     return {'colors': calc_c(lambda c: c.cost.colors or ['C']), 'types': calc_c(lambda c: [t for t in TRACKED_TYPES if c._has_type(t)]), 'mechs': calc_c(lambda c: list(c.mechanics)), 'multi': 0.0}
 
 def calculate_synergy(cards, min_freq=2):
-    ind_c, pair_c = Counter(), Counter()
+    ind_c, pair_c, dens_d = Counter(), Counter(), Counter()
     for c in cards:
         ms = sorted(list(c.mechanics))
+        dens_d[len(ms)] += 1
         for m in ms: ind_c[m] += 1
         for i in range(len(ms)):
             for j in range(i+1, len(ms)): pair_c[(ms[i], ms[j])] += 1
@@ -352,10 +353,10 @@ def calculate_synergy(cards, min_freq=2):
         if cnt < min_freq: continue
         lift = (cnt * len(cards)) / (ind_c[m1] * ind_c[m2])
         syn.append({'pair': (m1, m2), 'cnt': cnt, 'lift': lift})
-    return syn
+    return dict(dens_d), dict(ind_c), dict(pair_c), syn
 
 def analyze_dataset(cards):
-    s = {'total': len(cards), 'producers': 0, 'cats': Counter(), 'cols': Counter(), 'fixing': 0}
+    s = {'total': len(cards), 'total_cards': len(cards), 'producers': 0, 'cats': Counter(), 'cols': Counter(), 'fixing': 0}
     for c in cards:
         p = get_produced_colors(c)
         if p:
@@ -510,7 +511,7 @@ def handle_grid(args):
     def get_ks(d, t): return list(d['keys']) if isinstance(d['keys'], str) else (sorted([k for k in d['keys'] if t[k]>0]) if d==DIMENSIONS['mechanic'] else d['keys'])
     rks, cks = get_ks(r_dim, rt), get_ks(c_dim, ct)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    if args.json: print(json.dumps({'matrix': {str(rk): {str(ck): matrix[rk][ck] for ck in cks} for rk in rks}, 'rt': dict(rt), 'ct': dict(ct), 'total': len(cards)}, indent=2))
+    if args.json: print(json.dumps({'matrix': {str(rk): {str(ck): matrix[rk][ck] for ck in cks} for rk in rks}, 'rt': dict(rt), 'ct': dict(ct), 'total': len(cards), 'total_cards': len(cards)}, indent=2))
     elif args.csv:
         w = csv.writer(sys.stdout)
         w.writerow([r_dim['label']+'/'+c_dim['label']] + [str(ck) for ck in cks] + ['Total'])
@@ -570,7 +571,13 @@ def handle_types(args):
                 row.append(disp)
             row.append(utils.colorize(str(rt1[t]), utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else str(rt1[t]))
             rows.append(row)
-        datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l'] + ['r']*(len(COLOR_GROUPS)+1)), indent=2)
+        datalib.add_separator_row(rows)
+        tr = [utils.colorize("TOTAL", utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else "TOTAL"]
+        for g in COLOR_GROUPS:
+            tr.append(utils.colorize(str(ct1[g]), utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else str(ct1[g]))
+        tr.append(utils.colorize(str(len(cards1)), utils.Ansi.BOLD + utils.Ansi.WHITE + utils.Ansi.UNDERLINE) if use_color else str(len(cards1)))
+        rows.append(tr)
+        datalib.printrows(datalib.padrows(rows, aligns=['l'] + ['r']*(len(COLOR_GROUPS)+1)), indent=2)
 
 def handle_skeleton(args):
     cards = cli_utils.load_and_filter_cards(args)
@@ -586,7 +593,9 @@ def handle_skeleton(args):
         if not f: m["Other"][cmc]+=1
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     all_r = TRACKED_TYPES + (["Other"] if any(m["Other"].values()) else [])
-    if args.json: print(json.dumps({'skeleton': {t: {str(c): m[t][c] for c in cmcs} for t in all_r}, 'total': len(cards)}, indent=2))
+    if args.json:
+        res = {'skeleton': [{'type': t, 'buckets': {str(c): m[t][c] for c in cmcs}, 'total': sum(m[t].values())} for t in all_r], 'total': len(cards), 'total_cards': len(cards), 'grand_total': len(cards)}
+        print(json.dumps(res, indent=2))
     else:
         utils.print_header("DESIGN SKELETON", count=len(cards), use_color=use_color)
         rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Type / CMC"] + [str(c) if c<7 else "7+" for c in cmcs] + ["Total"]]]
@@ -605,11 +614,11 @@ def handle_mana(args):
     cards1 = cli_utils.load_and_filter_cards(args)
     if not cards1: return
     def analyze(cards):
-        s = {'total': len(cards), 'producers': 0, 'cats': Counter(), 'cols': Counter(), 'fixing': 0}
+        s = {'total': len(cards), 'total_cards': len(cards), 'producers': 0, 'producer_count': 0, 'cats': Counter(), 'cols': Counter(), 'fixing': 0}
         for c in cards:
             p = get_produced_colors(c)
             if p:
-                s['producers'] += 1; s['cats'][get_mana_category(c)] += 1
+                s['producers'] += 1; s['producer_count'] += 1; s['cats'][get_mana_category(c)] += 1
                 if "Any" in p: s['cols']['Any'] += 1; s['fixing'] += 1
                 else:
                     for col in p: s['cols'][col] += 1
@@ -655,7 +664,7 @@ def handle_pips(args):
     pips = Counter()
     for c in cards: pips.update(get_pip_counts(c, include_text=args.include_text))
     tot = sum(pips.values())
-    res = sorted([{'sym': s, 'cnt': c, 'pct': c/tot*100 if tot>0 else 0} for s, c in pips.items()], key=lambda x: x['sym'] if args.sort=='name' else x['cnt'], reverse=args.reverse if args.sort=='name' else not args.reverse)
+    res = sorted([{'sym': s, 'symbol': s, 'cnt': c, 'pct': c/tot*100 if tot>0 else 0} for s, c in pips.items()], key=lambda x: x['sym'] if args.sort=='name' else x['cnt'], reverse=args.reverse if args.sort=='name' else not args.reverse)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     if args.json: print(json.dumps(res, indent=2))
     elif args.csv:
@@ -682,7 +691,7 @@ def handle_costs(args):
     outliers.sort(key=lambda x: (x['intensity'], x['commitment']), reverse=True)
     avg_int = int_sum / len(cards)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    if args.json: print(json.dumps({'total': len(cards), 'avg_int': avg_int, 'buckets': dict(buckets), 'outliers': [{'name': o['name'], 'intensity': o['intensity'], 'commitment': o['commitment']} for o in outliers[:20]]}, indent=2))
+    if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'avg_int': avg_int, 'avg_intensity': avg_int, 'buckets': dict(buckets), 'commitment_distribution': dict(buckets), 'outliers': [{'name': o['name'], 'intensity': o['intensity'], 'commitment': o['commitment']} for o in outliers[:20]]}, indent=2))
     else:
         utils.print_header("MANA COST INTENSITY ANALYSIS", count=len(cards), use_color=use_color)
         print(f"  {utils.colorize(f'Global Average Intensity: {avg_int:.2f}', utils.Ansi.BOLD+utils.Ansi.GREEN) if use_color else f'Global Average Intensity: {avg_int:.2f}'}\n")
@@ -748,7 +757,7 @@ def handle_synergy(args):
         syn.append({'pair': (m1, m2), 'cnt': cnt, 'lift': lift})
     syn.sort(key=lambda x: x['lift'], reverse=True)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    if args.json: print(json.dumps({'total': len(cards), 'density': dict(dens_d), 'synergy': syn}, indent=2))
+    if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'density': dict(dens_d), 'density_distribution': dict(dens_d), 'synergy': syn, 'synergy_pairs': syn}, indent=2))
     else:
         utils.print_header("MECHANICAL SYNERGY ANALYSIS", count=len(cards), use_color=use_color)
         print(f"  {datalib.color_line('Mechanical Density:', use_color)}")
@@ -777,7 +786,7 @@ def handle_actions(args):
             act_c[a] += 1
             for col in (c.cost.colors or ['C']): col_act[col][a] += 1
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    if args.json: print(json.dumps({'total': len(cards), 'summary': dict(act_c), 'color': {c: dict(v) for c, v in col_act.items()}}, indent=2))
+    if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'summary': dict(act_c), 'color': {c: dict(v) for c, v in col_act.items()}}, indent=2))
     else:
         utils.print_header("CARD ACTION ANALYSIS", count=len(cards), use_color=use_color)
         rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Action", "Count", "Percent", "Frequency"]]]
@@ -852,7 +861,7 @@ def handle_stats(args):
             pt_d[(int(p), int(t))] += 1
         if l is not None: lo_s.append(l)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    if args.json: print(json.dumps({'total': len(cards), 'creatures': cre_c, 'avg_loy': sum(lo_s)/len(lo_s) if lo_s else 0}, indent=2))
+    if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'creatures': cre_c, 'creatures_analyzed': cre_c, 'avg_loy': sum(lo_s)/len(lo_s) if lo_s else 0}, indent=2))
     else:
         utils.print_header("COMBAT STAT ANALYSIS", count=len(cards), use_color=use_color)
         if cre_c > 0:
@@ -934,7 +943,7 @@ def handle_balance(args):
             elif len(id)==1:
                 for p in ps:
                     if id in p: counts[p]+=1
-        datasets.append({'name': os.path.basename(f)[:15], 'counts': counts, 'total': len(cards)})
+        datasets.append({'name': os.path.basename(f)[:15], 'counts': counts, 'total': len(cards), 'total_cards': len(cards)})
     if not datasets: return
     use_color = args.color if args.color is not None else sys.stdout.isatty()
     base = datasets[0]; ps = ["UW", "BU", "BR", "GR", "GW", "BW", "RU", "BG", "RW", "GU"]
@@ -1078,12 +1087,28 @@ def handle_subtypes(args):
         top = sorted([s for s in dist if f[s]>=1], key=lambda s: dist[s], reverse=True)[:args.top]
         c_stats[g] = {'top': top, 'freq': f, 'scores': dist, 'total': tot_ci, 'cnt': cc[g]}
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    utils.print_header("SUBTYPE DISTRIBUTION ANALYSIS", count=len(cards), use_color=use_color)
-    print(f"\n  {datalib.color_line('Top Subtypes Overall:', use_color)}")
-    rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Subtype", "Count", "Percent", "Distribution"]]]
-    for s, cnt in gf.most_common(args.top):
-        p = cnt/tot_gi*100; rows.append([s, datalib.color_count(cnt, use_color), f"{p:5.1f}%", datalib.get_bar_chart(p, use_color, color=utils.Ansi.CYAN)])
-    datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','r', 'l']), indent=4)
+    if args.json:
+        res = {'total_cards': len(cards), 'total': len(cards), 'stats': {g: {'top': v['top'], 'total': v['total'], 'cnt': v['cnt']} for g, v in c_stats.items()}}
+        print(json.dumps(res, indent=2))
+    elif args.csv:
+        w = csv.writer(sys.stdout); w.writerow(['Subtype', 'Count', 'Percent', 'Group', 'Distinctiveness'])
+        for g, d in c_stats.items():
+            for s in d['top']: w.writerow([s, d['freq'][s], f"{d['freq'][s]/d['total']*100:.2f}", g, f"{d['scores'][s]:.2f}"])
+    else:
+        utils.print_header("SUBTYPE DISTRIBUTION ANALYSIS", count=len(cards), use_color=use_color)
+        print(f"\n  {datalib.color_line('Top Subtypes Overall:', use_color)}")
+        rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Subtype", "Count", "Percent", "Distribution"]]]
+        for s, cnt in gf.most_common(args.top):
+            p = cnt/tot_gi*100; rows.append([s, datalib.color_count(cnt, use_color), f"{p:5.1f}%", datalib.get_bar_chart(p, use_color, color=utils.Ansi.CYAN)])
+        datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','r', 'l']), indent=4)
+        print(f"\n  {datalib.color_line('Signature Subtypes by Color Group:', use_color)}")
+        crows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Group", "Signature Subtypes", "Distinctiveness", "Cards"]]]
+        clbls = {'W':'White','U':'Blue','B':'Black','R':'Red','G':'Green','M':'Multi','A':'Colorless'}
+        for g in 'WUBRGMA':
+            if g not in c_stats: continue
+            d = c_stats[g]
+            crows.append([utils.colorize(clbls[g], utils.Ansi.get_color_color(g)) if use_color else clbls[g], ", ".join(d['top']), f"{max(d['scores'].values()) if d['scores'] else 0:.1f}x", str(d['cnt'])])
+        datalib.add_separator_row(crows); datalib.printrows(datalib.padrows(crows, aligns=['l','l','r','r']), indent=4)
 
 def handle_compare(args):
     def get_stats_for_file(path, args):
@@ -1207,6 +1232,7 @@ def main():
     def add_std(p):
         cli_utils.add_standard_filters(p)
         cli_utils.add_standard_output_args(p)
+        p.add_argument('query', nargs='?', help='Search query or input file.')
         p.add_argument('infile', nargs='?', default='-', help='Input card data.')
 
     # summary
@@ -1275,9 +1301,24 @@ def main():
 
     args = parser.parse_args()
     if not args.command: parser.print_help(); return
+    
     # Smart Positional Argument Handling
-    if hasattr(args, 'infile') and args.infile != '-' and not os.path.exists(args.infile):
-        if not getattr(args, 'grep', None): args.grep = [args.infile]; args.infile = '-'
+    if hasattr(args, 'query') and args.query:
+        if os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
+            # Swap if first arg is a file and second isn't
+            temp = args.query
+            args.query = args.infile if args.infile != '-' else None
+            args.infile = temp
+        elif not os.path.exists(args.query) and args.infile == '-':
+            # If first arg doesn't exist and second is default, treat first as query
+            if not getattr(args, 'grep', None): args.grep = [args.query]
+            else: args.grep.append(args.query)
+            args.query = None
+    
+    if hasattr(args, 'query') and args.query:
+        if not getattr(args, 'grep', None): args.grep = [args.query]
+        else: args.grep.append(args.query)
+
     if hasattr(args, 'infile') and args.infile == '-' and sys.stdin.isatty():
         df = 'data/AllPrintings.json'
         if os.path.exists(df): args.infile = df

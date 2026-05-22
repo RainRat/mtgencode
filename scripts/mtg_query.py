@@ -418,6 +418,41 @@ def handle_oracle(args):
             print(c.summary(ansi_color=use_color).replace('\u2014', '-'))
             print("-" * 40)
             print(c.get_text(ansi_color=use_color).replace('\u2014', '-'))
+
+            # Metadata Footer
+            footer_lines = []
+
+            # 1. Set and Number
+            set_info = ""
+            if c.set_code:
+                set_info = f"SET: {c.set_code.upper()}"
+                if c.number:
+                    set_info += f" #{c.number}"
+            if set_info:
+                footer_lines.append(set_info)
+
+            # 2. Color Identity
+            identity = c.color_identity
+            if not identity: identity = "C"
+            id_str = f"ID: {identity}"
+            if use_color:
+                colored_id = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in identity])
+                id_str = f"ID: {colored_id}"
+            footer_lines.append(id_str)
+
+            # 3. Scores
+            score_line = f"SCORE: {c.complexity_score} \u2022 RATING: {c.power_rating:.3f}"
+            footer_lines.append(score_line)
+
+            # 4. Scryfall URL
+            url = utils.get_scryfall_url(c.set_code, c.number)
+            if url:
+                footer_lines.append(url)
+
+            if footer_lines:
+                print("-" * 40)
+                for line in footer_lines:
+                    print(line)
             print()
 
 # --- Extract Logic (from extract_one.py) ---

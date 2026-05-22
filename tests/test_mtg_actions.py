@@ -23,8 +23,7 @@ class TestMtgActionsSimplified(unittest.TestCase):
         mock_open.return_value = []
 
         # Test that all project-standard filtering flags are recognized
-        args = [
-            'mtg_analyze.py', 'dummy.json',
+        args = ['mtg_analyze.py', 'actions', 'dummy.json',
             '--vgrep', 'test', '--identity', 'W', '--id-count', '1',
             '--pow', '>2', '--tou', '1-3', '--loy', '4',
             '--mechanic', 'Flying', '--deck-filter', 'deck.txt',

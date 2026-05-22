@@ -116,8 +116,7 @@ class TestMTGTypes(unittest.TestCase):
         mock_exists.return_value = True
         mock_open_file.return_value = self.mock_cards
 
-        test_args = [
-            'mtg_analyze.py', 'dummy.json',
+        test_args = ['mtg_analyze.py', 'types', 'dummy.json',
             '--set', 'MOM', '--rarity', 'rare', '-g', 'flying',
             '--cmc', '3', '--colors', 'W', '--identity', 'WU',
             '--pow', '2', '--tou', '2', '--loy', '3',
