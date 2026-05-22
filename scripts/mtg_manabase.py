@@ -3,6 +3,8 @@ import sys
 import os
 import argparse
 import math
+import json
+import csv
 from collections import Counter
 
 # Add lib directory to path
@@ -59,48 +61,41 @@ def calculate_manabase(cards, target_lands, include_text=False):
         }, pip_counts, total_pips
 
     # Calculate recommended distribution
-    # We use a proportional distribution with a minimum of 1 if a color is present
-    # to ensure you can actually cast the single 1-pip card.
-    recommendation = {}
-    remaining_lands = target_lands
-
     land_map = {
         'W': 'Plains', 'U': 'Island', 'B': 'Swamp', 'R': 'Mountain', 'G': 'Forest'
     }
+    recommendation = {name: 0 for name in land_map.values()}
+    active_colors = [c for c in 'WUBRG' if pip_counts[c] > 0]
 
-    # First pass: Allocate minimums for colors present
-    for color, land_name in land_map.items():
-        if pip_counts[color] > 0:
-            recommendation[land_name] = 1
-            remaining_lands -= 1
-        else:
-            recommendation[land_name] = 0
+    # We use a proportional distribution with a minimum of 1 if a color is present
+    # to ensure you can actually cast the single 1-pip card.
+    # If we have more colors than lands, we prioritize the most frequent colors.
+    num_min_alloc = min(len(active_colors), target_lands)
+    sorted_active = sorted(active_colors, key=lambda c: pip_counts[c], reverse=True)
 
-    # Second pass: Proportional allocation of remaining slots
-    if remaining_lands > 0:
-        for color, land_name in land_map.items():
-            if pip_counts[color] > 0:
-                share = (pip_counts[color] / total_pips) * remaining_lands
-                # Use floor to stay under total, we'll allocate remainder after
-                allocated = int(math.floor(share))
-                recommendation[land_name] += allocated
+    for i in range(num_min_alloc):
+        recommendation[land_map[sorted_active[i]]] = 1
 
-    # Final pass: Distribute any leftover lands to the highest decimal remainders
-    final_remaining = target_lands - sum(recommendation.values())
-    if final_remaining > 0:
-        remainders = []
-        for color, land_name in land_map.items():
-            if pip_counts[color] > 0:
-                share = (pip_counts[color] / total_pips) * (target_lands - sum(1 for c in 'WUBRG' if pip_counts[c] > 0))
-                remainder = share - math.floor(share)
-                remainders.append((remainder, land_name))
+    remaining_lands = target_lands - num_min_alloc
 
-        remainders.sort(reverse=True)
-        for i in range(min(final_remaining, len(remainders))):
-            recommendation[remainders[i][1]] += 1
+    # Proportional allocation of remaining slots
+    if remaining_lands > 0 and total_pips > 0:
+        shares = {c: (pip_counts[c] / total_pips) * remaining_lands for c in active_colors}
+        for c in active_colors:
+            allocated = int(math.floor(shares[c]))
+            recommendation[land_map[c]] += allocated
+            shares[c] -= allocated
+
+        # Distribute any leftover lands to the highest decimal remainders
+        final_remaining = target_lands - sum(recommendation.values())
+        if final_remaining > 0:
+            for c in sorted(active_colors, key=lambda c: shares[c], reverse=True):
+                if final_remaining <= 0: break
+                recommendation[land_map[c]] += 1
+                final_remaining -= 1
 
     # Wastes for colorless remainder if no colors at all
-    recommendation['Wastes'] = target_lands - sum(v for k, v in recommendation.items() if k != 'Wastes')
+    recommendation['Wastes'] = max(0, target_lands - sum(v for k, v in recommendation.items() if k != 'Wastes'))
 
     return recommendation, pip_counts, total_pips
 
