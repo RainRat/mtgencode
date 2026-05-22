@@ -171,6 +171,12 @@ def _normalize_scryfall_card(card):
     _map_scryfall_face(card, card)
     if 'set' in card: card['setCode'] = card['set'].upper()
     if 'collector_number' in card: card['number'] = card['collector_number']
+    if 'rulings' in card:
+        # Map Scryfall rulings to MTGJSON style if needed
+        card['rulings'] = [{
+            'date': r.get('published_at', r.get('date', '')),
+            'text': r.get('comment', r.get('text', ''))
+        } for r in card['rulings']]
 
     # Handle multi-faced cards (Splits, Transforms, Adventures, etc.)
     if 'card_faces' in card:
