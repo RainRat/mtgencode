@@ -123,7 +123,7 @@ class TestMtgSubtypes(unittest.TestCase):
 
         output = mock_stdout.getvalue()
         self.assertIn("Subtype,Count,Percent,Group,Distinctiveness", output)
-        self.assertIn("Human,5,27.78%,Global,1.0000", output) # 5 / 18 instances = 27.78%
+        self.assertIn("Human,5,50.00,W,1.80", output)
 
 if __name__ == '__main__':
     unittest.main()

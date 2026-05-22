@@ -28,7 +28,7 @@ class TestMtgActionsSimplified(unittest.TestCase):
             '--pow', '>2', '--tou', '1-3', '--loy', '4',
             '--mechanic', 'Flying', '--deck-filter', 'deck.txt',
             '--booster', '1', '--box', '1', '--seed', '42', '--shuffle',
-            '-j', '-n', '10', '-S', '5'
+            '-j', '-n', '10', '--sample', '5'
         ]
 
         with patch('sys.argv', args):

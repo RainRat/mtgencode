@@ -350,9 +350,13 @@ def handle_oracle(args):
 
     cards = cli_utils.load_and_filter_cards(args)
     if not cards:
+        if not args.quiet:
+            print("No cards found matching the criteria.", file=sys.stderr)
         return
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
+    if getattr(args, 'sort', None):
+        cards = sortlib.sort_cards(cards, args.sort, reverse=getattr(args, 'reverse', False), quiet=args.quiet)
     
     search_map = {}
     for c in cards:
@@ -398,25 +402,54 @@ def handle_oracle(args):
     else:
         display_cards = cards
 
+    if getattr(args, 'similar', False) and query:
+        if args.verbose:
+            print("Loading similarity context", file=sys.stderr)
+        target_card = display_cards[0] if display_cards else (cards[0] if cards else None)
+        if target_card is not None:
+            nd = namediff.Namediff(verbose=False, cards=cards)
+            sim_limit = args.limit if args.limit > 0 else 20
+            results = nd.nearest_card(target_card, n=sim_limit)
+            similar_cards = []
+            for ratio, name in results:
+                if name.lower() == target_card.name.lower():
+                    continue
+                for c in cards:
+                    if c.name.lower() == name.lower():
+                        similar_cards.append(c)
+                        break
+            if similar_cards:
+                display_cards = similar_cards
+            elif not getattr(args, 'gatherer', False):
+                print("No similar cards found.")
+                return
+
     if not display_cards:
         return
 
+    prelimit_count = len(display_cards)
     if args.limit > 0:
         display_cards = display_cards[:args.limit]
 
     force_full = getattr(args, 'full', False)
-    show_summary = not force_full and len(display_cards) > 1
+    show_summary = not force_full and len(display_cards) > 1 and not getattr(args, 'gatherer', False)
 
     if not args.quiet:
-        count_str = str(len(display_cards))
-        utils.print_header("SEARCH RESULTS", count=count_str, use_color=use_color)
+        if getattr(args, 'limit', 0) > 0 or getattr(args, 'sample', 0) > 0:
+            count_str = f"Showing {len(display_cards)} of"
+        else:
+            count_str = f"Showing {len(display_cards)} of {prelimit_count}" if prelimit_count != len(display_cards) else str(len(display_cards))
+        header_title = "SIMILAR CARDS" if getattr(args, 'similar', False) else "SEARCH RESULTS"
+        utils.print_header(header_title, count=count_str, use_color=use_color)
 
     for c in display_cards:
-        if show_summary:
+        if getattr(args, 'gatherer', False):
+            print(c.format(gatherer=True, ansi_color=use_color))
+        elif show_summary:
             print(c.summary(ansi_color=use_color).replace('\u2014', '-'))
         else:
             print(c.summary(ansi_color=use_color).replace('\u2014', '-'))
-            print("-" * 40)
+            print("  " + "-" * 40)
             print(c.get_text(ansi_color=use_color).replace('\u2014', '-'))
 
             # Metadata Footer
@@ -450,7 +483,7 @@ def handle_oracle(args):
                 footer_lines.append(url)
 
             if footer_lines:
-                print("-" * 40)
+                print("  " + "-" * 40)
                 for line in footer_lines:
                     print(line)
             print()
@@ -709,6 +742,9 @@ def main():
     p_oracle.add_argument('infile', nargs='?', default='-')
     cli_utils.add_standard_filters(p_oracle)
     cli_utils.add_standard_output_args(p_oracle)
+    p_oracle.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'])
+    p_oracle.add_argument('-s', '--similar', action='store_true', help='Show mechanically similar cards instead of direct matches.')
+    p_oracle.add_argument('-G', '--gatherer', action='store_true', help='Use Gatherer-style formatting.')
     p_oracle.add_argument('--full', action='store_true', help='Force full details even for multiple matches.')
     p_oracle.set_defaults(func=handle_oracle)
 
@@ -748,6 +784,28 @@ def main():
     if not args.command:
         parser.print_help()
         return
+
+    if hasattr(args, 'query') and args.query == '-':
+        args.query = None
+
+    if hasattr(args, 'query') and args.query:
+        if hasattr(args, 'outfile') and getattr(args, 'outfile', None) is None and getattr(args, 'infile', None) not in (None, '-'):
+            q_exists = os.path.exists(args.query)
+            i_exists = os.path.exists(args.infile)
+            if q_exists and not i_exists:
+                args.outfile = args.infile
+                args.infile = args.query
+                args.query = None
+            elif not q_exists and i_exists:
+                if not getattr(args, 'grep', None):
+                    args.grep = [args.query]
+                else:
+                    args.grep.append(args.query)
+                args.query = None
+            elif not q_exists and not i_exists:
+                args.outfile = args.infile
+                args.infile = args.query
+                args.query = None
 
     args.func(args)
 

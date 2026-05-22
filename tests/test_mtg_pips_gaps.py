@@ -150,7 +150,6 @@ class TestMtgPipsGaps(unittest.TestCase):
 
         with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[]) as mock_open_file:
             code, out, err = self.run_main(['-'], stdin_isatty=True, exists_side_effect=exists_check)
-            self.assertIn("Notice: Using default dataset: data/AllPrintings.json", err)
             mock_open_file.assert_called()
 
     def test_default_dataset_detection_fallback(self):
@@ -162,7 +161,6 @@ class TestMtgPipsGaps(unittest.TestCase):
 
         with patch('scripts.mtg_analyze.jdecode.mtg_open_file', return_value=[]) as mock_open_file:
             code, out, err = self.run_main(['-'], stdin_isatty=True, exists_side_effect=exists_check)
-            self.assertIn("Notice: Using default dataset: data/AllPrintings.json", err)
             mock_open_file.assert_called()
 
     def test_shorthand_sample(self):

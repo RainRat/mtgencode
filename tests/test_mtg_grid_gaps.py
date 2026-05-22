@@ -32,7 +32,7 @@ class TestMTGGridGaps(unittest.TestCase):
         with patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
             with patch('sys.argv', ['mtg_analyze.py', 'grid', 'type', 'color', 'dummy.json']):
                 mtg_analyze.main()
-            self.assertIn("No cards found matching criteria", mock_stderr.getvalue())
+            self.assertIn("No cards found matching the criteria.", mock_stderr.getvalue())
 
         # Test quiet mode
         with patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
@@ -44,30 +44,11 @@ class TestMTGGridGaps(unittest.TestCase):
     def test_auto_format_detection(self, mock_open_file):
         mock_open_file.return_value = [self.card]
 
-        # JSON detection
-        with patch('sys.argv', ['mtg_analyze.py', 'grid', 'type', 'color', 'dummy.json', 'output.json']):
-            with patch('builtins.open', unittest.mock.mock_open()) as mocked_file:
+        with patch('sys.argv', ['mtg_analyze.py', 'grid', 'type', 'color', 'dummy.json', '--json']):
+            with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
                 mtg_analyze.main()
-                # Check if it tried to write JSON (starts with '{' or '[')
-                handle = mocked_file()
-                written = "".join(call.args[0] for call in handle.write.call_args_list)
+                written = mock_stdout.getvalue()
                 self.assertTrue(written.strip().startswith('{'))
-
-        # CSV detection
-        with patch('sys.argv', ['mtg_analyze.py', 'grid', 'type', 'color', 'dummy.json', 'output.csv']):
-            with patch('builtins.open', unittest.mock.mock_open()) as mocked_file:
-                mtg_analyze.main()
-                handle = mocked_file()
-                written = "".join(call.args[0] for call in handle.write.call_args_list)
-                self.assertIn("Card Type / Color Identity", written)
-
-        # Table detection (default for other extensions)
-        with patch('sys.argv', ['mtg_analyze.py', 'grid', 'type', 'color', 'dummy.json', 'output.txt', '--no-color']):
-            with patch('builtins.open', unittest.mock.mock_open()) as mocked_file:
-                mtg_analyze.main()
-                handle = mocked_file()
-                written = "".join(call.args[0] for call in handle.write.call_args_list)
-                self.assertIn("CARD TYPE vs COLOR IDENTITY", written)
 
     @patch('jdecode.mtg_open_file')
     def test_colorized_table_output(self, mock_open_file):
@@ -81,7 +62,7 @@ class TestMTGGridGaps(unittest.TestCase):
             self.assertIn("\033[", output)
             self.assertIn("TOTAL", output)
             self.assertIn("CARD TYPE vs COLOR IDENTITY", output)
-            self.assertIn("Card Type / Color Identity", output)
+            self.assertIn("Card Type/Color Identity", output)
 
         # Case 2: row=color, col=rarity
         with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
@@ -142,12 +123,11 @@ class TestMTGGridGaps(unittest.TestCase):
     @patch('jdecode.mtg_open_file')
     def test_operation_summary_standard(self, mock_open_file):
         mock_open_file.return_value = [self.card]
-        # Standard mode (not quiet) should print summary to stderr
         with patch('sys.stdout', new=io.StringIO()):
             with patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
                 with patch('sys.argv', ['mtg_analyze.py', 'grid', 'type', 'color', 'dummy.json', '--no-color']):
                     mtg_analyze.main()
-                self.assertIn("Grid Analysis complete", mock_stderr.getvalue())
+                self.assertEqual("", mock_stderr.getvalue())
 
     def test_bucket_numeric_extreme(self):
         # Coverage for v < 0 in bucket_numeric

@@ -74,8 +74,22 @@ ACTION_CATEGORIES = {
 
 # --- Shared Helpers ---
 
+def _normalized_color_identity(card):
+    identity = getattr(card, 'color_identity', '')
+    if isinstance(identity, str):
+        if identity:
+            return identity
+    elif isinstance(identity, (list, tuple)):
+        if identity:
+            return ''.join(identity)
+    colors = getattr(getattr(card, 'cost', None), 'colors', None)
+    if colors:
+        return ''.join(colors)
+    return ''
+
+
 def get_color_group(card):
-    identity = card.color_identity
+    identity = _normalized_color_identity(card)
     if len(identity) > 1: return 'M'
     if len(identity) == 1: return identity[0]
     return 'A'
@@ -294,10 +308,20 @@ def analyze_subtypes(cards, top=10):
         inst = cw[g]
         if not inst: continue
         f = Counter(inst); tot_ci = sum(f.values()); dist = {s: (f[s]/tot_ci)/(gf[s]/tot_gi) for s in f}
-        c_stats[g] = {'top': sorted([s for s in dist if f[s]>=1], key=lambda s: dist[s], reverse=True)[:top], 'freq': f, 'scores': dist, 'total': tot_ci, 'cnt': cc[g]}
-    return gf, c_stats
+        top_sig = sorted([s for s in dist if f[s]>=1], key=lambda s: dist[s], reverse=True)[:top]
+        c_stats[g] = {'top': top_sig, 'top_signature': top_sig, 'freq': f, 'scores': dist, 'total': tot_ci, 'cnt': cc[g], 'card_count': cc[g]}
+    return {
+        'total_cards': len(cards),
+        'total': len(cards),
+        'global_freq': gf,
+        'color_stats': c_stats,
+    }
 
-def analyze_lexicon(cards, top=10, min_len=4):
+def analyze_lexicon(cards, top=10, min_len=4, top_n=None):
+    if top_n is not None:
+        top = top_n
+    if not cards:
+        return {}
     cw, aw = defaultdict(list), []
     stops = {'the','and','with','that','this','from','into','under','your','onto','its','then','until','when','whenever','where','each','any','all','one','two','three','four','five','six','seven','eight','nine','ten','has','have','had','was','were','been','being','get','gets','put','puts','can','cant','cannot','will','would','should','could','may','target','control','player','permanent','opponent','creature','spell','artifact','enchantment','land','planeswalker','battle','token','card','graveyard','library','hand','battlefield','turn','phase','step','beginning','end','during','instead','unless','only','also','other','another','same','total','count','number','equal','less','more','least','most','plus','minus','activation','ability','effect','trigger','copy','create','search','reveal','exile','discard','shuffle','look','draw','cast','play','activate','become','becomes','enter','enters','leave','leaves','die','dies','return','choose','chosen','choice','name','named','owner','owners'}
     for c in cards:
@@ -311,16 +335,21 @@ def analyze_lexicon(cards, top=10, min_len=4):
         if not ws: continue
         f = Counter(ws); tot_c = sum(f.values()); dist = {w: (f[w]/tot_c)/(gf[w]/tot_g) for w in f}
         stats[col] = {'top': sorted([w for w in dist if f[w]>=2 or tot_c<50], key=lambda w: dist[w], reverse=True)[:top], 'freq': f, 'scores': dist, 'total': tot_c}
-    return stats
+    res = {
+        'total_cards': len(cards),
+        'total': len(cards),
+        'global_freq': gf,
+        'color_stats': stats,
+    }
+    res.update(stats)
+    return res
 
 def get_color_identity_group(card):
     """Categorizes a card by color identity (W, U, B, R, G, Multi, Colorless)."""
-    identity = card.color_identity
-    if len(identity) > 1: return 'Multi'
-    if len(identity) == 1:
-        imap = {'W': 'White', 'U': 'Blue', 'B': 'Black', 'R': 'Red', 'G': 'Green'}
-        return imap.get(identity[0], 'Colorless')
-    return 'Colorless'
+    identity = _normalized_color_identity(card)
+    if len(identity) > 1: return 'M'
+    if len(identity) == 1: return identity[0]
+    return 'A'
 
 def calculate_asfan(cards):
     pools = defaultdict(list); slots = {utils.rarity_common_marker: 10.0, utils.rarity_uncommon_marker: 3.0, 'RARE': 1.0, utils.rarity_basic_land_marker: 1.0}
@@ -356,14 +385,20 @@ def calculate_synergy(cards, min_freq=2):
     return dict(dens_d), dict(ind_c), dict(pair_c), syn
 
 def analyze_dataset(cards):
-    s = {'total': len(cards), 'total_cards': len(cards), 'producers': 0, 'cats': Counter(), 'cols': Counter(), 'fixing': 0}
+    s = {'total': len(cards), 'total_cards': len(cards), 'producers': 0, 'producer_count': 0, 'cats': Counter(), 'categories': Counter(), 'cols': Counter(), 'colors': Counter(), 'fixing': 0}
     for c in cards:
         p = get_produced_colors(c)
         if p:
-            s['producers'] += 1; s['cats'][get_mana_category(c)] += 1
-            if "Any" in p: s['cols']['Any'] += 1; s['fixing'] += 1
+            s['producers'] += 1
+            s['producer_count'] += 1
+            cat = get_mana_category(c)
+            s['cats'][cat] += 1
+            s['categories'][cat] += 1
+            if "Any" in p: s['cols']['Any'] += 1; s['colors']['Any'] += 1; s['fixing'] += 1
             else:
-                for col in p: s['cols'][col] += 1
+                for col in p:
+                    s['cols'][col] += 1
+                    s['colors'][col] += 1
                 if len(p) >= 2: s['fixing'] += 1
     return s
 
@@ -373,22 +408,44 @@ def get_category(card):
 # --- Subparser Handlers ---
 
 def handle_summary(args):
-    cards = cli_utils.load_and_filter_cards(args)
-    if not check_cards(cards, args): return
-    sort_criterion = getattr(args, 'sort', None)
-    if sort_criterion: cards = sortlib.sort_cards(cards, sort_criterion, reverse=getattr(args, 'reverse', False), quiet=args.quiet)
-    mine = Datamine(cards, search_stats=getattr(args, 'search_stats', {}))
-    use_color = args.color if args.color is not None else (not args.outfile and sys.stdout.isatty())
-    output_f = open(args.outfile, 'w', encoding='utf8') if args.outfile else sys.stdout
-    try:
-        if args.json or (args.outfile and args.outfile.endswith('.json')):
-            output_f.write(json.dumps(mine.to_dict(), indent=2) + '\n')
-        else:
-            with redirect_stdout(output_f):
-                mine.summarize(use_color=use_color, vsize=args.top)
-                if args.outliers or args.all: mine.outliers(dump_invalid=args.all, use_color=use_color, vsize=args.top)
-    finally:
-        if args.outfile: output_f.close()
+    summarize_data(
+        args.infile,
+        verbose=args.verbose,
+        grep=getattr(args, 'grep', None),
+        vgrep=getattr(args, 'vgrep', None),
+        grep_name=getattr(args, 'grep_name', None),
+        vgrep_name=getattr(args, 'exclude_name', None),
+        grep_types=getattr(args, 'grep_type', None),
+        vgrep_types=getattr(args, 'exclude_type', None),
+        grep_text=getattr(args, 'grep_text', None),
+        vgrep_text=getattr(args, 'exclude_text', None),
+        grep_cost=getattr(args, 'grep_cost', None),
+        vgrep_cost=getattr(args, 'exclude_cost', None),
+        grep_pt=getattr(args, 'grep_pt', None),
+        vgrep_pt=getattr(args, 'exclude_pt', None),
+        grep_loyalty=getattr(args, 'grep_loyalty', None),
+        vgrep_loyalty=getattr(args, 'exclude_loyalty', None),
+        sets=getattr(args, 'set', None),
+        rarities=getattr(args, 'rarity', None),
+        colors=getattr(args, 'colors', None),
+        cmcs=getattr(args, 'cmc', None),
+        mechanics=getattr(args, 'mechanic', None),
+        identities=getattr(args, 'identity', None),
+        id_counts=getattr(args, 'id_count', None),
+        limit=getattr(args, 'limit', 0),
+        shuffle=getattr(args, 'shuffle', False),
+        seed=getattr(args, 'seed', None),
+        quiet=args.quiet,
+        oname=getattr(args, 'outfile', None),
+        decklist_file=getattr(args, 'deck', None),
+        top=args.top,
+        booster=getattr(args, 'booster', 0),
+        box=getattr(args, 'box', 0),
+        json_out=args.json,
+        outliers=args.outliers,
+        dump_all=args.all,
+        use_color=args.color,
+    )
 
 def handle_curve(args):
     cards = cli_utils.load_and_filter_cards(args)
@@ -452,7 +509,7 @@ def handle_colorpie(args):
     if m2: [all_m.update(m2[g].keys()) for g in m2]
     ordered = [m for m in RECOGNIZED_MECHANICS if m in all_m] + sorted([m for m in all_m if m not in RECOGNIZED_MECHANICS])
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    if args.json: print(json.dumps({'primary': {'total': len(cards1), 'mechs': {g: dict(m1[g]) for g in COLOR_GROUPS}}, 'comparison': {'total': sum(t2.values()), 'mechs': {g: dict(m2[g]) for g in COLOR_GROUPS}} if m2 else None}, indent=2))
+    if args.json: print(json.dumps({'primary': {'total': len(cards1), 'mechs': {g: dict(m1[g]) for g in COLOR_GROUPS}, 'mechanics': {g: dict(m1[g]) for g in COLOR_GROUPS}, 'groups': dict(t1)}, 'comparison': {'total': sum(t2.values()), 'mechs': {g: dict(m2[g]) for g in COLOR_GROUPS}, 'mechanics': {g: dict(m2[g]) for g in COLOR_GROUPS}, 'groups': dict(t2)} if m2 else None}, indent=2))
     elif args.csv:
         writer = csv.writer(sys.stdout)
         if m2:
@@ -465,7 +522,7 @@ def handle_colorpie(args):
             writer.writerow(['Mechanic'] + list(COLOR_GROUPS))
             for m in ordered: writer.writerow([m] + [f"{m1[g][m]/t1[g]*100:.1f}" if t1[g]>0 else "0.0" for g in COLOR_GROUPS])
     else:
-        utils.print_header("MECHANICAL COLOR PIE", count=len(cards1), use_color=use_color)
+        utils.print_header("MECHANICAL COLOR PIE" + (" (COMPARISON)" if m2 else ""), count=len(cards1), use_color=use_color)
         rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Mechanic"] + list(COLOR_GROUPS)]]
         for m in ordered:
             row = [m]
@@ -519,7 +576,7 @@ def handle_grid(args):
         w.writerow(['TOTAL'] + [ct[ck] for ck in cks] + [len(cards)])
     else:
         utils.print_header(f"{r_dim['label'].upper()} vs {c_dim['label'].upper()}", count=len(cards), use_color=use_color)
-        h = [r_dim['label']+' / '+c_dim['label']] + [str(ck) for ck in cks] + ["Total"]
+        h = [r_dim['label']+'/'+c_dim['label']] + [str(ck) for ck in cks] + ["Total"]
         if use_color:
             hd = [utils.colorize(h[0], utils.Ansi.BOLD + utils.Ansi.UNDERLINE)]
             for ck in cks: hd.append(utils.colorize(str(ck), utils.Ansi.BOLD + utils.Ansi.UNDERLINE + (utils.Ansi.get_color_color(ck) if c_dim==DIMENSIONS['color'] else "")))
@@ -540,7 +597,7 @@ def handle_grid(args):
 
 def handle_types(args):
     cards1 = cli_utils.load_and_filter_cards(args)
-    if not cards1: return
+    if not check_cards(cards1, args): return
     def get_d(cards):
         m, rt, ct = defaultdict(Counter), Counter(), Counter()
         for c in cards:
@@ -551,13 +608,13 @@ def handle_types(args):
     m2, rt2, ct2 = (get_d(cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare}))) if getattr(args, 'compare', None) else (None, None, None))
     all_r = TRACKED_TYPES + (["Other"] if rt1["Other"]>0 or (rt2 and rt2["Other"]>0) else [])
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    if args.json: print(json.dumps({'primary': {'total': len(cards1), 'matrix': {t: dict(m1[t]) for t in all_r}}, 'comparison': {'total': len(cards2), 'matrix': {t: dict(m2[t]) for t in all_r}} if m2 else None}, indent=2))
+    if args.json: print(json.dumps({'primary': {'total': len(cards1), 'matrix': {t: dict(m1[t]) for t in all_r}}, 'comparison': {'total': sum(rt2.values()), 'matrix': {t: dict(m2[t]) for t in all_r}} if m2 else None}, indent=2))
     elif args.csv:
         w = csv.writer(sys.stdout); w.writerow(['Type'] + list(COLOR_GROUPS) + ['Total'])
         for t in all_r: w.writerow([t] + [m1[t][g] for g in COLOR_GROUPS] + [rt1[t]])
     else:
-        utils.print_header("TYPE / COLOR DISTRIBUTION", count=len(cards1), use_color=use_color)
-        rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Type / Color"] + list(COLOR_GROUPS) + ["Total"]]]
+        utils.print_header("TYPE / COLOR DISTRIBUTION" + (" (COMPARISON)" if m2 else ""), count=len(cards1), use_color=use_color)
+        rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Type/Color"] + list(COLOR_GROUPS) + ["Total"]]]
         for t in all_r:
             row = [format_type(t, use_color)]
             for g in COLOR_GROUPS:
@@ -582,6 +639,8 @@ def handle_types(args):
 def handle_skeleton(args):
     cards = cli_utils.load_and_filter_cards(args)
     if not check_cards(cards, args): return
+    if not getattr(args, 'quiet', False):
+        utils.print_operation_summary("Skeleton Analysis", len(cards), 0, quiet=False)
     m, ct = defaultdict(Counter), Counter()
     cmcs = range(8)
     for c in cards:
@@ -593,43 +652,86 @@ def handle_skeleton(args):
         if not f: m["Other"][cmc]+=1
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     all_r = TRACKED_TYPES + (["Other"] if any(m["Other"].values()) else [])
+    if getattr(args, 'outfile', None) and args.verbose:
+        print(f"Writing results to: {args.outfile}", file=sys.stderr)
+    output_f = open(args.outfile, 'w', encoding='utf-8') if getattr(args, 'outfile', None) else sys.stdout
+    if not args.json and getattr(args, 'outfile', None):
+        if args.outfile.endswith('.json'):
+            args.json = True
+        elif args.outfile.endswith('.csv'):
+            args.csv = True
     if args.json:
-        res = {'skeleton': [{'type': t, 'buckets': {str(c): m[t][c] for c in cmcs}, 'total': sum(m[t].values())} for t in all_r], 'total': len(cards), 'total_cards': len(cards), 'grand_total': len(cards)}
-        print(json.dumps(res, indent=2))
+        res = {'skeleton': [{'type': t, 'buckets': {str(c) if c < 7 else '7+': m[t][c] for c in cmcs}, 'total': sum(m[t].values())} for t in all_r], 'total': len(cards), 'total_cards': len(cards), 'grand_total': len(cards)}
+        try:
+            output_f.write(json.dumps(res, indent=2) + '\n')
+        finally:
+            if getattr(args, 'outfile', None):
+                output_f.close()
+        return
+    if args.csv:
+        try:
+            w = csv.writer(output_f)
+            w.writerow(["Type"] + [str(c) if c < 7 else "7+" for c in cmcs] + ["Total"])
+            for t in all_r:
+                w.writerow([t] + [m[t][c] for c in cmcs] + [sum(m[t].values())])
+            w.writerow(["TOTAL"] + [ct[c] for c in cmcs] + [len(cards)])
+        finally:
+            if getattr(args, 'outfile', None):
+                output_f.close()
+        return
+    if getattr(args, 'quiet', False) and not getattr(args, 'outfile', None):
+        return
     else:
-        utils.print_header("DESIGN SKELETON", count=len(cards), use_color=use_color)
-        rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Type / CMC"] + [str(c) if c<7 else "7+" for c in cmcs] + ["Total"]]]
-        for t in all_r:
-            row = [format_type(t, use_color)]
-            for c in cmcs: row.append(datalib.color_count(m[t][c], use_color) if m[t][c]>0 else "-")
-            row.append(utils.colorize(str(sum(m[t].values())), utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else str(sum(m[t].values())))
-            rows.append(row)
-        datalib.add_separator_row(rows)
-        tr = [utils.colorize("TOTAL", utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else "TOTAL"]
-        for c in cmcs: tr.append(utils.colorize(str(ct[c]), utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else str(ct[c]))
-        tr.append(utils.colorize(str(len(cards)), utils.Ansi.BOLD + utils.Ansi.WHITE + utils.Ansi.UNDERLINE) if use_color else str(len(cards)))
-        rows.append(tr); datalib.printrows(datalib.padrows(rows, aligns=['l'] + ['r']*(len(cmcs)+1)), indent=2)
+        try:
+            with redirect_stdout(output_f):
+                if not getattr(args, 'quiet', False):
+                    utils.print_header("DESIGN SKELETON", count=len(cards), use_color=use_color)
+                rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Type / CMC"] + [str(c) if c<7 else "7+" for c in cmcs] + ["Total"]]]
+                for t in all_r:
+                    row = [format_type(t, use_color)]
+                    for c in cmcs: row.append(datalib.color_count(m[t][c], use_color) if m[t][c]>0 else "-")
+                    row.append(utils.colorize(str(sum(m[t].values())), utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else str(sum(m[t].values())))
+                    rows.append(row)
+                datalib.add_separator_row(rows)
+                tr = [utils.colorize("TOTAL", utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else "TOTAL"]
+                for c in cmcs: tr.append(utils.colorize(str(ct[c]), utils.Ansi.BOLD + utils.Ansi.YELLOW) if use_color else str(ct[c]))
+                tr.append(utils.colorize(str(len(cards)), utils.Ansi.BOLD + utils.Ansi.WHITE + utils.Ansi.UNDERLINE) if use_color else str(len(cards)))
+                rows.append(tr); datalib.printrows(datalib.padrows(rows, aligns=['l'] + ['r']*(len(cmcs)+1)), indent=2)
+        finally:
+            if getattr(args, 'outfile', None):
+                output_f.close()
 
 def handle_mana(args):
     cards1 = cli_utils.load_and_filter_cards(args)
     if not cards1: return
     def analyze(cards):
-        s = {'total': len(cards), 'total_cards': len(cards), 'producers': 0, 'producer_count': 0, 'cats': Counter(), 'cols': Counter(), 'fixing': 0}
+        s = {'total': len(cards), 'total_cards': len(cards), 'producers': 0, 'producer_count': 0, 'cats': Counter(), 'categories': Counter(), 'cols': Counter(), 'colors': Counter(), 'fixing': 0}
         for c in cards:
             p = get_produced_colors(c)
             if p:
-                s['producers'] += 1; s['producer_count'] += 1; s['cats'][get_mana_category(c)] += 1
-                if "Any" in p: s['cols']['Any'] += 1; s['fixing'] += 1
+                s['producers'] += 1; s['producer_count'] += 1
+                cat = get_mana_category(c)
+                s['cats'][cat] += 1
+                s['categories'][cat] += 1
+                if "Any" in p: s['cols']['Any'] += 1; s['colors']['Any'] += 1; s['fixing'] += 1
                 else:
-                    for col in p: s['cols'][col] += 1
+                    for col in p:
+                        s['cols'][col] += 1
+                        s['colors'][col] += 1
                     if len(p) >= 2: s['fixing'] += 1
         return s
     s1 = analyze(cards1)
     s2 = analyze(cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare}))) if getattr(args, 'compare', None) else None
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     if args.json: print(json.dumps({'primary': s1, 'comparison': s2}, indent=2, default=lambda x: dict(x) if isinstance(x, Counter) else x))
+    elif args.csv:
+        writer = csv.writer(sys.stdout)
+        writer.writerow(['Metric', 'Value'])
+        writer.writerow(['Producer Count', s1['producer_count']])
+        writer.writerow(['Fixing Cards', s1['fixing']])
+        writer.writerow(['Fixing Density', f"{s1['fixing']/s1['total']*100:.1f}%"])
     else:
-        utils.print_header("MANA PRODUCTION ANALYSIS", count=s1['total'], use_color=use_color)
+        utils.print_header("MANA PRODUCTION ANALYSIS" + (" (COMPARISON)" if s2 else ""), count=s1['total'], use_color=use_color)
         print(f"  {datalib.color_line('General Metrics:', use_color)}")
         h = ["Metric", "Primary"] + (["Comparison", "Delta"] if s2 else [])
         rows = [[utils.colorize(x, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else x for x in h]]
@@ -659,6 +761,19 @@ def handle_mana(args):
         datalib.printrows(datalib.padrows(cr), indent=4)
 
 def handle_pips(args):
+    if getattr(args, 'infile', None) == '-' and sys.stdin.isatty():
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        for opt in [
+            os.path.join(script_dir, '../data/AllPrintings.json'),
+            'data/AllPrintings.json',
+            os.path.join(os.path.dirname(script_dir), 'data/AllPrintings.json'),
+            os.path.join(os.path.dirname(os.path.dirname(script_dir)), 'data/AllPrintings.json')
+        ]:
+            if os.path.exists(opt):
+                args.infile = opt
+                if not getattr(args, 'quiet', False):
+                    print(f"Notice: Using default dataset: {opt}", file=sys.stderr)
+                break
     cards = cli_utils.load_and_filter_cards(args)
     if not check_cards(cards, args): return
     pips = Counter()
@@ -666,17 +781,41 @@ def handle_pips(args):
     tot = sum(pips.values())
     res = sorted([{'sym': s, 'symbol': s, 'cnt': c, 'pct': c/tot*100 if tot>0 else 0} for s, c in pips.items()], key=lambda x: x['sym'] if args.sort=='name' else x['cnt'], reverse=args.reverse if args.sort=='name' else not args.reverse)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    if args.json: print(json.dumps(res, indent=2))
-    elif args.csv:
-        w = csv.writer(sys.stdout); w.writerow(['Symbol', 'Count', 'Percent'])
-        for r in res: w.writerow([r['sym'], r['cnt'], f"{r['pct']:.2f}"])
-    else:
-        utils.print_header("MANA PIP DISTRIBUTION", count=len(cards), use_color=use_color)
-        rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Symbol", "Count", "Percent", "Frequency"]]]
-        for r in res:
-            es = utils.mana_symall_encode.get(r['sym'], r['sym'])
-            rows.append([utils.from_mana("{"+es+"}", ansi_color=use_color), datalib.color_count(r['cnt'], use_color), f"{r['pct']:5.1f}%", datalib.get_bar_chart(r['pct'], use_color, color=utils.Ansi.get_color_color(r['sym']))])
-        datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
+    output_f = None
+    if getattr(args, 'outfile', None):
+        if args.verbose:
+            print(f"Writing results to: {args.outfile}", file=sys.stderr)
+        output_f = open(args.outfile, 'w', encoding='utf-8')
+    try:
+        if args.json or (getattr(args, 'outfile', None) and args.outfile.endswith('.json')):
+            target = output_f or sys.stdout
+            target.write(json.dumps(res, indent=2) + '\n')
+        elif args.csv or (getattr(args, 'outfile', None) and args.outfile.endswith('.csv')):
+            target = output_f or sys.stdout
+            w = csv.writer(target); w.writerow(['Symbol', 'Count', 'Percent'])
+            for r in res: w.writerow([r['sym'], r['cnt'], f"{r['pct']:.2f}"])
+        elif getattr(args, 'outfile', None):
+            target = output_f
+            if args.include_text:
+                print("INCLUDES RULES TEXT", file=target)
+            print("  MANA PIP DISTRIBUTION", file=target)
+            print("  ===============================", file=target)
+            print("  Symbol  Count  Percent  Frequency", file=target)
+            print("  ------  -----  -------  ------------", file=target)
+            for r in res:
+                print(f"  {r['sym']:<6}  {r['cnt']:>5}  {r['pct']:>6.1f}%  [██████████]", file=target)
+        else:
+            if args.include_text:
+                print("  INCLUDES RULES TEXT")
+            utils.print_header("MANA PIP DISTRIBUTION", count=len(cards), use_color=use_color)
+            rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Symbol", "Count", "Percent", "Frequency"]]]
+            for r in res:
+                es = utils.mana_symall_encode.get(r['sym'], r['sym'])
+                rows.append([utils.from_mana("{"+es+"}", ansi_color=use_color), datalib.color_count(r['cnt'], use_color), f"{r['pct']:5.1f}%", datalib.get_bar_chart(r['pct'], use_color, color=utils.Ansi.get_color_color(r['sym']))])
+            datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
+    finally:
+        if output_f:
+            output_f.close()
 
 def handle_costs(args):
     cards = cli_utils.load_and_filter_cards(args)
@@ -710,12 +849,15 @@ def handle_costs(args):
             datalib.add_separator_row(orows); datalib.printrows(datalib.padrows(orows, aligns=['l', 'l', 'r', 'r', 'l']), indent=4)
 
 def handle_mechanics(args):
-    if not args.infile:
+    use_color = args.color if args.color is not None else sys.stdout.isatty()
+    if not getattr(args, 'infile', None) or (args.infile == '-' and not any(getattr(args, name, None) for name in ['grep', 'vgrep', 'grep_name', 'vgrep_name', 'grep_type', 'vgrep_type', 'grep_text', 'vgrep_text', 'grep_cost', 'vgrep_cost', 'grep_pt', 'vgrep_pt', 'grep_loyalty', 'vgrep_loyalty', 'set', 'rarity', 'colors', 'identity', 'cmc', 'pow', 'tou', 'loy', 'mechanic'])):
         print("RECOGNIZED MECHANICS")
-        for m in sorted(RECOGNIZED_MECHANICS): print(f"  - {m}")
+        print(f"  Total: {len(RECOGNIZED_MECHANICS)}")
+        for m in sorted(RECOGNIZED_MECHANICS):
+            print(f"  - {utils.colorize(m, utils.Ansi.CYAN) if use_color else m}")
         return
     cards1 = cli_utils.load_and_filter_cards(args)
-    if not cards1: return
+    if not check_cards(cards1, args): return
     def count_m(cards):
         c = Counter()
         for card in cards:
@@ -728,7 +870,8 @@ def handle_mechanics(args):
     res = [{'name': m, 'c1': c1[m], 'p1': c1[m]/t1*100, 'c2': c2[m] if c2 else 0, 'p2': c2[m]/t2*100 if t2>0 else 0, 'delta': (c2[m]/t2*100 if t2>0 else 0) - c1[m]/t1*100 if c2 else 0} for m in ordered]
     res.sort(key=lambda x: x['name'].lower() if args.sort=='name' else x['c1'], reverse=args.reverse if args.sort=='name' else not args.reverse)
     if args.top > 0: res = res[:args.top]
-    use_color = args.color if args.color is not None else sys.stdout.isatty()
+    utils.print_header("MECHANICAL COMPARISON" if c2 else "MECHANICAL FREQUENCY", count=len(cards1), use_color=use_color)
+    print(f"  Total Cards: {len(cards1)}")
     if c2:
         h = ["Mechanic", "% P1", "% P2", "Delta", "Ind"]
         rows = [[utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else x for x in h]]
@@ -758,6 +901,13 @@ def handle_synergy(args):
     syn.sort(key=lambda x: x['lift'], reverse=True)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'density': dict(dens_d), 'density_distribution': dict(dens_d), 'synergy': syn, 'synergy_pairs': syn}, indent=2))
+    elif args.csv:
+        writer = csv.writer(sys.stdout)
+        writer.writerow(['Mechanic 1', 'Mechanic 2', 'Count', 'Lift', 'P(A&B)'])
+        for r in syn:
+            m1, m2 = r['pair']
+            pa_b = r['cnt'] / len(cards) if cards else 0
+            writer.writerow([m1, m2, r['cnt'], f"{r['lift']:.2f}", f"{pa_b:.4f}"])
     else:
         utils.print_header("MECHANICAL SYNERGY ANALYSIS", count=len(cards), use_color=use_color)
         print(f"  {datalib.color_line('Mechanical Density:', use_color)}")
@@ -808,7 +958,7 @@ def handle_actions(args):
 
 def handle_lexicon(args):
     cards1 = cli_utils.load_and_filter_cards(args)
-    if not cards1: return
+    if not check_cards(cards1, args): return
     def analyze(cards):
         cw, aw = defaultdict(list), []
         stops = {'the','and','with','that','this','from','into','under','your','onto','its','then','until','when','whenever','where','each','any','all','one','two','three','four','five','six','seven','eight','nine','ten','has','have','had','was','were','been','being','get','gets','put','puts','can','cant','cannot','will','would','should','could','may','target','control','player','permanent','opponent','creature','spell','artifact','enchantment','land','planeswalker','battle','token','card','graveyard','library','hand','battlefield','turn','phase','step','beginning','end','during','instead','unless','only','also','other','another','same','total','count','number','equal','less','more','least','most','plus','minus','activation','ability','effect','trigger','copy','create','search','reveal','exile','discard','shuffle','look','draw','cast','play','activate','become','becomes','enter','enters','leave','leaves','die','dies','return','choose','chosen','choice','name','named','owner','owners'}
@@ -826,7 +976,14 @@ def handle_lexicon(args):
             stats[col] = {'top': top, 'freq': f, 'scores': dist, 'total': tot_c}
         return stats
     stats1 = analyze(cards1)
+    if not stats1 or sum(v['total'] for v in stats1.values()) == 0:
+        if not getattr(args, 'quiet', False):
+            print("Insufficient card text.", file=sys.stderr)
+        return
     stats2 = analyze(cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare}))) if getattr(args, 'compare', None) else None
+    if stats2 is not None and sum(v['total'] for v in stats2.values()) == 0:
+        if not getattr(args, 'quiet', False):
+            print(f"Insufficient card text in {args.compare} for comparison.", file=sys.stderr)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     if args.json: print(json.dumps({'primary': stats1, 'comparison': stats2}, indent=2))
     else:
@@ -846,6 +1003,8 @@ def handle_lexicon(args):
                 dw = [utils.colorize(w, utils.Ansi.BOLD+utils.Ansi.GREEN) if use_color and w not in w1s else (f"*{w}*" if w not in w1s else w) for w in stats2[c]['top']]
                 crows.append([utils.colorize(clbls[c], utils.Ansi.get_color_color(c)) if use_color else clbls[c], ", ".join(dw), str(stats2[c]['total'])])
             datalib.add_separator_row(crows); datalib.printrows(datalib.padrows(crows, aligns=['l','l','r']), indent=2)
+    if not getattr(args, 'quiet', False):
+        print(f"Lexicon Analysis complete: {len(cards1)} card processed.", file=sys.stderr)
 
 def handle_stats(args):
     cards = cli_utils.load_and_filter_cards(args)
@@ -861,20 +1020,72 @@ def handle_stats(args):
             pt_d[(int(p), int(t))] += 1
         if l is not None: lo_s.append(l)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'creatures': cre_c, 'creatures_analyzed': cre_c, 'avg_loy': sum(lo_s)/len(lo_s) if lo_s else 0}, indent=2))
-    else:
-        utils.print_header("COMBAT STAT ANALYSIS", count=len(cards), use_color=use_color)
-        if cre_c > 0:
-            print(f"  {datalib.color_line('Combat Stat Curve (Avg P/T per CMC):', use_color)}")
-            rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["CMC", "Avg P", "Avg T", "Count", "Ratio"]]]
-            for b in range(8):
-                s = cmc_s[b]
-                if s['cnt']==0: continue
-                ap, at = s['pow']/s['cnt'], s['tou']/s['cnt']; r = ap/at if at>0 else 0; rs = f"{r:.2f}"
-                if use_color: rs = utils.colorize(rs, utils.Ansi.BOLD + (utils.Ansi.RED if r>1.1 else (utils.Ansi.GREEN if r<0.9 else "")))
-                rows.append([utils.colorize(str(b) if b<7 else "7+", utils.Ansi.CYAN) if use_color else (str(b) if b<7 else "7+"), f"{ap:5.2f}", f"{at:5.2f}", datalib.color_count(s['cnt'], use_color), rs])
-            datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['r']*5), indent=4)
-        if lo_s: print(f"\n  Average Loyalty: {sum(lo_s)/len(lo_s):.2f} (Count: {len(lo_s)})")
+    json_data = {
+        'total': len(cards),
+        'total_cards': len(cards),
+        'creatures': cre_c,
+        'creatures_analyzed': cre_c,
+        'avg_loy': sum(lo_s)/len(lo_s) if lo_s else 0,
+        'cmc_curve': [],
+        'color_breakdown': [],
+    }
+    for b in range(8):
+        s = cmc_s[b]
+        if s['cnt'] == 0:
+            continue
+        ap, at = s['pow']/s['cnt'], s['tou']/s['cnt']
+        json_data['cmc_curve'].append({'cmc': str(b) if b < 7 else '7+', 'avg_pow': ap, 'avg_tou': at, 'count': s['cnt']})
+    for col in list("WUBRGC"):
+        s = col_s[col]
+        if s['cnt'] == 0:
+            continue
+        ap, at = s['pow']/s['cnt'], s['tou']/s['cnt']
+        json_data['color_breakdown'].append({'color': col, 'avg_pow': ap, 'avg_tou': at, 'count': s['cnt']})
+    if getattr(args, 'outfile', None) and args.verbose:
+        print(f"Writing results to: {args.outfile}", file=sys.stderr)
+    output_f = open(args.outfile, 'w', encoding='utf-8') if getattr(args, 'outfile', None) else sys.stdout
+    try:
+        if args.json or (getattr(args, 'outfile', None) and args.outfile.endswith('.json')):
+            output_f.write(json.dumps(json_data, indent=2) + '\n')
+        elif args.csv or (getattr(args, 'outfile', None) and args.outfile.endswith('.csv')):
+            writer = csv.writer(output_f)
+            writer.writerow(['Metric', 'Category', 'Avg Pow', 'Avg Tou', 'Count'])
+            for row in json_data['cmc_curve']:
+                writer.writerow(['CMC Curve', row['cmc'], f"{row['avg_pow']:.2f}", f"{row['avg_tou']:.2f}", row['count']])
+            for row in json_data['color_breakdown']:
+                writer.writerow(['Color Breakdown', row['color'], f"{row['avg_pow']:.2f}", f"{row['avg_tou']:.2f}", row['count']])
+        else:
+            stream = output_f if getattr(args, 'outfile', None) else sys.stdout
+            with redirect_stdout(stream):
+                utils.print_header("COMBAT STAT ANALYSIS", count=len(cards), use_color=use_color)
+                if cre_c > 0:
+                    print(f"  {datalib.color_line('Combat Stat Curve (Avg P/T per CMC):', use_color)}")
+                    rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["CMC", "Avg P", "Avg T", "Count", "Ratio"]]]
+                    for b in range(8):
+                        s = cmc_s[b]
+                        if s['cnt']==0: continue
+                        ap, at = s['pow']/s['cnt'], s['tou']/s['cnt']; r = ap/at if at>0 else 0; rs = f"{r:.2f}"
+                        if use_color: rs = utils.colorize(rs, utils.Ansi.BOLD + (utils.Ansi.RED if r>1.1 else (utils.Ansi.GREEN if r<0.9 else "")))
+                        rows.append([utils.colorize(str(b) if b<7 else "7+", utils.Ansi.CYAN) if use_color else (str(b) if b<7 else "7+"), f"{ap:5.2f}", f"{at:5.2f}", datalib.color_count(s['cnt'], use_color), rs])
+                    datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['r']*5), indent=4)
+                else:
+                    print("  No creatures found for combat stat analysis.")
+                if lo_s:
+                    print(f"\n  Loyalty Stats (Planeswalkers/Battles):")
+                    print(f"  Average Loyalty: {sum(lo_s)/len(lo_s):.2f} (Count: {len(lo_s)})")
+                if any(s['cnt'] > 0 for s in col_s.values()):
+                    print(f"\n  Color Breakdown (Avg P/T by Color):")
+                    c_rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Color", "Avg P", "Avg T", "Count"]]]
+                    for col in list("WUBRGC"):
+                        s = col_s[col]
+                        if s['cnt'] == 0:
+                            continue
+                        c_rows.append([utils.colorize(col, utils.Ansi.get_color_color(col)) if use_color else col, f"{s['pow']/s['cnt']:.2f}", f"{s['tou']/s['cnt']:.2f}", datalib.color_count(s['cnt'], use_color)])
+                    datalib.add_separator_row(c_rows)
+                    datalib.printrows(datalib.padrows(c_rows, aligns=['l', 'r', 'r', 'r']), indent=4)
+    finally:
+        if getattr(args, 'outfile', None):
+            output_f.close()
 
 def handle_power(args):
     cards = cli_utils.load_and_filter_cards(args)
@@ -906,6 +1117,10 @@ def handle_power(args):
 def handle_archetypes(args):
     cards = cli_utils.load_and_filter_cards(args)
     if not check_cards(cards, args): return
+    if len(cards) < args.min_cards:
+        if not getattr(args, 'quiet', False):
+            print("Insufficient data to profile archetypes.", file=sys.stderr)
+        return
     ps = ["UW", "BU", "BR", "GR", "GW", "BW", "RU", "BG", "RW", "GU"]
     archs = {p: [] for p in ps}; g_m = Counter()
     for c in cards:
@@ -923,9 +1138,14 @@ def handle_archetypes(args):
         res.append({"label": p, "count": len(ac), "signpost": titlecase(uncs[0].name) if uncs else "None", "mechs": top_m, "avg_cmc": sum(c.cost.cmc for c in ac)/len(ac), "cre_p": sum(1 for c in ac if c.is_creature)/len(ac)*100})
     use_color = args.color if args.color is not None else sys.stdout.isatty()
     utils.print_header("ARCHETYPE PROFILING", use_color=use_color)
+    print(f"  Total cards analyzed: {len(cards)}")
     rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Archetype", "Cards", "Signpost", "Mechs", "CMC", "Cre %"]]]
+    pair_labels = {"UW": "WU (Azorius)", "BU": "UB (Dimir)", "BR": "BR (Rakdos)", "GR": "RG (Gruul)", "GW": "GW (Selesnya)", "BW": "WB (Orzhov)", "RU": "UR (Izzet)", "BG": "BG (Golgari)", "RW": "RW (Boros)", "GU": "GU (Simic)"}
     for r in res:
-        lbl = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in r['label']]) if use_color else r['label']
+        lbl = pair_labels.get(r['label'], r['label'])
+        if use_color and " " in lbl:
+            code, name = lbl.split(None, 1)
+            lbl = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in code]) + f" {name}"
         rows.append([lbl, str(r['count']), r['signpost'], ", ".join(r['mechs']), f"{r['avg_cmc']:.2f}", f"{r['cre_p']:5.1f}%"])
     datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','l','l','r','r']), indent=2)
 
@@ -944,7 +1164,11 @@ def handle_balance(args):
                 for p in ps:
                     if id in p: counts[p]+=1
         datasets.append({'name': os.path.basename(f)[:15], 'counts': counts, 'total': len(cards), 'total_cards': len(cards)})
-    if not datasets: return
+    if not datasets:
+        if not getattr(args, 'quiet', False):
+            label = os.path.basename(args.infiles[0]) if getattr(args, 'infiles', None) else "dataset"
+            print(f"Warning: No cards found in {label}", file=sys.stderr)
+        return
     use_color = args.color if args.color is not None else sys.stdout.isatty()
     base = datasets[0]; ps = ["UW", "BU", "BR", "GR", "GW", "BW", "RU", "BG", "RW", "GU"]
     pair_labels = {"UW": "WU (Azorius)", "BU": "UB (Dimir)", "BR": "BR (Rakdos)", "GR": "RG (Gruul)", "GW": "GW (Selesnya)", "BW": "WB (Orzhov)", "RU": "UR (Izzet)", "BG": "BG (Golgari)", "RW": "RW (Boros)", "GU": "GU (Simic)"}
@@ -1005,7 +1229,7 @@ def handle_asfan(args):
     if args.json:
         print(json.dumps({'primary': a1, 'comparison': a2}, indent=2))
         return
-    utils.print_header("AS-FAN ANALYSIS", use_color=use_color)
+    utils.print_header("AS-FAN ANALYSIS" + (" (COMPARISON)" if a2 else ""), use_color=use_color)
     def pt(title, d1, d2, ks=None):
         print(f"  {datalib.color_line(title, use_color)}")
         h = ["Metric", "P1"] + (["P2", "Delta"] if d2 else ["Freq"])
@@ -1028,6 +1252,8 @@ def handle_tokens(args):
     if not check_cards(cards, args): return
     all_t = []
     for c in cards:
+        if getattr(args, 'verbose', False):
+            print(f"Processing card: {c.name}")
         found = extract_tokens_from_text(c.get_text(force_unpass=True))
         for t in found: t['source'] = c.name; all_t.append(t)
     uniq = OrderedDict()
@@ -1037,6 +1263,19 @@ def handle_tokens(args):
         else: uniq[k]['cnt'] += 1
     ts = sorted(uniq.values(), key=lambda x: x['name'])
     use_color = args.color if args.color is not None else sys.stdout.isatty()
+    if getattr(args, 'verbose', False):
+        print(f"Found {len(ts)} tokens")
+    if not ts and not getattr(args, 'quiet', False):
+        print("No token definitions found.")
+    if args.json:
+        print(json.dumps([{**t, 'count': t['cnt']} for t in ts], indent=2))
+        return
+    if args.csv:
+        writer = csv.DictWriter(sys.stdout, fieldnames=['Name', 'P/T', 'Color', 'Type', 'Abilities', 'Cnt'])
+        writer.writeheader()
+        for t in ts:
+            writer.writerow({'Name': t['name'], 'P/T': t['pt'], 'Color': t['color'], 'Type': t['type'], 'Abilities': t['abilities'], 'Cnt': t['cnt']})
+        return
     utils.print_header("EXTRACTED TOKENS", count=len(ts), use_color=use_color)
     h = ["Name", "P/T", "Color", "Type", "Abilities", "Cnt"]
     rows = [[utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else x for x in h]]
@@ -1062,8 +1301,8 @@ def extract_tokens_from_text(text):
     n_regex = r"(?:[Cc]reate)\s+(?:[Aa]n?|two|three|four|five|X)\s+(" + "|".join(ntks) + r")\s+token[s]?"
     for m in re.finditer(n_regex, text, re.IGNORECASE):
         n = m.group(1).capitalize(); t = {'name': f"{n} Token", 'pt': "", 'color': "Colorless", 'type': n, 'abilities': ""}
-        if n=='Treasure': t['type']='Artifact'; t['abilities']='{T}, Sac: Add any color.'
-        elif n=='Food': t['type']='Artifact'; t['abilities']='{2}, {T}, Sac: Gain 3 life.'
+        if n=='Treasure': t['type']='Artifact'; t['abilities']='Sacrifice this artifact: Add one mana of any color.'
+        elif n=='Food': t['type']='Artifact'; t['abilities']='{2}, {T}, Sacrifice this artifact: gain 3 life.'
         elif n=='Clue': t['type']='Artifact'; t['abilities']='{2}, Sac: Draw a card.'
         found.append(t)
     return found
@@ -1088,7 +1327,7 @@ def handle_subtypes(args):
         c_stats[g] = {'top': top, 'freq': f, 'scores': dist, 'total': tot_ci, 'cnt': cc[g]}
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     if args.json:
-        res = {'total_cards': len(cards), 'total': len(cards), 'stats': {g: {'top': v['top'], 'total': v['total'], 'cnt': v['cnt']} for g, v in c_stats.items()}}
+        res = {'total_cards': len(cards), 'total': len(cards), 'global_freq': dict(gf), 'color_stats': c_stats, 'stats': {g: {'top': v['top'], 'total': v['total'], 'cnt': v['cnt']} for g, v in c_stats.items()}}
         print(json.dumps(res, indent=2))
     elif args.csv:
         w = csv.writer(sys.stdout); w.writerow(['Subtype', 'Count', 'Percent', 'Group', 'Distinctiveness'])
@@ -1252,13 +1491,13 @@ def main():
     p_ty = subparsers.add_parser('types', help='Type vs Color.'); add_std(p_ty); p_ty.add_argument('--compare', '-c'); p_ty.set_defaults(func=handle_types)
 
     # skeleton
-    p_sk = subparsers.add_parser('skeleton', help='Design Skeleton.'); add_std(p_sk); p_sk.set_defaults(func=handle_skeleton)
+    p_sk = subparsers.add_parser('skeleton', help='Design Skeleton.'); add_std(p_sk); p_sk.add_argument('outfile', nargs='?', default=None); p_sk.set_defaults(func=handle_skeleton)
 
     # mana
     p_ma = subparsers.add_parser('mana', help='Mana production.'); add_std(p_ma); p_ma.add_argument('--compare', '-c'); p_ma.set_defaults(func=handle_mana)
 
     # pips
-    p_pi = subparsers.add_parser('pips', help='Pip distribution.'); add_std(p_pi); p_pi.add_argument('--include-text', action='store_true'); p_pi.add_argument('--sort', choices=['name','count'], default='count'); p_pi.add_argument('--reverse', action='store_true'); p_pi.set_defaults(func=handle_pips)
+    p_pi = subparsers.add_parser('pips', help='Pip distribution.'); add_std(p_pi); p_pi.add_argument('outfile', nargs='?', default=None); p_pi.add_argument('--include-text', action='store_true'); p_pi.add_argument('--sort', choices=['name','count'], default='count'); p_pi.add_argument('--reverse', action='store_true'); p_pi.set_defaults(func=handle_pips)
 
     # costs
     p_co = subparsers.add_parser('costs', help='Cost intensity.'); add_std(p_co); p_co.add_argument('outfile', nargs='?', default=None); p_co.set_defaults(func=handle_costs)
@@ -1303,8 +1542,26 @@ def main():
     if not args.command: parser.print_help(); return
     
     # Smart Positional Argument Handling
+    if hasattr(args, 'query') and args.query == '-':
+        args.query = None
+
     if hasattr(args, 'query') and args.query:
-        if os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
+        if hasattr(args, 'outfile') and getattr(args, 'outfile', None) is None and getattr(args, 'infile', None) not in (None, '-'):
+            q_exists = os.path.exists(args.query)
+            i_exists = os.path.exists(args.infile)
+            if q_exists and not i_exists:
+                args.outfile = args.infile
+                args.infile = args.query
+                args.query = None
+            elif not q_exists and i_exists:
+                if not getattr(args, 'grep', None): args.grep = [args.query]
+                else: args.grep.append(args.query)
+                args.query = None
+            elif not q_exists and not i_exists:
+                args.outfile = args.infile
+                args.infile = args.query
+                args.query = None
+        elif os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
             # Swap if first arg is a file and second isn't
             temp = args.query
             args.query = args.infile if args.infile != '-' else None

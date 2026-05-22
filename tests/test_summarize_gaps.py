@@ -11,7 +11,7 @@ from scripts.mtg_analyze import main as summarize_cli_main
 class TestSummarizeGaps(unittest.TestCase):
 
     def run_main(self, args, stdin_isatty=False, stdout_isatty=False):
-        with patch('sys.argv', ['mtg_analyze.py'] + args):
+        with patch('sys.argv', ['mtg_analyze.py', 'summary'] + args):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
                 with patch('sys.stderr', new=io.StringIO()) as fake_err:
                     with patch('sys.stdin.isatty', return_value=stdin_isatty):

@@ -51,11 +51,12 @@ class TestMtgStats(unittest.TestCase):
         self.assertIn("COMBAT STAT ANALYSIS", output)
         self.assertIn("Combat Stat Curve", output)
 
-        # Verify specific stats
-        self.assertIn("3       3.00       3.00      1   1.00", output) # CMC 3
-        self.assertIn("2       1.00       1.00      1   1.00", output) # CMC 2
-        self.assertIn("W           3.00       3.00      1", output) # Color W
-        self.assertIn("U           1.00       1.00      1", output) # Color U
+        # Verify specific stats using whitespace-agnostic checks.
+        self.assertRegex(output, r"(?m)^\s*3\s+3\.00\s+3\.00\s+1\s+1\.00$")
+        self.assertRegex(output, r"(?m)^\s*2\s+1\.00\s+1\.00\s+1\s+1\.00$")
+        self.assertIn("Color Breakdown (Avg P/T by Color):", output)
+        self.assertRegex(output, r"(?m)^\s*W\s+3\.00\s+3\.00\s+1$")
+        self.assertRegex(output, r"(?m)^\s*U\s+1\.00\s+1\.00\s+1$")
 
     @patch('jdecode.mtg_open_file')
     def test_json_output(self, mock_open_file):
@@ -122,9 +123,10 @@ class TestMtgStats(unittest.TestCase):
             mtg_analyze.main()
 
         output = stdout.getvalue()
-        self.assertIn("0       1.00       1.00      1", output) # Negative CMC buckets to 0
-        self.assertIn("7+      10.00      10.00      1", output) # CMC 10 buckets to 7+
-        self.assertIn("C           5.50       5.50      2", output) # Combined Colorless stats
+        self.assertRegex(output, r"(?m)^\s*0\s+1\.00\s+1\.00\s+1\s+1\.00$")
+        self.assertRegex(output, r"(?m)^\s*7\+\s+10\.00\s+10\.00\s+1\s+1\.00$")
+        self.assertIn("Color Breakdown (Avg P/T by Color):", output)
+        self.assertRegex(output, r"(?m)^\s*C\s+5\.50\s+5\.50\s+2$")
 
     @patch('jdecode.mtg_open_file')
     def test_ansi_color_highlighting(self, mock_open_file):
