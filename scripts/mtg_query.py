@@ -448,9 +448,19 @@ def handle_oracle(args):
         elif show_summary:
             print(c.summary(ansi_color=use_color).replace('\u2014', '-'))
         else:
+            # Detailed View
             print(c.summary(ansi_color=use_color).replace('\u2014', '-'))
             print("  " + "-" * 40)
             print(c.get_text(ansi_color=use_color).replace('\u2014', '-'))
+
+            # Handle B-Sides in detailed view
+            curr = c.bside
+            while curr:
+                print("  " + "." * 40)
+                print(curr.summary(ansi_color=use_color).replace('\u2014', '-'))
+                print("  " + "-" * 40)
+                print(curr.get_text(ansi_color=use_color).replace('\u2014', '-'))
+                curr = curr.bside
 
             # Metadata Footer
             footer_lines = []
@@ -485,7 +495,7 @@ def handle_oracle(args):
             if footer_lines:
                 print("  " + "-" * 40)
                 for line in footer_lines:
-                    print(line)
+                    print("  " + line)
             print()
 
 # --- Extract Logic (from extract_one.py) ---
