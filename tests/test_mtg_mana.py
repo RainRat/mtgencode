@@ -56,7 +56,7 @@ class TestMtgMana(unittest.TestCase):
         })
         self.assertEqual(mtg_analyze.get_produced_colors(card_lotus), {'Any'})
 
-    def test_get_category(self):
+    def test_get_mana_category(self):
         # Creature
         c = cardlib.Card({'name': 'Elf', 'types': ['Creature']})
         self.assertEqual(mtg_analyze.get_mana_category(c), 'Creature')

@@ -9,7 +9,7 @@ import io
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/..')
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../scripts')
 
-from scripts.mtg_analyze import main, analyze_subtypes, get_color_identity_group
+from scripts.mtg_analyze import main, analyze_subtypes, get_color_group
 import cardlib
 
 class TestMtgSubtypes(unittest.TestCase):
@@ -49,17 +49,17 @@ class TestMtgSubtypes(unittest.TestCase):
         c.subtypes = ["dragon"]
         self.cards.append(c)
 
-    def test_get_color_identity_group(self):
+    def test_get_color_group(self):
         c = MagicMock(spec=cardlib.Card)
 
         c.color_identity = ""
-        self.assertEqual(get_color_identity_group(c), 'A')
+        self.assertEqual(get_color_group(c), 'A')
 
         c.color_identity = "W"
-        self.assertEqual(get_color_identity_group(c), 'W')
+        self.assertEqual(get_color_group(c), 'W')
 
         c.color_identity = "UB"
-        self.assertEqual(get_color_identity_group(c), 'M')
+        self.assertEqual(get_color_group(c), 'M')
 
     def test_analyze_subtypes(self):
         stats = analyze_subtypes(self.cards)

@@ -89,6 +89,7 @@ def _normalized_color_identity(card):
 
 
 def get_color_group(card):
+    """Categorizes a card by color identity (W, U, B, R, G, Multi, Colorless)."""
     identity = _normalized_color_identity(card)
     if len(identity) > 1: return 'M'
     if len(identity) == 1: return identity[0]
@@ -344,12 +345,6 @@ def analyze_lexicon(cards, top=10, min_len=4, top_n=None):
     res.update(stats)
     return res
 
-def get_color_identity_group(card):
-    """Categorizes a card by color identity (W, U, B, R, G, Multi, Colorless)."""
-    identity = _normalized_color_identity(card)
-    if len(identity) > 1: return 'M'
-    if len(identity) == 1: return identity[0]
-    return 'A'
 
 def calculate_asfan(cards):
     pools = defaultdict(list); slots = {utils.rarity_common_marker: 10.0, utils.rarity_uncommon_marker: 3.0, 'RARE': 1.0, utils.rarity_basic_land_marker: 1.0}
@@ -402,8 +397,6 @@ def analyze_dataset(cards):
                 if len(p) >= 2: s['fixing'] += 1
     return s
 
-def get_category(card):
-    return get_mana_category(card)
 
 # --- Subparser Handlers ---
 
@@ -704,24 +697,8 @@ def handle_skeleton(args):
 def handle_mana(args):
     cards1 = cli_utils.load_and_filter_cards(args)
     if not cards1: return
-    def analyze(cards):
-        s = {'total': len(cards), 'total_cards': len(cards), 'producers': 0, 'producer_count': 0, 'cats': Counter(), 'categories': Counter(), 'cols': Counter(), 'colors': Counter(), 'fixing': 0}
-        for c in cards:
-            p = get_produced_colors(c)
-            if p:
-                s['producers'] += 1; s['producer_count'] += 1
-                cat = get_mana_category(c)
-                s['cats'][cat] += 1
-                s['categories'][cat] += 1
-                if "Any" in p: s['cols']['Any'] += 1; s['colors']['Any'] += 1; s['fixing'] += 1
-                else:
-                    for col in p:
-                        s['cols'][col] += 1
-                        s['colors'][col] += 1
-                    if len(p) >= 2: s['fixing'] += 1
-        return s
-    s1 = analyze(cards1)
-    s2 = analyze(cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare}))) if getattr(args, 'compare', None) else None
+    s1 = analyze_dataset(cards1)
+    s2 = analyze_dataset(cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare}))) if getattr(args, 'compare', None) else None
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     if args.json: print(json.dumps({'primary': s1, 'comparison': s2}, indent=2, default=lambda x: dict(x) if isinstance(x, Counter) else x))
     elif args.csv:
@@ -959,29 +936,13 @@ def handle_actions(args):
 def handle_lexicon(args):
     cards1 = cli_utils.load_and_filter_cards(args)
     if not check_cards(cards1, args): return
-    def analyze(cards):
-        cw, aw = defaultdict(list), []
-        stops = {'the','and','with','that','this','from','into','under','your','onto','its','then','until','when','whenever','where','each','any','all','one','two','three','four','five','six','seven','eight','nine','ten','has','have','had','was','were','been','being','get','gets','put','puts','can','cant','cannot','will','would','should','could','may','target','control','player','permanent','opponent','creature','spell','artifact','enchantment','land','planeswalker','battle','token','card','graveyard','library','hand','battlefield','turn','phase','step','beginning','end','during','instead','unless','only','also','other','another','same','total','count','number','equal','less','more','least','most','plus','minus','activation','ability','effect','trigger','copy','create','search','reveal','exile','discard','shuffle','look','draw','cast','play','activate','become','becomes','enter','enters','leave','leaves','die','dies','return','choose','chosen','choice','name','named','owner','owners'}
-        for c in cards:
-            col = get_color_group(c)
-            text = re.sub(r'\(.*?\)', '', c.get_text(force_unpass=True).lower())
-            ws = [w for w in word_tokenize(text) if w.isalpha() and len(w)>=args.min_len and w not in stops]
-            cw[col].extend(ws); aw.extend(ws)
-        gf = Counter(aw); tot_g = sum(gf.values()); stats = {}
-        for col in 'WUBRGMA':
-            ws = cw[col]
-            if not ws: continue
-            f = Counter(ws); tot_c = sum(f.values()); dist = {w: (f[w]/tot_c)/(gf[w]/tot_g) for w in f}
-            top = sorted([w for w in dist if f[w]>=2 or tot_c<50], key=lambda w: dist[w], reverse=True)[:args.top]
-            stats[col] = {'top': top, 'freq': f, 'scores': dist, 'total': tot_c}
-        return stats
-    stats1 = analyze(cards1)
-    if not stats1 or sum(v['total'] for v in stats1.values()) == 0:
+    stats1 = analyze_lexicon(cards1, top=args.top, min_len=args.min_len)
+    if not stats1 or stats1['total'] == 0:
         if not getattr(args, 'quiet', False):
             print("Insufficient card text.", file=sys.stderr)
         return
-    stats2 = analyze(cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare}))) if getattr(args, 'compare', None) else None
-    if stats2 is not None and sum(v['total'] for v in stats2.values()) == 0:
+    stats2 = analyze_lexicon(cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare})), top=args.top, min_len=args.min_len) if getattr(args, 'compare', None) else None
+    if stats2 is not None and stats2['total'] == 0:
         if not getattr(args, 'quiet', False):
             print(f"Insufficient card text in {args.compare} for comparison.", file=sys.stderr)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
