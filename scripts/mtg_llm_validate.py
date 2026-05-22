@@ -31,6 +31,7 @@ try:
     HAS_TRANSFORMERS = True
 except ImportError:
     pipeline = None
+    torch = None
     HAS_TRANSFORMERS = False
 
 DEFAULT_MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
@@ -117,7 +118,7 @@ def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, ver
                 })
         return results
 
-    if not HAS_TRANSFORMERS:
+    if pipeline is None:
         print("Error: The 'transformers' and 'torch' libraries are required for LLM validation.", file=sys.stderr)
         print("Install them with: pip install transformers torch", file=sys.stderr)
         sys.exit(1)
@@ -126,8 +127,8 @@ def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, ver
         print(f"Loading model '{model_name}' on {device}...", file=sys.stderr)
 
     # Detect dtype
-    dtype = torch.float32
-    if device != "cpu" and torch.cuda.is_available():
+    dtype = torch.float32 if torch is not None else None
+    if torch is not None and device != "cpu" and torch.cuda.is_available():
         if torch.cuda.is_bf16_supported():
             dtype = torch.bfloat16
         else:
@@ -143,7 +144,7 @@ def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, ver
                  import accelerate
                  device_map = "auto"
              except ImportError:
-                 if torch.cuda.is_available():
+                 if torch is not None and torch.cuda.is_available():
                      device_arg = 0
                  else:
                      device_arg = -1 # cpu

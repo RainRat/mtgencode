@@ -150,7 +150,7 @@ class TestMTGGrid(unittest.TestCase):
 
         reader = csv.reader(io.StringIO(mock_stdout.getvalue()))
         rows = list(reader)
-        self.assertEqual(rows[0][0], "Card Type / Color Identity")
+        self.assertEqual(rows[0][0], "Card Type/Color Identity")
         # Find creature row
         creature_row = next(r for r in rows if r[0] == "Creature")
         # W is usually the first color in WUBRGAM

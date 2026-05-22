@@ -102,7 +102,7 @@ class TestMtgMana(unittest.TestCase):
 
         output = mock_stdout.getvalue()
         self.assertIn("MANA PRODUCTION ANALYSIS", output)
-        self.assertIn("Land", output)
+        self.assertIn("Produced Colors", output)
         self.assertIn("G", output)
 
 if __name__ == '__main__':

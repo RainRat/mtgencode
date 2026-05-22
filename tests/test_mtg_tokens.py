@@ -10,7 +10,7 @@ def test_mtg_tokens_basic():
         pass
 
     # Run the script and capture output
-    cmd = ["python3", "scripts/mtg_analyze.py", test_file, "--json"]
+    cmd = ["python3", "scripts/mtg_analyze.py", "tokens", test_file, "--json"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode == 0
@@ -35,7 +35,7 @@ def test_mtg_tokens_filtering():
     test_file = "testdata/token_test.json"
 
     # Filter for only cards with "Beast" in name
-    cmd = ["python3", "scripts/mtg_analyze.py", test_file, "--grep", "Beast", "--json"]
+    cmd = ["python3", "scripts/mtg_analyze.py", "tokens", test_file, "--grep", "Beast", "--json"]
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     assert result.returncode == 0

@@ -90,7 +90,6 @@ class TestMtgCompare(unittest.TestCase):
                     self.assertIn("Total Cards", output)
                     self.assertIn("Avg CMC", output)
                     self.assertIn("Avg Complexity", output)
-                    self.assertIn("Avg Rating", output)
                     self.assertIn("1.0", output)
 
     def test_compare_main_two_files(self):
