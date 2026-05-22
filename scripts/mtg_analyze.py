@@ -1465,7 +1465,27 @@ def handle_compare(args):
     datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l'] + ['r']*(len(header)-1)), indent=2)
 
 def main():
-    parser = argparse.ArgumentParser(description="Unified MTG analysis tool.")
+    parser = argparse.ArgumentParser(
+        description="Unified MTG analysis tool.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Show general statistics for a dataset
+  python3 scripts/mtg_analyze.py summary data/AllPrintings.json
+
+  # Analyze the mana curve of a specific set
+  python3 scripts/mtg_analyze.py curve data/AllPrintings.json --set MOM
+
+  # Calculate As-Fan statistics for a generated set
+  python3 scripts/mtg_analyze.py asfan generated.txt
+
+  # Analyze mechanical synergy in a card pool
+  python3 scripts/mtg_analyze.py synergy my_cards.json --min-freq 5
+
+  # Compare the color lexicon of two datasets
+  python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
+"""
+    )
     subparsers = parser.add_subparsers(dest='command', help='Analysis command to run')
 
     def add_std(p):
@@ -1475,68 +1495,154 @@ def main():
         p.add_argument('infile', nargs='?', default='-', help='Input card data.')
 
     # summary
-    p_sum = subparsers.add_parser('summary', help='Show statistics and details.')
-    add_std(p_sum); p_sum.add_argument('outfile', nargs='?', default=None); p_sum.add_argument('-x', '--outliers', action='store_true'); p_sum.add_argument('-a', '--all', action='store_true'); p_sum.add_argument('--top', type=int, default=10); p_sum.add_argument('--sort', choices=['name','color','identity','type','cmc','rarity','power','toughness','loyalty','set','pack','complexity','score']); p_sum.add_argument('--reverse', action='store_true'); p_sum.set_defaults(func=handle_summary)
+    p_sum = subparsers.add_parser('summary', help='Show statistics and reports on mechanics and word variety.')
+    add_std(p_sum)
+    p_sum.add_argument('outfile', nargs='?', default=None, help='Save statistics to a file (JSON or CSV).')
+    p_sum.add_argument('-x', '--outliers', action='store_true', help='Show extra details and unusual cards (outliers).')
+    p_sum.add_argument('-a', '--all', action='store_true', help='Show all information, including dumping invalid cards.')
+    p_sum.add_argument('--top', type=int, default=10, help='Limit the number of entries in breakdown tables (Default: 10).')
+    p_sum.add_argument('--sort', choices=['name','color','identity','type','cmc','rarity','power','toughness','loyalty','set','pack','complexity','score'], help='Sort cards before summarizing.')
+    p_sum.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
+    p_sum.set_defaults(func=handle_summary)
 
     # curve
-    p_cur = subparsers.add_parser('curve', help='Analyze mana curve.'); add_std(p_cur); p_cur.set_defaults(func=handle_curve)
+    p_cur = subparsers.add_parser('curve', help='Analyze and visualize the mana curve (CMC distribution).')
+    add_std(p_cur)
+    p_cur.set_defaults(func=handle_curve)
 
     # colorpie
-    p_cp = subparsers.add_parser('colorpie', help='Mechanical Color Pie.'); add_std(p_cp); p_cp.add_argument('--compare', '-c'); p_cp.set_defaults(func=handle_colorpie)
+    p_cp = subparsers.add_parser('colorpie', help='Generate a Color Pie chart showing which mechanics appear in each color.')
+    add_std(p_cp)
+    p_cp.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
+    p_cp.set_defaults(func=handle_colorpie)
 
     # grid
-    p_gr = subparsers.add_parser('grid', help='2D grid.'); p_gr.add_argument('row_dim', choices=DIMENSIONS.keys()); p_gr.add_argument('col_dim', choices=DIMENSIONS.keys()); add_std(p_gr); p_gr.set_defaults(func=handle_grid)
+    p_gr = subparsers.add_parser('grid', help='Generate a 2D cross-tabulation (matrix) for card datasets.')
+    p_gr.add_argument('row_dim', choices=DIMENSIONS.keys(), help='Dimension to use for rows (e.g., color, rarity, type).')
+    p_gr.add_argument('col_dim', choices=DIMENSIONS.keys(), help='Dimension to use for columns (e.g., cmc, mechanic).')
+    add_std(p_gr)
+    p_gr.set_defaults(func=handle_grid)
 
     # types
-    p_ty = subparsers.add_parser('types', help='Type vs Color.'); add_std(p_ty); p_ty.add_argument('--compare', '-c'); p_ty.set_defaults(func=handle_types)
+    p_ty = subparsers.add_parser('types', help='Generate a Type vs. Color heatmap matrix.')
+    add_std(p_ty)
+    p_ty.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
+    p_ty.set_defaults(func=handle_types)
 
     # skeleton
-    p_sk = subparsers.add_parser('skeleton', help='Design Skeleton.'); add_std(p_sk); p_sk.add_argument('outfile', nargs='?', default=None); p_sk.set_defaults(func=handle_skeleton)
+    p_sk = subparsers.add_parser('skeleton', help='Generate a "Design Skeleton" bucketing cards by type and CMC.')
+    add_std(p_sk)
+    p_sk.add_argument('outfile', nargs='?', default=None, help='Save the skeleton to a file.')
+    p_sk.set_defaults(func=handle_skeleton)
 
     # mana
-    p_ma = subparsers.add_parser('mana', help='Mana production.'); add_std(p_ma); p_ma.add_argument('--compare', '-c'); p_ma.set_defaults(func=handle_mana)
+    p_ma = subparsers.add_parser('mana', help='Identify and profile mana-producing cards.')
+    add_std(p_ma)
+    p_ma.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
+    p_ma.set_defaults(func=handle_mana)
 
     # pips
-    p_pi = subparsers.add_parser('pips', help='Pip distribution.'); add_std(p_pi); p_pi.add_argument('outfile', nargs='?', default=None); p_pi.add_argument('--include-text', action='store_true'); p_pi.add_argument('--sort', choices=['name','count'], default='count'); p_pi.add_argument('--reverse', action='store_true'); p_pi.set_defaults(func=handle_pips)
+    p_pi = subparsers.add_parser('pips', help='Analyze the distribution of mana symbols (pips).')
+    add_std(p_pi)
+    p_pi.add_argument('outfile', nargs='?', default=None, help='Save pip distribution to a file.')
+    p_pi.add_argument('--include-text', action='store_true', help='Include mana symbols found in rules text (e.g., activation costs).')
+    p_pi.add_argument('--sort', choices=['name','count'], default='count', help='Sort results by symbol name or frequency.')
+    p_pi.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
+    p_pi.set_defaults(func=handle_pips)
 
     # costs
-    p_co = subparsers.add_parser('costs', help='Cost intensity.'); add_std(p_co); p_co.add_argument('outfile', nargs='?', default=None); p_co.set_defaults(func=handle_costs)
+    p_co = subparsers.add_parser('costs', help='Analyze mana cost intensity and color commitment.')
+    add_std(p_co)
+    p_co.add_argument('outfile', nargs='?', default=None, help='Save cost analysis to a file.')
+    p_co.set_defaults(func=handle_costs)
 
     # mechanics
-    p_me = subparsers.add_parser('mechanics', help='Keyword frequency.'); add_std(p_me); p_me.add_argument('--compare', '-c'); p_me.add_argument('--sort', choices=['name','count'], default='name'); p_me.add_argument('--reverse', action='store_true'); p_me.add_argument('--top', type=int, default=0); p_me.set_defaults(func=handle_mechanics)
+    p_me = subparsers.add_parser('mechanics', help='List recognized mechanics and calculate their frequency.')
+    add_std(p_me)
+    p_me.add_argument('--compare', '-c', help='Compare frequencies with a second dataset.')
+    p_me.add_argument('--sort', choices=['name','count'], default='name', help='Sort mechanics by name or count.')
+    p_me.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
+    p_me.add_argument('--top', type=int, default=0, help='Limit the number of mechanics shown.')
+    p_me.set_defaults(func=handle_mechanics)
 
     # synergy
-    p_sy = subparsers.add_parser('synergy', help='Keyword synergy.'); add_std(p_sy); p_sy.add_argument('--min-freq', type=int, default=2); p_sy.add_argument('--top', type=int, default=20); p_sy.set_defaults(func=handle_synergy)
+    p_sy = subparsers.add_parser('synergy', help='Analyze how mechanics appear together (co-occurrence).')
+    add_std(p_sy)
+    p_sy.add_argument('--min-freq', type=int, default=2, help='Minimum co-occurrences required to report a pair (Default: 2).')
+    p_sy.add_argument('--top', type=int, default=20, help='Show the top N pairings (Default: 20).')
+    p_sy.set_defaults(func=handle_synergy)
 
     # actions
-    p_ac = subparsers.add_parser('actions', help='Functional actions.'); add_std(p_ac); p_ac.add_argument('outfile', nargs='?', default=None); p_ac.set_defaults(func=handle_actions)
+    p_ac = subparsers.add_parser('actions', help='Analyze and categorize functional card effects (Removal, Buffs, etc).')
+    add_std(p_ac)
+    p_ac.add_argument('outfile', nargs='?', default=None, help='Save action analysis to a file.')
+    p_ac.set_defaults(func=handle_actions)
 
     # lexicon
-    p_le = subparsers.add_parser('lexicon', help='Signature words.'); add_std(p_le); p_le.add_argument('--compare', '-c'); p_le.add_argument('--top', type=int, default=10); p_le.add_argument('--min-len', type=int, default=4); p_le.set_defaults(func=handle_lexicon)
+    p_le = subparsers.add_parser('lexicon', help='Identify "signature words" for each Magic color.')
+    add_std(p_le)
+    p_le.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
+    p_le.add_argument('--top', type=int, default=10, help='Number of signature words to show per color (Default: 10).')
+    p_le.add_argument('--min-len', type=int, default=4, help='Minimum word length to include in analysis (Default: 4).')
+    p_le.set_defaults(func=handle_lexicon)
 
     # stats
-    p_st = subparsers.add_parser('stats', help='Combat stats.'); add_std(p_st); p_st.add_argument('outfile', nargs='?', default=None); p_st.set_defaults(func=handle_stats)
+    p_st = subparsers.add_parser('stats', help='Analyze creature combat stats (P/T) and Planeswalker loyalty.')
+    add_std(p_st)
+    p_st.add_argument('outfile', nargs='?', default=None, help='Save combat stats to a file.')
+    p_st.set_defaults(func=handle_stats)
 
     # power
-    p_po = subparsers.add_parser('power', help='Creature efficiency.'); add_std(p_po); p_po.add_argument('outfile', nargs='?', default=None); p_po.set_defaults(func=handle_power)
+    p_po = subparsers.add_parser('power', help='Analyze creature power balance and efficiency relative to CMC.')
+    add_std(p_po)
+    p_po.add_argument('outfile', nargs='?', default=None, help='Save power analysis to a file.')
+    p_po.set_defaults(func=handle_power)
 
     # archetypes
-    p_ar = subparsers.add_parser('archetypes', help='Color pair archetypes.'); add_std(p_ar); p_ar.add_argument('outfile', nargs='?', default=None); p_ar.add_argument('--min-cards', type=int, default=5); p_ar.add_argument('--top-mechanics', type=int, default=3); p_ar.set_defaults(func=handle_archetypes)
+    p_ar = subparsers.add_parser('archetypes', help='Profile the ten primary two-color archetypes.')
+    add_std(p_ar)
+    p_ar.add_argument('outfile', nargs='?', default=None, help='Save archetype analysis to a file.')
+    p_ar.add_argument('--min-cards', type=int, default=5, help='Minimum number of cards required to profile an archetype (Default: 5).')
+    p_ar.add_argument('--top-mechanics', type=int, default=3, help='Number of signature mechanics to show per archetype (Default: 3).')
+    p_ar.set_defaults(func=handle_archetypes)
 
     # balance
-    p_ba = subparsers.add_parser('balance', help='Archetype balance.'); p_ba.add_argument('infiles', nargs='*'); p_ba.add_argument('--set', action='append'); p_ba.add_argument('--rarity', action='append'); p_ba.add_argument('--limit', type=int, default=0); p_ba.add_argument('-v', '--verbose', action='store_true'); p_ba.add_argument('-q', '--quiet', action='store_true'); c_grp = p_ba.add_mutually_exclusive_group(); c_grp.add_argument('--color', action='store_true', default=None); c_grp.add_argument('--no-color', action='store_false', dest='color'); p_ba.set_defaults(func=handle_balance)
+    p_ba = subparsers.add_parser('balance', help='Compare how color pairs are distributed between datasets.')
+    p_ba.add_argument('infiles', nargs='*', help='One or more card data files to compare.')
+    p_ba.add_argument('--set', action='append', help='Filter inputs by set code.')
+    p_ba.add_argument('--rarity', action='append', help='Filter inputs by rarity.')
+    p_ba.add_argument('--limit', type=int, default=0, help='Only process the first N cards from each input.')
+    p_ba.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
+    p_ba.add_argument('-q', '--quiet', action='store_true', help='Suppress status messages.')
+    c_grp = p_ba.add_mutually_exclusive_group()
+    c_grp.add_argument('--color', action='store_true', default=None, help='Force enable ANSI color output.')
+    c_grp.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
+    p_ba.set_defaults(func=handle_balance)
 
     # asfan
-    p_as = subparsers.add_parser('asfan', help='As-Fan stats.'); add_std(p_as); p_as.add_argument('--compare', '-c'); p_as.add_argument('outfile', nargs='?', default=None); p_as.set_defaults(func=handle_asfan)
+    p_as = subparsers.add_parser('asfan', help='Calculate "As-Fan" (average cards per pack) statistics.')
+    add_std(p_as)
+    p_as.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
+    p_as.add_argument('outfile', nargs='?', default=None, help='Save As-Fan stats to a file.')
+    p_as.set_defaults(func=handle_asfan)
 
     # tokens
-    p_to = subparsers.add_parser('tokens', help='Extract tokens.'); add_std(p_to); p_to.set_defaults(func=handle_tokens)
+    p_to = subparsers.add_parser('tokens', help='Extract and summarize token definitions from rules text.')
+    add_std(p_to)
+    p_to.set_defaults(func=handle_tokens)
 
     # subtypes
-    p_sub = subparsers.add_parser('subtypes', help='Subtype analysis.'); add_std(p_sub); p_sub.add_argument('outfile', nargs='?', default=None); p_sub.add_argument('--top', type=int, default=10); p_sub.set_defaults(func=handle_subtypes)
+    p_sub = subparsers.add_parser('subtypes', help='Analyze the distribution of card subtypes.')
+    add_std(p_sub)
+    p_sub.add_argument('outfile', nargs='?', default=None, help='Save subtype analysis to a file.')
+    p_sub.add_argument('--top', type=int, default=10, help='Number of entries to show in tables (Default: 10).')
+    p_sub.set_defaults(func=handle_subtypes)
 
     # compare
-    p_comp = subparsers.add_parser('compare', help='Dataset comparison.'); p_comp.add_argument('infiles', nargs='+'); add_std(p_comp); p_comp.set_defaults(func=handle_compare)
+    p_comp = subparsers.add_parser('compare', help='Provide a side-by-side statistical comparison of two or more datasets.')
+    p_comp.add_argument('infiles', nargs='+', help='Two or more card data files to compare.')
+    add_std(p_comp)
+    p_comp.set_defaults(func=handle_compare)
 
     args = parser.parse_args()
     if not args.command: parser.print_help(); return
