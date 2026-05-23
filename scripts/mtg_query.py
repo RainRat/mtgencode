@@ -720,9 +720,29 @@ def main():
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
     # Search Subparser
-    p_search = subparsers.add_parser('search', help='Search card data and extract specific fields.')
-    p_search.add_argument('infile', nargs='?', default='-')
-    p_search.add_argument('outfile', nargs='?', default=None)
+    p_search = subparsers.add_parser(
+        'search',
+        help='Search card data and extract specific fields.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Find all cards matching a search pattern
+  python3 scripts/mtg_query.py search --grep "Grizzly Bears"
+
+  # List names and costs of all Goblins in a table
+  python3 scripts/mtg_query.py search data/AllPrintings.json --grep "Goblin" --fields "name,cost" --table
+
+  # Find all mythic rares with CMC > 7 and save to a JSON file
+  python3 scripts/mtg_query.py search data/AllPrintings.json --rarity mythic --cmc ">7" mythics.json
+
+  # Find cards mechanically similar to a specific card
+  python3 scripts/mtg_query.py search --similar-to "Giant Growth" --limit 5
+"""
+    )
+    p_search.add_argument('infile', nargs='?', default='-',
+                        help='Input card data (JSON, CSV, XML, MSE, or encoded text). Defaults to stdin (-). If stdin is a TTY, data/AllPrintings.json is used if available.')
+    p_search.add_argument('outfile', nargs='?', default=None,
+                        help='Path to save the search results. If not provided, results print to the console.')
     p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics')
     p_search.add_argument('--delimiter', default=' | ')
     cli_utils.add_standard_filters(p_search)
@@ -737,9 +757,25 @@ def main():
     p_search.set_defaults(func=handle_search)
 
     # Oracle Subparser
-    p_oracle = subparsers.add_parser('oracle', help='Search for a card by name and display its full Oracle text.')
-    p_oracle.add_argument('query', nargs='?', help='Card name to search for.')
-    p_oracle.add_argument('infile', nargs='?', default='-')
+    p_oracle = subparsers.add_parser(
+        'oracle',
+        help='Search for a card by name and display its full Oracle text.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Quick lookup (fuzzy matching supported)
+  python3 scripts/mtg_query.py oracle "Grizly Beers"
+
+  # Find cards matching specific filters
+  python3 scripts/mtg_query.py oracle --set MOM --rarity rare --grep "Battle"
+
+  # Find cards mechanically similar to a specific card
+  python3 scripts/mtg_query.py oracle "Giant Growth" --similar
+"""
+    )
+    p_oracle.add_argument('query', nargs='?', help='Card name to search for. Supports fuzzy matching and partial names.')
+    p_oracle.add_argument('infile', nargs='?', default='-',
+                        help='Input card data. Defaults to data/AllPrintings.json if available.')
     cli_utils.add_standard_filters(p_oracle)
     cli_utils.add_standard_output_args(p_oracle)
     p_oracle.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'])
@@ -749,18 +785,44 @@ def main():
     p_oracle.set_defaults(func=handle_oracle)
 
     # Extract Subparser
-    p_extract = subparsers.add_parser('extract', help='Extract a single card from an MTGJSON file.')
-    p_extract.add_argument('infile', help='Input MTGJSON file.')
-    p_extract.add_argument('set_code', help='Set code (or ANY).')
-    p_extract.add_argument('card_name', help='Card name.')
+    p_extract = subparsers.add_parser(
+        'extract',
+        help='Extract a single card from an MTGJSON file.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Extract a card object by name and set code
+  python3 scripts/mtg_query.py extract data/AllPrintings.json MOM "Invasion of Tarkir"
+"""
+    )
+    p_extract.add_argument('infile', help='Input MTGJSON file (must be a full database).')
+    p_extract.add_argument('set_code', help='Set code to search in (e.g., MOM, MRD, or ANY).')
+    p_extract.add_argument('card_name', help='Full or partial card name to extract.')
     p_extract.add_argument('-o', '--outfile', help='Output file.')
     cli_utils.add_standard_output_args(p_extract)
     p_extract.set_defaults(func=handle_extract)
 
     # Sets Subparser
-    p_sets = subparsers.add_parser('sets', help='List and filter sets in an MTGJSON file.')
-    p_sets.add_argument('infile', nargs='?', default='-')
-    p_sets.add_argument('outfile', nargs='?', default=None)
+    p_sets = subparsers.add_parser(
+        'sets',
+        help='List and filter sets in an MTGJSON file.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # List all sets in the default dataset
+  python3 scripts/mtg_query.py sets
+
+  # Find sets with "Masters" in their name or code
+  python3 scripts/mtg_query.py sets --grep "Masters"
+
+  # Show card count and release date, sorted by date
+  python3 scripts/mtg_query.py sets --sort date
+"""
+    )
+    p_sets.add_argument('infile', nargs='?', default='-',
+                        help='Input MTGJSON file. Defaults to data/AllPrintings.json if available.')
+    p_sets.add_argument('outfile', nargs='?', default=None,
+                        help='Path to save the set list.')
     p_sets.add_argument('--grep', '--filter', action='append')
     p_sets.add_argument('--sort', choices=['code', 'name', 'type', 'date', 'count'], default='date')
     p_sets.add_argument('--reverse', action='store_true')
@@ -774,8 +836,21 @@ def main():
     p_sets.set_defaults(func=handle_sets)
 
     # Functional Subparser
-    p_functional = subparsers.add_parser('functional', help='Identify and group functional reprints.')
-    p_functional.add_argument('infile', nargs='?', default='-')
+    p_functional = subparsers.add_parser(
+        'functional',
+        help='Identify and group functional reprints.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # List all functional reprints (same mechanics, different name)
+  python3 scripts/mtg_query.py functional data/AllPrintings.json
+
+  # Find functional reprints of Goblins
+  python3 scripts/mtg_query.py functional --grep "Goblin"
+"""
+    )
+    p_functional.add_argument('infile', nargs='?', default='-',
+                            help='Input card data (JSON, CSV, XML, or encoded text) to check for functional reprints.')
     cli_utils.add_standard_filters(p_functional)
     cli_utils.add_standard_output_args(p_functional)
     p_functional.set_defaults(func=handle_functional)
