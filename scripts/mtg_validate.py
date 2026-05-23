@@ -291,9 +291,9 @@ def check_triggered(card):
     for line in card.text_lines:
         if 'when ' + utils.this_marker + ' enters the battlefield' in line.text:
             triggered += 1
-        if 'when ' + utils.this_marker + ' leaves the battlefield' in line.text:
+        elif 'when ' + utils.this_marker + ' leaves the battlefield' in line.text:
             triggered += 1
-        if 'when ' + utils.this_marker + ' dies' in line.text:
+        elif 'when ' + utils.this_marker + ' dies' in line.text:
             triggered += 1
         elif 'at the beginning' == line.text[:16] or 'when' == line.text[:4]:
             if 'from your graveyard' in line.text:
