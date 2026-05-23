@@ -552,6 +552,7 @@ class Card:
         # metadata for interoperability
         self.set_code = None
         self.number = None
+        self.rulings = []
 
         self.bside = None
         # format-independent view of processed input
@@ -562,6 +563,7 @@ class Card:
             self.json = src
             self.set_code = src.get('setCode')
             self.number = src.get('number')
+            self.rulings = src.get('rulings', [])
             if utils.json_field_bside in src:
                 self.bside = Card(src[utils.json_field_bside],
                                   fmt_ordered = fmt_ordered,
@@ -1659,6 +1661,9 @@ class Card:
             d['setCode'] = self.set_code
         if self.number:
             d['number'] = self.number
+
+        if self.rulings:
+            d['rulings'] = self.rulings
 
         if hasattr(self, 'box_id'):
             d['box_id'] = self.box_id

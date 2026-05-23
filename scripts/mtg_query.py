@@ -512,10 +512,21 @@ def handle_oracle(args):
             if url:
                 footer_lines.append(url)
 
-            if footer_lines:
-                print("  " + "-" * 40)
-                for line in footer_lines:
                     print("  " + line)
+
+            # Rulings
+            if not getattr(args, 'no_rulings', False) and c.rulings:
+                print()
+                rulings_header = "RULINGS"
+                if use_color:
+                    rulings_header = utils.colorize(rulings_header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                print(f"  {rulings_header}:")
+                for ruling in c.rulings:
+                    date = ruling.get('date', 'Unknown Date')
+                    text = ruling.get('text', '')
+                    if use_color:
+                        date = utils.colorize(date, utils.Ansi.BOLD)
+                    print(f"  - {date}: {text}")
             print()
 
 # --- Extract Logic (from extract_one.py) ---
@@ -812,6 +823,7 @@ Usage Examples:
     p_oracle.add_argument('-s', '--similar', action='store_true', help='Show mechanically similar cards instead of direct matches.')
     p_oracle.add_argument('-G', '--gatherer', action='store_true', help='Use Gatherer-style formatting.')
     p_oracle.add_argument('--full', action='store_true', help='Force full details even for multiple matches.')
+    p_oracle.add_argument('--no-rulings', action='store_true', help='Suppress display of card rulings.')
     p_oracle.set_defaults(func=handle_oracle)
 
     # Extract Subparser
