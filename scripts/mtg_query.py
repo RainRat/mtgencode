@@ -448,9 +448,29 @@ def handle_oracle(args):
         elif show_summary:
             print(c.summary(ansi_color=use_color).replace('\u2014', '-'))
         else:
+            # Detailed View
             print(c.summary(ansi_color=use_color).replace('\u2014', '-'))
-            print("  " + "-" * 40)
-            print(c.get_text(ansi_color=use_color).replace('\u2014', '-'))
+
+            def print_face(face, is_bside=False):
+                if is_bside:
+                    # Subtle divider for secondary faces
+                    print("  " + "." * 40)
+                    # For B-sides in detailed view, we show a mini-summary
+                    face_info = face.get_type_line(separator='-')
+                    stats = face._get_pt_display(ansi_color=use_color) or face._get_loyalty_display(ansi_color=use_color)
+                    if stats:
+                        face_info += f" • {stats}"
+                    if use_color:
+                        face_info = utils.colorize(face_info, utils.Ansi.GREEN)
+                    print("  " + face_info)
+                else:
+                    print("  " + "-" * 40)
+
+                print(face.get_text(ansi_color=use_color).replace('\u2014', '-'))
+                if face.bside:
+                    print_face(face.bside, is_bside=True)
+
+            print_face(c)
 
             # Metadata Footer
             footer_lines = []
@@ -485,7 +505,7 @@ def handle_oracle(args):
             if footer_lines:
                 print("  " + "-" * 40)
                 for line in footer_lines:
-                    print(line)
+                    print("  " + line)
             print()
 
 # --- Extract Logic (from extract_one.py) ---
