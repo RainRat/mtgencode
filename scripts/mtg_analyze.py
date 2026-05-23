@@ -1106,13 +1106,20 @@ def handle_power(args):
     if args.json: print(json.dumps({'total': len(creatures), 'top': [{'name': c.display_name, 'rating': c.power_rating} for c in sc[:limit]]}, indent=2))
     else:
         utils.print_header("POWER BALANCE ANALYSIS", count=len(creatures), use_color=use_color)
-        rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Name", "Rating", "Cost", "P/T", "Rarity"]]]
+        rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Name", "Rating", "Cost", "Fair MV", "P/T", "Rarity"]]]
         for c in sc[:limit]:
             rt = str(c.power_rating)
             if use_color: rt = utils.colorize(rt, utils.Ansi.BOLD+utils.Ansi.GREEN if c.power_rating>1.2 else (utils.Ansi.RED if c.power_rating<0.8 else ""))
+
+            val = c.recommended_cmc
+            fair_mv = str(val)
+            if use_color:
+                color = utils.Ansi.GREEN if c.cost.cmc >= val else utils.Ansi.RED
+                fair_mv = utils.colorize(fair_mv, utils.Ansi.BOLD + color)
+
             rar = c.rarity_name
-            rows.append([utils.colorize(c.display_name, c._get_ansi_color()) if use_color else c.display_name, rt, c.cost.format(ansi_color=use_color), c._get_pt_display(ansi_color=use_color, include_parens=False), utils.colorize(rar, utils.Ansi.get_rarity_color(rar)) if use_color else rar])
-        datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','l','r','l']), indent=4)
+            rows.append([utils.colorize(c.display_name, c._get_ansi_color()) if use_color else c.display_name, rt, c.cost.format(ansi_color=use_color), fair_mv, c._get_pt_display(ansi_color=use_color, include_parens=False), utils.colorize(rar, utils.Ansi.get_rarity_color(rar)) if use_color else rar])
+        datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','l','r','r','l']), indent=4)
 
 def handle_archetypes(args):
     cards = cli_utils.load_and_filter_cards(args)

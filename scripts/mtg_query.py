@@ -52,6 +52,7 @@ FIELD_MAP = {
     'box': {'header': 'Box', 'align': 'r', 'aliases': ['box_id']},
     'complexity': {'header': 'Score', 'align': 'r', 'aliases': ['score']},
     'rating': {'header': 'Rating', 'align': 'r', 'aliases': ['power_rating']},
+    'fair_cmc': {'header': 'Fair MV', 'align': 'r', 'aliases': ['fcmc', 'fair_cost', 'fair_mv', 'recommended_cmc']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
@@ -149,6 +150,13 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         res = str(card.power_rating)
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.RED)
+        return res
+    elif canon == 'fair_cmc':
+        val = card.recommended_cmc
+        res = str(val) if val > 0 else ""
+        if res and ansi_color:
+            color = utils.Ansi.GREEN if card.cost.cmc >= val else utils.Ansi.RED
+            res = utils.colorize(res, utils.Ansi.BOLD + color)
         return res
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
@@ -475,6 +483,8 @@ def handle_oracle(args):
 
             # 3. Scores
             score_line = f"SCORE: {c.complexity_score} \u2022 RATING: {c.power_rating:.3f}"
+            if c.is_creature:
+                score_line += f" \u2022 FAIR MV: {c.recommended_cmc}"
             footer_lines.append(score_line)
 
             # 4. Scryfall URL

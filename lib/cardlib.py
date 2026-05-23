@@ -729,6 +729,34 @@ class Card:
         return score
 
     @property
+    def recommended_cmc(self):
+        """Calculates a heuristic 'Fair Mana Value' for creatures based on stats and keywords."""
+        recommendation = 0.0
+        if self.is_creature:
+            p = utils.from_unary_single(self.pt_p)
+            t = utils.from_unary_single(self.pt_t)
+
+            # Default to 0 if non-numeric (X, *, etc.)
+            p_val = float(p) if isinstance(p, (int, float)) else 0.0
+            t_val = float(t) if isinstance(t, (int, float)) else 0.0
+
+            score = p_val + t_val
+
+            # Add keyword bonuses
+            face_mechanics = self.get_face_mechanics()
+            for m in face_mechanics:
+                score += KEYWORD_WEIGHTS.get(m, 0.0)
+
+            # Formula: (P + T + Keywords) / 2.0
+            # A basic 2/2 creature without abilities is recommended at 2.0 mana.
+            recommendation = score / 2.0
+
+        if self.bside:
+            recommendation = max(recommendation, self.bside.recommended_cmc)
+
+        return round(recommendation, 1)
+
+    @property
     def power_rating(self):
         """Calculates a heuristic power rating for creatures relative to their CMC."""
         rating = 0.0
@@ -1332,12 +1360,25 @@ class Card:
         if ansi_color and mechanics_str:
             mechanics_str = utils.colorize(mechanics_str, utils.Ansi.CYAN)
 
+        # Recommended CMC (Fair MV) for creatures
+        fair_mv = ''
+        if self.is_creature:
+            val = self.recommended_cmc
+            fair_mv = f'Fair MV: {val}'
+            if ansi_color:
+                # Use Green if the card is "fair" or better (cost >= fair_mv)
+                # Use Red if the card is pushed (cost < fair_mv)
+                color = utils.Ansi.GREEN if self.cost.cmc >= val else utils.Ansi.RED
+                fair_mv = utils.colorize(fair_mv, utils.Ansi.BOLD + color)
+
         # Construct final summary string with consistent bullet separators
         res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
         if stats:
             res += f' \u2022 {stats}'
         if mechanics_str:
             res += f' \u2022 {mechanics_str}'
+        if fair_mv:
+            res += f' \u2022 {fair_mv}'
 
         if self.bside:
             res += ' // ' + self.bside.summary(ansi_color=ansi_color)
