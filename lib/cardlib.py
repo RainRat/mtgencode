@@ -27,6 +27,29 @@ RECOGNIZED_MECHANICS = [
     'Incubate', 'Discover', 'First Strike', 'Double Strike'
 ]
 
+# Functional categories for card effects
+ACTION_CATEGORIES = {
+    'Removal': [
+        r'\bdestroy\b', r'\bexile target\b', r'sacrifice (a|target|an)\b',
+        r'deals? \d+ damage to (target|each) (creature|planeswalker|permanent)',
+        r'deals? &[\^]+ damage to (target|each) (creature|planeswalker|permanent)',
+        r'return (target|each) [^:]* to (its|their) owner\'s hand'
+    ],
+    'Protection': [
+        r'\bhexproof\b', r'\bindestructible\b', r'\bward\b', r'\bprotection from\b', r'\bshroud\b', r'\bregenerate\b'
+    ],
+    'Buffs': [
+        r'gets? \+&[\^]*/\+&[\^]*', r'put (a|&[\^]+) \+&[\^]*/\+&[\^]* counter',
+        r'target creature gets \+', r'creatures you control get \+'
+    ],
+    'Card Advantage': [
+        r'\bdraw(s|ing)? (a|&[\^]+) cards?\b', r'\bsearch your library\b', r'\breturn (target|a) card from your graveyard\b'
+    ],
+    'Disruption': [
+        r'\bdiscard(s|ing)? (a|&[\^]+)?\b', r'\buncast target\b', r'\btap target\b', r'can\'t attack or block'
+    ]
+}
+
 # Heuristic weights for calculating power rating
 KEYWORD_WEIGHTS = {
     'Flying': 1.5,
@@ -662,6 +685,46 @@ class Card:
         return self._has_type('sorcery')
 
     @property
+    def produced_colors(self):
+        """Returns the set of colors this card can produce."""
+        produced = self.get_face_produced_colors()
+        if self.bside:
+            b_produced = self.bside.produced_colors
+            if "Any" in b_produced or "Any" in produced:
+                return {"Any"}
+            produced.update(b_produced)
+        return produced
+
+    def get_face_produced_colors(self):
+        """Returns the set of colors this card face can produce."""
+        produced = set()
+        land_types = {
+            'plains': 'W', 'island': 'U', 'swamp': 'B', 'mountain': 'R', 'forest': 'G', 'wastes': 'C'
+        }
+        for land_type, color in land_types.items():
+            if self._has_subtype(land_type) or self._has_type(land_type):
+                produced.add(color)
+
+        text = self.get_text(force_unpass=True).lower()
+        any_patterns = ["any color", "any chosen color", "one mana of any color", "any combination of colors"]
+        if any(p in text for p in any_patterns):
+            return {"Any"}
+
+        for match in re.finditer(r'[Aa]dd\s+([^.]+)', text):
+            symbols = re.findall(r'\{([^}]+)\}', match.group(1))
+            for sym in symbols:
+                for char in sym.upper():
+                    if char in 'WUBRGC':
+                        produced.add(char)
+
+        color_map = {'white': 'W', 'blue': 'U', 'black': 'B', 'red': 'R', 'green': 'G', 'colorless': 'C'}
+        for color_name, char in color_map.items():
+            if re.search(r'[Aa]dd\s+(?:one|two|three|[Xx])\s+' + color_name, text):
+                produced.add(char)
+
+        return produced
+
+    @property
     def color_identity(self):
         """Returns the color identity of the card (mana cost + rules text symbols)."""
         colors = set(self.cost.colors)
@@ -949,6 +1012,34 @@ class Card:
             m.update(self.bside.mechanics)
 
         return m
+
+    @property
+    def actions(self):
+        """Returns a set of functional action categories identified on the card."""
+        a = self.get_face_actions()
+
+        if self.bside:
+            a.update(self.bside.actions)
+
+        return a
+
+    def get_face_actions(self):
+        """Returns a set of functional action categories identified on this card face."""
+        text = self.get_text(force_unpass=True).lower()
+        # Ensure we use the encoded string for regex matching on unary markers
+        text_enc = str(self.text.encode()).lower()
+        actions = set()
+
+        for category, patterns in ACTION_CATEGORIES.items():
+            for pattern in patterns:
+                if re.search(pattern, text) or re.search(pattern, text_enc):
+                    actions.add(category)
+                    break
+
+        if self.get_face_produced_colors():
+            actions.add('Mana')
+
+        return actions
 
     @property
     def rarity_name(self):
@@ -1379,6 +1470,15 @@ class Card:
             res += f' \u2022 {stats}'
         if mechanics_str:
             res += f' \u2022 {mechanics_str}'
+
+        # Actions
+        face_actions = sorted(list(self.get_face_actions()))
+        if face_actions:
+            act_str = ", ".join(face_actions)
+            if ansi_color:
+                act_str = utils.colorize(act_str, utils.Ansi.CYAN)
+            res += f' \u2022 {act_str}'
+
         if fair_mv:
             res += f' \u2022 {fair_mv}'
 
@@ -1648,6 +1748,16 @@ class Card:
         face_mechanics = sorted(list(self.get_face_mechanics()))
         if face_mechanics:
             d['mechanics'] = face_mechanics
+
+        # Actions
+        face_actions = sorted(list(self.get_face_actions()))
+        if face_actions:
+            d['actions'] = face_actions
+
+        # Produced Colors
+        produced = sorted(list(self.get_face_produced_colors()))
+        if produced:
+            d['producedColors'] = produced
 
         # Color Identity
         identity = self.color_identity

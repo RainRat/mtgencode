@@ -845,6 +845,7 @@ def mtg_open_file(fname, verbose = False,
                   colors=None, cmcs=None,
                   pows=None, tous=None, loys=None,
                   mechanics=None,
+                  actions=None,
                   identities=None, id_counts=None,
                   shuffle=False, seed=None,
                   decklist_file=None,
@@ -1174,7 +1175,7 @@ def mtg_open_file(fname, verbose = False,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                    decklist_names=decklist_names)
 
-    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or identities or id_counts:
+    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or actions or identities or id_counts:
         # Sanitize queries to match internal representations (hyphens are dash_marker)
         greps = _compile_patterns(grep, sanitize=True)
         vgreps = _compile_patterns(vgrep, sanitize=True)
@@ -1204,6 +1205,7 @@ def mtg_open_file(fname, verbose = False,
 
         target_colors = [c.upper() for c in colors] if colors else None
         target_mechanics = [m.lower() for m in mechanics] if mechanics else None
+        target_actions = [a.lower() for a in actions] if actions else None
         target_identities = [c.upper() for c in identities] if identities else None
 
         # Initialize NumericFilters
@@ -1345,6 +1347,17 @@ def mtg_open_file(fname, verbose = False,
                         match_mechanic = True
                         break
                 if not match_mechanic:
+                    return False
+
+            # Action filtering
+            if target_actions:
+                card_actions = [a.lower() for a in card.actions]
+                match_action = False
+                for ta in target_actions:
+                    if ta in card_actions:
+                        match_action = True
+                        break
+                if not match_action:
                     return False
 
             # Identity filtering

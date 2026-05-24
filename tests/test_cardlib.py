@@ -129,7 +129,7 @@ def test_card_summary(sample_card_json):
 
     # Test plain summary
     output = card.summary()
-    assert output == "[U] Ornithopter {0} • Artifact Creature — Thopter • (0/2) • Flying"
+    assert output == "[U] Ornithopter {0} • Artifact Creature — Thopter • (0/2) • Flying • Fair MV: 1.8"
 
     # Test colored summary
     colored_output = card.summary(ansi_color=True)
@@ -140,7 +140,12 @@ def test_card_summary(sample_card_json):
     expected_rarity_indicator = utils.colorize("[U]", utils.Ansi.BOLD + utils.Ansi.CYAN)
     expected_mechanics = utils.colorize("Flying", utils.Ansi.CYAN)
 
-    expected_colored_summary = f"{expected_rarity_indicator} {expected_name} {expected_cost} • {expected_type} • {expected_pt} • {expected_mechanics}"
+    # Summary now includes Fair MV but only if it's a creature.
+    # Ornithopter is a creature. Fair MV: 1.8 (P:0 + T:2 + Flying:1.5)/2 = 1.75 -> 1.8
+    # Since cost is {0}, 0 < 1.8, so it should be RED.
+    expected_fair_mv = utils.colorize("Fair MV: 1.8", utils.Ansi.BOLD + utils.Ansi.RED)
+
+    expected_colored_summary = f"{expected_rarity_indicator} {expected_name} {expected_cost} • {expected_type} • {expected_pt} • {expected_mechanics} • {expected_fair_mv}"
     assert colored_output == expected_colored_summary
 
 def test_card_summary_status_indicators():

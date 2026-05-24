@@ -44,6 +44,7 @@ FIELD_MAP = {
     'text': {'header': 'Rules Text', 'align': 'l', 'aliases': ['oracle', 'rules']},
     'rarity': {'header': 'Rarity', 'align': 'l', 'aliases': []},
     'mechanics': {'header': 'Mechanics', 'align': 'l', 'aliases': ['keywords']},
+    'actions': {'header': 'Actions', 'align': 'l', 'aliases': ['functional']},
     'identity': {'header': 'Identity', 'align': 'l', 'aliases': ['color_identity', 'ci']},
     'id_count': {'header': 'ID', 'align': 'r', 'aliases': ['identity_count']},
     'set': {'header': 'Set', 'align': 'l', 'aliases': ['code']},
@@ -123,6 +124,8 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
             res = utils.colorize(res, utils.Ansi.get_rarity_color(res))
     elif canon == 'mechanics':
         return ", ".join(sorted(list(card.mechanics)))
+    elif canon == 'actions':
+        return ", ".join(sorted(list(card.actions)))
     elif canon == 'identity':
         res = card.color_identity
         if ansi_color and res:
@@ -507,12 +510,21 @@ def handle_oracle(args):
                 score_line += f" \u2022 FAIR MV: {c.recommended_cmc}"
             footer_lines.append(score_line)
 
-            # 4. Scryfall URL
+            # 4. Actions
+            face_actions = sorted(list(c.get_face_actions()))
+            if face_actions:
+                act_str = f"ACTIONS: {', '.join(face_actions)}"
+                if use_color:
+                    act_str = f"ACTIONS: {utils.colorize(', '.join(face_actions), utils.Ansi.CYAN)}"
+                footer_lines.append(act_str)
+
+            # 5. Scryfall URL
             url = utils.get_scryfall_url(c.set_code, c.number)
             if url:
                 footer_lines.append(url)
 
-                    print("  " + line)
+            for line in footer_lines:
+                print("  " + line)
 
             # Rulings
             if not getattr(args, 'no_rulings', False) and c.rulings:
