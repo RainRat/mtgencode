@@ -452,12 +452,12 @@ def handle_oracle(args):
 
     for c in display_cards:
         if getattr(args, 'gatherer', False):
-            print(c.format(gatherer=True, ansi_color=use_color))
+            print("  " + c.format(gatherer=True, ansi_color=use_color).replace('\n', '\n  '))
         elif show_summary:
-            print(c.summary(ansi_color=use_color).replace('\u2014', '-'))
+            print("  " + c.summary(ansi_color=use_color).replace('\u2014', '-'))
         else:
             # Detailed View
-            print(c.summary(ansi_color=use_color).replace('\u2014', '-'))
+            print("  " + c.summary(ansi_color=use_color).replace('\u2014', '-'))
 
             def print_face(face, is_bside=False):
                 if is_bside:
@@ -474,7 +474,7 @@ def handle_oracle(args):
                 else:
                     print("  " + "-" * 40)
 
-                print(face.get_text(ansi_color=use_color).replace('\u2014', '-'))
+                print("  " + face.get_text(ansi_color=use_color).replace('\u2014', '-').replace('\n', '\n  '))
                 if face.bside:
                     print_face(face.bside, is_bside=True)
 
@@ -512,7 +512,8 @@ def handle_oracle(args):
             if url:
                 footer_lines.append(url)
 
-                    print("  " + line)
+            for line in footer_lines:
+                print("  " + line)
 
             # Rulings
             if not getattr(args, 'no_rulings', False) and c.rulings:
