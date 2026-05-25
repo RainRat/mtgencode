@@ -338,7 +338,7 @@ def analyze_lexicon(cards, top=10, min_len=4, top_n=None):
         stats[col] = {'top': sorted([w for w in dist if f[w]>=2 or tot_c<50], key=lambda w: dist[w], reverse=True)[:top], 'freq': f, 'scores': dist, 'total': tot_c}
     res = {
         'total_cards': len(cards),
-        'total': len(cards),
+        'total': tot_g,
         'global_freq': gf,
         'color_stats': stats,
     }
