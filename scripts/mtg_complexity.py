@@ -273,7 +273,7 @@ Usage Examples:
 
         # Top Cards Table
         output_f.write(f"  {datalib.color_line('Top Complex Cards:', use_color)}\n")
-        header = ['Name', 'Score', 'ID', 'Rarity', 'Type']
+        header = ['Name', 'Complexity', 'ID', 'Rarity', 'Type']
         if use_color:
             header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
 

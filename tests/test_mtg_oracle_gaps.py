@@ -140,7 +140,7 @@ class TestMtgOracleGaps(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("SET: EOC #7", out)
         self.assertIn("ID: U", out)
-        self.assertIn("SCORE:", out)
+        self.assertIn("COMPLEXITY:", out)
 
     def test_main_color_output(self):
         code, out, err = self.run_main(['testdata/uthros.json', '--color'])

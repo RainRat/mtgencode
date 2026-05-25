@@ -50,7 +50,7 @@ FIELD_MAP = {
     'number': {'header': 'Num', 'align': 'r', 'aliases': ['collector_number', 'num']},
     'pack': {'header': 'Pack', 'align': 'r', 'aliases': ['pack_id']},
     'box': {'header': 'Box', 'align': 'r', 'aliases': ['box_id']},
-    'complexity': {'header': 'Score', 'align': 'r', 'aliases': ['score']},
+    'complexity': {'header': 'Complexity', 'align': 'r', 'aliases': ['score']},
     'rating': {'header': 'Rating', 'align': 'r', 'aliases': ['power_rating']},
     'fair_cmc': {'header': 'Fair MV', 'align': 'r', 'aliases': ['fcmc', 'fair_cost', 'fair_mv', 'recommended_cmc']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
@@ -502,7 +502,7 @@ def handle_oracle(args):
             footer_lines.append(id_str)
 
             # 3. Scores
-            score_line = f"SCORE: {c.complexity_score} \u2022 RATING: {c.power_rating:.3f}"
+            score_line = f"COMPLEXITY: {c.complexity_score} \u2022 RATING: {c.power_rating:.3f}"
             if c.is_creature:
                 score_line += f" \u2022 FAIR MV: {c.recommended_cmc}"
             footer_lines.append(score_line)
@@ -756,7 +756,7 @@ def handle_functional(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Unified MTG Query Tool",
+        description="Unified tool for searching card data, looking up rules text, and listing set contents.",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     subparsers = parser.add_subparsers(dest='command', help='Commands')
@@ -768,17 +768,19 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
-  # Find all cards matching a search pattern
-  python3 scripts/mtg_query.py search --grep "Grizzly Bears"
+  # Search for a card by name
+  python3 scripts/mtg_query.py search "Grizzly Bears"
 
   # List names and costs of all Goblins in a table
-  python3 scripts/mtg_query.py search data/AllPrintings.json --grep "Goblin" --fields "name,cost" --table
+  python3 scripts/mtg_query.py search "Goblin" --fields "name,cost" --table
 
-  # Find all mythic rares with CMC > 7 and save to a JSON file
-  python3 scripts/mtg_query.py search data/AllPrintings.json --rarity mythic --cmc ">7" mythics.json
+  # Find all mythic rares with CMC > 7 in a specific file and save to JSON
+  python3 scripts/mtg_query.py search my_cards.json --rarity mythic --cmc ">7" mythics.json
 
   # Find cards mechanically similar to a specific card
   python3 scripts/mtg_query.py search --similar-to "Giant Growth" --limit 5
+
+Note: If no input file is provided, data/AllPrintings.json is used if available.
 """
     )
     p_search.add_argument('infile', nargs='?', default='-',
@@ -793,7 +795,8 @@ Usage Examples:
     p_search.add_argument('--md-table', '--mdt', action='store_true')
     p_search.add_argument('--jsonl', action='store_true')
     p_search.add_argument('-S', '--summary', action='store_true')
-    p_search.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'])
+    p_search.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
+                        help="Sort cards by a specific field. Use 'complexity' for design complexity score.")
     p_search.add_argument('--reverse', action='store_true')
     p_search.add_argument('--similar-to', help='Only include cards mechanically similar to the specified card name.')
     p_search.set_defaults(func=handle_search)
@@ -801,7 +804,7 @@ Usage Examples:
     # Oracle Subparser
     p_oracle = subparsers.add_parser(
         'oracle',
-        help='Search for a card by name and display its full Oracle text.',
+        help='Search for a card by name and display its full official rules text.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
@@ -809,7 +812,7 @@ Usage Examples:
   python3 scripts/mtg_query.py oracle "Grizly Beers"
 
   # Find cards matching specific filters
-  python3 scripts/mtg_query.py oracle --set MOM --rarity rare --grep "Battle"
+  python3 scripts/mtg_query.py oracle "Battle" --set MOM --rarity rare
 
   # Find cards mechanically similar to a specific card
   python3 scripts/mtg_query.py oracle "Giant Growth" --similar
@@ -820,7 +823,8 @@ Usage Examples:
                         help='Input card data. Defaults to data/AllPrintings.json if available.')
     cli_utils.add_standard_filters(p_oracle)
     cli_utils.add_standard_output_args(p_oracle)
-    p_oracle.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'])
+    p_oracle.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
+                        help="Sort cards by a specific field. Use 'complexity' for design complexity score.")
     p_oracle.add_argument('-s', '--similar', action='store_true', help='Show mechanically similar cards instead of direct matches.')
     p_oracle.add_argument('-G', '--gatherer', action='store_true', help='Use Gatherer-style formatting.')
     p_oracle.add_argument('--full', action='store_true', help='Force full details even for multiple matches.')
@@ -830,7 +834,7 @@ Usage Examples:
     # Extract Subparser
     p_extract = subparsers.add_parser(
         'extract',
-        help='Extract a single card from an MTGJSON file.',
+        help='Extract a single card object from a large JSON database.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
@@ -848,7 +852,7 @@ Usage Examples:
     # Sets Subparser
     p_sets = subparsers.add_parser(
         'sets',
-        help='List and filter sets in an MTGJSON file.',
+        help='List and filter card sets from a data file.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
@@ -881,7 +885,7 @@ Usage Examples:
     # Functional Subparser
     p_functional = subparsers.add_parser(
         'functional',
-        help='Identify and group functional reprints.',
+        help='Identify and group cards with the same mechanics but different names.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
