@@ -259,14 +259,26 @@ def format_delta(val, base_val, is_percent=False, use_color=False, reverse_color
             res = utils.colorize(res, color)
     return res
 
-def summarize_data(infile, verbose=False, grep=None, vgrep=None, 
-                   sets=None, rarities=None, colors=None, cmcs=None, 
+def summarize_data(infile, verbose=False, grep=None, vgrep=None,
+                   grep_name=None, vgrep_name=None,
+                   grep_types=None, vgrep_types=None,
+                   grep_text=None, vgrep_text=None,
+                   grep_cost=None, vgrep_cost=None,
+                   grep_pt=None, vgrep_pt=None,
+                   grep_loyalty=None, vgrep_loyalty=None,
+                   sets=None, rarities=None, colors=None, cmcs=None,
                    mechanics=None, identities=None, id_counts=None,
                    limit=0, shuffle=False, seed=None, quiet=False, oname=None, decklist_file=None,
                    top=10, booster=0, sort=None, reverse_sort=False, box=0,
                    json_out=False, outliers=False, dump_all=False, use_color=None):
-    cards = jdecode.mtg_open_file(infile, verbose=verbose, grep=grep, vgrep=vgrep, 
-                                  sets=sets, rarities=rarities, colors=colors, cmcs=cmcs, 
+    cards = jdecode.mtg_open_file(infile, verbose=verbose, grep=grep, vgrep=vgrep,
+                                  grep_name=grep_name, vgrep_name=vgrep_name,
+                                  grep_types=grep_types, vgrep_types=vgrep_types,
+                                  grep_text=grep_text, vgrep_text=vgrep_text,
+                                  grep_cost=grep_cost, vgrep_cost=vgrep_cost,
+                                  grep_pt=grep_pt, vgrep_pt=vgrep_pt,
+                                  grep_loyalty=grep_loyalty, vgrep_loyalty=vgrep_loyalty,
+                                  sets=sets, rarities=rarities, colors=colors, cmcs=cmcs,
                                   mechanics=mechanics, identities=identities, id_counts=id_counts,
                                   limit=limit, shuffle=shuffle, seed=seed, decklist_file=decklist_file,
                                   booster=booster, box=box)
@@ -338,7 +350,7 @@ def analyze_lexicon(cards, top=10, min_len=4, top_n=None):
         stats[col] = {'top': sorted([w for w in dist if f[w]>=2 or tot_c<50], key=lambda w: dist[w], reverse=True)[:top], 'freq': f, 'scores': dist, 'total': tot_c}
     res = {
         'total_cards': len(cards),
-        'total': len(cards),
+        'total': tot_g,
         'global_freq': gf,
         'color_stats': stats,
     }

@@ -512,7 +512,8 @@ def handle_oracle(args):
             if url:
                 footer_lines.append(url)
 
-                    print("  " + line)
+            for line in footer_lines:
+                print("  " + line)
 
             # Rulings
             if not getattr(args, 'no_rulings', False) and c.rulings:
