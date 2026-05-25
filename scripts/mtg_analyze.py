@@ -50,27 +50,7 @@ RECOGNIZED_MECHANICS = cardlib.RECOGNIZED_MECHANICS
 COLOR_GROUPS = 'WUBRGAM'
 TRACKED_TYPES = ["Creature", "Instant", "Sorcery", "Enchantment", "Artifact", "Planeswalker", "Land", "Battle"]
 
-ACTION_CATEGORIES = {
-    'Removal': [
-        r'\bdestroy\b', r'\bexile target\b', r'sacrifice (a|target|an)\b',
-        r'deals? \d+ damage to (target|each) (creature|planeswalker|permanent)',
-        r'deals? &[\^]+ damage to (target|each) (creature|planeswalker|permanent)',
-        r'return (target|each) [^:]* to (its|their) owner\'s hand'
-    ],
-    'Protection': [
-        r'\bhexproof\b', r'\bindestructible\b', r'\bward\b', r'\bprotection from\b', r'\bshroud\b', r'\bregenerate\b'
-    ],
-    'Buffs': [
-        r'gets? \+&[\^]*/\+&[\^]*', r'put (a|&[\^]+) \+&[\^]*/\+&[\^]* counter',
-        r'target creature gets \+', r'creatures you control get \+'
-    ],
-    'Card Advantage': [
-        r'\bdraw(s|ing)? (a|&[\^]+) cards?\b', r'\bsearch your library\b', r'\breturn (target|a) card from your graveyard\b'
-    ],
-    'Disruption': [
-        r'\bdiscard(s|ing)? (a|&[\^]+)?\b', r'\buncast target\b', r'\btap target\b', r'can\'t attack or block'
-    ]
-}
+ACTION_CATEGORIES = cardlib.ACTION_CATEGORIES
 
 # --- Shared Helpers ---
 
@@ -154,32 +134,7 @@ DIMENSIONS = {
 }
 
 def get_produced_colors(card):
-    produced = set()
-    land_types = {
-        'plains': 'W', 'island': 'U', 'swamp': 'B', 'mountain': 'R', 'forest': 'G', 'wastes': 'C'
-    }
-    for land_type, color in land_types.items():
-        if card._has_subtype(land_type) or card._has_type(land_type):
-            produced.add(color)
-    text = card.get_text(force_unpass=True).lower()
-    any_patterns = ["any color", "any chosen color", "one mana of any color", "any combination of colors"]
-    if any(p in text for p in any_patterns):
-        produced = {"Any"}
-    else:
-        for match in re.finditer(r'[Aa]dd\s+([^.]+)', text):
-            symbols = re.findall(r'\{([^}]+)\}', match.group(1))
-            for sym in symbols:
-                for char in sym.upper():
-                    if char in 'WUBRGC': produced.add(char)
-        color_map = {'white': 'W', 'blue': 'U', 'black': 'B', 'red': 'R', 'green': 'G', 'colorless': 'C'}
-        for color_name, char in color_map.items():
-            if re.search(r'[Aa]dd\s+(?:one|two|three|[Xx])\s+' + color_name, text):
-                produced.add(char)
-    if card.bside:
-        b_produced = get_produced_colors(card.bside)
-        if "Any" in b_produced: return {"Any"}
-        produced.update(b_produced)
-    return produced
+    return card.produced_colors
 
 def get_mana_category(card):
     if card.is_creature: return "Creature"
@@ -218,16 +173,7 @@ def get_cost_metrics(card):
     return cmc, colored_pips, intensity, max_commitment
 
 def get_card_actions(card):
-    text = card.get_text(force_unpass=True).lower()
-    text_enc = card.text.encode().lower()
-    actions = set()
-    for category, patterns in ACTION_CATEGORIES.items():
-        for pattern in patterns:
-            if re.search(pattern, text) or re.search(pattern, text_enc):
-                actions.add(category)
-                break
-    if card.bside: actions.update(get_card_actions(card.bside))
-    return actions
+    return card.actions
 
 def get_numeric_stats(card):
     return utils.from_unary_single(card.pt_p), utils.from_unary_single(card.pt_t), utils.from_unary_single(card.loyalty)
@@ -1647,12 +1593,12 @@ Examples:
                 args.outfile = args.infile
                 args.infile = args.query
                 args.query = None
-        elif os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
+        elif os.path.exists(args.query) and (getattr(args, 'infile', None) == '-' or (hasattr(args, 'infile') and not os.path.exists(args.infile))):
             # Swap if first arg is a file and second isn't
             temp = args.query
             args.query = args.infile if args.infile != '-' else None
             args.infile = temp
-        elif not os.path.exists(args.query) and args.infile == '-':
+        elif not os.path.exists(args.query) and getattr(args, 'infile', None) == '-':
             # If first arg doesn't exist and second is default, treat first as query
             if not getattr(args, 'grep', None): args.grep = [args.query]
             else: args.grep.append(args.query)

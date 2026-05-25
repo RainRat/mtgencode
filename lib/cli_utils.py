@@ -59,6 +59,8 @@ def add_standard_filters(parser):
                         help='Only include cards with specific Loyalty or Defense values.')
     filter_group.add_argument('--mechanic', action='append',
                         help='Only include cards with specific mechanical features.')
+    filter_group.add_argument('--action', action='append',
+                        help='Only include cards with specific functional actions (Removal, Protection, Buffs, Card Advantage, Disruption, Mana).')
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file.')
     filter_group.add_argument('--booster', type=int, default=0,
@@ -172,6 +174,7 @@ def load_and_filter_cards(args):
                                   tous=getattr(args, 'tou', None), 
                                   loys=getattr(args, 'loy', None),
                                   mechanics=getattr(args, 'mechanic', None),
+                                  actions=getattr(args, 'action', None),
                                   identities=getattr(args, 'identity', None), 
                                   id_counts=getattr(args, 'id_count', None),
                                   decklist_file=getattr(args, 'deck', None),
