@@ -301,6 +301,7 @@ Filter cards using search patterns, set codes, rarities, or decklist files. Thes
         *   `--tou VALUE`: Filter by Toughness.
         *   `--loy VALUE`: Filter by Loyalty or Defense.
     *   `--mechanic NAME`: Include cards with specific keyword abilities or features (e.g., `Flying`, `Activated`, `ETB Effect`).
+    *   `--action NAME`: Include cards with specific functional actions (e.g., `Removal`, `Protection`, `Buffs`, `Card Advantage`, `Disruption`, or `Mana`).
     *   `--deck-filter FILE`: Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
 
 > **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), and L (Basic Land).`
@@ -324,6 +325,9 @@ python3 scripts/mtg_analyze.py summary data/AllPrintings.json --pow ">=5"
 
 # Find rare cards with CMC between 2 and 4
 python3 scripts/mtg_query.py search data/AllPrintings.json --rarity rare --cmc "2-4"
+
+# Find rare cards from the MOM set that provide Card Advantage
+python3 scripts/mtg_query.py search data/AllPrintings.json --set MOM --rarity rare --action "Card Advantage"
 ```
 
 ---
@@ -751,7 +755,7 @@ python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generate
     *   `-t N`, `--top N`: Number of signature words to show per color (Default: 10).
     *   `--min-len N`: Minimum word length to include in analysis (Default: 4).
     *   `--compare FILE`: Side-by-side comparison with a second dataset.
-    *   **Filtering:** Supports `--grep`, `--set`, `--rarity`, and `--mechanic`.
+    *   **Filtering:** Supports standard **Advanced Filtering** flags.
 
 ### `mtg_analyze.py tokens`
 Extracts and summarizes token definitions from card rules text. This tool identifies the properties of tokens created by cards (like P/T, color, types, and abilities) and de-duplicates them to show a consolidated list.
@@ -884,7 +888,7 @@ python3 scripts/mtg_analyze.py stats data/AllPrintings.json --rarity rare --grep
     *   Supports standard **Advanced Filtering** flags and simulation.
 
 ### `mtg_analyze.py actions`
-Analyzes and categorizes functional card effects (Removal, Protection, Buffs, Card Advantage, and Disruption) in a dataset. This tool identifies how cards interact with the game state, providing a profile of a set's interactivity.
+Analyzes and categorizes functional card effects (Removal, Protection, Buffs, Card Advantage, Disruption, and Mana) in a dataset. This tool identifies how cards interact with the game state, providing a profile of a set's interactivity.
 ```bash
 # Analyze actions for a specific set
 python3 scripts/mtg_analyze.py actions data/AllPrintings.json --set MOM
