@@ -763,6 +763,118 @@ def handle_functional(args):
             print(group[0].summary(ansi_color=use_color).replace('\u2014', '-'))
             print()
 
+# --- Compare Logic ---
+
+def handle_compare_cards(args):
+    # Smart positional argument handling for infile
+    if args.card2 and os.path.exists(args.card2) and (args.infile == '-' or not os.path.exists(args.infile)):
+        temp = args.card2
+        args.card2 = args.infile if args.infile != '-' else None
+        args.infile = temp
+
+    # Load all cards to perform fuzzy matching
+    all_cards = cli_utils.load_and_filter_cards(args)
+    if not all_cards:
+        if not args.quiet:
+            print("No cards found in the dataset.", file=sys.stderr)
+        return
+
+    def resolve_card(name, pool):
+        if not name: return None
+        name_sanitized = name.lower().replace('-', utils.dash_marker)
+
+        # Expand pool to include all faces
+        expanded_pool = []
+        for c in pool:
+            expanded_pool.append(c)
+            curr = c
+            while curr.bside:
+                expanded_pool.append(curr.bside)
+                curr = curr.bside
+
+        # 1. Exact match
+        matches = [c for c in expanded_pool if c.name.lower() == name_sanitized]
+        if matches: return matches[0]
+
+        # 2. Partial match
+        matches = [c for c in expanded_pool if name_sanitized in c.name.lower()]
+        if matches: return matches[0]
+
+        # 3. Fuzzy match
+        search_names = {c.name.lower(): c for c in expanded_pool}
+        # Use a more lenient cutoff or also check titlecased versions for fuzzy matching
+        close = difflib.get_close_matches(name.lower().replace('-', ' '), list(search_names.keys()), n=1, cutoff=0.5)
+        if close:
+            if not args.quiet:
+                print(f"Notice: Card '{name}' not found. Using best match: {cardlib.titlecase(close[0].replace(utils.dash_marker, '-'))}", file=sys.stderr)
+            return search_names[close[0]]
+
+        return None
+
+    card1 = resolve_card(args.card1, all_cards)
+    card2 = resolve_card(args.card2, all_cards)
+
+    if not card1 or not card2:
+        if not card1 and not args.quiet:
+            print(f"Error: Could not find card '{args.card1}'", file=sys.stderr)
+        if not card2 and not args.quiet:
+            print(f"Error: Could not find card '{args.card2}'", file=sys.stderr)
+        return
+
+    use_color = args.color if args.color is not None else sys.stdout.isatty()
+
+    if args.json:
+        diff_data = {
+            'card1': card1.to_dict(),
+            'card2': card2.to_dict(),
+        }
+        print(json.dumps(diff_data, indent=4))
+    else:
+        if not args.quiet:
+            utils.print_header("CARD COMPARISON", use_color=use_color)
+
+        fields = [
+            ('Name', 'name'),
+            ('Cost', 'cost'),
+            ('CMC', 'cmc'),
+            ('Type', 'type'),
+            ('Stats', 'stats'),
+            ('Rarity', 'rarity'),
+            ('Mechanics', 'mechanics'),
+            ('Actions', 'actions'),
+            ('Fair MV', 'fair_cmc'),
+            ('Rating', 'rating'),
+            ('Complexity', 'complexity'),
+            ('Text', 'text')
+        ]
+
+        rows = []
+        header = ["Field", cardlib.titlecase(card1.name.replace(utils.dash_marker, '-')), cardlib.titlecase(card2.name.replace(utils.dash_marker, '-'))]
+        if use_color:
+            header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+        rows.append(header)
+
+        for label, field in fields:
+            v1 = get_field_value(card1, field, ansi_color=False)
+            v2 = get_field_value(card2, field, ansi_color=False)
+
+            display_v1 = get_field_value(card1, field, ansi_color=use_color)
+            display_v2 = get_field_value(card2, field, ansi_color=use_color)
+
+            # Strip newlines for table view for better alignment
+            if field == 'text':
+                display_v1 = display_v1.replace('\n', ' ')
+                display_v2 = display_v2.replace('\n', ' ')
+
+            if v1 != v2:
+                if use_color:
+                    label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+
+            rows.append([label, display_v1, display_v2])
+
+        datalib.add_separator_row(rows)
+        datalib.printrows(datalib.padrows(rows, aligns=['l', 'l', 'l']), indent=2)
+
 # --- Main Entry Point ---
 
 def main():
@@ -912,6 +1024,28 @@ Usage Examples:
     cli_utils.add_standard_filters(p_functional)
     cli_utils.add_standard_output_args(p_functional)
     p_functional.set_defaults(func=handle_functional)
+
+    # Compare Subparser
+    p_compare = subparsers.add_parser(
+        'compare',
+        help='Compare two cards side-by-side by name.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Compare two cards by name
+  python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre"
+
+  # Compare two cards in a specific file
+  python3 scripts/mtg_query.py compare "Grizzly Bears" "Balduvian Bears" my_cards.json
+"""
+    )
+    p_compare.add_argument('card1', help='First card name to compare.')
+    p_compare.add_argument('card2', help='Second card name to compare.')
+    p_compare.add_argument('infile', nargs='?', default='-',
+                         help='Input card data. Defaults to data/AllPrintings.json if available.')
+    cli_utils.add_standard_filters(p_compare)
+    cli_utils.add_standard_output_args(p_compare)
+    p_compare.set_defaults(func=handle_compare_cards)
 
     args = parser.parse_args()
     if not args.command:
