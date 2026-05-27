@@ -434,14 +434,19 @@ mana_unary_regex = (re.escape(mana_json_open_delimiter) + number_unary_regex
 mana_translate_regex = re.compile('|'.join(
     [mana_unary_regex, mana_decimal_regex] +
     [re.escape(s) for s in sorted(mana_symall_jdecode, key=len, reverse=True)]
-))
+), re.IGNORECASE)
 
 # convert a json mana string to the proper encoding
 def mana_translate(jmanastr):
+    if jmanastr is None:
+        return None
+
     def replace_token(match):
         token = match.group(0)
-        if token in mana_symall_jdecode:
-            return mana_encode_direct(token)
+        # We use a case-insensitive regex, so we must normalize token for lookup
+        token_upper = token.upper()
+        if token_upper in mana_symall_jdecode:
+            return mana_encode_direct(token_upper)
 
         inner = token[len(mana_json_open_delimiter):-len(mana_json_close_delimiter)]
 
@@ -449,14 +454,29 @@ def mana_translate(jmanastr):
              i = int(inner)
              return mana_unary_marker + mana_unary_counter * i
 
+        if inner.lower() in _unary_exceptions_inv:
+             i = _unary_exceptions_inv[inner.lower()]
+             return mana_unary_marker + mana_unary_counter * i
+
         if inner.startswith(unary_marker):
              i = (len(inner) - len(unary_marker)) // len(unary_counter)
              return mana_unary_marker + mana_unary_counter * i
 
-        return token
+        # This branch is only reached if the regex matched but no specific logic applied.
+        return inner
 
-    manastr = re.sub(mana_translate_regex, replace_token, jmanastr)
-    return mana_open_delimiter + manastr + mana_close_delimiter
+    # The to_mana function passes strings that match mana_json_regex, which is basically {anything}.
+    # The internal mana format uses exactly one pair of braces around ALL tokens.
+    # Example: {W}{U} should become {WWUU}
+
+    processed = re.sub(mana_translate_regex, replace_token, jmanastr)
+
+    # To avoid double braces when we wrap the result, we strip one level if it exists.
+    # This handles both already-braced unknown tokens and the final wrapping.
+    if processed.startswith(mana_open_delimiter) and processed.endswith(mana_close_delimiter):
+        processed = processed[len(mana_open_delimiter):-len(mana_close_delimiter)]
+
+    return mana_open_delimiter + processed + mana_close_delimiter
 
 # convert an encoded mana string back to json
 mana_symlen_min = min([len(sym) for sym in mana_symall_decode])
