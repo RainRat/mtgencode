@@ -486,42 +486,58 @@ def handle_oracle(args):
             # Metadata Footer
             footer_lines = []
 
-            # 1. Set and Number
-            set_info = ""
+            # 1. Identification Line (Set, ID, URL)
+            id_parts = []
             if c.set_code:
                 set_info = f"SET: {c.set_code.upper()}"
                 if c.number:
                     set_info += f" #{c.number}"
-            if set_info:
-                footer_lines.append(set_info)
+                id_parts.append(set_info)
 
-            # 2. Color Identity
             identity = c.color_identity
             if not identity: identity = "C"
-            id_str = f"ID: {identity}"
             if use_color:
                 colored_id = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in identity])
-                id_str = f"ID: {colored_id}"
-            footer_lines.append(id_str)
+                id_parts.append(f"ID: {colored_id}")
+            else:
+                id_parts.append(f"ID: {identity}")
 
-            # 3. Scores
-            score_line = f"COMPLEXITY: {c.complexity_score} \u2022 RATING: {c.power_rating:.3f}"
+            url = utils.get_scryfall_url(c.set_code, c.number)
+            if url:
+                id_parts.append(url)
+
+            footer_lines.append(" \u2022 ".join(id_parts))
+
+            # 2. Design Metrics Line (Complexity, Rating, Fair MV)
+            comp_val = str(c.complexity_score)
+            rate_val = f"{c.power_rating:.3f}"
+            fair_val = str(c.recommended_cmc)
+
+            if use_color:
+                comp_val = utils.colorize(comp_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
+
+                # Rating Color: Green if efficient/powerful (> 1.2), Red if weak (< 0.8)
+                r_color = ""
+                if c.power_rating > 1.2: r_color = utils.Ansi.BOLD + utils.Ansi.GREEN
+                elif c.power_rating < 0.8: r_color = utils.Ansi.BOLD + utils.Ansi.RED
+                if r_color: rate_val = utils.colorize(rate_val, r_color)
+
+                # Fair MV Color: Green if "fair" (actual cost >= recommended), Red if "pushed" (cost < recommended)
+                f_color = utils.Ansi.BOLD + (utils.Ansi.GREEN if c.cost.cmc >= c.recommended_cmc else utils.Ansi.RED)
+                fair_val = utils.colorize(fair_val, f_color)
+
+            score_line = f"COMPLEXITY: {comp_val} \u2022 RATING: {rate_val}"
             if c.is_creature:
-                score_line += f" \u2022 FAIR MV: {c.recommended_cmc}"
+                score_line += f" \u2022 FAIR MV: {fair_val}"
             footer_lines.append(score_line)
 
-            # 4. Actions
+            # 3. Actions Line
             face_actions = sorted(list(c.get_face_actions()))
             if face_actions:
                 act_str = f"ACTIONS: {', '.join(face_actions)}"
                 if use_color:
                     act_str = f"ACTIONS: {utils.colorize(', '.join(face_actions), utils.Ansi.CYAN)}"
                 footer_lines.append(act_str)
-
-            # 5. Scryfall URL
-            url = utils.get_scryfall_url(c.set_code, c.number)
-            if url:
-                footer_lines.append(url)
 
             for line in footer_lines:
                 print("  " + line)
