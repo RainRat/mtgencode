@@ -1303,26 +1303,6 @@ def handle_compare(args):
         if args.limit > 0: cs = cs[:args.limit]
         return Datamine(cs, search_stats=ss)
 
-    def format_delta(val, base_val, is_percent=False, use_color=False, reverse_color=False):
-        delta = val - base_val
-        if abs(delta) < 1e-6: return " -- "
-        sign = "+" if delta > 0 else ""
-        suffix = "%" if is_percent else ""
-        res = f"{sign}{delta:.1f}{suffix}"
-        if use_color:
-            significant = False
-            if is_percent:
-                if abs(delta) >= 2.0: significant = True
-            else:
-                if abs(base_val) > 1e-6:
-                    if abs(delta) / abs(base_val) >= 0.05: significant = True
-                elif abs(delta) >= 1.0: significant = True
-            if significant:
-                if reverse_color is None: color = utils.Ansi.BOLD + utils.Ansi.CYAN
-                else: color = utils.Ansi.BOLD + (utils.Ansi.GREEN if (delta > 0 if not reverse_color else delta < 0) else utils.Ansi.RED)
-                res = utils.colorize(res, color)
-        return res
-
     use_color = args.color if args.color is not None else sys.stdout.isatty()
     mines = []
     for f in args.infiles:
