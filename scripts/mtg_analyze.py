@@ -1276,6 +1276,22 @@ def handle_subtypes(args):
         datalib.add_separator_row(crows); datalib.printrows(datalib.padrows(crows, aligns=['l','l','r','r']), indent=4)
 
 def handle_compare(args):
+    # Smart Baseline Detection: if only one file is provided, try to find a standard baseline
+    if len(args.infiles) == 1:
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        options = [
+            os.path.join(script_dir, '../data/AllPrintings.json'),
+            'data/AllPrintings.json',
+            os.path.join(os.path.dirname(script_dir), 'data/AllPrintings.json'),
+            os.path.join(os.path.dirname(os.path.dirname(script_dir)), 'data/AllPrintings.json')
+        ]
+        for opt in options:
+            if os.path.exists(opt) and os.path.abspath(opt) != os.path.abspath(args.infiles[0]):
+                args.infiles.insert(0, opt)
+                if not args.quiet:
+                    print(f"Notice: Comparing against baseline: {opt}", file=sys.stderr)
+                break
+
     def get_stats_for_file(path, args):
         ss = {}
         cs = jdecode.mtg_open_file(path, verbose=args.verbose, linetrans=not getattr(args, 'nolinetrans', False),
@@ -1310,7 +1326,14 @@ def handle_compare(args):
         mines.append(get_stats_for_file(f, args))
     if not mines: return
     base_mine = mines[0]; base_data = base_mine.to_dict()
-    fnames = [os.path.basename(f)[:15] for f in args.infiles]
+    def clean_fname(path):
+        bn = os.path.basename(path)
+        for ext in ['.json', '.csv', '.txt', '.mse-set', '.xml', '.jsonl']:
+            if bn.lower().endswith(ext):
+                bn = bn[:-len(ext)]
+                break
+        return bn[:15]
+    fnames = [clean_fname(f) for f in args.infiles]
     header = ["Metric", fnames[0]]
     for i in range(1, len(fnames)): header.extend([fnames[i], "Delta"])
     if use_color: header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
@@ -1362,6 +1385,7 @@ def handle_compare(args):
     add_metric_row("Avg CMC", ["stats", "avg_cmc"], reverse_color=True)
     add_metric_row("Avg Power", ["stats", "avg_power"])
     add_metric_row("Avg Toughness", ["stats", "avg_toughness"])
+    add_metric_row("Avg Rating", ["stats", "avg_power_rating"])
     add_metric_row("Avg Complexity", ["stats", "avg_complexity"], reverse_color=True)
     add_sep("Colors")
     for c in 'WUBRG': add_index_percent_row(f"{c} %", "by_color_inclusive", c, reverse_color=None)
