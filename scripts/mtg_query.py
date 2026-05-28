@@ -798,17 +798,19 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
                         help='Input card data (JSON, CSV, XML, MSE, or encoded text). Defaults to stdin (-). If stdin is a TTY, data/AllPrintings.json is used if available.')
     p_search.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the search results. If not provided, results print to the console.')
-    p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics')
-    p_search.add_argument('--delimiter', default=' | ')
+    p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                        help='Comma-separated list of fields to extract (e.g., name, cost, type, stats, text).')
+    p_search.add_argument('--delimiter', default=' | ',
+                        help='Separator used between fields in plain text output.')
     cli_utils.add_standard_filters(p_search)
     cli_utils.add_standard_output_args(p_search)
-    p_search.add_argument('--text', action='store_true')
-    p_search.add_argument('--md-table', '--mdt', action='store_true')
-    p_search.add_argument('--jsonl', action='store_true')
-    p_search.add_argument('-S', '--summary', action='store_true')
+    p_search.add_argument('--text', action='store_true', help='Force plain text output.')
+    p_search.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
+    p_search.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format.')
+    p_search.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
     p_search.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
                         help="Sort cards by a specific field. Use 'complexity' for design complexity score.")
-    p_search.add_argument('--reverse', action='store_true')
+    p_search.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
     p_search.add_argument('--similar-to', help='Only include cards mechanically similar to the specified card name.')
     p_search.set_defaults(func=handle_search)
 
