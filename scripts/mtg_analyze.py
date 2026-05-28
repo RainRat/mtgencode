@@ -1472,7 +1472,22 @@ Examples:
     p_me.set_defaults(func=handle_mechanics)
 
     # synergy
-    p_sy = subparsers.add_parser('synergy', help='Analyze how mechanics appear together (co-occurrence).')
+    p_sy = subparsers.add_parser(
+        'synergy',
+        help='Analyze how mechanics appear together (co-occurrence).',
+        description="""
+Analyzes how different mechanics (like Flying, Kicker, or Flashback) appear
+together on the same cards. It identifies frequent pairings and calculates
+a 'Lift Score' to measure the interaction between them.
+
+The Lift Score measures if two mechanics appear together more often than
+expected by chance:
+- Score > 1.0: The mechanics appear together MORE often than expected (interaction).
+- Score = 1.0: The mechanics appear together exactly as often as expected by chance.
+- Score < 1.0: The mechanics appear together LESS often than expected.
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_sy)
     p_sy.add_argument('--min-freq', type=int, default=2, help='Minimum co-occurrences required to report a pair (Default: 2).')
     p_sy.add_argument('--top', type=int, default=20, help='Show the top N pairings (Default: 20).')
