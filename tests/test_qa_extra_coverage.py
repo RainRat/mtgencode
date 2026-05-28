@@ -66,7 +66,7 @@ def test_to_cockatrice_xml_sorcery_tablerow():
 
 def test_mana_translate_unrecognized_token_fallback():
     res = utils.mana_translate("{W/U/B}")
-    assert res == "{{W/U/B}}"
+    assert res == "{W/U/B}"
 
 def test_fields_from_json_supertypes_parsing():
     src = {

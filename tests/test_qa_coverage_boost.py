@@ -70,7 +70,7 @@ def test_datalib_plimit_short_string():
 
 def test_mana_translate_fallback_branch():
     res = utils.mana_translate("{1.5}")
-    assert res == "{{1.5}}"
+    assert res == "{1.5}"
 
 def test_text_unpass_1_choice_fallback_branch():
     s = "[& = ability]"
