@@ -444,7 +444,8 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `search`: Search card data and extract specific fields.
 *   `oracle`: Look up a card by name and display its full rules text.
 *   `sets`: List and filter sets in an MTGJSON file.
-*   `functional`: Identify and group functional reprints.
+*   `functional`: Identify and group cards with the same mechanics but different names.
+*   `compare`: Compare two cards side-by-side by name to identify differences.
 *   `extract`: Extract a single card object from a large JSON database.
 
 ---
@@ -506,6 +507,19 @@ python3 scripts/mtg_query.py functional
 
 # Create a deduplicated dataset
 python3 scripts/mtg_query.py functional --dedupe unique_cards.json
+```
+
+---
+
+#### **Subcommand: `compare`**
+Side-by-side card comparison for identifying design differences. Supports fuzzy matching and multi-faced cards.
+
+```bash
+# Compare two cards by name
+python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre"
+
+# Compare two cards in a specific file and highlight differences
+python3 scripts/mtg_query.py compare "Uthros" "Invasion" testdata/ --color
 ```
 
 ---
