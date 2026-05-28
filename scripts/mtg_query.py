@@ -9,6 +9,8 @@ import difflib
 import re
 import random
 import io
+import copy
+import atexit
 from collections import Counter, defaultdict, OrderedDict
 from contextlib import redirect_stdout
 
@@ -180,7 +182,9 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
 
 def handle_search(args):
     cards = cli_utils.load_and_filter_cards(args)
-    
+    _execute_search(cards, args)
+
+def _execute_search(cards, args):
     total_matches = len(cards)
     
     if not cards:
@@ -250,8 +254,10 @@ def handle_search(args):
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
     
-    if not (args.text or args.table or args.md_table or args.json or args.jsonl or args.csv or args.summary):
-        if args.outfile:
+    if not (getattr(args, 'text', False) or getattr(args, 'table', False) or getattr(args, 'md_table', False) or
+            getattr(args, 'json', False) or getattr(args, 'jsonl', False) or getattr(args, 'csv', False) or
+            getattr(args, 'summary', False)):
+        if getattr(args, 'outfile', None):
             if args.outfile.endswith('.json'): args.json = True
             elif args.outfile.endswith('.jsonl'): args.jsonl = True
             elif args.outfile.endswith('.csv'): args.csv = True
@@ -264,24 +270,24 @@ def handle_search(args):
         else:
             args.text = True
 
-    if args.json:
+    if getattr(args, 'json', False):
         res_text = json.dumps([c.to_dict() if hasattr(c, 'to_dict') else c.__dict__ for c in cards], indent=4)
-        if args.outfile:
+        if getattr(args, 'outfile', None):
             with open(args.outfile, 'w') as f:
                 f.write(res_text + '\n')
         else:
             print(res_text)
-    elif args.jsonl:
-        if args.outfile:
+    elif getattr(args, 'jsonl', False):
+        if getattr(args, 'outfile', None):
             with open(args.outfile, 'w') as f:
                 for c in cards:
                     f.write(json.dumps(c.to_dict() if hasattr(c, 'to_dict') else c.__dict__) + '\n')
         else:
             for c in cards:
                 print(json.dumps(c.to_dict() if hasattr(c, 'to_dict') else c.__dict__))
-    elif args.csv:
+    elif getattr(args, 'csv', False):
         header = [FIELD_MAP.get(get_field_canonical_name(f), {}).get('header', f) for f in field_list]
-        if args.outfile:
+        if getattr(args, 'outfile', None):
             with open(args.outfile, 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(header)
@@ -292,13 +298,13 @@ def handle_search(args):
             writer.writerow(header)
             for c in cards:
                 writer.writerow([get_field_value(c, f, ansi_color=False) for f in field_list])
-    elif args.table or args.md_table:
+    elif getattr(args, 'table', False) or getattr(args, 'md_table', False):
         header = [FIELD_MAP.get(get_field_canonical_name(f), {}).get('header', f) for f in field_list]
         rows = [header]
         for c in cards:
             rows.append([get_field_value(c, f, ansi_color=use_color) for f in field_list])
         
-        if args.md_table:
+        if getattr(args, 'md_table', False):
             header_row = "| " + " | ".join(header) + " |"
             align_row = "|"
             for field in field_list:
@@ -312,7 +318,7 @@ def handle_search(args):
                 row = [get_field_value(c, f, ansi_color=False).replace('|', '\\|').replace('\n', ' ') for f in field_list]
                 table_lines.append("| " + " | ".join(row) + " |")
             res_text = "\n".join(table_lines)
-            if args.outfile:
+            if getattr(args, 'outfile', None):
                 with open(args.outfile, 'w') as f:
                     f.write(res_text + '\n')
             else:
@@ -325,14 +331,14 @@ def handle_search(args):
             aligns = [FIELD_MAP.get(get_field_canonical_name(f), {}).get('align', 'l') for f in field_list]
             datalib.add_separator_row(rows)
             padded = datalib.padrows(rows, aligns=aligns)
-            if args.outfile:
+            if getattr(args, 'outfile', None):
                 with open(args.outfile, 'w') as f:
                     for line in padded:
                         f.write("  " + line + '\n')
             else:
                 datalib.printrows(padded, indent=2)
-    elif args.summary:
-        if args.outfile:
+    elif getattr(args, 'summary', False):
+        if getattr(args, 'outfile', None):
             with open(args.outfile, 'w') as f:
                 for c in cards:
                     f.write(get_field_value(c, 'summary', ansi_color=False) + '\n')
@@ -340,7 +346,7 @@ def handle_search(args):
             for c in cards:
                 print(get_field_value(c, 'summary', ansi_color=use_color))
     else:
-        if args.outfile:
+        if getattr(args, 'outfile', None):
             with open(args.outfile, 'w') as f:
                 for c in cards:
                     line = args.delimiter.join([get_field_value(c, f, ansi_color=False) for f in field_list])
@@ -360,6 +366,9 @@ def handle_oracle(args):
         args.infile = temp
 
     cards = cli_utils.load_and_filter_cards(args)
+    _execute_oracle(cards, args)
+
+def _execute_oracle(cards, args):
     if not cards:
         if not args.quiet:
             print("No cards found matching the criteria.", file=sys.stderr)
@@ -379,7 +388,7 @@ def handle_oracle(args):
                 if clean_word and clean_word not in search_map:
                     search_map[clean_word] = cardlib.titlecase(unpassed_name)
 
-    query = args.query
+    query = getattr(args, 'query', None)
     if query:
         query_sanitized = query.lower().replace('-', utils.dash_marker)
         display_cards = [c for c in cards if c.name.lower() == query_sanitized]
@@ -556,6 +565,100 @@ def handle_oracle(args):
                         date = utils.colorize(date, utils.Ansi.BOLD)
                     print(f"  - {date}: {text}")
             print()
+
+# --- Shell Logic ---
+
+def handle_shell(args):
+    # Load cards once using standard logic for default dataset detection
+    all_cards = cli_utils.load_and_filter_cards(args)
+    if not all_cards:
+        if not args.quiet:
+            print("Error: Could not load card database.", file=sys.stderr)
+        return
+
+    # Set up tab completion and history
+    try:
+        import readline
+        card_names = sorted(list(set(cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) for c in all_cards)))
+
+        def completer(text, state):
+            if text.startswith('/'):
+                commands = ['/search ', '/help', '/exit', '/quit']
+                options = [c for c in commands if c.startswith(text)]
+            else:
+                options = [n for n in card_names if n.lower().startswith(text.lower())]
+
+            if state < len(options):
+                return options[state]
+            return None
+
+        readline.set_completer(completer)
+        readline.set_completer_delims(' \t\n`@=#|\\')
+        if 'libedit' in readline.__doc__: # macOS fix
+            readline.parse_and_bind("bind ^I rl_complete")
+        else:
+            readline.parse_and_bind("tab: complete")
+
+        # Enable history
+        histfile = os.path.join(os.path.expanduser("~"), ".mtg_query_history")
+        try:
+            if os.path.exists(histfile):
+                readline.read_history_file(histfile)
+            readline.set_history_length(1000)
+        except Exception:
+            pass
+        atexit.register(readline.write_history_file, histfile)
+    except ImportError:
+        # Fallback for systems without readline (e.g. some Windows setups)
+        pass
+
+    use_color = args.color if args.color is not None else sys.stdout.isatty()
+
+    welcome = "MTG Interactive Shell. Type a card name for Oracle text, or /search for bulk queries."
+    if use_color:
+        welcome = utils.colorize(welcome, utils.Ansi.BOLD + utils.Ansi.CYAN)
+    print(welcome)
+    print("Type '/help' for commands, or 'exit' to leave.\n")
+
+    while True:
+        try:
+            line = input("> ").strip()
+            if not line:
+                continue
+            if line.lower() in ['exit', 'quit', '/exit', '/quit']:
+                break
+
+            if line.startswith('/search '):
+                query = line[8:].strip()
+                # Proper filtering for shell search
+                # We reuse the open_file logic but pass our already loaded cards
+                # Wait, mtg_open_file doesn't take a list of cards.
+                # Let's do a simple grep on our own.
+                query_pat = re.compile(re.escape(query.replace('-', utils.dash_marker)), re.IGNORECASE)
+                matched_cards = [c for c in all_cards if c.search(query_pat)]
+
+                # Create a fake args object for search display
+                s_args = copy.copy(args)
+                s_args.fields = getattr(args, 'fields', 'name,cost,type,stats')
+                s_args.table = True
+                if not hasattr(s_args, 'limit'): s_args.limit = 0
+                _execute_search(matched_cards, s_args)
+            elif line.startswith('/help'):
+                print("Commands:")
+                print("  <card name>   - Show Oracle text for a card.")
+                print("  /search <q>   - Search for cards matching <q>.")
+                print("  /exit, /quit  - Exit the shell.")
+            else:
+                # Oracle lookup
+                o_args = copy.copy(args)
+                o_args.query = line
+                if not hasattr(o_args, 'limit'): o_args.limit = 0
+                _execute_oracle(all_cards, o_args)
+        except EOFError:
+            print()
+            break
+        except Exception as e:
+            print(f"Error: {e}")
 
 # --- Extract Logic (from extract_one.py) ---
 
@@ -1064,6 +1167,28 @@ Usage Examples:
     cli_utils.add_standard_filters(p_compare)
     cli_utils.add_standard_output_args(p_compare)
     p_compare.set_defaults(func=handle_compare_cards)
+
+    # Shell Subparser
+    p_shell = subparsers.add_parser(
+        'shell',
+        aliases=['interactive', 'repl'],
+        help='Launch an interactive shell for quick card lookups and searches.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Start the interactive shell using the default dataset
+  python3 scripts/mtg_query.py shell
+
+  # Start with a specific file and custom fields for searches
+  python3 scripts/mtg_query.py shell my_cards.json --fields "name,cost,type,pt,rarity"
+"""
+    )
+    p_shell.add_argument('infile', nargs='?', default='-',
+                        help='Input card data. Defaults to data/AllPrintings.json if available.')
+    p_shell.add_argument('-f', '--fields', default='name,cost,type,stats,rarity',
+                        help='Default fields to show during /search commands.')
+    cli_utils.add_standard_output_args(p_shell)
+    p_shell.set_defaults(func=handle_shell)
 
     args = parser.parse_args()
     if not args.command:
