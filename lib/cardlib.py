@@ -793,24 +793,29 @@ class Card:
 
         return score
 
+    def _get_face_power_score(self):
+        """Calculates the base power score for this card face (P + T + Keywords)."""
+        p = utils.from_unary_single(self.pt_p)
+        t = utils.from_unary_single(self.pt_t)
+
+        # Default to 0 if non-numeric (X, *, etc.)
+        p_val = float(p) if isinstance(p, (int, float)) else 0.0
+        t_val = float(t) if isinstance(t, (int, float)) else 0.0
+
+        score = p_val + t_val
+
+        # Add keyword bonuses
+        face_mechanics = self.get_face_mechanics()
+        for m in face_mechanics:
+            score += KEYWORD_WEIGHTS.get(m, 0.0)
+        return score
+
     @property
     def recommended_cmc(self):
         """Calculates a heuristic 'Fair Mana Value' for creatures based on stats and keywords."""
         recommendation = 0.0
         if self.is_creature:
-            p = utils.from_unary_single(self.pt_p)
-            t = utils.from_unary_single(self.pt_t)
-
-            # Default to 0 if non-numeric (X, *, etc.)
-            p_val = float(p) if isinstance(p, (int, float)) else 0.0
-            t_val = float(t) if isinstance(t, (int, float)) else 0.0
-
-            score = p_val + t_val
-
-            # Add keyword bonuses
-            face_mechanics = self.get_face_mechanics()
-            for m in face_mechanics:
-                score += KEYWORD_WEIGHTS.get(m, 0.0)
+            score = self._get_face_power_score()
 
             # Formula: (P + T + Keywords) / 2.0
             # A basic 2/2 creature without abilities is recommended at 2.0 mana.
@@ -826,19 +831,7 @@ class Card:
         """Calculates a heuristic power rating for creatures relative to their CMC."""
         rating = 0.0
         if self.is_creature:
-            p = utils.from_unary_single(self.pt_p)
-            t = utils.from_unary_single(self.pt_t)
-
-            # Default to 0 if non-numeric (X, *, etc.)
-            p_val = float(p) if isinstance(p, (int, float)) else 0.0
-            t_val = float(t) if isinstance(t, (int, float)) else 0.0
-
-            score = p_val + t_val
-
-            # Add keyword bonuses
-            face_mechanics = self.get_face_mechanics()
-            for m in face_mechanics:
-                score += KEYWORD_WEIGHTS.get(m, 0.0)
+            score = self._get_face_power_score()
 
             # Adjust for CMC
             # Formula: (P + T + Keywords) / (2 * max(1, CMC))
