@@ -1,9 +1,10 @@
 import json
 import os
-import subprocess
 import tempfile
 import csv
 import sys
+from unittest.mock import patch
+from scripts.json2csv import main as json2csv_main
 
 def test_json2csv_basic_conversion():
     card_data = {
@@ -35,8 +36,8 @@ def test_json2csv_basic_conversion():
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(card_data, f)
 
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'json2csv.py'))
-        subprocess.run([sys.executable, script_path, json_path, csv_path], check=True)
+        with patch('sys.argv', ['json2csv.py', json_path, csv_path]):
+            json2csv_main()
 
         with open(csv_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
@@ -84,8 +85,8 @@ def test_json2csv_stats_handling():
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(card_data, f)
 
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'json2csv.py'))
-        subprocess.run([sys.executable, script_path, json_path, csv_path], check=True)
+        with patch('sys.argv', ['json2csv.py', json_path, csv_path]):
+            json2csv_main()
 
         with open(csv_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
@@ -122,8 +123,8 @@ def test_json2csv_set_filtering():
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(card_data, f)
 
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'json2csv.py'))
-        subprocess.run([sys.executable, script_path, json_path, csv_path, '--set', 'SET1'], check=True)
+        with patch('sys.argv', ['json2csv.py', json_path, csv_path, '--set', 'SET1']):
+            json2csv_main()
 
         with open(csv_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
@@ -133,25 +134,6 @@ def test_json2csv_set_filtering():
         assert rows[0]['name'] == 'card a'
 
 def test_json2csv_text_unpassing():
-    card_data = {
-        "data": {
-            "TEST": {
-                "name": "Gideon",
-                "code": "TEST",
-                "type": "expansion",
-                "cards": [
-                    {
-                        "name": "Gideon",
-                        "types": ["Planeswalker"],
-                        "rarity": "Mythic",
-                        "text": "+1: Put a % counter on @.",
-                        "loyalty": "4"
-                    }
-                ]
-            }
-        }
-    }
-
     encoded_text = "|1Gideon|5Planeswalker|7mythic|8|9+1: put a % counter on @. \\ countertype % loyalty|3|0Y|"
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -161,12 +143,13 @@ def test_json2csv_text_unpassing():
         with open(txt_path, 'w', encoding='utf-8') as f:
             f.write(encoded_text)
 
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'json2csv.py'))
-        subprocess.run([sys.executable, script_path, txt_path, csv_path], check=True)
+        with patch('sys.argv', ['json2csv.py', txt_path, csv_path]):
+            json2csv_main()
 
         with open(csv_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
 
         assert len(rows) == 1
+        # Gideon is unpassed using the Card class logic
         assert rows[0]['text'].strip() == '+1: Put a loyalty counter on Gideon.'

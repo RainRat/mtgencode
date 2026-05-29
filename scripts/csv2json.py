@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import csv
 import argparse
 import json
@@ -15,9 +16,48 @@ used by the MTG Card Encoder. This is useful for adding your own custom
 cards to the AI training dataset.
 """
 
-parser = argparse.ArgumentParser(
-    description='Convert a CSV file of custom Magic cards into MTGJSON format.',
-    epilog='''
+def process_face(name, cost, type_line, subtypes, text, stats, rarity, rarity_mapping):
+    temprarity = rarity_mapping.get(rarity, rarity)
+    face = {
+        "name": name,
+        "manaCost": cost,
+        "rarity": temprarity,
+        "text": text.replace("\\n", "\n"),
+    }
+
+    # supertypes, types, subtypes
+    supertypes, types = utils.split_types(type_line)
+    if supertypes:
+        face["supertypes"] = supertypes
+    face["types"] = types
+    if subtypes != "":
+        face["subtypes"] = subtypes.split(" ")
+
+    if stats != "":
+        pt = stats.split("/")
+        if len(pt) >= 2:
+            face["power"] = pt[0]
+            face["toughness"] = pt[1]
+        else:
+            if "Planeswalker" in types:
+                face["loyalty"] = stats
+            elif "Battle" in types:
+                face["defense"] = stats
+            else:
+                face["pt"] = stats
+
+    # create "type" (full type line)
+    fulltypes = type_line
+    if subtypes != "":
+        fulltypes = fulltypes + " — " + subtypes
+    face["type"] = fulltypes
+
+    return face
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Convert a CSV file of custom Magic cards into MTGJSON format.',
+        epilog='''
 Custom Card Workflow:
   1. Create a CSV file (e.g., custom.csv) following the format below.
   2. Convert to JSON:
@@ -41,86 +81,53 @@ Multi-Faced Cards:
 
 Note: The first row is ignored if the first column is exactly "name".
 ''',
-    formatter_class=argparse.RawDescriptionHelpFormatter
-)
-parser.add_argument('csv_file', help='Path to the input CSV file.')
-parser.add_argument('json_output', help='Path to the output JSON file.')
-args = parser.parse_args()
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument('csv_file', help='Path to the input CSV file.')
+    parser.add_argument('json_output', help='Path to the output JSON file.')
+    args = parser.parse_args()
 
-rarity_mapping = {"R": "rare", "U": "uncommon", "C": "common", "M": "mythic", "L": "basic land", "I": "special"}
+    rarity_mapping = {"R": "rare", "U": "uncommon", "C": "common", "M": "mythic", "L": "basic land", "I": "special"}
 
-with open(args.csv_file) as csvfile, open(args.json_output, 'w') as jsonfile:
-    reader = csv.reader(csvfile)
-    json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
+    with open(args.csv_file, encoding='utf-8') as csvfile, open(args.json_output, 'w', encoding='utf-8') as jsonfile:
+        reader = csv.reader(csvfile)
+        json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
 
-    for row in reader:
-        if row[0] == "name":
-            continue
+        for row in reader:
+            if not row or row[0] == "name":
+                continue
 
-        # Check for multi-faced cards via ' // ' in Name, Cost, or Type
-        is_multi = any(' // ' in row[i] for i in [0, 1, 2])
+            # Check for multi-faced cards via ' // ' in any of the 7 columns
+            is_multi = any(' // ' in str(row[i]) for i in range(min(len(row), 7)))
 
-        def process_face(name, cost, type_line, subtypes, text, stats, rarity):
-            temprarity = rarity_mapping.get(rarity, rarity)
-            face = {
-                "name": name,
-                "manaCost": cost,
-                "rarity": temprarity,
-                "text": text.replace("\\n", "\n"),
-            }
-
-            # supertypes, types, subtypes
-            supertypes, types = utils.split_types(type_line)
-            if supertypes:
-                face["supertypes"] = supertypes
-            face["types"] = types
-            if subtypes != "":
-                face["subtypes"] = subtypes.split(" ")
-
-            if stats != "":
-                pt = stats.split("/")
-                if len(pt) >= 2:
-                    face["power"] = pt[0]
-                    face["toughness"] = pt[1]
-                else:
-                    if "Planeswalker" in types:
-                        face["loyalty"] = stats
-                    elif "Battle" in types:
-                        face["defense"] = stats
+            if is_multi:
+                # Split fields
+                front_args = []
+                back_args = []
+                for i in range(7):
+                    val = row[i] if i < len(row) else ""
+                    if ' // ' in val:
+                        parts = val.split(' // ', 1)
+                        front_args.append(parts[0])
+                        back_args.append(parts[1])
                     else:
-                        face["pt"] = stats
+                        front_args.append(val)
+                        back_args.append(val)
 
-            # create "type" (full type line)
-            fulltypes = type_line
-            if subtypes != "":
-                fulltypes = fulltypes + " — " + subtypes
-            face["type"] = fulltypes
+                card = process_face(front_args[0], front_args[1], front_args[2], front_args[3], front_args[4], front_args[5], front_args[6], rarity_mapping)
+                bside = process_face(back_args[0], back_args[1], back_args[2], back_args[3], back_args[4], back_args[5], back_args[6], rarity_mapping)
+                card["bside"] = bside
+                card["layout"] = "transform" # Standard multi-face layout
+            else:
+                # Pad row if it has fewer than 7 columns
+                padded_row = row + [""] * (7 - len(row))
+                card = process_face(padded_row[0], padded_row[1], padded_row[2], padded_row[3], padded_row[4], padded_row[5], padded_row[6], rarity_mapping)
+                card["layout"] = "normal"
 
-            return face
+            card["setCode"] = "CUS"
+            json_data["data"]["CUS"]["cards"].append(card)
 
-        if is_multi:
-            # Split fields
-            front_args = []
-            back_args = []
-            for i in range(7):
-                val = row[i]
-                if ' // ' in val:
-                    parts = val.split(' // ', 1)
-                    front_args.append(parts[0])
-                    back_args.append(parts[1])
-                else:
-                    front_args.append(val)
-                    back_args.append(val)
+        json.dump(json_data, jsonfile, indent=2)
 
-            card = process_face(*front_args)
-            bside = process_face(*back_args)
-            card["bside"] = bside
-            card["layout"] = "transform" # Standard multi-face layout
-        else:
-            card = process_face(row[0], row[1], row[2], row[3], row[4], row[5], row[6])
-            card["layout"] = "normal"
-
-        card["setCode"] = "CUS"
-        json_data["data"]["CUS"]["cards"].append(card)
-
-    json.dump(json_data, jsonfile)
+if __name__ == '__main__':
+    main()
