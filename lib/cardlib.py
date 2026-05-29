@@ -1400,8 +1400,8 @@ class Card:
             return self.bside.search_loyalty(pattern)
         return False
 
-    def summary(self, ansi_color=False):
-        """Returns a compact, one-line summary of the card."""
+    def get_face_header(self, ansi_color=False):
+        """Returns a minimal identification line for the current card face."""
         # Status indicator
         status = ''
         if not self.parsed:
@@ -1447,27 +1447,28 @@ class Card:
         if not stats:
             stats = self._get_loyalty_display(ansi_color=ansi_color)
 
+        # Construct final header string
+        res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
+        if stats:
+            res += f' \u2022 {stats}'
+        return res
+
+    def header(self, ansi_color=False):
+        """Returns a minimal identification line for the card (including b-sides)."""
+        res = self.get_face_header(ansi_color=ansi_color)
+        if self.bside:
+            res += ' // ' + self.bside.header(ansi_color=ansi_color)
+        return res
+
+    def summary(self, ansi_color=False):
+        """Returns a compact, one-line summary of the card."""
+        res = self.get_face_header(ansi_color=ansi_color)
+
         # Mechanics
         face_mechanics = sorted(list(self.get_face_mechanics()))
         mechanics_str = ", ".join(face_mechanics)
         if ansi_color and mechanics_str:
             mechanics_str = utils.colorize(mechanics_str, utils.Ansi.CYAN)
-
-        # Recommended CMC (Fair MV) for creatures
-        fair_mv = ''
-        if self.is_creature:
-            val = self.recommended_cmc
-            fair_mv = f'Fair MV: {val}'
-            if ansi_color:
-                # Use Green if the card is "fair" or better (cost >= fair_mv)
-                # Use Red if the card is pushed (cost < fair_mv)
-                color = utils.Ansi.GREEN if self.cost.cmc >= val else utils.Ansi.RED
-                fair_mv = utils.colorize(fair_mv, utils.Ansi.BOLD + color)
-
-        # Construct final summary string with consistent bullet separators
-        res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
-        if stats:
-            res += f' \u2022 {stats}'
         if mechanics_str:
             res += f' \u2022 {mechanics_str}'
 
@@ -1479,7 +1480,13 @@ class Card:
                 act_str = utils.colorize(act_str, utils.Ansi.CYAN)
             res += f' \u2022 {act_str}'
 
-        if fair_mv:
+        # Recommended CMC (Fair MV) for creatures
+        if self.is_creature:
+            val = self.recommended_cmc
+            fair_mv = f'Fair MV: {val}'
+            if ansi_color:
+                color = utils.Ansi.GREEN if self.cost.cmc >= val else utils.Ansi.RED
+                fair_mv = utils.colorize(fair_mv, utils.Ansi.BOLD + color)
             res += f' \u2022 {fair_mv}'
 
         if self.bside:

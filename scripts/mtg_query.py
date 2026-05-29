@@ -447,7 +447,7 @@ def handle_oracle(args):
 
     if not args.quiet:
         if getattr(args, 'limit', 0) > 0 or getattr(args, 'sample', 0) > 0:
-            count_str = f"Showing {len(display_cards)} of"
+            count_str = f"Showing {len(display_cards)} of {prelimit_count}"
         else:
             count_str = f"Showing {len(display_cards)} of {prelimit_count}" if prelimit_count != len(display_cards) else str(len(display_cards))
         header_title = "SIMILAR CARDS" if getattr(args, 'similar', False) else "SEARCH RESULTS"
@@ -460,7 +460,7 @@ def handle_oracle(args):
             print("  " + c.summary(ansi_color=use_color).replace('\u2014', '-'))
         else:
             # Detailed View
-            print("  " + c.summary(ansi_color=use_color).replace('\u2014', '-'))
+            print("  " + c.header(ansi_color=use_color).replace('\u2014', '-'))
 
             def print_face(face, is_bside=False):
                 if is_bside:
@@ -531,14 +531,23 @@ def handle_oracle(args):
                 score_line += f" \u2022 FAIR MV: {fair_val}"
             footer_lines.append(score_line)
 
-            # 3. Actions Line
+            # 3. Mechanics & Actions Line
+            face_mechanics = sorted(list(c.get_face_mechanics()))
             face_actions = sorted(list(c.get_face_actions()))
+
+            if face_mechanics:
+                mech_str = f"MECHANICS: {', '.join(face_mechanics)}"
+                if use_color:
+                    mech_str = f"MECHANICS: {utils.colorize(', '.join(face_mechanics), utils.Ansi.CYAN)}"
+                footer_lines.append(mech_str)
+
             if face_actions:
                 act_str = f"ACTIONS: {', '.join(face_actions)}"
                 if use_color:
                     act_str = f"ACTIONS: {utils.colorize(', '.join(face_actions), utils.Ansi.CYAN)}"
                 footer_lines.append(act_str)
 
+            print() # Visual separation from rules text
             for line in footer_lines:
                 print("  " + line)
 
