@@ -372,6 +372,18 @@ python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "El
 *   `--md`, `--markdown`: Output in Markdown format with collapsible sections.
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
+### `mtg_analyze.py profile`
+Identifies the "Mechanical Identity" (signature features) of a filtered subset of cards. It compares a specific context (like a color or rarity) against the global dataset to find over-represented keywords, actions, and subtypes.
+```bash
+# Identify what makes Red Rare cards unique in a set
+python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors R --rarity rare
+
+# Profile the mechanical identity of a specific set
+python3 scripts/mtg_analyze.py profile data/AllPrintings.json --set MOM
+```
+*   **Metrics:** Calculates "Lift" (subset frequency / global frequency) to identify defining features.
+*   **Options:** Supports `--top N` and all standard **Advanced Filtering** flags.
+
 ### `mtg_analyze.py summary`
 Shows statistics and reports on mechanics and word variety for your card data. It works with any card data (JSON, CSV, XML, encoded text, etc.).
 ```bash

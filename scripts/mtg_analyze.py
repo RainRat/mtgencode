@@ -1370,6 +1370,151 @@ def handle_compare(args):
     utils.print_header("DATASET COMPARISON", use_color=use_color)
     datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l'] + ['r']*(len(header)-1)), indent=2)
 
+def handle_profile(args):
+    # Load targets using standard logic (applies filters)
+    subset_cards = cli_utils.load_and_filter_cards(args)
+    if not check_cards(subset_cards, args): return
+
+    # Load global baseline from same file (ignores filters)
+    import copy
+    global_args = copy.copy(args)
+    # Clear all filter and sampling attributes to get the full baseline pool
+    filter_attrs = ['grep', 'vgrep', 'grep_name', 'exclude_name', 'grep_type', 'exclude_type',
+                    'grep_text', 'exclude_text', 'grep_cost', 'exclude_cost', 'grep_pt', 'exclude_pt',
+                    'grep_loyalty', 'exclude_loyalty', 'set', 'rarity', 'colors', 'cmcs', 'pow', 'tou', 'loy',
+                    'mechanic', 'action', 'identities', 'id_counts', 'deck']
+    for attr in filter_attrs:
+        if hasattr(global_args, attr): setattr(global_args, attr, None)
+
+    # Numeric attributes should be reset to 0 to avoid TypeError in cli_utils
+    for attr in ['limit', 'sample', 'booster', 'box']:
+        if hasattr(global_args, attr): setattr(global_args, attr, 0)
+
+    # Use standard loading utility for baseline to ensure consistent format support
+    global_cards = cli_utils.load_and_filter_cards(global_args)
+
+    use_color = args.color if args.color is not None else sys.stdout.isatty()
+
+    # 1. Basic Stats
+    subset_mine = Datamine(subset_cards)
+    global_mine = Datamine(global_cards)
+
+    utils.print_header("MECHANICAL IDENTITY PROFILE", count=len(subset_cards), use_color=use_color)
+    print(f"  {datalib.color_line('Context:', use_color)} {args.infile}")
+
+    # Calculate Averages
+    p1_cmc = subset_mine.avg_cmc
+    p0_cmc = global_mine.avg_cmc
+
+    p1_pow = subset_mine.avg_power
+    p0_pow = global_mine.avg_power
+
+    p1_tou = subset_mine.avg_toughness
+    p0_tou = global_mine.avg_toughness
+
+    p1_comp = subset_mine.avg_complexity
+    p0_comp = global_mine.avg_complexity
+
+    avg_rows = [
+        ["Metric", "Subset", "Global", "Delta"],
+        ["Avg CMC", f"{p1_cmc:.2f}", f"{p0_cmc:.2f}", format_delta(p1_cmc, p0_cmc, use_color=use_color, reverse_color=True)],
+        ["Avg Power", f"{p1_pow:.2f}", f"{p0_pow:.2f}", format_delta(p1_pow, p0_pow, use_color=use_color)],
+        ["Avg Toughness", f"{p1_tou:.2f}", f"{p0_tou:.2f}", format_delta(p1_tou, p0_tou, use_color=use_color)],
+        ["Avg Complexity", f"{p1_comp:.1f}", f"{p0_comp:.1f}", format_delta(p1_comp, p0_comp, use_color=use_color, reverse_color=True)]
+    ]
+    if use_color:
+        avg_rows[0] = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in avg_rows[0]]
+
+    datalib.add_separator_row(avg_rows)
+    datalib.printrows(datalib.padrows(avg_rows, aligns=['l', 'r', 'r', 'r']), indent=4)
+    print()
+
+    def get_lift_report(title, subset_counts, global_counts, subset_total, global_total, top_n=10, formatter=None):
+        if not subset_counts: return
+        print(f"  {datalib.color_line(title, use_color)}")
+
+        lift_data = []
+        for key, count in subset_counts.items():
+            if count < 1: continue
+
+            p_subset = count / subset_total
+            # Handle cases where key might not be in global (e.g. custom keyword in subset)
+            count_global = global_counts.get(key, 0)
+            p_global = count_global / global_total if global_total > 0 else 0
+
+            # Lift = Representation in subset / Representation in global
+            if p_global > 0:
+                lift = p_subset / p_global
+            else:
+                lift = 99.0 # Infinite lift
+
+            lift_data.append({
+                'key': key,
+                'lift': lift,
+                'count': count,
+                'percent': p_subset * 100
+            })
+
+        # Sort by lift descending
+        lift_data.sort(key=lambda x: (x['lift'], x['count']), reverse=True)
+
+        header = ["Signature Feature", "Count", "Subset %", "Lift"]
+        if use_color:
+            header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+        rows = [header]
+
+        for item in lift_data[:top_n]:
+            display_key = formatter(item['key']) if formatter else str(item['key'])
+            if use_color:
+                # Highlight if lift is high
+                if item['lift'] > 2.0: display_key = utils.colorize(display_key, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                elif item['lift'] > 1.2: display_key = utils.colorize(display_key, utils.Ansi.GREEN)
+
+            rows.append([
+                display_key,
+                str(item['count']),
+                f"{item['percent']:5.1f}%",
+                f"{item['lift']:.2f}x"
+            ])
+
+        datalib.add_separator_row(rows)
+        datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'r']), indent=4)
+        print()
+
+    # 2. Signature Mechanics
+    sub_mechs = Counter()
+    for c in subset_cards:
+        for m in c.mechanics: sub_mechs[m] += 1
+
+    ref_mechs = Counter()
+    for c in global_cards:
+        for m in c.mechanics: ref_mechs[m] += 1
+
+    get_lift_report("Top Signature Mechanics:", sub_mechs, ref_mechs, len(subset_cards), len(global_cards), top_n=args.top)
+
+    # 3. Signature Actions
+    sub_acts = Counter()
+    for c in subset_cards:
+        for a in c.actions: sub_acts[a] += 1
+
+    ref_acts = Counter()
+    for c in global_cards:
+        for a in c.actions: ref_acts[a] += 1
+
+    get_lift_report("Top Signature Actions:", sub_acts, ref_acts, len(subset_cards), len(global_cards), top_n=args.top)
+
+    # 4. Signature Subtypes
+    sub_types = Counter()
+    for c in subset_cards:
+        for s in c.subtypes: sub_types[s] += 1
+
+    ref_types = Counter()
+    for c in global_cards:
+        for s in c.subtypes: ref_types[s] += 1
+
+    get_lift_report("Top Signature Subtypes:", sub_types, ref_types, len(subset_cards), len(global_cards), top_n=args.top,
+                    formatter=lambda s: titlecase(s.replace(utils.dash_marker, '-')))
+
 def main():
     parser = argparse.ArgumentParser(
         description="Unified MTG analysis tool.",
@@ -1381,6 +1526,9 @@ Examples:
 
   # Analyze the mana curve of a specific set
   python3 scripts/mtg_analyze.py curve data/AllPrintings.json --set MOM
+
+  # Identify what makes Red Rare cards unique (signature features)
+  python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors R --rarity rare
 
   # Calculate As-Fan statistics for a generated set
   python3 scripts/mtg_analyze.py asfan generated.txt
@@ -1549,6 +1697,12 @@ Examples:
     p_comp.add_argument('infiles', nargs='+', help='Two or more card data files to compare.')
     add_std(p_comp)
     p_comp.set_defaults(func=handle_compare)
+
+    # profile
+    p_prof = subparsers.add_parser('profile', help='Identify the "Mechanical Identity" (signature features) of a filtered subset of cards.')
+    add_std(p_prof)
+    p_prof.add_argument('--top', type=int, default=10, help='Number of signature features to show per category (Default: 10).')
+    p_prof.set_defaults(func=handle_profile)
 
     args = parser.parse_args()
     if not args.command: parser.print_help(); return
