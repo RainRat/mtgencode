@@ -1400,8 +1400,8 @@ class Card:
             return self.bside.search_loyalty(pattern)
         return False
 
-    def summary(self, ansi_color=False):
-        """Returns a compact, one-line summary of the card."""
+    def header(self, ansi_color=False, recurse=True):
+        """Returns a minimal, one-line identification of the card (Status, Rarity, Name, Cost, Type, Stats, Mechanics)."""
         # Status indicator
         status = ''
         if not self.parsed:
@@ -1453,23 +1453,21 @@ class Card:
         if ansi_color and mechanics_str:
             mechanics_str = utils.colorize(mechanics_str, utils.Ansi.CYAN)
 
-        # Recommended CMC (Fair MV) for creatures
-        fair_mv = ''
-        if self.is_creature:
-            val = self.recommended_cmc
-            fair_mv = f'Fair MV: {val}'
-            if ansi_color:
-                # Use Green if the card is "fair" or better (cost >= fair_mv)
-                # Use Red if the card is pushed (cost < fair_mv)
-                color = utils.Ansi.GREEN if self.cost.cmc >= val else utils.Ansi.RED
-                fair_mv = utils.colorize(fair_mv, utils.Ansi.BOLD + color)
-
-        # Construct final summary string with consistent bullet separators
+        # Construct final header string
         res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
         if stats:
             res += f' \u2022 {stats}'
         if mechanics_str:
             res += f' \u2022 {mechanics_str}'
+
+        if recurse and self.bside:
+            res += ' // ' + self.bside.header(ansi_color=ansi_color, recurse=True)
+
+        return res
+
+    def summary(self, ansi_color=False):
+        """Returns a compact, one-line summary including header, actions, and Fair MV."""
+        res = self.header(ansi_color=ansi_color, recurse=False)
 
         # Actions
         face_actions = sorted(list(self.get_face_actions()))
@@ -1479,7 +1477,15 @@ class Card:
                 act_str = utils.colorize(act_str, utils.Ansi.CYAN)
             res += f' \u2022 {act_str}'
 
-        if fair_mv:
+        # Recommended CMC (Fair MV) for creatures
+        if self.is_creature:
+            val = self.recommended_cmc
+            fair_mv = f'Fair MV: {val}'
+            if ansi_color:
+                # Use Green if the card is "fair" or better (cost >= fair_mv)
+                # Use Red if the card is pushed (cost < fair_mv)
+                color = utils.Ansi.GREEN if self.cost.cmc >= val else utils.Ansi.RED
+                fair_mv = utils.colorize(fair_mv, utils.Ansi.BOLD + color)
             res += f' \u2022 {fair_mv}'
 
         if self.bside:

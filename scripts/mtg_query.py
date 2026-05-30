@@ -459,8 +459,8 @@ def handle_oracle(args):
         elif show_summary:
             print("  " + c.summary(ansi_color=use_color).replace('\u2014', '-'))
         else:
-            # Detailed View
-            print("  " + c.summary(ansi_color=use_color).replace('\u2014', '-'))
+            # Detailed View: Use header() for the title line as metadata is in the footer
+            print("  " + c.header(ansi_color=use_color).replace('\u2014', '-'))
 
             def print_face(face, is_bside=False):
                 if is_bside:
