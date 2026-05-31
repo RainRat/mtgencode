@@ -927,7 +927,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
     p_search.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the search results. If not provided, results print to the console.')
     p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                        help='Comma-separated list of fields to extract (e.g., name, cost, type, stats, text).')
+                        help='Comma-separated list of fields to extract (e.g., name, cost, type, stats, text, mechanics, actions, identity, complexity, rating, fair_mv).')
     p_search.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     cli_utils.add_standard_filters(p_search)
