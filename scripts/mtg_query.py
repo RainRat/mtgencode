@@ -460,7 +460,7 @@ def handle_oracle(args):
             print("  " + c.summary(ansi_color=use_color).replace('\u2014', '-'))
         else:
             # Detailed View
-            print("  " + c.summary(ansi_color=use_color).replace('\u2014', '-'))
+            print("  " + c.header(ansi_color=use_color).replace('\u2014', '-'))
 
             def print_face(face, is_bside=False):
                 if is_bside:
@@ -526,17 +526,25 @@ def handle_oracle(args):
                 f_color = utils.Ansi.BOLD + (utils.Ansi.GREEN if c.cost.cmc >= c.recommended_cmc else utils.Ansi.RED)
                 fair_val = utils.colorize(fair_val, f_color)
 
-            score_line = f"COMPLEXITY: {comp_val} \u2022 RATING: {rate_val}"
+            score_line = f"COMPLEXITY: {comp_val}"
             if c.is_creature:
-                score_line += f" \u2022 FAIR MV: {fair_val}"
+                score_line += f" \u2022 RATING: {rate_val} \u2022 FAIR MV: {fair_val}"
             footer_lines.append(score_line)
 
-            # 3. Actions Line
-            face_actions = sorted(list(c.get_face_actions()))
-            if face_actions:
-                act_str = f"ACTIONS: {', '.join(face_actions)}"
+            # 3. Mechanics Line
+            all_mechanics = sorted(list(c.mechanics))
+            if all_mechanics:
+                mech_str = f"MECHANICS: {', '.join(all_mechanics)}"
                 if use_color:
-                    act_str = f"ACTIONS: {utils.colorize(', '.join(face_actions), utils.Ansi.CYAN)}"
+                    mech_str = f"MECHANICS: {utils.colorize(', '.join(all_mechanics), utils.Ansi.CYAN)}"
+                footer_lines.append(mech_str)
+
+            # 4. Actions Line
+            all_actions = sorted(list(c.actions))
+            if all_actions:
+                act_str = f"ACTIONS: {', '.join(all_actions)}"
+                if use_color:
+                    act_str = f"ACTIONS: {utils.colorize(', '.join(all_actions), utils.Ansi.CYAN)}"
                 footer_lines.append(act_str)
 
             for line in footer_lines:
