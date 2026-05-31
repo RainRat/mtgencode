@@ -1233,6 +1233,99 @@ def extract_tokens_from_text(text):
         found.append(t)
     return found
 
+def handle_profile(args):
+    target_cards = cli_utils.load_and_filter_cards(args)
+    if not check_cards(target_cards, args): return
+
+    import copy
+    baseline_args = copy.deepcopy(args)
+    # Clear filters for baseline to get the whole dataset
+    filter_attrs = [
+        'grep', 'vgrep', 'grep_name', 'exclude_name', 'grep_type', 'exclude_type',
+        'grep_text', 'exclude_text', 'grep_cost', 'exclude_cost', 'grep_pt', 'exclude_pt',
+        'grep_loyalty', 'exclude_loyalty', 'set', 'rarity', 'colors', 'identity',
+        'id_count', 'cmc', 'pow', 'tou', 'loy', 'mechanic', 'action', 'deck',
+        'booster', 'box', 'limit', 'sample'
+    ]
+    for attr in filter_attrs:
+        if hasattr(baseline_args, attr):
+            setattr(baseline_args, attr, 0 if attr in ['booster', 'box', 'limit', 'sample'] else None)
+    baseline_args.shuffle = False
+    baseline_args.quiet = True
+
+    baseline_cards = cli_utils.load_and_filter_cards(baseline_args)
+    if not baseline_cards:
+        return
+
+    def get_metrics(cards):
+        metrics = {'cmc': 0.0, 'pow': 0.0, 'tou': 0.0, 'comp': 0.0, 'cnt': len(cards), 'cre_cnt': 0}
+        for c in cards:
+            metrics['cmc'] += c.cost.cmc
+            metrics['comp'] += c.complexity_score
+            p, t, _ = get_numeric_stats(c)
+            if p is not None and t is not None:
+                metrics['pow'] += p
+                metrics['tou'] += t
+                metrics['cre_cnt'] += 1
+
+        return {
+            'cmc': metrics['cmc'] / metrics['cnt'] if metrics['cnt'] > 0 else 0,
+            'comp': metrics['comp'] / metrics['cnt'] if metrics['cnt'] > 0 else 0,
+            'pow': metrics['pow'] / metrics['cre_cnt'] if metrics['cre_cnt'] > 0 else 0,
+            'tou': metrics['tou'] / metrics['cre_cnt'] if metrics['cre_cnt'] > 0 else 0,
+            'cnt': metrics['cnt']
+        }
+
+    t_metrics = get_metrics(target_cards)
+    b_metrics = get_metrics(baseline_cards)
+
+    use_color = args.color if args.color is not None else sys.stdout.isatty()
+    utils.print_header("MECHANICAL IDENTITY PROFILE", count=f"{t_metrics['cnt']} cards", use_color=use_color)
+
+    stats_rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Metric", "Subset", "Baseline", "Delta"]]]
+    for label, key, reverse in [("Avg CMC", 'cmc', True), ("Avg Power", 'pow', False), ("Avg Toughness", 'tou', False), ("Avg Complexity", 'comp', True)]:
+        v_t, v_b = t_metrics[key], b_metrics[key]
+        stats_rows.append([label, f"{v_t:.2f}", f"{v_b:.2f}", format_delta(v_t, v_b, use_color=use_color, reverse_color=reverse)])
+
+    datalib.add_separator_row(stats_rows)
+    datalib.printrows(datalib.padrows(stats_rows, aligns=['l', 'r', 'r', 'r']), indent=2)
+    print()
+
+    def get_freqs(cards):
+        mechs, acts, subs = Counter(), Counter(), Counter()
+        for c in cards:
+            for m in c.mechanics: mechs[m] += 1
+            for a in c.actions: acts[a] += 1
+            for s in c.subtypes: subs[titlecase(s.replace(utils.dash_marker, '-'))] += 1
+        return mechs, acts, subs
+
+    t_mechs, t_acts, t_subs = get_freqs(target_cards)
+    b_mechs, b_acts, b_subs = get_freqs(baseline_cards)
+
+    def calculate_lifts(t_counts, b_counts, t_total, b_total):
+        lifts = []
+        for k, count in t_counts.items():
+            f_t = count / t_total
+            f_b = b_counts[k] / b_total if b_counts[k] > 0 else 0.0001
+            lifts.append({'key': k, 'lift': f_t / f_b, 'count': count, 'freq': f_t * 100})
+        return sorted(lifts, key=lambda x: x['lift'], reverse=True)
+
+    def print_lift_table(title, lifts, top_n):
+        if not lifts: return
+        print(f"  {datalib.color_line(title, use_color)}")
+        rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Feature", "Lift", "Subset %", "Count"]]]
+        for item in lifts[:top_n]:
+            l_str = f"{item['lift']:.2f}x"
+            if use_color and item['lift'] > 1.5: l_str = utils.colorize(l_str, utils.Ansi.BOLD + utils.Ansi.GREEN)
+            rows.append([item['key'], l_str, f"{item['freq']:5.1f}%", str(item['count'])])
+        datalib.add_separator_row(rows)
+        datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'r']), indent=4)
+        print()
+
+    print_lift_table("Signature Mechanics:", calculate_lifts(t_mechs, b_mechs, t_metrics['cnt'], b_metrics['cnt']), args.top)
+    print_lift_table("Signature Actions:", calculate_lifts(t_acts, b_acts, t_metrics['cnt'], b_metrics['cnt']), args.top)
+    print_lift_table("Signature Subtypes:", calculate_lifts(t_subs, b_subs, t_metrics['cnt'], b_metrics['cnt']), args.top)
+
 def handle_subtypes(args):
     cards = cli_utils.load_and_filter_cards(args)
     if not check_cards(cards, args): return
@@ -1543,6 +1636,12 @@ Examples:
     p_sub.add_argument('outfile', nargs='?', default=None, help='Save subtype analysis to a file.')
     p_sub.add_argument('--top', type=int, default=10, help='Number of entries to show in tables (Default: 10).')
     p_sub.set_defaults(func=handle_subtypes)
+
+    # profile
+    p_prof = subparsers.add_parser('profile', help='Identify the "Mechanical Identity" (signature features) of a card subset.')
+    add_std(p_prof)
+    p_prof.add_argument('--top', type=int, default=10, help='Number of signature features to show per category (Default: 10).')
+    p_prof.set_defaults(func=handle_profile)
 
     # compare
     p_comp = subparsers.add_parser('compare', help='Provide a side-by-side statistical comparison of two or more datasets.')
