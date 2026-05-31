@@ -278,7 +278,7 @@ def fields_check_valid(fields):
             return False
     # Station cards can become creatures, so they are allowed to NOT have P/T.
     # We also allow them to HAVE P/T if they want.
-    elif isartifact and 'station' in text:
+    elif isartifact and re.search(r'\bstation\b', text):
         pass
     else:
         if field_pt in fields:
@@ -966,7 +966,7 @@ class Card:
         if 'level up' in text_raw or 'level &' in text_enc:
             m.add('Leveler')
 
-        if 'station' in text_raw:
+        if re.search(r'\bstation\b', text_raw):
             m.add('Station')
 
         if '%' in text_enc or '#' in text_enc or 'counter' in text_raw:

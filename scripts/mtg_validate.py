@@ -81,7 +81,7 @@ def check_pt(card):
     if 'battle' in card.types:
         return None
     # "Station" cards are artifacts that can become creatures, so they are exempt from P/T checks.
-    if "station" in card.text.text.lower():
+    if re.search(r'\bstation\b', card.text.text.lower()):
         return None
     if ('creature' in card.types or 'vehicle' in card.subtypes) or card.pt:
         return ((('creature' in card.types or 'vehicle' in card.subtypes) and len(re.findall(re.escape('/'), card.pt)) == 1)
