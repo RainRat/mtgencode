@@ -9,8 +9,9 @@ import json
 sys.path.append(os.getcwd())
 sys.path.append(os.path.join(os.getcwd(), 'lib'))
 
-from scripts.mtg_analyze import summarize_data as summarize_main
+from scripts.mtg_analyze import handle_summary
 from lib.cardlib import Card
+import argparse
 
 class TestSummarize(unittest.TestCase):
 
@@ -25,88 +26,91 @@ class TestSummarize(unittest.TestCase):
             "text": text
         })
 
-    @patch('scripts.mtg_analyze.jdecode.mtg_open_file')
-    def test_main_basic(self, mock_open_file):
+    @patch('scripts.mtg_analyze.cli_utils.load_and_filter_cards')
+    def test_main_basic(self, mock_load):
         card1 = self.create_sample_card()
-        mock_open_file.return_value = [card1]
+        mock_load.return_value = [card1]
+        args = argparse.Namespace(infile='dummy.json', verbose=False, color=False, top=10, json=False, outfile=None)
 
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            summarize_main('dummy.json', verbose=False, use_color=False)
+            handle_summary(args)
             output = fake_out.getvalue()
             self.assertIn("DATASET SUMMARY", output)
             self.assertIn("1 valid cards", output)
             self.assertIn("COLORS & MANA", output)
             self.assertIn("CARD TYPES", output)
 
-    @patch('scripts.mtg_analyze.jdecode.mtg_open_file')
-    def test_main_json_output(self, mock_open_file):
+    @patch('scripts.mtg_analyze.cli_utils.load_and_filter_cards')
+    def test_main_json_output(self, mock_load):
         card1 = self.create_sample_card()
-        mock_open_file.return_value = [card1]
+        mock_load.return_value = [card1]
+        args = argparse.Namespace(infile='dummy.json', verbose=False, json=True, outfile=None, sort=None)
 
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            summarize_main('dummy.json', verbose=False, json_out=True)
+            handle_summary(args)
             output = fake_out.getvalue()
             data = json.loads(output)
             self.assertEqual(data['counts']['valid'], 1)
             self.assertIn('indices', data)
 
-    @patch('scripts.mtg_analyze.jdecode.mtg_open_file')
-    def test_main_outliers(self, mock_open_file):
+    @patch('scripts.mtg_analyze.cli_utils.load_and_filter_cards')
+    def test_main_outliers(self, mock_load):
         card1 = self.create_sample_card()
-        mock_open_file.return_value = [card1]
+        mock_load.return_value = [card1]
+        args = argparse.Namespace(infile='dummy.json', verbose=False, outliers=True, color=False, top=10, json=False, outfile=None, sort=None, all=False)
 
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            summarize_main('dummy.json', verbose=False, outliers=True, use_color=False)
+            handle_summary(args)
             output = fake_out.getvalue()
             self.assertIn("OUTLIER ANALYSIS", output)
 
-    @patch('scripts.mtg_analyze.jdecode.mtg_open_file')
-    def test_main_filtering_propagation(self, mock_open_file):
-        mock_open_file.return_value = []
+    @patch('scripts.mtg_analyze.cli_utils.load_and_filter_cards')
+    def test_main_filtering_propagation(self, mock_load):
+        mock_load.return_value = []
+        args = argparse.Namespace(infile='dummy.json', verbose=False, grep=['pattern'], rarity=['common'], cmc=['>2'], quiet=False)
 
-        summarize_main('dummy.json', verbose=False, grep=['pattern'], rarities=['common'], cmcs=['>2'])
+        handle_summary(args)
 
-        mock_open_file.assert_called_once()
-        args, kwargs = mock_open_file.call_args
-        self.assertEqual(kwargs['grep'], ['pattern'])
-        self.assertEqual(kwargs['rarities'], ['common'])
-        self.assertEqual(kwargs['cmcs'], ['>2'])
+        mock_load.assert_called_once_with(args)
 
-    @patch('scripts.mtg_analyze.jdecode.mtg_open_file')
-    def test_main_limit_and_sort(self, mock_open_file):
+    @patch('scripts.mtg_analyze.cli_utils.load_and_filter_cards')
+    def test_main_limit_and_sort(self, mock_load):
         card1 = self.create_sample_card(name="B")
         card2 = self.create_sample_card(name="A")
 
-        mock_open_file.return_value = [card1, card2]
+        mock_load.return_value = [card1, card2]
+        args = argparse.Namespace(infile='dummy.json', verbose=False, limit=1, sort='name', reverse=False, quiet=True, json=False, outfile=None, top=10, color=False)
 
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            summarize_main('dummy.json', verbose=False, limit=1, sort='name')
+            handle_summary(args)
             output = fake_out.getvalue()
-            # self.assertIn("1 valid cards", output)
 
-    @patch('scripts.mtg_analyze.jdecode.mtg_open_file')
+    @patch('scripts.mtg_analyze.cli_utils.load_and_filter_cards')
     @patch('scripts.mtg_analyze.open', new_callable=mock_open)
-    def test_main_oname_auto_json(self, mock_file, mock_open_file):
-        mock_open_file.return_value = []
-        summarize_main('dummy.json', oname='summary.json', verbose=True)
+    def test_main_oname_auto_json(self, mock_file, mock_load):
+        mock_load.return_value = [self.create_sample_card()]
+        args = argparse.Namespace(infile='dummy.json', outfile='summary.json', verbose=True, json=False, sort=None)
+        handle_summary(args)
         handle = mock_file()
         if handle.write.call_count > 0:
-            args, _ = handle.write.call_args_list[0]
-            self.assertTrue(args[0].startswith('{'))
+            args_call, _ = handle.write.call_args_list[0]
+            self.assertTrue(args_call[0].startswith('{'))
 
-    @patch('scripts.mtg_analyze.jdecode.mtg_open_file')
-    def test_main_empty_cards(self, mock_open_file):
-        mock_open_file.return_value = []
+    @patch('scripts.mtg_analyze.cli_utils.load_and_filter_cards')
+    def test_main_empty_cards(self, mock_load):
+        mock_load.return_value = []
+        args = argparse.Namespace(infile='dummy.json', verbose=False, quiet=True)
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            summarize_main('dummy.json', verbose=False)
+            handle_summary(args)
 
-    @patch('scripts.mtg_analyze.jdecode.mtg_open_file')
-    def test_main_color_options(self, mock_open_file):
+    @patch('scripts.mtg_analyze.cli_utils.load_and_filter_cards')
+    def test_main_color_options(self, mock_load):
         card1 = self.create_sample_card()
-        mock_open_file.return_value = [card1]
+        mock_load.return_value = [card1]
+        args = argparse.Namespace(infile='dummy.json', verbose=False, color=True, top=10, json=False, outfile=None, sort=None)
 
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            summarize_main('dummy.json', verbose=False, use_color=True)
+            handle_summary(args)
             output = fake_out.getvalue()
             self.assertIn("\033[", output)
 

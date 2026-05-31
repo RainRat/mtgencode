@@ -205,42 +205,6 @@ def format_delta(val, base_val, is_percent=False, use_color=False, reverse_color
             res = utils.colorize(res, color)
     return res
 
-def summarize_data(infile, verbose=False, grep=None, vgrep=None,
-                   grep_name=None, vgrep_name=None,
-                   grep_types=None, vgrep_types=None,
-                   grep_text=None, vgrep_text=None,
-                   grep_cost=None, vgrep_cost=None,
-                   grep_pt=None, vgrep_pt=None,
-                   grep_loyalty=None, vgrep_loyalty=None,
-                   sets=None, rarities=None, colors=None, cmcs=None,
-                   mechanics=None, identities=None, id_counts=None,
-                   limit=0, shuffle=False, seed=None, quiet=False, oname=None, decklist_file=None,
-                   top=10, booster=0, sort=None, reverse_sort=False, box=0,
-                   json_out=False, outliers=False, dump_all=False, use_color=None):
-    cards = jdecode.mtg_open_file(infile, verbose=verbose, grep=grep, vgrep=vgrep,
-                                  grep_name=grep_name, vgrep_name=vgrep_name,
-                                  grep_types=grep_types, vgrep_types=vgrep_types,
-                                  grep_text=grep_text, vgrep_text=vgrep_text,
-                                  grep_cost=grep_cost, vgrep_cost=vgrep_cost,
-                                  grep_pt=grep_pt, vgrep_pt=vgrep_pt,
-                                  grep_loyalty=grep_loyalty, vgrep_loyalty=vgrep_loyalty,
-                                  sets=sets, rarities=rarities, colors=colors, cmcs=cmcs,
-                                  mechanics=mechanics, identities=identities, id_counts=id_counts,
-                                  limit=limit, shuffle=shuffle, seed=seed, decklist_file=decklist_file,
-                                  booster=booster, box=box)
-    if not cards: return
-    if sort: cards = sortlib.sort_cards(cards, sort, reverse=reverse_sort, quiet=quiet)
-    mine = Datamine(cards)
-    if not json_out and oname and oname.endswith('.json'): json_out = True
-    output_f = open(oname, 'w', encoding='utf8') if oname else sys.stdout
-    try:
-        if json_out: output_f.write(json.dumps(mine.to_dict(), indent=2) + '\n')
-        else:
-            with redirect_stdout(output_f):
-                mine.summarize(use_color=use_color, vsize=top)
-                if outliers or dump_all: mine.outliers(dump_invalid=dump_all, use_color=use_color, vsize=top)
-    finally:
-        if oname: output_f.close()
 
 def get_archetype_counts(cards):
     ps = ["UW", "BU", "BR", "GR", "GW", "BW", "RU", "BG", "RW", "GU"]
@@ -359,44 +323,27 @@ def analyze_dataset(cards):
 # --- Subparser Handlers ---
 
 def handle_summary(args):
-    summarize_data(
-        args.infile,
-        verbose=args.verbose,
-        grep=getattr(args, 'grep', None),
-        vgrep=getattr(args, 'vgrep', None),
-        grep_name=getattr(args, 'grep_name', None),
-        vgrep_name=getattr(args, 'exclude_name', None),
-        grep_types=getattr(args, 'grep_type', None),
-        vgrep_types=getattr(args, 'exclude_type', None),
-        grep_text=getattr(args, 'grep_text', None),
-        vgrep_text=getattr(args, 'exclude_text', None),
-        grep_cost=getattr(args, 'grep_cost', None),
-        vgrep_cost=getattr(args, 'exclude_cost', None),
-        grep_pt=getattr(args, 'grep_pt', None),
-        vgrep_pt=getattr(args, 'exclude_pt', None),
-        grep_loyalty=getattr(args, 'grep_loyalty', None),
-        vgrep_loyalty=getattr(args, 'exclude_loyalty', None),
-        sets=getattr(args, 'set', None),
-        rarities=getattr(args, 'rarity', None),
-        colors=getattr(args, 'colors', None),
-        cmcs=getattr(args, 'cmc', None),
-        mechanics=getattr(args, 'mechanic', None),
-        identities=getattr(args, 'identity', None),
-        id_counts=getattr(args, 'id_count', None),
-        limit=getattr(args, 'limit', 0),
-        shuffle=getattr(args, 'shuffle', False),
-        seed=getattr(args, 'seed', None),
-        quiet=args.quiet,
-        oname=getattr(args, 'outfile', None),
-        decklist_file=getattr(args, 'deck', None),
-        top=args.top,
-        booster=getattr(args, 'booster', 0),
-        box=getattr(args, 'box', 0),
-        json_out=args.json,
-        outliers=args.outliers,
-        dump_all=args.all,
-        use_color=args.color,
-    )
+    cards = cli_utils.load_and_filter_cards(args)
+    if not check_cards(cards, args): return
+    if getattr(args, 'sort', None):
+        cards = sortlib.sort_cards(cards, args.sort, reverse=getattr(args, 'reverse', False), quiet=getattr(args, 'quiet', False))
+    mine = Datamine(cards)
+
+    json_out = getattr(args, 'json', False)
+    oname = getattr(args, 'outfile', None)
+    if not json_out and oname and oname.endswith('.json'): json_out = True
+
+    output_f = open(oname, 'w', encoding='utf8') if oname else sys.stdout
+    try:
+        if json_out:
+            output_f.write(json.dumps(mine.to_dict(), indent=2) + '\n')
+        else:
+            with redirect_stdout(output_f):
+                mine.summarize(use_color=args.color, vsize=args.top)
+                if getattr(args, 'outliers', False) or getattr(args, 'all', False):
+                    mine.outliers(dump_invalid=getattr(args, 'all', False), use_color=args.color, vsize=args.top)
+    finally:
+        if oname: output_f.close()
 
 def handle_curve(args):
     cards = cli_utils.load_and_filter_cards(args)
