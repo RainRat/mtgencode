@@ -278,7 +278,7 @@ def fields_check_valid(fields):
             return False
     # Station cards can become creatures, so they are allowed to NOT have P/T.
     # We also allow them to HAVE P/T if they want.
-    elif isartifact and 'station' in text:
+    elif isartifact and re.search(r'\bstation\b', text):
         pass
     else:
         if field_pt in fields:
@@ -793,24 +793,29 @@ class Card:
 
         return score
 
+    def _get_face_power_score(self):
+        """Calculates the base power score for this card face (P + T + Keywords)."""
+        p = utils.from_unary_single(self.pt_p)
+        t = utils.from_unary_single(self.pt_t)
+
+        # Default to 0 if non-numeric (X, *, etc.)
+        p_val = float(p) if isinstance(p, (int, float)) else 0.0
+        t_val = float(t) if isinstance(t, (int, float)) else 0.0
+
+        score = p_val + t_val
+
+        # Add keyword bonuses
+        face_mechanics = self.get_face_mechanics()
+        for m in face_mechanics:
+            score += KEYWORD_WEIGHTS.get(m, 0.0)
+        return score
+
     @property
     def recommended_cmc(self):
         """Calculates a heuristic 'Fair Mana Value' for creatures based on stats and keywords."""
         recommendation = 0.0
         if self.is_creature:
-            p = utils.from_unary_single(self.pt_p)
-            t = utils.from_unary_single(self.pt_t)
-
-            # Default to 0 if non-numeric (X, *, etc.)
-            p_val = float(p) if isinstance(p, (int, float)) else 0.0
-            t_val = float(t) if isinstance(t, (int, float)) else 0.0
-
-            score = p_val + t_val
-
-            # Add keyword bonuses
-            face_mechanics = self.get_face_mechanics()
-            for m in face_mechanics:
-                score += KEYWORD_WEIGHTS.get(m, 0.0)
+            score = self._get_face_power_score()
 
             # Formula: (P + T + Keywords) / 2.0
             # A basic 2/2 creature without abilities is recommended at 2.0 mana.
@@ -826,19 +831,7 @@ class Card:
         """Calculates a heuristic power rating for creatures relative to their CMC."""
         rating = 0.0
         if self.is_creature:
-            p = utils.from_unary_single(self.pt_p)
-            t = utils.from_unary_single(self.pt_t)
-
-            # Default to 0 if non-numeric (X, *, etc.)
-            p_val = float(p) if isinstance(p, (int, float)) else 0.0
-            t_val = float(t) if isinstance(t, (int, float)) else 0.0
-
-            score = p_val + t_val
-
-            # Add keyword bonuses
-            face_mechanics = self.get_face_mechanics()
-            for m in face_mechanics:
-                score += KEYWORD_WEIGHTS.get(m, 0.0)
+            score = self._get_face_power_score()
 
             # Adjust for CMC
             # Formula: (P + T + Keywords) / (2 * max(1, CMC))
@@ -966,7 +959,7 @@ class Card:
         if 'level up' in text_raw or 'level &' in text_enc:
             m.add('Leveler')
 
-        if 'station' in text_raw:
+        if re.search(r'\bstation\b', text_raw):
             m.add('Station')
 
         if '%' in text_enc or '#' in text_enc or 'counter' in text_raw:
@@ -1400,8 +1393,8 @@ class Card:
             return self.bside.search_loyalty(pattern)
         return False
 
-    def summary(self, ansi_color=False):
-        """Returns a compact, one-line summary of the card."""
+    def header(self, ansi_color=False, recursive=True):
+        """Returns a minimal one-line identification header for the card."""
         # Status indicator
         status = ''
         if not self.parsed:
@@ -1447,27 +1440,26 @@ class Card:
         if not stats:
             stats = self._get_loyalty_display(ansi_color=ansi_color)
 
+        # Construct final header string with consistent bullet separators
+        res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
+        if stats:
+            res += f' \u2022 {stats}'
+
+        if recursive and self.bside:
+            res += ' // ' + self.bside.header(ansi_color=ansi_color, recursive=True)
+
+        return res
+
+    def summary(self, ansi_color=False):
+        """Returns a compact, one-line summary of the card."""
+        res = self.header(ansi_color=ansi_color, recursive=False)
+
         # Mechanics
         face_mechanics = sorted(list(self.get_face_mechanics()))
         mechanics_str = ", ".join(face_mechanics)
         if ansi_color and mechanics_str:
             mechanics_str = utils.colorize(mechanics_str, utils.Ansi.CYAN)
 
-        # Recommended CMC (Fair MV) for creatures
-        fair_mv = ''
-        if self.is_creature:
-            val = self.recommended_cmc
-            fair_mv = f'Fair MV: {val}'
-            if ansi_color:
-                # Use Green if the card is "fair" or better (cost >= fair_mv)
-                # Use Red if the card is pushed (cost < fair_mv)
-                color = utils.Ansi.GREEN if self.cost.cmc >= val else utils.Ansi.RED
-                fair_mv = utils.colorize(fair_mv, utils.Ansi.BOLD + color)
-
-        # Construct final summary string with consistent bullet separators
-        res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
-        if stats:
-            res += f' \u2022 {stats}'
         if mechanics_str:
             res += f' \u2022 {mechanics_str}'
 
@@ -1479,7 +1471,15 @@ class Card:
                 act_str = utils.colorize(act_str, utils.Ansi.CYAN)
             res += f' \u2022 {act_str}'
 
-        if fair_mv:
+        # Recommended CMC (Fair MV) for creatures
+        if self.is_creature:
+            val = self.recommended_cmc
+            fair_mv = f'Fair MV: {val}'
+            if ansi_color:
+                # Use Green if the card is "fair" or better (cost >= fair_mv)
+                # Use Red if the card is pushed (cost < fair_mv)
+                color = utils.Ansi.GREEN if self.cost.cmc >= val else utils.Ansi.RED
+                fair_mv = utils.colorize(fair_mv, utils.Ansi.BOLD + color)
             res += f' \u2022 {fair_mv}'
 
         if self.bside:

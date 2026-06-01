@@ -4,8 +4,10 @@ import tempfile
 import json
 
 # Ensure lib is in path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from lib import jdecode
+libdir = os.path.join(os.path.dirname(__file__), '../lib')
+if libdir not in sys.path:
+    sys.path.append(libdir)
+import jdecode
 
 def test_advanced_filtering():
     # Setup sample data with set codes and rarities

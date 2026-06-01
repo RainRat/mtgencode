@@ -205,42 +205,6 @@ def format_delta(val, base_val, is_percent=False, use_color=False, reverse_color
             res = utils.colorize(res, color)
     return res
 
-def summarize_data(infile, verbose=False, grep=None, vgrep=None,
-                   grep_name=None, vgrep_name=None,
-                   grep_types=None, vgrep_types=None,
-                   grep_text=None, vgrep_text=None,
-                   grep_cost=None, vgrep_cost=None,
-                   grep_pt=None, vgrep_pt=None,
-                   grep_loyalty=None, vgrep_loyalty=None,
-                   sets=None, rarities=None, colors=None, cmcs=None,
-                   mechanics=None, identities=None, id_counts=None,
-                   limit=0, shuffle=False, seed=None, quiet=False, oname=None, decklist_file=None,
-                   top=10, booster=0, sort=None, reverse_sort=False, box=0,
-                   json_out=False, outliers=False, dump_all=False, use_color=None):
-    cards = jdecode.mtg_open_file(infile, verbose=verbose, grep=grep, vgrep=vgrep,
-                                  grep_name=grep_name, vgrep_name=vgrep_name,
-                                  grep_types=grep_types, vgrep_types=vgrep_types,
-                                  grep_text=grep_text, vgrep_text=vgrep_text,
-                                  grep_cost=grep_cost, vgrep_cost=vgrep_cost,
-                                  grep_pt=grep_pt, vgrep_pt=vgrep_pt,
-                                  grep_loyalty=grep_loyalty, vgrep_loyalty=vgrep_loyalty,
-                                  sets=sets, rarities=rarities, colors=colors, cmcs=cmcs,
-                                  mechanics=mechanics, identities=identities, id_counts=id_counts,
-                                  limit=limit, shuffle=shuffle, seed=seed, decklist_file=decklist_file,
-                                  booster=booster, box=box)
-    if not cards: return
-    if sort: cards = sortlib.sort_cards(cards, sort, reverse=reverse_sort, quiet=quiet)
-    mine = Datamine(cards)
-    if not json_out and oname and oname.endswith('.json'): json_out = True
-    output_f = open(oname, 'w', encoding='utf8') if oname else sys.stdout
-    try:
-        if json_out: output_f.write(json.dumps(mine.to_dict(), indent=2) + '\n')
-        else:
-            with redirect_stdout(output_f):
-                mine.summarize(use_color=use_color, vsize=top)
-                if outliers or dump_all: mine.outliers(dump_invalid=dump_all, use_color=use_color, vsize=top)
-    finally:
-        if oname: output_f.close()
 
 def get_archetype_counts(cards):
     ps = ["UW", "BU", "BR", "GR", "GW", "BW", "RU", "BG", "RW", "GU"]
@@ -359,44 +323,27 @@ def analyze_dataset(cards):
 # --- Subparser Handlers ---
 
 def handle_summary(args):
-    summarize_data(
-        args.infile,
-        verbose=args.verbose,
-        grep=getattr(args, 'grep', None),
-        vgrep=getattr(args, 'vgrep', None),
-        grep_name=getattr(args, 'grep_name', None),
-        vgrep_name=getattr(args, 'exclude_name', None),
-        grep_types=getattr(args, 'grep_type', None),
-        vgrep_types=getattr(args, 'exclude_type', None),
-        grep_text=getattr(args, 'grep_text', None),
-        vgrep_text=getattr(args, 'exclude_text', None),
-        grep_cost=getattr(args, 'grep_cost', None),
-        vgrep_cost=getattr(args, 'exclude_cost', None),
-        grep_pt=getattr(args, 'grep_pt', None),
-        vgrep_pt=getattr(args, 'exclude_pt', None),
-        grep_loyalty=getattr(args, 'grep_loyalty', None),
-        vgrep_loyalty=getattr(args, 'exclude_loyalty', None),
-        sets=getattr(args, 'set', None),
-        rarities=getattr(args, 'rarity', None),
-        colors=getattr(args, 'colors', None),
-        cmcs=getattr(args, 'cmc', None),
-        mechanics=getattr(args, 'mechanic', None),
-        identities=getattr(args, 'identity', None),
-        id_counts=getattr(args, 'id_count', None),
-        limit=getattr(args, 'limit', 0),
-        shuffle=getattr(args, 'shuffle', False),
-        seed=getattr(args, 'seed', None),
-        quiet=args.quiet,
-        oname=getattr(args, 'outfile', None),
-        decklist_file=getattr(args, 'deck', None),
-        top=args.top,
-        booster=getattr(args, 'booster', 0),
-        box=getattr(args, 'box', 0),
-        json_out=args.json,
-        outliers=args.outliers,
-        dump_all=args.all,
-        use_color=args.color,
-    )
+    cards = cli_utils.load_and_filter_cards(args)
+    if not check_cards(cards, args): return
+    if getattr(args, 'sort', None):
+        cards = sortlib.sort_cards(cards, args.sort, reverse=getattr(args, 'reverse', False), quiet=getattr(args, 'quiet', False))
+    mine = Datamine(cards)
+
+    json_out = getattr(args, 'json', False)
+    oname = getattr(args, 'outfile', None)
+    if not json_out and oname and oname.endswith('.json'): json_out = True
+
+    output_f = open(oname, 'w', encoding='utf8') if oname else sys.stdout
+    try:
+        if json_out:
+            output_f.write(json.dumps(mine.to_dict(), indent=2) + '\n')
+        else:
+            with redirect_stdout(output_f):
+                mine.summarize(use_color=args.color, vsize=args.top)
+                if getattr(args, 'outliers', False) or getattr(args, 'all', False):
+                    mine.outliers(dump_invalid=getattr(args, 'all', False), use_color=args.color, vsize=args.top)
+    finally:
+        if oname: output_f.close()
 
 def handle_curve(args):
     cards = cli_utils.load_and_filter_cards(args)
@@ -1369,6 +1316,22 @@ def handle_subtypes(args):
         datalib.add_separator_row(crows); datalib.printrows(datalib.padrows(crows, aligns=['l','l','r','r']), indent=4)
 
 def handle_compare(args):
+    # Smart Baseline Detection: if only one file is provided, try to find a standard baseline
+    if len(args.infiles) == 1:
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        options = [
+            os.path.join(script_dir, '../data/AllPrintings.json'),
+            'data/AllPrintings.json',
+            os.path.join(os.path.dirname(script_dir), 'data/AllPrintings.json'),
+            os.path.join(os.path.dirname(os.path.dirname(script_dir)), 'data/AllPrintings.json')
+        ]
+        for opt in options:
+            if os.path.exists(opt) and os.path.abspath(opt) != os.path.abspath(args.infiles[0]):
+                args.infiles.insert(0, opt)
+                if not args.quiet:
+                    print(f"Notice: Comparing against baseline: {opt}", file=sys.stderr)
+                break
+
     def get_stats_for_file(path, args):
         ss = {}
         cs = jdecode.mtg_open_file(path, verbose=args.verbose, linetrans=not getattr(args, 'nolinetrans', False),
@@ -1403,7 +1366,14 @@ def handle_compare(args):
         mines.append(get_stats_for_file(f, args))
     if not mines: return
     base_mine = mines[0]; base_data = base_mine.to_dict()
-    fnames = [os.path.basename(f)[:15] for f in args.infiles]
+    def clean_fname(path):
+        bn = os.path.basename(path)
+        for ext in ['.json', '.csv', '.txt', '.mse-set', '.xml', '.jsonl']:
+            if bn.lower().endswith(ext):
+                bn = bn[:-len(ext)]
+                break
+        return bn[:15]
+    fnames = [clean_fname(f) for f in args.infiles]
     header = ["Metric", fnames[0]]
     for i in range(1, len(fnames)): header.extend([fnames[i], "Delta"])
     if use_color: header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
@@ -1455,6 +1425,7 @@ def handle_compare(args):
     add_metric_row("Avg CMC", ["stats", "avg_cmc"], reverse_color=True)
     add_metric_row("Avg Power", ["stats", "avg_power"])
     add_metric_row("Avg Toughness", ["stats", "avg_toughness"])
+    add_metric_row("Avg Rating", ["stats", "avg_power_rating"])
     add_metric_row("Avg Complexity", ["stats", "avg_complexity"], reverse_color=True)
     add_sep("Colors")
     for c in 'WUBRG': add_index_percent_row(f"{c} %", "by_color_inclusive", c, reverse_color=None)
@@ -1565,7 +1536,22 @@ Examples:
     p_me.set_defaults(func=handle_mechanics)
 
     # synergy
-    p_sy = subparsers.add_parser('synergy', help='Analyze how mechanics appear together (co-occurrence).')
+    p_sy = subparsers.add_parser(
+        'synergy',
+        help='Analyze how mechanics appear together (co-occurrence).',
+        description="""
+Analyzes how different mechanics (like Flying, Kicker, or Flashback) appear
+together on the same cards. It identifies frequent pairings and calculates
+a 'Lift Score' to measure the interaction between them.
+
+The Lift Score measures if two mechanics appear together more often than
+expected by chance:
+- Score > 1.0: The mechanics appear together MORE often than expected (interaction).
+- Score = 1.0: The mechanics appear together exactly as often as expected by chance.
+- Score < 1.0: The mechanics appear together LESS often than expected.
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_sy)
     p_sy.add_argument('--min-freq', type=int, default=2, help='Minimum co-occurrences required to report a pair (Default: 2).')
     p_sy.add_argument('--top', type=int, default=20, help='Show the top N pairings (Default: 20).')
