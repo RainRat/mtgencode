@@ -43,4 +43,4 @@ This will create a file containing the raw data for any cards that could not be 
 Key utility scripts for dataset analysis:
 *   `scripts/mtg_query.py search`: Comprehensive card searching and field extraction.
 *   `scripts/mtg_subset.py`: Creates filtered subsets of MTGJSON files.
-*   `scripts/mtg_analyze.py`: Unified metric and profiling tool (summary, curve, colorpie, grid, types, skeleton, mana, pips, costs, mechanics, synergy, actions, lexicon, stats, power, archetypes, balance, asfan, tokens, subtypes, compare).
+*   `scripts/mtg_analyze.py`: Unified metric and profiling tool (summary, curve, colorpie, grid, types, skeleton, mana, pips, costs, mechanics, interaction, actions, lexicon, stats, power, archetypes, balance, asfan, tokens, subtypes, compare).

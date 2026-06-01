@@ -286,7 +286,7 @@ def calculate_asfan(cards):
         return res
     return {'colors': calc_c(lambda c: c.cost.colors or ['C']), 'types': calc_c(lambda c: [t for t in TRACKED_TYPES if c._has_type(t)]), 'mechs': calc_c(lambda c: list(c.mechanics)), 'multi': 0.0}
 
-def calculate_synergy(cards, min_freq=2):
+def calculate_interaction(cards, min_freq=2):
     ind_c, pair_c, dens_d = Counter(), Counter(), Counter()
     for c in cards:
         ms = sorted(list(c.mechanics))
@@ -766,7 +766,7 @@ def handle_mechanics(args):
         for r in res: rows.append([utils.colorize(r['name'], utils.Ansi.CYAN) if use_color else r['name'], str(r['c1']), f"{r['p1']:5.1f}%", datalib.get_bar_chart(r['p1'], use_color, color=utils.Ansi.CYAN)])
     datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','r','r','c'] if c2 else ['l','r','r','l']), indent=2)
 
-def handle_synergy(args):
+def handle_interaction(args):
     cards = cli_utils.load_and_filter_cards(args)
     if not check_cards(cards, args): return
     ind_c, pair_c, dens_d = Counter(), Counter(), Counter()
@@ -782,7 +782,7 @@ def handle_synergy(args):
         syn.append({'pair': (m1, m2), 'cnt': cnt, 'lift': lift})
     syn.sort(key=lambda x: x['lift'], reverse=True)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
-    if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'density': dict(dens_d), 'density_distribution': dict(dens_d), 'synergy': syn, 'synergy_pairs': syn}, indent=2))
+    if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'density': dict(dens_d), 'density_distribution': dict(dens_d), 'interaction': syn, 'interaction_pairs': syn}, indent=2))
     elif args.csv:
         writer = csv.writer(sys.stdout)
         writer.writerow(['Mechanic 1', 'Mechanic 2', 'Count', 'Lift', 'P(A&B)'])
@@ -791,20 +791,20 @@ def handle_synergy(args):
             pa_b = r['cnt'] / len(cards) if cards else 0
             writer.writerow([m1, m2, r['cnt'], f"{r['lift']:.2f}", f"{pa_b:.4f}"])
     else:
-        utils.print_header("MECHANICAL SYNERGY ANALYSIS", count=len(cards), use_color=use_color)
+        utils.print_header("MECHANICAL INTERACTION ANALYSIS", count=len(cards), use_color=use_color)
         print(f"  {datalib.color_line('Mechanical Density:', use_color)}")
         rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Mechanics", "Cards", "Percent", "Distribution"]]]
         for i in range(max(dens_d.keys())+1 if dens_d else 1):
             cnt = dens_d.get(i, 0); p = cnt/len(cards)*100
             rows.append([str(i), str(cnt), f"{p:5.1f}%", datalib.get_bar_chart(p, use_color, color=utils.Ansi.CYAN)])
         datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['r','r','r','l']), indent=4)
-        print(f"\n  {datalib.color_line('Top Synergistic Pairs (by Lift):', use_color)}")
+        print(f"\n  {datalib.color_line('Top Interaction Pairs (by Lift):', use_color)}")
         sh = ["Pair", "Count", "Lift", "Desc"]
         srows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in sh]]
         for r in syn[:args.top]:
             m1, m2 = r['pair']; lift = r['lift']
             pair = f"{utils.colorize(m1, utils.Ansi.CYAN)} + {utils.colorize(m2, utils.Ansi.CYAN)}" if use_color else f"{m1} + {m2}"
-            desc = "Strong Synergy" if lift>2.0 else ("Synergistic" if lift>1.2 else "Expected")
+            desc = "Strong Interaction" if lift>2.0 else ("Positive Interaction" if lift>1.2 else "Expected")
             srows.append([pair, str(r['cnt']), utils.colorize(f"{lift:6.2f}", utils.Ansi.BOLD+utils.Ansi.GREEN if lift>2.0 else "") if use_color else f"{lift:6.2f}", desc])
         datalib.add_separator_row(srows); datalib.printrows(datalib.padrows(srows, aligns=['l','r','r','l']), indent=4)
 
@@ -1449,8 +1449,8 @@ Examples:
   # Calculate As-Fan statistics for a generated set
   python3 scripts/mtg_analyze.py asfan generated.txt
 
-  # Analyze mechanical synergy in a card pool
-  python3 scripts/mtg_analyze.py synergy my_cards.json --min-freq 5
+  # Analyze mechanical interaction in a card pool
+  python3 scripts/mtg_analyze.py interaction my_cards.json --min-freq 5
 
   # Compare the color lexicon of two datasets
   python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
@@ -1535,9 +1535,10 @@ Examples:
     p_me.add_argument('--top', type=int, default=0, help='Limit the number of mechanics shown.')
     p_me.set_defaults(func=handle_mechanics)
 
-    # synergy
+    # interaction
     p_sy = subparsers.add_parser(
-        'synergy',
+        'interaction',
+        aliases=['synergy'],
         help='Analyze how mechanics appear together (co-occurrence).',
         description="""
 Analyzes how different mechanics (like Flying, Kicker, or Flashback) appear
@@ -1555,7 +1556,7 @@ expected by chance:
     add_std(p_sy)
     p_sy.add_argument('--min-freq', type=int, default=2, help='Minimum co-occurrences required to report a pair (Default: 2).')
     p_sy.add_argument('--top', type=int, default=20, help='Show the top N pairings (Default: 20).')
-    p_sy.set_defaults(func=handle_synergy)
+    p_sy.set_defaults(func=handle_interaction)
 
     # actions
     p_ac = subparsers.add_parser('actions', help='Analyze and categorize functional card effects (Removal, Buffs, etc).')

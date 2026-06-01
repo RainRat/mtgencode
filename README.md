@@ -644,14 +644,14 @@ python3 scripts/mtg_analyze.py asfan data/AllPrintings.json --compare generated.
     *   `--csv`: Output results in CSV format.
     *   Supports standard **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
-### `mtg_analyze.py synergy`
+### `mtg_analyze.py interaction`
 Analyzes how different mechanics (like Flying, Kicker, or Flashback) appear together on the same cards. It identifies frequent pairings and calculates a 'Lift Score' to measure if these mechanics appear together more often than expected by chance.
 ```bash
 # Analyze co-occurrence for a specific set
-python3 scripts/mtg_analyze.py synergy data/AllPrintings.json --set MOM
+python3 scripts/mtg_analyze.py interaction data/AllPrintings.json --set MOM
 
 # Find frequent pairings in AI designs with at least 5 occurrences
-python3 scripts/mtg_analyze.py synergy generated.txt --min-freq 5
+python3 scripts/mtg_analyze.py interaction generated.txt --min-freq 5
 ```
 *   **Options:**
     *   `--min-freq N`: Minimum co-occurrences required to report a pair (Default: 2).
