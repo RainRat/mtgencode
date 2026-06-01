@@ -133,9 +133,6 @@ DIMENSIONS = {
     }
 }
 
-def get_produced_colors(card):
-    return card.produced_colors
-
 def get_mana_category(card):
     if card.is_creature: return "Creature"
     if card.is_artifact: return "Artifact"
@@ -171,9 +168,6 @@ def get_cost_metrics(card):
     intensity = colored_pips / max(1, cmc)
     max_commitment = max(color_pips.values()) if color_pips else 0
     return cmc, colored_pips, intensity, max_commitment
-
-def get_card_actions(card):
-    return card.actions
 
 def get_numeric_stats(card):
     return utils.from_unary_single(card.pt_p), utils.from_unary_single(card.pt_t), utils.from_unary_single(card.loyalty)
@@ -304,7 +298,7 @@ def calculate_synergy(cards, min_freq=2):
 def analyze_dataset(cards):
     s = {'total': len(cards), 'total_cards': len(cards), 'producers': 0, 'producer_count': 0, 'cats': Counter(), 'categories': Counter(), 'cols': Counter(), 'colors': Counter(), 'fixing': 0}
     for c in cards:
-        p = get_produced_colors(c)
+        p = c.produced_colors
         if p:
             s['producers'] += 1
             s['producer_count'] += 1
@@ -813,7 +807,7 @@ def handle_actions(args):
     if not check_cards(cards, args): return
     act_c, col_act = Counter(), defaultdict(Counter)
     for c in cards:
-        acts = get_card_actions(c)
+        acts = c.actions
         for a in acts:
             act_c[a] += 1
             for col in (c.cost.colors or ['C']): col_act[col][a] += 1
