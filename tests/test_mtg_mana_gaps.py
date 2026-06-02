@@ -19,20 +19,20 @@ class TestMtgManaGaps(unittest.TestCase):
     def test_get_produced_colors_wastes(self):
         # Wastes as subtype
         card = Card({'name': 'Wastes', 'types': ['Land'], 'subtypes': ['Wastes']})
-        self.assertEqual(mtg_analyze.get_produced_colors(card), {'C'})
+        self.assertEqual(card.produced_colors, {'C'})
 
         # Wastes as type
         card = Card({'name': 'Wastes', 'types': ['Wastes', 'Land']})
-        self.assertEqual(mtg_analyze.get_produced_colors(card), {'C'})
+        self.assertEqual(card.produced_colors, {'C'})
 
     def test_get_produced_colors_hybrid_and_complex(self):
         # Hybrid symbols
         card = Card({'name': 'Hybrid', 'types': ['Artifact'], 'text': '{T}: Add {W/U}.'})
-        self.assertEqual(mtg_analyze.get_produced_colors(card), {'W', 'U'})
+        self.assertEqual(card.produced_colors, {'W', 'U'})
 
         # Multiple symbols in one line
         card = Card({'name': 'Complex', 'types': ['Artifact'], 'text': '{T}: Add {R}{G} or {B}{B}.'})
-        self.assertEqual(mtg_analyze.get_produced_colors(card), {'R', 'G', 'B'})
+        self.assertEqual(card.produced_colors, {'R', 'G', 'B'})
 
     def test_get_produced_colors_older_text(self):
         patterns = [
@@ -45,18 +45,18 @@ class TestMtgManaGaps(unittest.TestCase):
         ]
         for text, color in patterns:
             card = Card({'name': 'Old Text', 'types': ['Artifact'], 'text': text})
-            self.assertEqual(mtg_analyze.get_produced_colors(card), {color}, f"Failed for pattern: {text}")
+            self.assertEqual(card.produced_colors, {color}, f"Failed for pattern: {text}")
 
     def test_get_produced_colors_bside_recursion(self):
         # B-side produces Any
         bside_json = {'name': 'Back', 'types': ['Artifact'], 'text': '{T}: Add one mana of any color.'}
         card = Card({'name': 'Front', 'types': ['Enchantment'], 'bside': bside_json})
-        self.assertEqual(mtg_analyze.get_produced_colors(card), {'Any'})
+        self.assertEqual(card.produced_colors, {'Any'})
 
         # B-side produces specific color
         bside_json = {'name': 'Back', 'types': ['Land'], 'subtypes': ['Forest']}
         card = Card({'name': 'Front', 'types': ['Artifact'], 'bside': bside_json})
-        self.assertEqual(mtg_analyze.get_produced_colors(card), {'G'})
+        self.assertEqual(card.produced_colors, {'G'})
 
     @patch('mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
