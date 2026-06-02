@@ -365,6 +365,12 @@ def check_quotes(card):
                 retval = retval and thisval
     return retval
 
+def check_color_pie(card):
+    res = card.check_color_pie()
+    if isinstance(res, str):
+        return False
+    return res
+
 props = OrderedDict([
     ('types', check_types),
     ('pt', check_pt),
@@ -383,6 +389,7 @@ props = OrderedDict([
     ('shuffle', check_shuffle),
     ('activated', check_activated),
     ('triggered', check_triggered),
+    ('color_pie', check_color_pie),
 ])
 
 def process_props(cards, dump = False, uncovered = False, quiet = False):
@@ -411,7 +418,12 @@ def process_props(cards, dump = False, uncovered = False, quiet = False):
                     if card.name not in ['demonic pact', 'lavaclaw reaches',
                                          "ertai's trickery", 'rumbling aftershocks', # i hate these
                     ] and dump:
-                        print(('---- ' + prop + ' ----'))
+                        msg = '---- ' + prop + ' ----'
+                        if prop == 'color_pie':
+                            detail = card.check_color_pie()
+                            if isinstance(detail, str):
+                                msg += ' (' + detail + ')'
+                        print(msg)
                         print((card.encode()))
                         print((card.format()))
                 values[prop] = (total, good, bad)
@@ -441,7 +453,12 @@ def main(fname, oname = None, verbose = False, dump = False,
          mechanics=None,
          identities=None, id_counts=None,
          shuffle = False, seed = None, quiet = False, decklist_file = None,
-         booster = 0, sort = None, reverse_sort = False, limit = 0, use_color = None, box = 0):
+         booster = 0, sort = None, reverse_sort = False, limit = 0, use_color = None, box = 0,
+         color_pie = False):
+
+    if not color_pie:
+        if 'color_pie' in props:
+            del props['color_pie']
 
     # Use the robust mtg_open_file for all loading and filtering.
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
@@ -655,6 +672,8 @@ Usage Examples:
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-d', '--dump', action='store_true',
                         help='Show the text of cards that failed validation (useful for debugging).')
+    proc_group.add_argument('--color-pie', action='store_true',
+                        help='Flag cards that violate the mechanical color pie.')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
     proc_group.add_argument('--shuffle', action='store_true',
@@ -774,5 +793,6 @@ Usage Examples:
          mechanics=args.mechanic,
          identities=args.identity, id_counts=args.id_count,
          shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, decklist_file = args.deck,
-         booster = args.booster, sort = args.sort, reverse_sort = args.reverse, limit = args.limit, use_color = args.color, box = args.box)
+         booster = args.booster, sort = args.sort, reverse_sort = args.reverse, limit = args.limit, use_color = args.color, box = args.box,
+         color_pie = args.color_pie)
     exit(0)
