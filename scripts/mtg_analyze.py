@@ -216,7 +216,7 @@ def analyze_subtypes(cards, top=10):
     cw, aw, cc = defaultdict(list), [], Counter()
     for c in cards:
         g = get_color_group(c); cc[g]+=1
-        for s in c.subtypes:
+        for s in getattr(c, 'subtypes', []):
             sc = titlecase(s.replace(utils.dash_marker, '-'))
             cw[g].append(sc); aw.append(sc)
     gf = Counter(aw); tot_gi = sum(gf.values())
@@ -1270,24 +1270,17 @@ def handle_profile(args):
 def handle_subtypes(args):
     cards = cli_utils.load_and_filter_cards(args)
     if not check_cards(cards, args): return
-    cw, aw, cc = defaultdict(list), [], Counter()
-    for c in cards:
-        g = get_color_group(c); cc[g]+=1
-        for s in c.subtypes:
-            sc = titlecase(s.replace(utils.dash_marker, '-'))
-            cw[g].append(sc); aw.append(sc)
-    gf = Counter(aw); tot_gi = sum(gf.values())
-    if not aw: return
-    c_stats = {}
-    for g in 'WUBRGMA':
-        inst = cw[g]
-        if not inst: continue
-        f = Counter(inst); tot_ci = sum(f.values()); dist = {s: (f[s]/tot_ci)/(gf[s]/tot_gi) for s in f}
-        top = sorted([s for s in dist if f[s]>=1], key=lambda s: dist[s], reverse=True)[:args.top]
-        c_stats[g] = {'top': top, 'freq': f, 'scores': dist, 'total': tot_ci, 'cnt': cc[g]}
+
+    stats = analyze_subtypes(cards, top=args.top)
+    gf = stats['global_freq']
+    if not gf: return
+
+    c_stats = stats['color_stats']
+    tot_gi = sum(gf.values())
+
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     if args.json:
-        res = {'total_cards': len(cards), 'total': len(cards), 'global_freq': dict(gf), 'color_stats': c_stats, 'stats': {g: {'top': v['top'], 'total': v['total'], 'cnt': v['cnt']} for g, v in c_stats.items()}}
+        res = {'total_cards': stats['total_cards'], 'total': stats['total'], 'global_freq': dict(gf), 'color_stats': c_stats, 'stats': {g: {'top': v['top'], 'total': v['total'], 'cnt': v['cnt']} for g, v in c_stats.items()}}
         print(json.dumps(res, indent=2))
     elif args.csv:
         w = csv.writer(sys.stdout); w.writerow(['Subtype', 'Count', 'Percent', 'Group', 'Distinctiveness'])
