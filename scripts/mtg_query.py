@@ -455,18 +455,24 @@ def _execute_oracle(cards, args):
     show_summary = not force_full and len(display_cards) > 1 and not getattr(args, 'gatherer', False)
 
     if not args.quiet:
-        if getattr(args, 'limit', 0) > 0 or getattr(args, 'sample', 0) > 0:
-            count_str = f"Showing {len(display_cards)} of"
-        else:
-            count_str = f"Showing {len(display_cards)} of {prelimit_count}" if prelimit_count != len(display_cards) else str(len(display_cards))
-        header_title = "SIMILAR CARDS" if getattr(args, 'similar', False) else "SEARCH RESULTS"
-        utils.print_header(header_title, count=count_str, use_color=use_color)
+        # Suppress header for direct name lookups of a single card
+        suppress_header = getattr(args, 'query', None) and len(display_cards) == 1 and not getattr(args, 'similar', False)
+
+        if not suppress_header:
+            if getattr(args, 'limit', 0) > 0 or getattr(args, 'sample', 0) > 0:
+                count_str = f"Showing {len(display_cards)} of"
+            else:
+                count_str = f"Showing {len(display_cards)} of {prelimit_count}" if prelimit_count != len(display_cards) else str(len(display_cards))
+            header_title = "SIMILAR CARDS" if getattr(args, 'similar', False) else "SEARCH RESULTS"
+            utils.print_header(header_title, count=count_str, use_color=use_color)
 
     for c in display_cards:
+        if show_summary:
+            print("  " + c.summary(ansi_color=use_color).replace('\u2014', '-'))
+            continue
+
         if getattr(args, 'gatherer', False):
             print("  " + c.format(gatherer=True, ansi_color=use_color).replace('\n', '\n  '))
-        elif show_summary:
-            print("  " + c.summary(ansi_color=use_color).replace('\u2014', '-'))
         else:
             # Detailed View
             print("  " + c.header(ansi_color=use_color).replace('\u2014', '-'))
@@ -476,13 +482,23 @@ def _execute_oracle(cards, args):
                     # Subtle divider for secondary faces
                     print("  " + "." * 40)
                     # For B-sides in detailed view, we show a mini-summary
-                    face_info = face.get_type_line(separator='-')
-                    stats = face._get_pt_display(ansi_color=use_color) or face._get_loyalty_display(ansi_color=use_color)
-                    if stats:
-                        face_info += f" • {stats}"
+                    face_name = cardlib.titlecase(face.name.replace(utils.dash_marker, '-'))
                     if use_color:
-                        face_info = utils.colorize(face_info, utils.Ansi.GREEN)
-                    print("  " + face_info)
+                        face_name = utils.colorize(face_name, face._get_ansi_color())
+                    face_cost = face.cost.format(ansi_color=use_color)
+                    face_type = face.get_type_line(separator='-')
+                    if use_color:
+                        face_type = utils.colorize(face_type, utils.Ansi.GREEN)
+                    stats = face._get_pt_display(ansi_color=use_color) or face._get_loyalty_display(ansi_color=use_color)
+
+                    display_line = f"{face_name}"
+                    if face_cost:
+                        display_line += f" {face_cost}"
+                    display_line += f" • {face_type}"
+                    if stats:
+                        display_line += f" • {stats}"
+
+                    print("  " + display_line)
                 else:
                     print("  " + "-" * 40)
 
@@ -492,93 +508,108 @@ def _execute_oracle(cards, args):
 
             print_face(c)
 
-            # Metadata Footer
-            footer_lines = []
+        # Metadata Footer
+        footer_lines = []
 
-            def fmt_label(label):
-                if use_color:
-                    return utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
-                return label
-
-            # 1. Identification Line (Set, Identity, URL)
-            id_parts = []
-            if c.set_code:
-                set_info = f"{fmt_label('SET:')} {c.set_code.upper()}"
-                if c.number:
-                    set_info += f" #{c.number}"
-                id_parts.append(set_info)
-
-            identity = c.color_identity
-            if not identity: identity = "C"
+        def fmt_label(label):
             if use_color:
-                colored_id = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in identity])
-                id_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
-            else:
-                id_parts.append(f"IDENTITY: {identity}")
+                return utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+            return label
 
-            url = utils.get_scryfall_url(c.set_code, c.number)
-            if url:
-                id_parts.append(f"{fmt_label('URL:')} {url}")
+        # 1. Identification Line (Set, Identity, URL)
+        id_parts = []
+        if c.set_code:
+            set_info = f"{fmt_label('SET:')} {c.set_code.upper()}"
+            if c.number:
+                set_info += f" #{c.number}"
+            id_parts.append(set_info)
 
-            footer_lines.append(" \u2022 ".join(id_parts))
+        identity = c.color_identity
+        if not identity: identity = "C"
+        if use_color:
+            colored_id = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in identity])
+            id_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
+        else:
+            id_parts.append(f"IDENTITY: {identity}")
 
-            # 2. Design Metrics Line (Complexity, Rating, Fair MV)
-            comp_val = str(c.complexity_score)
-            rate_val = f"{c.power_rating:.3f}"
-            fair_val = str(c.recommended_cmc)
+        url = utils.get_scryfall_url(c.set_code, c.number)
+        if url:
+            id_parts.append(f"{fmt_label('URL:')} {url}")
+
+        footer_lines.append(" \u2022 ".join(id_parts))
+
+        # 1.5. Production Line (Produced Colors)
+        produced = c.produced_colors
+        if produced:
+            prod_str = "".join(sorted(list(produced)))
+            if "Any" in produced:
+                prod_str = "Any"
 
             if use_color:
-                comp_val = utils.colorize(comp_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
+                if prod_str == "Any":
+                    prod_str = utils.colorize(prod_str, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                else:
+                    prod_str = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in prod_str])
 
-                # Rating Color: Green if efficient/powerful (> 1.2), Red if weak (< 0.8)
-                r_color = ""
-                if c.power_rating > 1.2: r_color = utils.Ansi.BOLD + utils.Ansi.GREEN
-                elif c.power_rating < 0.8: r_color = utils.Ansi.BOLD + utils.Ansi.RED
-                if r_color: rate_val = utils.colorize(rate_val, r_color)
+            footer_lines.append(f"{fmt_label('PRODUCED:')} {prod_str}")
 
-                # Fair MV Color: Green if "fair" (actual cost >= recommended), Red if "pushed" (cost < recommended)
-                f_color = utils.Ansi.BOLD + (utils.Ansi.GREEN if c.cost.cmc >= c.recommended_cmc else utils.Ansi.RED)
-                fair_val = utils.colorize(fair_val, f_color)
+        # 2. Design Metrics Line (Complexity, Rating, Fair MV)
+        comp_val = str(c.complexity_score)
+        rate_val = f"{c.power_rating:.3f}"
+        fair_val = str(c.recommended_cmc)
 
-            score_line = f"{fmt_label('COMPLEXITY:')} {comp_val}"
-            if c.is_creature:
-                score_line += f" \u2022 {fmt_label('RATING:')} {rate_val} \u2022 {fmt_label('FAIR MV:')} {fair_val}"
-            footer_lines.append(score_line)
+        if use_color:
+            comp_val = utils.colorize(comp_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
 
-            # 3. Mechanics Line
-            all_mechanics = sorted(list(c.mechanics))
-            if all_mechanics:
-                mech_val = ', '.join(all_mechanics)
-                if use_color:
-                    mech_val = utils.colorize(mech_val, utils.Ansi.CYAN)
-                footer_lines.append(f"{fmt_label('MECHANICS:')} {mech_val}")
+            # Rating Color: Green if efficient/powerful (> 1.2), Red if weak (< 0.8)
+            r_color = ""
+            if c.power_rating > 1.2: r_color = utils.Ansi.BOLD + utils.Ansi.GREEN
+            elif c.power_rating < 0.8: r_color = utils.Ansi.BOLD + utils.Ansi.RED
+            if r_color: rate_val = utils.colorize(rate_val, r_color)
 
-            # 4. Actions Line
-            all_actions = sorted(list(c.actions))
-            if all_actions:
-                act_val = ', '.join(all_actions)
-                if use_color:
-                    act_val = utils.colorize(act_val, utils.Ansi.CYAN)
-                footer_lines.append(f"{fmt_label('ACTIONS:')} {act_val}")
+            # Fair MV Color: Green if "fair" (actual cost >= recommended), Red if "pushed" (cost < recommended)
+            f_color = utils.Ansi.BOLD + (utils.Ansi.GREEN if c.cost.cmc >= c.recommended_cmc else utils.Ansi.RED)
+            fair_val = utils.colorize(fair_val, f_color)
 
-            print() # Spacer before footer
-            for line in footer_lines:
-                print("  " + line)
+        score_line = f"{fmt_label('COMPLEXITY:')} {comp_val}"
+        if c.is_creature:
+            score_line += f" \u2022 {fmt_label('RATING:')} {rate_val} \u2022 {fmt_label('FAIR MV:')} {fair_val}"
+        footer_lines.append(score_line)
 
-            # Rulings
-            if not getattr(args, 'no_rulings', False) and c.rulings:
-                print()
-                rulings_header = "RULINGS"
-                if use_color:
-                    rulings_header = utils.colorize(rulings_header, utils.Ansi.BOLD + utils.Ansi.CYAN)
-                print(f"  {rulings_header}:")
-                for ruling in c.rulings:
-                    date = ruling.get('date', 'Unknown Date')
-                    text = ruling.get('text', '')
-                    if use_color:
-                        date = utils.colorize(date, utils.Ansi.BOLD)
-                    print(f"  - {date}: {text}")
+        # 3. Mechanics Line
+        all_mechanics = sorted(list(c.mechanics))
+        if all_mechanics:
+            mech_val = ', '.join(all_mechanics)
+            if use_color:
+                mech_val = utils.colorize(mech_val, utils.Ansi.CYAN)
+            footer_lines.append(f"{fmt_label('MECHANICS:')} {mech_val}")
+
+        # 4. Actions Line
+        all_actions = sorted(list(c.actions))
+        if all_actions:
+            act_val = ', '.join(all_actions)
+            if use_color:
+                act_val = utils.colorize(act_val, utils.Ansi.CYAN)
+            footer_lines.append(f"{fmt_label('ACTIONS:')} {act_val}")
+
+        print() # Spacer before footer
+        for line in footer_lines:
+            print("  " + line)
+
+        # Rulings
+        if not getattr(args, 'gatherer', False) and not getattr(args, 'no_rulings', False) and c.rulings:
             print()
+            rulings_header = "RULINGS"
+            if use_color:
+                rulings_header = utils.colorize(rulings_header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+            print(f"  {rulings_header}:")
+            for ruling in c.rulings:
+                date = ruling.get('date', 'Unknown Date')
+                text = ruling.get('text', '')
+                if use_color:
+                    date = utils.colorize(date, utils.Ansi.BOLD)
+                print(f"  - {date}: {text}")
+        print()
 
 # --- Shell Logic ---
 
