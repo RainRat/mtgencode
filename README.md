@@ -420,10 +420,14 @@ Validates card data for rule and formatting consistency (e.g., checking creature
 # Basic validation
 python3 scripts/mtg_validate.py encoded_output.txt
 
+# Check for color pie violations (e.g. Blue cards with Deathtouch)
+python3 scripts/mtg_validate.py generated.txt --color-pie --dump
+
 # Print details for invalid cards
 python3 scripts/mtg_validate.py data/AllPrintings.json --dump
 ```
 *   **Options:**
+    *   `--color-pie`: Identify mechanics that don't match the card's color identity.
     *   `-d`, `--dump`: Print full details for cards that failed validation.
     *   `-n LIMIT`, `--limit LIMIT`: Only process the first N cards.
     *   `--shuffle`: Randomize the order of cards before validating.

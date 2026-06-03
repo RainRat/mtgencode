@@ -50,6 +50,45 @@ ACTION_CATEGORIES = {
     ]
 }
 
+# Mapping of mechanics to their valid color identities (W, U, B, R, G, C=Colorless)
+# This represents the "Color Pie" for validation.
+MECHANIC_COLORS = {
+    'Deathtouch': 'BGC',
+    'Defender': 'WUBRGC',
+    'Double Strike': 'WRC',
+    'First Strike': 'WBRC',
+    'Flash': 'UGBC',
+    'Flying': 'WUBRC',
+    'Haste': 'RBGC',
+    'Hexproof': 'UGWC',
+    'Indestructible': 'WGBC',
+    'Lifelink': 'WBC',
+    'Menace': 'BRGC',
+    'Prowess': 'URWC',
+    'Reach': 'GRC',
+    'Trample': 'GRBC',
+    'Vigilance': 'WGC',
+    'Ward': 'WUGC',
+    'Scry': 'UWRBGC',
+    'Mill': 'UBC',
+    'Discard': 'BURC',
+    'Cycling': 'WUBRGC',
+    'Convoke': 'WGC',
+    'Flashback': 'URBWGC',
+    'Infect': 'BGUC',
+    'Toxic': 'BGWC',
+    'Uncast': 'UC', # "Counter target spell"
+}
+
+# Mapping of functional actions to valid colors
+ACTION_COLORS = {
+    'Protection': 'WGUC',
+    'Buffs': 'WGRBC',
+    'Card Advantage': 'UBGRWC',
+    'Disruption': 'BURWC',
+    'Mana': 'GRC' # Acceleration/Fixing
+}
+
 # Heuristic weights for calculating power rating
 KEYWORD_WEIGHTS = {
     'Flying': 1.5,
@@ -1033,6 +1072,37 @@ class Card:
             actions.add('Mana')
 
         return actions
+
+    def check_color_pie(self):
+        """
+        Validates the card's mechanics and actions against its color identity.
+        Returns True if the card is consistent with the color pie, a string message
+        if it has a break, and None if no relevant mechanics or actions were found to check.
+        """
+        identity = self.color_identity or 'C'
+        checked = False
+        violations = []
+
+        # 1. Check Mechanics
+        for mech in self.mechanics:
+            if mech in MECHANIC_COLORS:
+                checked = True
+                valid_colors = MECHANIC_COLORS[mech]
+                # A violation occurs if the card doesn't share ANY color with the valid set
+                if not any(c in valid_colors for c in identity):
+                    violations.append(f"{mech} (Expected {valid_colors})")
+
+        # 2. Check Actions
+        for act in self.actions:
+            if act in ACTION_COLORS:
+                checked = True
+                valid_colors = ACTION_COLORS[act]
+                if not any(c in valid_colors for c in identity):
+                    violations.append(f"{act} (Expected {valid_colors})")
+
+        if violations:
+            return "Color Pie Break: " + ", ".join(violations)
+        return True if checked else None
 
     @property
     def rarity_name(self):
