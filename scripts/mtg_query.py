@@ -495,10 +495,15 @@ def _execute_oracle(cards, args):
             # Metadata Footer
             footer_lines = []
 
-            # 1. Identification Line (Set, ID, URL)
+            def fmt_label(label):
+                if use_color:
+                    return utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                return label
+
+            # 1. Identification Line (Set, Identity, URL)
             id_parts = []
             if c.set_code:
-                set_info = f"SET: {c.set_code.upper()}"
+                set_info = f"{fmt_label('SET:')} {c.set_code.upper()}"
                 if c.number:
                     set_info += f" #{c.number}"
                 id_parts.append(set_info)
@@ -507,13 +512,13 @@ def _execute_oracle(cards, args):
             if not identity: identity = "C"
             if use_color:
                 colored_id = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in identity])
-                id_parts.append(f"ID: {colored_id}")
+                id_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
             else:
-                id_parts.append(f"ID: {identity}")
+                id_parts.append(f"IDENTITY: {identity}")
 
             url = utils.get_scryfall_url(c.set_code, c.number)
             if url:
-                id_parts.append(url)
+                id_parts.append(f"{fmt_label('URL:')} {url}")
 
             footer_lines.append(" \u2022 ".join(id_parts))
 
@@ -535,27 +540,28 @@ def _execute_oracle(cards, args):
                 f_color = utils.Ansi.BOLD + (utils.Ansi.GREEN if c.cost.cmc >= c.recommended_cmc else utils.Ansi.RED)
                 fair_val = utils.colorize(fair_val, f_color)
 
-            score_line = f"COMPLEXITY: {comp_val}"
+            score_line = f"{fmt_label('COMPLEXITY:')} {comp_val}"
             if c.is_creature:
-                score_line += f" \u2022 RATING: {rate_val} \u2022 FAIR MV: {fair_val}"
+                score_line += f" \u2022 {fmt_label('RATING:')} {rate_val} \u2022 {fmt_label('FAIR MV:')} {fair_val}"
             footer_lines.append(score_line)
 
             # 3. Mechanics Line
             all_mechanics = sorted(list(c.mechanics))
             if all_mechanics:
-                mech_str = f"MECHANICS: {', '.join(all_mechanics)}"
+                mech_val = ', '.join(all_mechanics)
                 if use_color:
-                    mech_str = f"MECHANICS: {utils.colorize(', '.join(all_mechanics), utils.Ansi.CYAN)}"
-                footer_lines.append(mech_str)
+                    mech_val = utils.colorize(mech_val, utils.Ansi.CYAN)
+                footer_lines.append(f"{fmt_label('MECHANICS:')} {mech_val}")
 
             # 4. Actions Line
             all_actions = sorted(list(c.actions))
             if all_actions:
-                act_str = f"ACTIONS: {', '.join(all_actions)}"
+                act_val = ', '.join(all_actions)
                 if use_color:
-                    act_str = f"ACTIONS: {utils.colorize(', '.join(all_actions), utils.Ansi.CYAN)}"
-                footer_lines.append(act_str)
+                    act_val = utils.colorize(act_val, utils.Ansi.CYAN)
+                footer_lines.append(f"{fmt_label('ACTIONS:')} {act_val}")
 
+            print() # Spacer before footer
             for line in footer_lines:
                 print("  " + line)
 
