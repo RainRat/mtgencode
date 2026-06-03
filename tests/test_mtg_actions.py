@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 import io
-from scripts.mtg_analyze import get_card_actions, main
+from scripts.mtg_analyze import main
 from lib.cardlib import Card
 
 class TestMtgActionsSimplified(unittest.TestCase):
@@ -9,12 +9,12 @@ class TestMtgActionsSimplified(unittest.TestCase):
     def test_get_card_actions_basic(self):
         # Removal
         card = Card({"name": "Murder", "manaCost": "{1}{B}{B}", "text": "destroy target creature.", "types": ["instant"], "rarity": "common"})
-        actions = get_card_actions(card)
+        actions = card.actions
         self.assertIn("Removal", actions)
 
         # Protection
         card = Card({"name": "Swiftfoot Boots", "manaCost": "{2}", "text": "hexproof", "types": ["artifact"], "rarity": "common"})
-        actions = get_card_actions(card)
+        actions = card.actions
         self.assertIn("Protection", actions)
 
     @patch('scripts.mtg_analyze.jdecode.mtg_open_file')

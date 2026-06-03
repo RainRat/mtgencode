@@ -21,7 +21,7 @@ class TestMtgMana(unittest.TestCase):
             'types': ['Land'],
             'subtypes': ['Forest']
         })
-        self.assertEqual(mtg_analyze.get_produced_colors(card_forest), {'G'})
+        self.assertEqual(card_forest.produced_colors, {'G'})
 
         # Dual Land
         card_volcanic = cardlib.Card({
@@ -29,7 +29,7 @@ class TestMtgMana(unittest.TestCase):
             'types': ['Land'],
             'subtypes': ['Island', 'Mountain']
         })
-        self.assertEqual(mtg_analyze.get_produced_colors(card_volcanic), {'U', 'R'})
+        self.assertEqual(card_volcanic.produced_colors, {'U', 'R'})
 
     def test_get_produced_colors_text(self):
         # Mana Creature
@@ -38,7 +38,7 @@ class TestMtgMana(unittest.TestCase):
             'types': ['Creature'],
             'text': '{T}: Add {G}.'
         })
-        self.assertEqual(mtg_analyze.get_produced_colors(card_elf), {'G'})
+        self.assertEqual(card_elf.produced_colors, {'G'})
 
         # Mana Artifact
         card_sol_ring = cardlib.Card({
@@ -46,7 +46,7 @@ class TestMtgMana(unittest.TestCase):
             'types': ['Artifact'],
             'text': '{T}: Add {C}{C}.'
         })
-        self.assertEqual(mtg_analyze.get_produced_colors(card_sol_ring), {'C'})
+        self.assertEqual(card_sol_ring.produced_colors, {'C'})
 
         # "Any Color"
         card_lotus = cardlib.Card({
@@ -54,7 +54,7 @@ class TestMtgMana(unittest.TestCase):
             'types': ['Artifact'],
             'text': '{T}, Sacrifice @: Add three mana of any color.'
         })
-        self.assertEqual(mtg_analyze.get_produced_colors(card_lotus), {'Any'})
+        self.assertEqual(card_lotus.produced_colors, {'Any'})
 
     def test_get_mana_category(self):
         # Creature
