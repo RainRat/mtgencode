@@ -414,6 +414,21 @@ python3 scripts/mtg_analyze.py summary encoded_output.txt summary.json
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
     *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--grep`, `--cmc`, `--mechanic`).
 
+### `mtg_eval.py`
+Evaluates the quality of a trained AI model checkpoint by generating a sample of cards and automatically running the validation suite. It calculates a 'Mechanical Accuracy Score' based on how many cards follow Magic's rules logic (e.g., P/T on creatures, X-cost usage).
+```bash
+# Evaluate a checkpoint by generating 100 cards
+python3 scripts/mtg_eval.py checkpoint.pt --count 100
+
+# See details for cards that failed validation
+python3 scripts/mtg_eval.py checkpoint.pt --count 20 --dump
+```
+*   **Options:**
+    *   `-c N`, `--count N`: Number of cards to generate and evaluate (Default: 100).
+    *   `-t TEMP`, `--temp TEMP`: Sampling temperature (Default: 0.8).
+    *   `-d`, `--dump`: Print details for cards that failed validation.
+    *   `--seed N`: Random seed for sampling.
+
 ### `mtg_validate.py`
 Validates card data for rule and formatting consistency (e.g., checking creature stats or land costs). It works with all supported input formats (JSON, CSV, XML, encoded text, etc.).
 ```bash
