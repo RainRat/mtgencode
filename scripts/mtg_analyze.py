@@ -763,17 +763,7 @@ def handle_mechanics(args):
 def handle_interaction(args):
     cards = cli_utils.load_and_filter_cards(args)
     if not check_cards(cards, args): return
-    ind_c, pair_c, dens_d = Counter(), Counter(), Counter()
-    for c in cards:
-        ms = sorted(list(c.mechanics)); dens_d[len(ms)] += 1
-        for m in ms: ind_c[m] += 1
-        for i in range(len(ms)):
-            for j in range(i+1, len(ms)): pair_c[(ms[i], ms[j])] += 1
-    syn = []
-    for (m1, m2), cnt in pair_c.items():
-        if cnt < args.min_freq: continue
-        lift = (cnt * len(cards)) / (ind_c[m1] * ind_c[m2])
-        syn.append({'pair': (m1, m2), 'cnt': cnt, 'lift': lift})
+    dens_d, _, _, syn = calculate_interaction(cards, min_freq=args.min_freq)
     syn.sort(key=lambda x: x['lift'], reverse=True)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'density': dict(dens_d), 'density_distribution': dict(dens_d), 'interaction': syn, 'interaction_pairs': syn}, indent=2))
