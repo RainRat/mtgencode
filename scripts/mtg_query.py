@@ -184,6 +184,35 @@ def handle_search(args):
     cards = cli_utils.load_and_filter_cards(args)
     _execute_search(cards, args)
 
+def _build_search_map(cards):
+    search_map = {}
+    for c in cards:
+        # Determine the best "full" name for suggestions
+        names = []
+        curr = c
+        while curr:
+            names.append(cardlib.titlecase(curr.name.replace(utils.dash_marker, '-')))
+            curr = curr.bside
+        root_title = " // ".join(names)
+
+        # Recursively add all faces to the map
+        curr = c
+        while curr:
+            unpassed_name = curr.name.replace(utils.dash_marker, '-')
+            name_lower = curr.name.lower()
+
+            # Map the exact face name to the root title
+            search_map[name_lower] = root_title
+
+            # Map individual words to the root title
+            for word in unpassed_name.split():
+                if len(word) > 3:
+                    clean_word = re.sub(r'[^a-zA-Z0-9]', '', word).lower()
+                    if clean_word and clean_word not in search_map:
+                        search_map[clean_word] = root_title
+            curr = curr.bside
+    return search_map
+
 def _execute_search(cards, args):
     total_matches = len(cards)
     
@@ -192,16 +221,7 @@ def _execute_search(cards, args):
             print("No cards found matching the criteria.", file=sys.stderr)
         if getattr(args, 'grep_name', None) and not args.quiet:
             all_cards = jdecode.mtg_open_file(args.infile, verbose=False)
-            search_map = {}
-            for c in all_cards:
-                unpassed_name = c.name.replace(utils.dash_marker, '-')
-                full_title = cardlib.titlecase(unpassed_name)
-                search_map[c.name.lower()] = full_title
-                for word in unpassed_name.split():
-                    if len(word) > 3:
-                        clean_word = re.sub(r'[^a-zA-Z0-9]', '', word).lower()
-                        if clean_word and clean_word not in search_map:
-                            search_map[clean_word] = full_title
+            search_map = _build_search_map(all_cards)
             
             matches = []
             for gn in args.grep_name:
@@ -378,22 +398,35 @@ def _execute_oracle(cards, args):
     if getattr(args, 'sort', None):
         cards = sortlib.sort_cards(cards, args.sort, reverse=getattr(args, 'reverse', False), quiet=args.quiet)
     
-    search_map = {}
-    for c in cards:
-        unpassed_name = c.name.replace(utils.dash_marker, '-')
-        search_map[c.name.lower()] = cardlib.titlecase(unpassed_name)
-        for word in unpassed_name.split():
-            if len(word) > 3:
-                clean_word = re.sub(r'[^a-zA-Z0-9]', '', word).lower()
-                if clean_word and clean_word not in search_map:
-                    search_map[clean_word] = cardlib.titlecase(unpassed_name)
+    search_map = _build_search_map(cards)
 
     query = getattr(args, 'query', None)
     if query:
         query_sanitized = query.lower().replace('-', utils.dash_marker)
-        display_cards = [c for c in cards if c.name.lower() == query_sanitized]
+
+        # Exact match (recursive across faces)
+        def is_exact_match(card, q):
+            # Check full combined name
+            names = []
+            curr = card
+            while curr:
+                names.append(curr.name.lower())
+                curr = curr.bside
+            if " // ".join(names) == q: return True
+
+            # Check individual faces
+            curr = card
+            while curr:
+                if curr.name.lower() == q: return True
+                curr = curr.bside
+            return False
+
+        display_cards = [c for c in cards if is_exact_match(c, query_sanitized)]
+
+        # Partial match (recursive via Card.search_name)
         if not display_cards:
-            display_cards = [c for c in cards if query_sanitized in c.name.lower()]
+            query_pat = re.compile(re.escape(query_sanitized), re.IGNORECASE)
+            display_cards = [c for c in cards if c.search_name(query_pat)]
         
         if not display_cards:
             matches = difflib.get_close_matches(query.lower(), list(search_map.keys()), n=3, cutoff=0.6)
@@ -405,7 +438,7 @@ def _execute_oracle(cards, args):
             if len(distinct_suggestions) == 1:
                 suggestion_name = list(distinct_suggestions.values())[0]
                 suggestion_sanitized = suggestion_name.lower().replace('-', utils.dash_marker)
-                display_cards = [c for c in cards if c.name.lower() == suggestion_sanitized]
+                display_cards = [c for c in cards if is_exact_match(c, suggestion_sanitized)]
                 if not args.quiet:
                     print(f"Notice: Card '{query}' not found. Showing best match: {suggestion_name}", file=sys.stderr)
             elif not args.quiet:
