@@ -82,6 +82,7 @@ MECHANIC_COLORS = {
 
 # Mapping of functional actions to valid colors
 ACTION_COLORS = {
+    'Removal': 'WUBRGC',
     'Protection': 'WGUC',
     'Buffs': 'WGRBC',
     'Card Advantage': 'UBGRWC',

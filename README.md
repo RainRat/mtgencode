@@ -565,6 +565,18 @@ python3 scripts/mtg_diff.py data/AllPrintings.json generated_cards.txt
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
     *   Supports all **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
 
+### `mtg_analyze.py audit`
+Performs a comprehensive design "Health Check" on a dataset. It checks for color and rarity balance, creature density, functional coverage (like availability of removal and card advantage), and identifies color pie violations or complexity outliers.
+```bash
+# Audit a generated set for design issues
+python3 scripts/mtg_analyze.py audit generated.txt
+
+# Audit a specific set and get results in JSON format
+python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM --json
+```
+*   **Audit includes:** Dataset health, color balance, type distribution, functional coverage by color, color pie verification, and complexity/power analysis.
+*   **Options:** Supports `--json` and all standard **Advanced Filtering** flags.
+
 ### `mtg_analyze.py compare`
 Provides a side-by-side statistical comparison of two or more card datasets. This is useful for evaluating how well a generated dataset matches the characteristics of official Magic data.
 ```bash

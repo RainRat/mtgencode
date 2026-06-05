@@ -1302,6 +1302,111 @@ def handle_subtypes(args):
             crows.append([utils.colorize(clbls[g], utils.Ansi.get_color_color(g)) if use_color else clbls[g], ", ".join(d['top']), f"{max(d['scores'].values()) if d['scores'] else 0:.1f}x", str(d['cnt'])])
         datalib.add_separator_row(crows); datalib.printrows(datalib.padrows(crows, aligns=['l','l','r','r']), indent=4)
 
+def handle_audit(args):
+    cards = cli_utils.load_and_filter_cards(args)
+    if not check_cards(cards, args): return
+    mine = Datamine(cards)
+    data = mine.to_dict()
+    use_color = args.color if args.color is not None else (not args.json and sys.stdout.isatty())
+
+    report = {
+        'summary': {'total': len(cards), 'valid': data['counts']['valid'], 'invalid': data['counts']['invalid'], 'unparsed': data['counts']['unparsed']},
+        'checks': [],
+        'suggestions': []
+    }
+
+    def add_check(label, status, message):
+        report['checks'].append({'label': label, 'status': status, 'message': message})
+
+    # 1. Dataset Health
+    if data['counts']['invalid'] > 0:
+        add_check("Dataset Integrity", "WARNING", f"Found {data['counts']['invalid']} invalid cards.")
+    if data['counts']['unparsed'] > 0:
+        add_check("Parsing", "ISSUE", f"Failed to parse {data['counts']['unparsed']} cards.")
+
+    # 2. Color Balance
+    total_creatures = sum(1 for c in cards if c.is_creature)
+    total_cards = len(cards)
+    color_stats = data['color_pie']['groups']
+    for c in 'WUBRG':
+        pct = color_stats.get(c, 0) / total_cards * 100 if total_cards > 0 else 0
+        if pct < 15:
+            add_check(f"Color Balance ({c})", "WARNING", f"Under-represented: {pct:.1f}% (Target ~20%)")
+        elif pct > 25:
+            add_check(f"Color Balance ({c})", "WARNING", f"Over-represented: {pct:.1f}% (Target ~20%)")
+
+    # 3. Type Balance
+    cre_pct = total_creatures / total_cards * 100 if total_cards > 0 else 0
+    if cre_pct < 40:
+        add_check("Creature Density", "WARNING", f"Low creature count: {cre_pct:.1f}% (Target 45-55%)")
+        report['suggestions'].append("Increase the number of creatures to improve Limited playability.")
+    elif cre_pct > 60:
+        add_check("Creature Density", "WARNING", f"High creature count: {cre_pct:.1f}% (Target 45-55%)")
+
+    # 4. Functional Coverage
+    # Check if each color has Removal and Card Advantage
+    color_actions = defaultdict(set)
+    for c in cards:
+        g = get_color_group(c)
+        if g in 'WUBRG':
+            for a in c.actions:
+                color_actions[g].add(a)
+
+    for c in 'WUBRG':
+        missing = []
+        if 'Removal' not in color_actions[c]: missing.append('Removal')
+        if 'Card Advantage' not in color_actions[c]: missing.append('Card Advantage')
+        if missing:
+            add_check(f"Functional Coverage ({c})", "ISSUE" if 'Removal' in missing else "WARNING", f"Missing core actions: {', '.join(missing)}")
+
+    # 5. Color Pie Audit
+    breaks = []
+    for c in cards:
+        res = c.check_color_pie()
+        if isinstance(res, str):
+            breaks.append({'card': c.display_name, 'error': res})
+
+    if breaks:
+        add_check("Color Pie", "ISSUE", f"Found {len(breaks)} color pie violations.")
+        for b in breaks[:5]:
+            report['suggestions'].append(f"Review {b['card']}: {b['error']}")
+
+    # 6. Complexity & Power
+    avg_comp = data['stats']['avg_complexity']
+    if avg_comp > 45:
+        add_check("Set Complexity", "WARNING", f"High average complexity ({avg_comp:.1f}).")
+
+    # Power Rating Outliers (High Power at Common)
+    pushed_commons = [c for c in cards if c.rarity == utils.rarity_common_marker and c.power_rating > 1.3]
+    if pushed_commons:
+        add_check("Power Level", "WARNING", f"Found {len(pushed_commons)} pushed commons (Rating > 1.3).")
+        for c in pushed_commons[:3]:
+            report['suggestions'].append(f"Consider increasing rarity or weakening {c.display_name} (Rating: {c.power_rating:.2f})")
+
+    if args.json:
+        print(json.dumps(report, indent=2))
+        return
+
+    utils.print_header("DESIGN HEALTH AUDIT", count=total_cards, use_color=use_color)
+
+    status_colors = {"INFO": utils.Ansi.CYAN, "WARNING": utils.Ansi.YELLOW, "ISSUE": utils.Ansi.BOLD + utils.Ansi.RED}
+
+    for check in report['checks']:
+        st = check['status']
+        lbl = f"[{st}]"
+        if use_color: lbl = utils.colorize(lbl, status_colors.get(st, ""))
+        print(f"  {lbl:<10} {check['label']}: {check['message']}")
+
+    if report['suggestions']:
+        print()
+        print(f"  {utils.colorize('SUGGESTIONS:', utils.Ansi.BOLD + utils.Ansi.GREEN) if use_color else 'SUGGESTIONS:'}")
+        for sug in report['suggestions']:
+            print(f"  - {sug}")
+    else:
+        print()
+        print("  " + (utils.colorize("No significant issues found. Great design!", utils.Ansi.GREEN) if use_color else "No significant issues found. Great design!"))
+    print()
+
 def handle_compare(args):
     # Smart Baseline Detection: if only one file is provided, try to find a standard baseline
     if len(args.infiles) == 1:
@@ -1441,6 +1546,9 @@ Examples:
 
   # Compare the color lexicon of two datasets
   python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
+
+  # Perform a design health audit on a generated set
+  python3 scripts/mtg_analyze.py audit generated.txt
 """
     )
     subparsers = parser.add_subparsers(dest='command', help='Analysis command to run')
@@ -1622,6 +1730,11 @@ expected by chance:
     p_comp.add_argument('infiles', nargs='+', help='Two or more card data files to compare.')
     add_std(p_comp)
     p_comp.set_defaults(func=handle_compare)
+
+    # audit
+    p_aud = subparsers.add_parser('audit', help='Perform a design "Health Check" on a dataset.')
+    add_std(p_aud)
+    p_aud.set_defaults(func=handle_audit)
 
     args = parser.parse_args()
     if not args.command: parser.print_help(); return
