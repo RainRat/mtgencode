@@ -33,7 +33,8 @@ ACTION_CATEGORIES = {
         r'\bdestroy\b', r'\bexile target\b', r'sacrifice (a|target|an)\b',
         r'deals? \d+ damage to (target|each) (creature|planeswalker|permanent)',
         r'deals? &[\^]+ damage to (target|each) (creature|planeswalker|permanent)',
-        r'return (target|each) [^:]* to (its|their) owner\'s hand'
+        r'return (target|each) [^:]* to (its|their) owner\'s hand',
+        r'gets? \-&[\^]+/\-&[\^]+'
     ],
     'Protection': [
         r'\bhexproof\b', r'\bindestructible\b', r'\bward\b', r'\bprotection from\b', r'\bshroud\b', r'\bregenerate\b'
@@ -57,7 +58,7 @@ MECHANIC_COLORS = {
     'Defender': 'WUBRGC',
     'Double Strike': 'WRC',
     'First Strike': 'WBRC',
-    'Flash': 'UGBC',
+    'Flash': 'UGWBC',
     'Flying': 'WUBRC',
     'Haste': 'RBGC',
     'Hexproof': 'UGWC',
@@ -68,7 +69,7 @@ MECHANIC_COLORS = {
     'Reach': 'GRC',
     'Trample': 'GRBC',
     'Vigilance': 'WGC',
-    'Ward': 'WUGC',
+    'Ward': 'WUBRGC',
     'Scry': 'UWRBGC',
     'Mill': 'UBC',
     'Discard': 'BURC',
@@ -82,11 +83,12 @@ MECHANIC_COLORS = {
 
 # Mapping of functional actions to valid colors
 ACTION_COLORS = {
-    'Protection': 'WGUC',
+    'Removal': 'WBRGUC',
+    'Protection': 'WUBRGC',
     'Buffs': 'WGRBC',
     'Card Advantage': 'UBGRWC',
     'Disruption': 'BURWC',
-    'Mana': 'GRC' # Acceleration/Fixing
+    'Mana': 'GRRC' # Acceleration/Fixing (R for rituals)
 }
 
 # Heuristic weights for calculating power rating
