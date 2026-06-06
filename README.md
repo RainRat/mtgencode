@@ -679,6 +679,19 @@ python3 scripts/mtg_analyze.py types data/AllPrintings.json --compare generated.
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
+### `mtg_analyze.py audit`
+Performs a comprehensive design 'Health Check' for card datasets. It reports on core metrics (creature density, average CMC, complexity), functional coverage (removal, card advantage, mana fixing), identifies complexity outliers, and flags mechanical color pie violations.
+```bash
+# Perform a health audit for a generated set
+python3 scripts/mtg_analyze.py audit generated.txt
+
+# Audit a specific set and output structured JSON
+python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM --json > audit.json
+```
+*   **Metrics:** Reports on Creature Density, Avg CMC, Avg Complexity, Removal Density, Card Advantage, and Mana Fixing.
+*   **Color Pie:** Uses `Card.check_color_pie()` to identify mechanics that contradict a card's color identity.
+*   **Options:** Supports all **Advanced Filtering** flags and `--json` output.
+
 ### `mtg_analyze.py subtypes`
 Analyzes the distribution of card subtypes (like Creature types, Artifact types, or Spell types) in a dataset. It identifies the most popular subtypes and calculates 'Signature' subtypes for each color identity (types that appear significantly more often in one color than others).
 ```bash

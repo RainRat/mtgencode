@@ -161,7 +161,7 @@ def get_cost_metrics(card):
         if not sym or sym in [utils.mana_X, utils.mana_S, utils.mana_E]: continue
         is_colored = False
         for char in sym:
-            if char in 'WUBRRG': # wait, WUBRG
+            if char in 'WUBRG':
                 color_pips[char] += 1
                 is_colored = True
         if is_colored: colored_pips += 1
@@ -1302,6 +1302,112 @@ def handle_subtypes(args):
             crows.append([utils.colorize(clbls[g], utils.Ansi.get_color_color(g)) if use_color else clbls[g], ", ".join(d['top']), f"{max(d['scores'].values()) if d['scores'] else 0:.1f}x", str(d['cnt'])])
         datalib.add_separator_row(crows); datalib.printrows(datalib.padrows(crows, aligns=['l','l','r','r']), indent=4)
 
+def handle_audit(args):
+    cards = cli_utils.load_and_filter_cards(args)
+    if not check_cards(cards, args): return
+
+    total = len(cards)
+    creatures = [c for c in cards if c.is_creature]
+
+    # 1. Balance Check
+    color_counts = Counter()
+    rarity_counts = Counter()
+    for c in cards:
+        color_counts[get_color_group(c)] += 1
+        rarity_counts[c.rarity_name.title()] += 1
+
+    # 2. Functional Coverage
+    actions = Counter()
+    fixing_cards = 0
+    for c in cards:
+        for a in c.actions:
+            actions[a] += 1
+        if c.produced_colors and "Any" in c.produced_colors:
+            fixing_cards += 1
+        elif len(c.produced_colors) >= 2:
+            fixing_cards += 1
+
+    # 3. Complexity & Balance
+    avg_cmc = sum(c.cost.cmc for c in cards) / total
+    avg_complexity = sum(c.complexity_score for c in cards) / total
+
+    complexity_outliers = sorted(cards, key=lambda c: c.complexity_score, reverse=True)[:5]
+
+    # 4. Color Pie Break Detection
+    breaks = []
+    for c in cards:
+        res = c.check_color_pie()
+        if isinstance(res, str):
+            breaks.append({'card': c.display_name, 'reason': res})
+
+    use_color = args.color if args.color is not None else (not (getattr(args, 'json', False)) and sys.stdout.isatty())
+
+    audit_data = {
+        'total_cards': total,
+        'creature_density': len(creatures) / total * 100,
+        'avg_cmc': avg_cmc,
+        'avg_complexity': avg_complexity,
+        'color_balance': {c: count / total * 100 for c, count in color_counts.items()},
+        'rarity_balance': {r: count / total * 100 for r, count in rarity_counts.items()},
+        'functional_coverage': {a: count / total * 100 for a, count in actions.items()},
+        'fixing_density': fixing_cards / total * 100,
+        'complexity_outliers': [{'name': c.display_name, 'score': c.complexity_score} for c in complexity_outliers],
+        'color_pie_breaks': breaks
+    }
+
+    if getattr(args, 'json', False):
+        print(json.dumps(audit_data, indent=2))
+        return
+
+    utils.print_header("DESIGN HEALTH AUDIT", count=total, use_color=use_color)
+
+    def print_stat(label, val, target=None, unit="", indent=2):
+        s = f"{label}: {val:.1f}{unit}"
+        msg_type = "[INFO]"
+        color = utils.Ansi.BOLD + utils.Ansi.CYAN
+
+        if target is not None:
+            diff = abs(val - target)
+            if diff > target * 0.5:
+                msg_type = "[ISSUE]"
+                color = utils.Ansi.BOLD + utils.Ansi.RED
+            elif diff > target * 0.2:
+                msg_type = "[WARNING]"
+                color = utils.Ansi.BOLD + utils.Ansi.YELLOW
+
+        if use_color:
+            print(f"{' ' * indent}{utils.colorize(msg_type, color)} {s}")
+        else:
+            print(f"{' ' * indent}{msg_type} {s}")
+
+    print(f"\n  {datalib.color_line('Core Metrics:', use_color)}")
+    print_stat("Creature Density", audit_data['creature_density'], target=50, unit="%")
+    print_stat("Average CMC", audit_data['avg_cmc'], target=3.0)
+    print_stat("Average Complexity", audit_data['avg_complexity'], target=40)
+
+    print(f"\n  {datalib.color_line('Functional Coverage:', use_color)}")
+    print_stat("Removal Density", audit_data['functional_coverage'].get('Removal', 0), target=10, unit="%")
+    print_stat("Card Advantage", audit_data['functional_coverage'].get('Card Advantage', 0), target=8, unit="%")
+    print_stat("Mana Fixing", audit_data['fixing_density'], target=5, unit="%")
+
+    if complexity_outliers:
+        print(f"\n  {datalib.color_line('Top Complexity Outliers:', use_color)}")
+        for c in complexity_outliers:
+            print(f"    - {c.display_name} ({c.complexity_score})")
+
+    if breaks:
+        issue_label = "[ISSUE]"
+        if use_color: issue_label = utils.colorize(issue_label, utils.Ansi.BOLD + utils.Ansi.RED)
+        print(f"\n  {datalib.color_line('Color Pie Violations:', use_color)}")
+        for b in breaks[:10]:
+            print(f"    {issue_label} {b['card']}: {b['reason']}")
+        if len(breaks) > 10:
+            print(f"    ... and {len(breaks)-10} more.")
+    else:
+        print(f"\n  {datalib.color_line('Color Pie Integrity: Clear', use_color)}")
+
+    print()
+
 def handle_compare(args):
     # Smart Baseline Detection: if only one file is provided, try to find a standard baseline
     if len(args.infiles) == 1:
@@ -1616,6 +1722,11 @@ expected by chance:
     add_std(p_prof)
     p_prof.add_argument('--top', type=int, default=10, help='Number of signature features to show per category (Default: 10).')
     p_prof.set_defaults(func=handle_profile)
+
+    # audit
+    p_audit = subparsers.add_parser('audit', help='Perform a comprehensive design health audit of a card dataset.')
+    add_std(p_audit)
+    p_audit.set_defaults(func=handle_audit)
 
     # compare
     p_comp = subparsers.add_parser('compare', help='Provide a side-by-side statistical comparison of two or more datasets.')
