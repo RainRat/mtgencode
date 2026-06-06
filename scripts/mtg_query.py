@@ -49,6 +49,7 @@ FIELD_MAP = {
     'actions': {'header': 'Actions', 'align': 'l', 'aliases': ['functional']},
     'identity': {'header': 'Identity', 'align': 'l', 'aliases': ['color_identity', 'ci']},
     'id_count': {'header': 'ID', 'align': 'r', 'aliases': ['identity_count']},
+    'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
     'set': {'header': 'Set', 'align': 'l', 'aliases': ['code']},
     'number': {'header': 'Num', 'align': 'r', 'aliases': ['collector_number', 'num']},
     'pack': {'header': 'Pack', 'align': 'r', 'aliases': ['pack_id']},
@@ -132,6 +133,18 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         res = card.color_identity
         if ansi_color and res:
             res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in res])
+        return res
+    elif canon == 'produced':
+        produced = card.produced_colors
+        if "Any" in produced:
+            res = "Any"
+            if ansi_color:
+                res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+        else:
+            p_list = sorted(list(produced), key=lambda x: 'WUBRGC'.find(x) if x in 'WUBRGC' else 99)
+            res = "".join(p_list)
+            if ansi_color and res:
+                res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in res])
         return res
     elif canon == 'id_count':
         res = len(card.color_identity)
@@ -512,9 +525,24 @@ def _execute_oracle(cards, args):
             if not identity: identity = "C"
             if use_color:
                 colored_id = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in identity])
-                id_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
             else:
-                id_parts.append(f"IDENTITY: {identity}")
+                colored_id = identity
+            id_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
+
+            produced = c.produced_colors
+            if produced:
+                if "Any" in produced:
+                    prod_val = "Any"
+                    if use_color:
+                        prod_val = utils.colorize(prod_val, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                else:
+                    p_list = sorted(list(produced), key=lambda x: 'WUBRGC'.find(x) if x in 'WUBRGC' else 99)
+                    prod_str = "".join(p_list)
+                    if use_color:
+                        prod_val = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in prod_str])
+                    else:
+                        prod_val = prod_str
+                id_parts.append(f"{fmt_label('PRODUCED:')} {prod_val}")
 
             url = utils.get_scryfall_url(c.set_code, c.number)
             if url:
