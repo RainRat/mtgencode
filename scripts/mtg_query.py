@@ -628,7 +628,7 @@ def handle_shell(args):
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
 
-    welcome = "MTG Interactive Shell. Type a card name for Oracle text, or /search for bulk queries."
+    welcome = "MTG Interactive Shell. Type a card name for official rules text, or /search for bulk queries."
     if use_color:
         welcome = utils.colorize(welcome, utils.Ansi.BOLD + utils.Ansi.CYAN)
     print(welcome)
@@ -659,7 +659,7 @@ def handle_shell(args):
                 _execute_search(matched_cards, s_args)
             elif line.startswith('/help'):
                 print("Commands:")
-                print("  <card name>   - Show Oracle text for a card.")
+                print("  <card name>   - Show official rules text for a card.")
                 print("  /search <q>   - Search for cards matching <q>.")
                 print("  /exit, /quit  - Exit the shell.")
             else:
@@ -867,11 +867,11 @@ def handle_functional(args):
 
     if not functional_reprints:
         if not args.quiet:
-            print("No functional reprints found.", file=sys.stderr)
+            print("No cards with the same mechanics found.", file=sys.stderr)
         return
 
     if not args.quiet:
-        print("Functional check complete.", file=sys.stderr)
+        print("Check for cards with the same mechanics complete.", file=sys.stderr)
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
 
@@ -887,7 +887,7 @@ def handle_functional(args):
     else:
         if not args.quiet:
             count_str = f"{len(functional_reprints)} match" if len(functional_reprints) == 1 else f"{len(functional_reprints)} matches"
-            utils.print_header("FUNCTIONAL REPRINT GROUPS", count=count_str, use_color=use_color)
+            utils.print_header("GROUPS OF CARDS WITH THE SAME MECHANICS", count=count_str, use_color=use_color)
 
         for group in functional_reprints:
             names = sorted(list(set(titlecase(c.name.replace(utils.dash_marker, '-')) for c in group)))
@@ -1147,15 +1147,15 @@ Usage Examples:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
-  # List all functional reprints (same mechanics, different name)
+  # List all cards with the same mechanics (but different names)
   python3 scripts/mtg_query.py functional data/AllPrintings.json
 
-  # Find functional reprints of Goblins
+  # Find cards with the same mechanics as Goblins
   python3 scripts/mtg_query.py functional --grep "Goblin"
 """
     )
     p_functional.add_argument('infile', nargs='?', default='-',
-                            help='Input card data (JSON, CSV, XML, or encoded text) to check for functional reprints.')
+                            help='Input card data (JSON, CSV, XML, or encoded text) to check for cards with the same mechanics.')
     cli_utils.add_standard_filters(p_functional)
     cli_utils.add_standard_output_args(p_functional)
     p_functional.set_defaults(func=handle_functional)

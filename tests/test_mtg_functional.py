@@ -34,10 +34,10 @@ def test_functional_basic(tmp_path):
     cmd = ["python3", "scripts/mtg_query.py", "functional", str(test_file), "--no-color"]
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 0
-    assert "FUNCTIONAL REPRINT GROUPS (1 match)" in result.stdout
+    assert "GROUPS OF CARDS WITH THE SAME MECHANICS (1 match)" in result.stdout
     assert "Card A, Card B" in result.stdout
     # Standardized summary in stderr
-    assert "Functional check complete" in result.stderr
+    assert "Check for cards with the same mechanics complete" in result.stderr
 
 def test_functional_no_match(tmp_path):
     """Test output when no functional reprints are found."""
@@ -65,7 +65,7 @@ def test_functional_no_match(tmp_path):
 
     cmd = ["python3", "scripts/mtg_query.py", "functional", str(test_file), "--no-color"]
     result = subprocess.run(cmd, capture_output=True, text=True)
-    assert "No functional reprints found." in result.stderr
+    assert "No cards with the same mechanics found." in result.stderr
 
 def test_functional_json_output(tmp_path):
     """Test JSON output format."""
