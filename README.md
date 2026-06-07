@@ -439,6 +439,22 @@ python3 scripts/mtg_validate.py data/AllPrintings.json --dump
     *   `-q`, `--quiet`: Suppress the progress bar.
     *   Supports all **Advanced Filtering** flags.
 
+### `mtg_eval.py`
+Automates AI model quality assessment by generating a sample of cards and running them through the validation suite. This provides a single 'Mechanical Accuracy Score' for a given model checkpoint.
+```bash
+# Evaluate a checkpoint by generating 100 cards
+python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --count 100
+
+# Evaluate with higher creativity (temperature)
+python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
+```
+*   **Options:**
+    *   `-c`, `--checkpoint`: Path to the model checkpoint file.
+    *   `-n`, `--count`: Number of cards to generate and validate.
+    *   `-t`, `--temp`: Creativity temperature for generation.
+    *   `-d`, `--dump`: Print full text of cards that failed validation.
+    *   `-j`, `--json`: Output results in structured JSON format.
+
 ### `mtg_llm_validate.py`
 Validates the mechanical integrity of cards using a local Large Language Model (LLM). This tool asks the AI to judge if a card's text follows Magic's rules logic and provides a reason for its decision.
 ```bash
