@@ -1040,18 +1040,21 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
 """
     )
     p_search.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (JSON, CSV, XML, MSE, or encoded text). Defaults to stdin (-). If stdin is a TTY, data/AllPrintings.json is used if available.')
+                        help='Input card data (JSON, CSV, XML, MSE, or encoded text). Defaults to standard input. The official dataset (data/AllPrintings.json) is used if no input is provided.')
     p_search.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the search results. If not provided, results print to the console.')
     p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                        help='Comma-separated list of fields to extract (e.g., name, cost, type, stats, text, mechanics, actions, identity, complexity, rating, fair_mv).')
+                        help='Comma-separated list of fields to extract. Available fields:\n'
+                             '  - Basic: name, cost, cmc, type, stats, text, rarity\n'
+                             '  - Analysis: mechanics, actions, identity, complexity, rating, fair_mv\n'
+                             '  - Metadata: set, number, pack, box')
     p_search.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     cli_utils.add_standard_filters(p_search)
     cli_utils.add_standard_output_args(p_search)
     p_search.add_argument('--text', action='store_true', help='Force plain text output.')
     p_search.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
-    p_search.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format.')
+    p_search.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format (one card per line).')
     p_search.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
     p_search.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
                         help="Sort cards by a specific field. Use 'complexity' for design complexity score.")
@@ -1076,15 +1079,15 @@ Usage Examples:
   python3 scripts/mtg_query.py oracle "Giant Growth" --similar
 """
     )
-    p_oracle.add_argument('query', nargs='?', help='Card name to search for. Supports fuzzy matching and partial names.')
+    p_oracle.add_argument('query', nargs='?', help='The card name to look up. Supports partial names and fuzzy matching (e.g., "Grizly Bears").')
     p_oracle.add_argument('infile', nargs='?', default='-',
-                        help='Input card data. Defaults to data/AllPrintings.json if available.')
+                        help='Input card data file. Defaults to the official dataset (data/AllPrintings.json).')
     cli_utils.add_standard_filters(p_oracle)
     cli_utils.add_standard_output_args(p_oracle)
     p_oracle.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
                         help="Sort cards by a specific field. Use 'complexity' for design complexity score.")
     p_oracle.add_argument('-s', '--similar', action='store_true', help='Show mechanically similar cards instead of direct matches.')
-    p_oracle.add_argument('-G', '--gatherer', action='store_true', help='Use Gatherer-style formatting.')
+    p_oracle.add_argument('-G', '--gatherer', action='store_true', help='Use official card formatting (emulating the Gatherer website).')
     p_oracle.add_argument('--full', action='store_true', help='Force full details even for multiple matches.')
     p_oracle.add_argument('--no-rulings', action='store_true', help='Suppress display of card rulings.')
     p_oracle.set_defaults(func=handle_oracle)
