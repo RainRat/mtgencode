@@ -49,9 +49,9 @@ class TestMtgFunctional(unittest.TestCase):
 
             code, out, err = self.run_main([test_file, "--no-color"])
             self.assertEqual(code, 0)
-            self.assertIn("FUNCTIONAL REPRINT GROUPS (1 match)", out)
+            self.assertIn("GROUPS OF CARDS WITH THE SAME MECHANICS (1 match)", out)
             self.assertIn("Card A, Card B", out)
-            self.assertIn("Functional check complete", err)
+            self.assertIn("Check for cards with the same mechanics complete", err)
 
     def test_functional_no_match(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -78,7 +78,7 @@ class TestMtgFunctional(unittest.TestCase):
                 ], f)
 
             code, out, err = self.run_main([test_file, "--no-color"])
-            self.assertIn("No functional reprints found.", err)
+            self.assertIn("No cards with the same mechanics found.", err)
 
     def test_functional_json_output(self):
         with tempfile.TemporaryDirectory() as tmpdir:
