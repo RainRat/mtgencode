@@ -1,0 +1,23 @@
+{
+  "data": {
+    "TST": {
+      "name": "Test Set",
+      "code": "TST",
+      "type": "expansion",
+      "cards": [
+        {
+          "name": "Llanowar Elves",
+          "manaCost": "{G}",
+          "rarity": "common",
+          "type": "Creature — Elf Druid",
+          "types": ["Creature"],
+          "subtypes": ["Elf", "Druid"],
+          "text": "{T}: Add {G}.",
+          "power": "1",
+          "toughness": "1",
+          "setCode": "TST"
+        }
+      ]
+    }
+  }
+}
