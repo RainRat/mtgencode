@@ -508,14 +508,18 @@ def _execute_oracle(cards, args):
                 if is_bside:
                     # Subtle divider for secondary faces
                     print("  " + "." * 40)
-                    # For B-sides in detailed view, we show a mini-summary
+                    # For B-sides in detailed view, we show name, type, and stats
+                    face_name = face.display_name
+                    if use_color:
+                        face_name = utils.colorize(face_name, face._get_ansi_color())
+
                     face_info = face.get_type_line(separator='-')
                     stats = face._get_pt_display(ansi_color=use_color) or face._get_loyalty_display(ansi_color=use_color)
                     if stats:
                         face_info += f" • {stats}"
                     if use_color:
                         face_info = utils.colorize(face_info, utils.Ansi.GREEN)
-                    print("  " + face_info)
+                    print(f"  {face_name} \u2022 {face_info}")
                 else:
                     print("  " + "-" * 40)
 
@@ -548,6 +552,21 @@ def _execute_oracle(cards, args):
                 id_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
             else:
                 id_parts.append(f"IDENTITY: {identity}")
+
+            produced = c.produced_colors
+            if produced:
+                # Sort in WUBRGC order
+                p_order = "WUBRGC"
+                p_list = sorted(list(produced), key=lambda x: p_order.find(x) if x in p_order else 99)
+                if "Any" in produced:
+                    p_str = "Any"
+                    if use_color:
+                        p_str = utils.colorize(p_str, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                elif use_color:
+                    p_str = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in p_list])
+                else:
+                    p_str = "".join(p_list)
+                id_parts.append(f"{fmt_label('PRODUCED:')} {p_str}")
 
             url = utils.get_scryfall_url(c.set_code, c.number)
             if url:

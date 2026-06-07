@@ -747,7 +747,7 @@ class Card:
                 produced.add(color)
 
         text = self.get_text(force_unpass=True).lower()
-        any_patterns = ["any color", "any chosen color", "one mana of any color", "any combination of colors"]
+        any_patterns = ["any color", "any chosen color", "one mana of any color", "any combination of colors", "any one color"]
         if any(p in text for p in any_patterns):
             return {"Any"}
 
