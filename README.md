@@ -467,6 +467,7 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `functional`: Identify and group cards with the same mechanics but different names.
 *   `compare`: Compare two cards side-by-side by name to identify differences.
 *   `extract`: Extract a single card object from a large JSON database.
+*   `shell`: Launch an interactive terminal for quick card lookups and searches.
 
 ---
 
@@ -550,6 +551,24 @@ Extracts a single card object for debugging or testing.
 ```bash
 python3 scripts/mtg_query.py extract data/AllPrintings.json MOM "Invasion of Tarkir"
 ```
+
+---
+
+#### **Subcommand: `shell`**
+Provides an interactive terminal for browsing card data. Supports tab completion for card names and command history.
+
+```bash
+# Start the interactive shell (automatically uses data/AllPrintings.json if available)
+python3 scripts/mtg_query.py shell
+
+# Start with a specific file and custom fields for searches
+python3 scripts/mtg_query.py shell my_cards.json --fields "name,cost,type,pt,rarity"
+```
+*   **In-Shell Commands:**
+    *   `<card name>`: Type any card name to see its official rules text.
+    *   `/search <query>`: Perform a bulk search and display results in a table.
+    *   `/help`: Show available commands.
+    *   `exit` or `quit`: Leave the shell.
 
 ### `mtg_diff.py`
 Compares two card datasets and identifies additions, removals, and modifications. It highlights changes in cost, type, stats, text, and rarity.
