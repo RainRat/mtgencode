@@ -265,6 +265,12 @@ def analyze_lexicon(cards, top=10, min_len=4, top_n=None):
 def calculate_asfan(cards):
     pools = defaultdict(list); slots = {utils.rarity_common_marker: 10.0, utils.rarity_uncommon_marker: 3.0, 'RARE': 1.0, utils.rarity_basic_land_marker: 1.0}
     for c in cards: pools['RARE' if c.rarity in [utils.rarity_rare_marker, utils.rarity_mythic_marker] else c.rarity].append(c)
+    def calc(fn):
+        res = 0.0
+        for s, cnt in slots.items():
+            p = pools.get(s, [])
+            if p: res += sum(1 for c in p if fn(c))/len(p)*cnt
+        return res
     def calc_c(fn):
         ks, pc = set(), defaultdict(Counter)
         for s in slots:
@@ -278,7 +284,7 @@ def calculate_asfan(cards):
                 if pl>0: v += pc[s][k]/pl*cnt
             res[k] = v
         return res
-    return {'colors': calc_c(lambda c: c.cost.colors or ['C']), 'types': calc_c(lambda c: [t for t in TRACKED_TYPES if c._has_type(t)]), 'mechs': calc_c(lambda c: list(c.mechanics)), 'multi': 0.0}
+    return {'colors': calc_c(lambda c: c.cost.colors or ['C']), 'types': calc_c(lambda c: [t for t in TRACKED_TYPES if c._has_type(t)]), 'mechs': calc_c(lambda c: list(c.mechanics)), 'multi': calc(lambda c: len(c.cost.colors)>1)}
 
 def calculate_interaction(cards, min_freq=2):
     ind_c, pair_c, dens_d = Counter(), Counter(), Counter()
@@ -1064,34 +1070,16 @@ def handle_balance(args):
     datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l'] + ['r']*(len(h)-1)), indent=2)
 
 def handle_asfan(args):
-    def get_asfan(cards):
-        if not check_cards(cards, args): return {}
-        pools = defaultdict(list); slots = {utils.rarity_common_marker: 10.0, utils.rarity_uncommon_marker: 3.0, 'RARE': 1.0, utils.rarity_basic_land_marker: 1.0}
-        for c in cards: pools['RARE' if c.rarity in [utils.rarity_rare_marker, utils.rarity_mythic_marker] else c.rarity].append(c)
-        def calc(fn):
-            res = 0.0
-            for s, cnt in slots.items():
-                p = pools.get(s, [])
-                if p: res += sum(1 for c in p if fn(c))/len(p)*cnt
-            return res
-        def calc_c(fn):
-            ks, pc = set(), defaultdict(Counter)
-            for s in slots:
-                for c in pools.get(s, []):
-                    for k in fn(c): ks.add(k); pc[s][k]+=1
-            res = {}
-            for k in ks:
-                v = 0.0
-                for s, cnt in slots.items():
-                    pl = len(pools.get(s, []))
-                    if pl>0: v += pc[s][k]/pl*cnt
-                res[k] = v
-            return res
-        return {'colors': calc_c(lambda c: c.cost.colors or ['C']), 'types': calc_c(lambda c: [t for t in TRACKED_TYPES if c._has_type(t)]), 'mechs': calc_c(lambda c: list(c.mechanics)), 'multi': calc(lambda c: len(c.cost.colors)>1)}
     cards1 = cli_utils.load_and_filter_cards(args)
-    if not cards1: return
-    a1 = get_asfan(cards1)
-    a2 = get_asfan(cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare}))) if getattr(args, 'compare', None) else None
+    if not check_cards(cards1, args): return
+    a1 = calculate_asfan(cards1)
+
+    a2 = None
+    if getattr(args, 'compare', None):
+        cards2 = cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare}))
+        if check_cards(cards2, args):
+            a2 = calculate_asfan(cards2)
+
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
     if args.json:
         print(json.dumps({'primary': a1, 'comparison': a2}, indent=2))
