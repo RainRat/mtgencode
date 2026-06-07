@@ -52,6 +52,13 @@ TRACKED_TYPES = ["Creature", "Instant", "Sorcery", "Enchantment", "Artifact", "P
 
 ACTION_CATEGORIES = cardlib.ACTION_CATEGORIES
 
+GUILD_PAIRS = ["UW", "BU", "BR", "GR", "GW", "BW", "RU", "BG", "RW", "GU"]
+GUILD_LABELS = {
+    "UW": "WU (Azorius)", "BU": "UB (Dimir)", "BR": "BR (Rakdos)", "GR": "RG (Gruul)",
+    "GW": "GW (Selesnya)", "BW": "WB (Orzhov)", "RU": "UR (Izzet)", "BG": "BG (Golgari)",
+    "RW": "RW (Boros)", "GU": "GU (Simic)"
+}
+
 # --- Shared Helpers ---
 
 def _normalized_color_identity(card):
@@ -201,15 +208,14 @@ def format_delta(val, base_val, is_percent=False, use_color=False, reverse_color
 
 
 def get_archetype_counts(cards):
-    ps = ["UW", "BU", "BR", "GR", "GW", "BW", "RU", "BG", "RW", "GU"]
-    counts = Counter({p: 0 for p in ps})
+    counts = Counter({p: 0 for p in GUILD_PAIRS})
     for c in cards:
         id = c.color_identity
-        if len(id)==2:
-            if id in counts: counts[id]+=1
-        elif len(id)==1:
-            for p in ps:
-                if id in p: counts[p]+=1
+        if len(id) == 2:
+            if id in counts: counts[id] += 1
+        elif len(id) == 1:
+            for p in GUILD_PAIRS:
+                if id in p: counts[p] += 1
     return counts
 
 def analyze_subtypes(cards, top=10):
@@ -978,28 +984,26 @@ def handle_archetypes(args):
         if not getattr(args, 'quiet', False):
             print("Insufficient data to profile archetypes.", file=sys.stderr)
         return
-    ps = ["UW", "BU", "BR", "GR", "GW", "BW", "RU", "BG", "RW", "GU"]
-    archs = {p: [] for p in ps}; g_m = Counter()
+    archs = {p: [] for p in GUILD_PAIRS}; g_m = Counter()
     for c in cards:
         for m in c.mechanics: g_m[m] += 1
         id = c.color_identity
-        if len(id)==2 and id in archs: archs[id].append(c)
-        elif len(id)==1: [archs[p].append(c) for p in ps if id in p]
+        if len(id) == 2 and id in archs: archs[id].append(c)
+        elif len(id) == 1: [archs[p].append(c) for p in GUILD_PAIRS if id in p]
     res = []
-    for p in [p for p in ps if len(archs[p]) >= args.min_cards]:
+    for p in [p for p in GUILD_PAIRS if len(archs[p]) >= args.min_cards]:
         ac = archs[p]; pm = Counter()
         for c in ac: [pm.update([m]) for m in c.mechanics]
         dist = {m: (pm[m]/len(ac))/(g_m[m]/len(cards)) for m in pm}
         top_m = sorted(dist.keys(), key=lambda m: (dist[m], pm[m]), reverse=True)[:args.top_mechanics]
-        uncs = [c for c in ac if c.rarity==utils.rarity_uncommon_marker and len(c.color_identity)==2]
+        uncs = [c for c in ac if c.rarity == utils.rarity_uncommon_marker and len(c.color_identity) == 2]
         res.append({"label": p, "count": len(ac), "signpost": titlecase(uncs[0].name) if uncs else "None", "mechs": top_m, "avg_cmc": sum(c.cost.cmc for c in ac)/len(ac), "cre_p": sum(1 for c in ac if c.is_creature)/len(ac)*100})
     use_color = args.color if args.color is not None else sys.stdout.isatty()
     utils.print_header("ARCHETYPE PROFILING", use_color=use_color)
     print(f"  Total cards analyzed: {len(cards)}")
     rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Archetype", "Cards", "Signpost", "Mechs", "CMC", "Cre %"]]]
-    pair_labels = {"UW": "WU (Azorius)", "BU": "UB (Dimir)", "BR": "BR (Rakdos)", "GR": "RG (Gruul)", "GW": "GW (Selesnya)", "BW": "WB (Orzhov)", "RU": "UR (Izzet)", "BG": "BG (Golgari)", "RW": "RW (Boros)", "GU": "GU (Simic)"}
     for r in res:
-        lbl = pair_labels.get(r['label'], r['label'])
+        lbl = GUILD_LABELS.get(r['label'], r['label'])
         if use_color and " " in lbl:
             code, name = lbl.split(None, 1)
             lbl = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in code]) + f" {name}"
@@ -1010,16 +1014,9 @@ def handle_balance(args):
     datasets = []
     for f in args.infiles:
         cards = jdecode.mtg_open_file(f, verbose=args.verbose, sets=args.set, rarities=args.rarity)
-        if args.limit>0: cards = cards[:args.limit]
+        if args.limit > 0: cards = cards[:args.limit]
         if not cards: continue
-        ps = ["UW", "BU", "BR", "GR", "GW", "BW", "RU", "BG", "RW", "GU"]; counts = Counter({p: 0 for p in ps})
-        for c in cards:
-            id = c.color_identity
-            if len(id)==2:
-                if id in counts: counts[id]+=1
-            elif len(id)==1:
-                for p in ps:
-                    if id in p: counts[p]+=1
+        counts = get_archetype_counts(cards)
         datasets.append({'name': os.path.basename(f)[:15], 'counts': counts, 'total': len(cards), 'total_cards': len(cards)})
     if not datasets:
         if not getattr(args, 'quiet', False):
@@ -1027,14 +1024,13 @@ def handle_balance(args):
             print(f"Warning: No cards found in {label}", file=sys.stderr)
         return
     use_color = args.color if args.color is not None else sys.stdout.isatty()
-    base = datasets[0]; ps = ["UW", "BU", "BR", "GR", "GW", "BW", "RU", "BG", "RW", "GU"]
-    pair_labels = {"UW": "WU (Azorius)", "BU": "UB (Dimir)", "BR": "BR (Rakdos)", "GR": "RG (Gruul)", "GW": "GW (Selesnya)", "BW": "WB (Orzhov)", "RU": "UR (Izzet)", "BG": "BG (Golgari)", "RW": "RW (Boros)", "GU": "GU (Simic)"}
+    base = datasets[0]
     h = ["Archetype", f"% {base['name']}"]
     for i in range(1, len(datasets)): h.extend([f"% {datasets[i]['name']}", "Delta"])
     if use_color: h = [utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) for x in h]
     rows = [h]
-    for p in ps:
-        label = pair_labels[p]
+    for p in GUILD_PAIRS:
+        label = GUILD_LABELS[p]
         if use_color:
             parts = label.split(None, 1); code = parts[0]; name = parts[1] if len(parts)>1 else ""
             colored_code = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in code])
