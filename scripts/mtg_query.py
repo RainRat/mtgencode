@@ -911,6 +911,17 @@ def handle_functional(args):
         key = get_functional_key(card)
         groups[key].append(card)
 
+    if getattr(args, 'dedupe', None):
+        unique_cards = []
+        for key in sorted(groups.keys(), key=lambda x: str(x)):
+            unique_cards.append(groups[key][0])
+
+        if args.dedupe != '-':
+            args.outfile = args.dedupe
+
+        _execute_search(unique_cards, args)
+        return
+
     functional_reprints = []
     for key, group in groups.items():
         distinct_names = set(c.name for c in group)
@@ -927,7 +938,7 @@ def handle_functional(args):
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
 
-    if args.json:
+    if getattr(args, 'json', False):
         output = []
         for group in functional_reprints:
             names = sorted(list(set(titlecase(c.name.replace(utils.dash_marker, '-')) for c in group)))
@@ -1207,10 +1218,26 @@ Usage Examples:
 
   # Find cards with the same mechanics as Goblins
   python3 scripts/mtg_query.py functional --grep "Goblin"
+
+  # Create a deduplicated dataset
+  python3 scripts/mtg_query.py functional --dedupe unique_cards.json
 """
     )
     p_functional.add_argument('infile', nargs='?', default='-',
                             help='Input card data (JSON, CSV, XML, or encoded text) to check for cards with the same mechanics.')
+    p_functional.add_argument('--dedupe', nargs='?', const='-',
+                            help='Create a deduplicated dataset (one card per functional group) and save to the specified file.')
+    p_functional.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                            help='Comma-separated list of fields to extract when using --dedupe.')
+    p_functional.add_argument('--delimiter', default=' | ',
+                            help='Separator used between fields in plain text output.')
+    p_functional.add_argument('--text', action='store_true', help='Force plain text output.')
+    p_functional.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
+    p_functional.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format.')
+    p_functional.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
+    p_functional.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
+                        help="Sort cards by a specific field.")
+    p_functional.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
     cli_utils.add_standard_filters(p_functional)
     cli_utils.add_standard_output_args(p_functional)
     p_functional.set_defaults(func=handle_functional)
