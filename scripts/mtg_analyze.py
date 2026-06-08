@@ -1692,7 +1692,36 @@ expected by chance:
     p_sub.set_defaults(func=handle_subtypes)
 
     # profile
-    p_prof = subparsers.add_parser('profile', help='Identify the "Mechanical Identity" (signature features) of a card subset.')
+    p_prof = subparsers.add_parser(
+        'profile',
+        help='Identify the "Mechanical Identity" (signature features) of a card subset.',
+        description="""
+Identifies the "Mechanical Identity" (signature features) of a card subset by
+comparing it against a global baseline. This highlights what makes a specific
+group of cards unique.
+
+It calculates Avg CMC, Power, Toughness, and Complexity deltas, and identifies
+over-represented Mechanics, Actions, and Subtypes using a 'Lift Score'.
+
+The Lift Score measures how much more common a feature is in the subset
+compared to the baseline:
+- Score > 1.0: The feature is MORE common in the subset (signature feature).
+- Score = 1.0: The feature appears exactly as often as in the baseline.
+- Score < 1.0: The feature is LESS common in the subset.
+""",
+        epilog="""
+Examples:
+  # Profile Green Rare cards to see their defining mechanics
+  python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors G --rarity rare
+
+  # Profile a specific set to see its mechanical themes
+  python3 scripts/mtg_analyze.py profile data/AllPrintings.json --set MOM
+
+  # See the top 20 signature features for a decklist
+  python3 scripts/mtg_analyze.py profile my_deck.txt --top 20
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_prof)
     p_prof.add_argument('--top', type=int, default=10, help='Number of signature features to show per category (Default: 10).')
     p_prof.set_defaults(func=handle_profile)
