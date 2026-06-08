@@ -57,6 +57,7 @@ FIELD_MAP = {
     'rating': {'header': 'Rating', 'align': 'r', 'aliases': ['power_rating']},
     'fair_cmc': {'header': 'Fair MV', 'align': 'r', 'aliases': ['fcmc', 'fair_cost', 'fair_mv', 'recommended_cmc']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
+    'tokens': {'header': 'Tokens', 'align': 'l', 'aliases': ['creates']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
 
@@ -165,6 +166,13 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return res
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
+    elif canon == 'tokens':
+        tokens = card.get_face_tokens()
+        if not tokens: return ""
+        res = ", ".join([t['name'] for t in tokens])
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.CYAN)
+        return res
     elif canon == 'encoded':
         res = card.encode()
     else:
@@ -612,6 +620,23 @@ def _execute_oracle(cards, args):
                 if use_color:
                     act_val = utils.colorize(act_val, utils.Ansi.CYAN)
                 footer_lines.append(f"{fmt_label('ACTIONS:')} {act_val}")
+
+            # 5. Tokens Line
+            all_tokens = c.tokens
+            if all_tokens:
+                token_names = []
+                for t in all_tokens:
+                    t_str = t['name']
+                    if t['abilities']:
+                        t_str += f" with {t['abilities']}"
+                    token_names.append(t_str)
+
+                # Deduplicate tokens with same description
+                token_names = sorted(list(set(token_names)))
+                token_val = '; '.join(token_names)
+                if use_color:
+                    token_val = utils.colorize(token_val, utils.Ansi.CYAN)
+                footer_lines.append(f"{fmt_label('TOKENS:')} {token_val}")
 
             print() # Spacer before footer
             for line in footer_lines:

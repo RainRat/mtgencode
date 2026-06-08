@@ -1095,8 +1095,11 @@ def handle_tokens(args):
     for c in cards:
         if getattr(args, 'verbose', False):
             print(f"Processing card: {c.name}")
-        found = extract_tokens_from_text(c.get_text(force_unpass=True))
-        for t in found: t['source'] = c.name; all_t.append(t)
+        found = c.tokens
+        for t in found:
+            t_copy = t.copy()
+            t_copy['source'] = c.name
+            all_t.append(t_copy)
     uniq = OrderedDict()
     for t in all_t:
         k = (t['pt'], t['color'], t['type'], t['abilities'])
@@ -1125,28 +1128,6 @@ def handle_tokens(args):
         if use_color: n = utils.colorize(n, utils.Ansi.BOLD+utils.Ansi.CYAN); pt = utils.colorize(pt, utils.Ansi.RED); ty = utils.colorize(ty, utils.Ansi.GREEN); cnt = utils.colorize(cnt, utils.Ansi.BOLD+utils.Ansi.GREEN)
         rows.append([n, pt, cl, ty, t['abilities'], cnt])
     datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','l','l','l','r']), indent=2)
-
-def extract_tokens_from_text(text):
-    found = []
-    text = text.replace('\n', ' ').strip()
-    c_regex = r"(?:[Cc]reate)\s+(?:[Aa]n?|two|three|four|five|X)\s+([0-9/X+&^]+)\s+([a-zA-Z\s,]+)\s+token[s]?(?:\s+with\s+([^,.]+))?"
-    for m in re.finditer(c_regex, text):
-        pt, ct, ab = m.group(1), m.group(2).strip(), m.group(3).strip() if m.group(3) else ""
-        if ct.lower().endswith(' creature'): ct = ct[:-9]
-        cols = [c.capitalize() for c in ['white','blue','black','red','green','colorless'] if c in ct.lower()]
-        ty = ct
-        for x in ['white','blue','black','red','green','colorless','multi','and',',']: ty = re.sub(r'\b'+x+r'\b' if x.isalpha() else re.escape(x), '', ty, flags=re.IGNORECASE)
-        ty = " ".join([t.capitalize() for t in ty.split()])
-        found.append({'name': f"{pt} {', '.join(cols) if cols else 'Colorless'} {ty} Token", 'pt': pt, 'color': ", ".join(cols) if cols else "Colorless", 'type': f"{ty} Creature".strip(), 'abilities': ab})
-    ntks = ['Treasure','Food','Clue','Blood','Map','Role','Incubator','Powerstone','Walker']
-    n_regex = r"(?:[Cc]reate)\s+(?:[Aa]n?|two|three|four|five|X)\s+(" + "|".join(ntks) + r")\s+token[s]?"
-    for m in re.finditer(n_regex, text, re.IGNORECASE):
-        n = m.group(1).capitalize(); t = {'name': f"{n} Token", 'pt': "", 'color': "Colorless", 'type': n, 'abilities': ""}
-        if n=='Treasure': t['type']='Artifact'; t['abilities']='Sacrifice this artifact: Add one mana of any color.'
-        elif n=='Food': t['type']='Artifact'; t['abilities']='{2}, {T}, Sacrifice this artifact: gain 3 life.'
-        elif n=='Clue': t['type']='Artifact'; t['abilities']='{2}, Sac: Draw a card.'
-        found.append(t)
-    return found
 
 def handle_profile(args):
     target_cards = cli_utils.load_and_filter_cards(args)

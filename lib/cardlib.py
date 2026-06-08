@@ -1057,6 +1057,62 @@ class Card:
 
         return a
 
+    @property
+    def tokens(self):
+        """Returns a list of token definitions extracted from the card's rules text."""
+        all_tokens = self.get_face_tokens()
+        if self.bside:
+            all_tokens.extend(self.bside.tokens)
+        return all_tokens
+
+    def get_face_tokens(self):
+        """Extracts token definitions from this card face's rules text."""
+        text = self.get_text(force_unpass=True).replace('\n', ' ').strip()
+        found = []
+
+        # 1. Creature tokens with P/T
+        # Matches: "Create a 1/1 white Soldier creature token", "Create two 3/3 green Beast creature tokens with trample", etc.
+        c_regex = r"(?:[Cc]reate)\s+(?:[Aa]n?|two|three|four|five|X)\s+([0-9/X+&^]+)\s+([a-zA-Z\s,]+)\s+token[s]?(?:\s+with\s+([^,.]+))?"
+        for m in re.finditer(c_regex, text):
+            pt, ct, ab = m.group(1), m.group(2).strip(), m.group(3).strip() if m.group(3) else ""
+            if ct.lower().endswith(' creature'):
+                ct = ct[:-9]
+
+            cols = [c.capitalize() for c in ['white', 'blue', 'black', 'red', 'green', 'colorless'] if c in ct.lower()]
+            ty = ct
+            # Strip colors and functional words from the type string
+            for x in ['white', 'blue', 'black', 'red', 'green', 'colorless', 'multi', 'and', ',']:
+                ty = re.sub(r'\b' + x + r'\b' if x.isalpha() else re.escape(x), '', ty, flags=re.IGNORECASE)
+            ty = " ".join([t.capitalize() for t in ty.split()])
+
+            found.append({
+                'name': f"{pt} {', '.join(cols) if cols else 'Colorless'} {ty} Token",
+                'pt': pt,
+                'color': ", ".join(cols) if cols else "Colorless",
+                'type': f"{ty} Creature".strip(),
+                'abilities': ab
+            })
+
+        # 2. Predefined named tokens
+        # Matches: "Create a Treasure token", "Create a Food token", etc.
+        ntks = ['Treasure', 'Food', 'Clue', 'Blood', 'Map', 'Role', 'Incubator', 'Powerstone', 'Walker']
+        n_regex = r"(?:[Cc]reate)\s+(?:[Aa]n?|two|three|four|five|X)\s+(" + "|".join(ntks) + r")\s+token[s]?"
+        for m in re.finditer(n_regex, text, re.IGNORECASE):
+            n = m.group(1).capitalize()
+            t = {'name': f"{n} Token", 'pt': "", 'color': "Colorless", 'type': n, 'abilities': ""}
+            if n == 'Treasure':
+                t['type'] = 'Artifact'
+                t['abilities'] = 'Sacrifice this artifact: Add one mana of any color.'
+            elif n == 'Food':
+                t['type'] = 'Artifact'
+                t['abilities'] = '{2}, {T}, Sacrifice this artifact: gain 3 life.'
+            elif n == 'Clue':
+                t['type'] = 'Artifact'
+                t['abilities'] = '{2}, Sac: Draw a card.'
+            found.append(t)
+
+        return found
+
     def get_face_actions(self):
         """Returns a set of functional action categories identified on this card face."""
         text = self.get_text(force_unpass=True).lower()
