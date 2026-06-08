@@ -61,23 +61,16 @@ GUILD_LABELS = {
 
 # --- Shared Helpers ---
 
-def _normalized_color_identity(card):
-    identity = getattr(card, 'color_identity', '')
-    if isinstance(identity, str):
-        if identity:
-            return identity
-    elif isinstance(identity, (list, tuple)):
-        if identity:
-            return ''.join(identity)
-    colors = getattr(getattr(card, 'cost', None), 'colors', None)
-    if colors:
-        return ''.join(colors)
-    return ''
-
-
 def get_color_group(card):
     """Categorizes a card by color identity (W, U, B, R, G, Multi, Colorless)."""
-    identity = _normalized_color_identity(card)
+    identity = getattr(card, 'color_identity', '')
+    if not identity:
+        cost = getattr(card, 'cost', None)
+        identity = getattr(cost, 'colors', '') if cost else ''
+
+    if not isinstance(identity, str):
+        identity = "".join(identity) if identity else ""
+
     if len(identity) > 1: return 'M'
     if len(identity) == 1: return identity[0]
     return 'A'
