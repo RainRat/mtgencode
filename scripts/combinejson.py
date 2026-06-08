@@ -58,7 +58,7 @@ Example:
         with open(args.base_file, encoding='utf8') as fo:
             data1 = json.load(fo)
 
-        with open(args.custom_file, encoding='latin1') as fo:
+        with open(args.custom_file, encoding='utf8') as fo:
             data2 = json.load(fo)
 
         merged_data = merge_dicts(data1, data2)
