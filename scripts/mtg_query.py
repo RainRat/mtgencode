@@ -1041,14 +1041,34 @@ def handle_compare_cards(args):
             ('Fair MV', 'fair_cmc'),
             ('Rating', 'rating'),
             ('Complexity', 'complexity'),
-            ('Text', 'text')
+            ('Rules Text', 'text')
         ]
+
+        # Calculate Signature Features (unique mechanics and actions)
+        def get_sig_features(card, other_card):
+            features = set(getattr(card, 'mechanics', [])) | set(getattr(card, 'actions', []))
+            other_features = set(getattr(other_card, 'mechanics', [])) | set(getattr(other_card, 'actions', []))
+            unique = sorted(list(features - other_features))
+            res = ", ".join(unique)
+            if use_color and res:
+                res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
+            return res
+
+        sig1 = get_sig_features(card1, card2)
+        sig2 = get_sig_features(card2, card1)
 
         rows = []
         header = ["Field", cardlib.titlecase(card1.name.replace(utils.dash_marker, '-')), cardlib.titlecase(card2.name.replace(utils.dash_marker, '-'))]
         if use_color:
             header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
         rows.append(header)
+
+        # Add Signature row early for high visibility, but only if there are differences
+        if sig1 or sig2:
+            sig_label = "Signature"
+            if use_color:
+                sig_label = utils.colorize(sig_label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+            rows.append([sig_label, sig1, sig2])
 
         for label, field in fields:
             v1 = get_field_value(card1, field, ansi_color=False)
@@ -1057,14 +1077,16 @@ def handle_compare_cards(args):
             display_v1 = get_field_value(card1, field, ansi_color=use_color)
             display_v2 = get_field_value(card2, field, ansi_color=use_color)
 
-            # Strip newlines for table view for better alignment
-            if field == 'text':
-                display_v1 = display_v1.replace('\n', ' ')
-                display_v2 = display_v2.replace('\n', ' ')
-
-            if v1 != v2:
-                if use_color:
-                    label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+            if use_color:
+                # Bold labels by default
+                label = utils.colorize(label, utils.Ansi.BOLD)
+                if v1 != v2:
+                    # Highlight field labels and values that differ
+                    label = utils.colorize(label, utils.Ansi.YELLOW)
+                    # Don't highlight rules text or complex objects too aggressively
+                    if field not in ['text', 'mechanics', 'actions']:
+                        display_v1 = utils.colorize(display_v1, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                        display_v2 = utils.colorize(display_v2, utils.Ansi.BOLD + utils.Ansi.YELLOW)
 
             rows.append([label, display_v1, display_v2])
 
