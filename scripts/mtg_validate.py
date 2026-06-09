@@ -153,7 +153,8 @@ def check_X(card):
             elif 'contain {X' in linetext or 'with {X' in linetext:
                 correct = True
                 
-            elif ('additional cost' in linetext
+            elif (defs > 0
+                  or 'additional cost' in linetext
                   or 'morph' in linetext
                   or 'kicker' in linetext):
                 cost_lines += 1
