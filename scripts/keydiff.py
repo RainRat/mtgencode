@@ -42,7 +42,10 @@ def main(fname1, fname2, verbose = True):
         elif v2 is None:
             only_1[k] = v1
         else:
-            ratios[k] = float(v2 * tot1) / float(v1 * tot2)
+            if v1 == 0 or tot2 == 0:
+                ratios[k] = 0.0
+            else:
+                ratios[k] = float(v2 * tot1) / float(v1 * tot2)
 
     print('shared: ' + str(len(ratios)))
     for k in sorted(ratios, key=lambda x: d2[x], reverse=True):
@@ -73,5 +76,9 @@ if __name__ == '__main__':
                         help='verbose output')
 
     args = parser.parse_args()
-    main(args.file1, args.file2, verbose=args.verbose)
+    try:
+        main(args.file1, args.file2, verbose=args.verbose)
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        exit(1)
     exit(0)
