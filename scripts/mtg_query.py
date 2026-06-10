@@ -47,6 +47,7 @@ FIELD_MAP = {
     'rarity': {'header': 'Rarity', 'align': 'l', 'aliases': []},
     'mechanics': {'header': 'Mechanics', 'align': 'l', 'aliases': ['keywords']},
     'actions': {'header': 'Actions', 'align': 'l', 'aliases': ['functional']},
+    'tokens': {'header': 'Tokens', 'align': 'l', 'aliases': ['creates', 'token']},
     'identity': {'header': 'Identity', 'align': 'l', 'aliases': ['color_identity', 'ci']},
     'id_count': {'header': 'ID', 'align': 'r', 'aliases': ['identity_count']},
     'set': {'header': 'Set', 'align': 'l', 'aliases': ['code']},
@@ -128,6 +129,8 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ", ".join(sorted(list(card.mechanics)))
     elif canon == 'actions':
         return ", ".join(sorted(list(card.actions)))
+    elif canon == 'tokens':
+        res = ", ".join([t['name'] for t in card.get_face_tokens()])
     elif canon == 'identity':
         res = card.color_identity
         if ansi_color and res:
@@ -171,7 +174,10 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ""
 
     if card.bside:
-        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary']:
+        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary', 'tokens']:
+            if canon == 'tokens':
+                all_tokens = [t['name'] for t in card.tokens]
+                return ", ".join(all_tokens)
             return str(res)
         b_res = get_field_value(card.bside, field, ansi_color, multi_sep=multi_sep)
         if res and b_res:
@@ -613,6 +619,14 @@ def _execute_oracle(cards, args):
                     act_val = utils.colorize(act_val, utils.Ansi.CYAN)
                 footer_lines.append(f"{fmt_label('ACTIONS:')} {act_val}")
 
+            # 5. Tokens Line
+            all_tokens = [t['name'] for t in c.tokens]
+            if all_tokens:
+                tok_val = ', '.join(all_tokens)
+                if use_color:
+                    tok_val = utils.colorize(tok_val, utils.Ansi.CYAN)
+                footer_lines.append(f"{fmt_label('TOKENS:')} {tok_val}")
+
             print() # Spacer before footer
             for line in footer_lines:
                 print("  " + line)
@@ -1038,6 +1052,7 @@ def handle_compare_cards(args):
             ('Rarity', 'rarity'),
             ('Mechanics', 'mechanics'),
             ('Actions', 'actions'),
+            ('Tokens', 'tokens'),
             ('Fair MV', 'fair_cmc'),
             ('Rating', 'rating'),
             ('Complexity', 'complexity'),
@@ -1109,7 +1124,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
     p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
                         help='Comma-separated list of fields to extract. Available fields:\n'
                              '  - Basic: name, cost, cmc, type, stats, text, rarity\n'
-                             '  - Analysis: mechanics, actions, identity, complexity, rating, fair_mv\n'
+                             '  - Analysis: mechanics, actions, tokens, identity, complexity, rating, fair_mv\n'
                              '  - Metadata: set, number, pack, box')
     p_search.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')

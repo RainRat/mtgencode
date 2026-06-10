@@ -178,6 +178,33 @@ def sentencecase(s):
             clines += ['']
     return utils.newline.join(clines).replace(utils.reserved_marker, utils.x_marker)
 
+def extract_tokens_from_text(text):
+    """Identifies and extracts token definitions from rules text."""
+    found = []
+    text = text.replace('\n', ' ').strip()
+    # 1. Regex for creature tokens with P/T and optional abilities
+    # Supports both singular and multiple tokens (e.g., "Create two... and a...")
+    c_regex = r"(?:[Cc]reate[sd]?|and)\s+(?:[Aa]n?|two|three|four|five|six|seven|eight|nine|ten|X)\s+([0-9/X+&^]+)\s+([a-zA-Z\s,]+?)\s+token[s]?(?:\s+with\s+([^,.]+?))?(?=(?:\s*(?:and|[,.])|$))"
+    for m in re.finditer(c_regex, text, re.IGNORECASE):
+        pt, ct, ab = m.group(1), m.group(2).strip(), m.group(3).strip() if m.group(3) else ""
+        if ct.lower().endswith(' creature'): ct = ct[:-9]
+        cols = [c.capitalize() for c in ['white','blue','black','red','green','colorless'] if c in ct.lower()]
+        ty = ct
+        for x in ['white','blue','black','red','green','colorless','multi','and',',']: ty = re.sub(r'\b'+x+r'\b' if x.isalpha() else re.escape(x), '', ty, flags=re.IGNORECASE)
+        ty = " ".join([t.capitalize() for t in ty.split()])
+        found.append({'name': f"{pt} {', '.join(cols) if cols else 'Colorless'} {ty} Token", 'pt': pt, 'color': ", ".join(cols) if cols else "Colorless", 'type': f"{ty} Creature".strip(), 'abilities': ab})
+
+    # 2. Regex for predefined tokens (Treasure, Food, etc.)
+    ntks = ['Treasure','Food','Clue','Blood','Map','Role','Incubator','Powerstone','Walker']
+    n_regex = r"(?:[Cc]reate[sd]?)\s+(?:[Aa]n?|two|three|four|five|X)\s+(" + "|".join(ntks) + r")\s+token[s]?"
+    for m in re.finditer(n_regex, text, re.IGNORECASE):
+        n = m.group(1).capitalize(); t = {'name': f"{n} Token", 'pt': "", 'color': "Colorless", 'type': n, 'abilities': ""}
+        if n=='Treasure': t['type']='Artifact'; t['abilities']='Sacrifice this artifact: Add one mana of any color.'
+        elif n=='Food': t['type']='Artifact'; t['abilities']='{2}, {T}, Sacrifice this artifact: gain 3 life.'
+        elif n=='Clue': t['type']='Artifact'; t['abilities']='{2}, Sac: Draw a card.'
+        found.append(t)
+    return found
+
 # These are used later to determine what the fields of the Card object are called.
 # Define them here because they have nothing to do with the actual format.
 field_name = 'name'
@@ -724,6 +751,18 @@ class Card:
     def is_sorcery(self):
         """Returns True if the card is a sorcery."""
         return self._has_type('sorcery')
+
+    @property
+    def tokens(self):
+        """Returns a list of token definitions extracted from the card rules text."""
+        res = self.get_face_tokens()
+        if self.bside:
+            res.extend(self.bside.tokens)
+        return res
+
+    def get_face_tokens(self):
+        """Returns a list of token definitions extracted from this card face."""
+        return extract_tokens_from_text(self.get_text(force_unpass=True))
 
     @property
     def produced_colors(self):
@@ -1830,6 +1869,11 @@ class Card:
         produced = sorted(list(self.get_face_produced_colors()))
         if produced:
             d['producedColors'] = produced
+
+        # Tokens
+        tokens = self.get_face_tokens()
+        if tokens:
+            d['tokens'] = tokens
 
         # Color Identity
         identity = self.color_identity
