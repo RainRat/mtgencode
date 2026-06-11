@@ -332,6 +332,38 @@ python3 scripts/mtg_query.py search data/AllPrintings.json --set MOM --rarity ra
 
 ---
 
+## Smart Input Handling
+
+Most tools in this project feature "smart" logic to make common tasks faster and easier.
+
+### 1. Smart Dataset Detection
+If you don't provide an input file (and aren't using a pipe), the tools automatically look for the official dataset at `data/AllPrintings.json`. This means you can often skip typing the filename entirely.
+
+```bash
+# Instead of:
+python3 scripts/mtg_query.py search data/AllPrintings.json --grep "Grizzly Bears"
+
+# You can just type:
+python3 scripts/mtg_query.py search "Grizzly Bears"
+```
+
+### 2. Smart Positional Argument Handling
+The tools are smart enough to distinguish between a filename and a search query. This allows you to omit the `--grep` flag or even swap the order of arguments.
+
+*   **Automatic Search:** If a positional argument isn't a valid file, the tool automatically treats it as a search query.
+*   **Flexible Order:** You can provide the query before or after the filename.
+
+```bash
+# Both of these work:
+python3 scripts/mtg_analyze.py summary my_cards.json "Elf"
+python3 scripts/mtg_analyze.py summary "Elf" my_cards.json
+
+# If my_cards.json doesn't exist, this searches the default dataset for "my_cards.json":
+python3 scripts/mtg_analyze.py summary my_cards.json
+```
+
+---
+
 ## Training your own AI Model
 Use your encoded card data to train a neural network that can design its own Magic cards.
 

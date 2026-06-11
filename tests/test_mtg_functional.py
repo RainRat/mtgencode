@@ -129,7 +129,7 @@ class TestMtgFunctional(unittest.TestCase):
 
             code, out, err = self.run_main([test_file, "--no-color"])
             self.assertEqual(code, 0)
-            self.assertIn("FUNCTIONAL REPRINT GROUPS (1 match)", out)
+            self.assertIn("GROUPS OF CARDS WITH THE SAME MECHANICS (1 match)", out)
             self.assertIn("Split A, Split B", out)
 
 if __name__ == '__main__':
