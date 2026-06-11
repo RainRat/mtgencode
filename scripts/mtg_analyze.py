@@ -1521,7 +1521,7 @@ Examples:
     p_sum.set_defaults(func=handle_summary)
 
     # curve
-    p_cur = subparsers.add_parser('curve', help='Analyze and visualize the mana curve (CMC distribution).')
+    p_cur = subparsers.add_parser('curve', help='Analyze and visualize the mana curve (mana cost distribution).')
     add_std(p_cur)
     p_cur.set_defaults(func=handle_curve)
 
@@ -1532,14 +1532,14 @@ Examples:
     p_cp.set_defaults(func=handle_colorpie)
 
     # grid
-    p_gr = subparsers.add_parser('grid', help='Generate a 2D cross-tabulation (matrix) for card datasets.')
+    p_gr = subparsers.add_parser('grid', help='Generate a 2D table to cross-reference card attributes (like color vs. rarity).')
     p_gr.add_argument('row_dim', choices=DIMENSIONS.keys(), help='Dimension to use for rows (e.g., color, rarity, type).')
     p_gr.add_argument('col_dim', choices=DIMENSIONS.keys(), help='Dimension to use for columns (e.g., cmc, mechanic).')
     add_std(p_gr)
     p_gr.set_defaults(func=handle_grid)
 
     # types
-    p_ty = subparsers.add_parser('types', help='Generate a Type vs. Color heatmap matrix.')
+    p_ty = subparsers.add_parser('types', help='Generate a table showing how card types are distributed across colors.')
     add_std(p_ty)
     p_ty.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
     p_ty.set_defaults(func=handle_types)
@@ -1566,7 +1566,7 @@ Examples:
     p_pi.set_defaults(func=handle_pips)
 
     # costs
-    p_co = subparsers.add_parser('costs', help='Analyze mana cost intensity and color commitment.')
+    p_co = subparsers.add_parser('costs', help='Analyze how many colored mana symbols cards require relative to their total cost.')
     add_std(p_co)
     p_co.add_argument('outfile', nargs='?', default=None, help='Save cost analysis to a file.')
     p_co.set_defaults(func=handle_costs)
@@ -1584,16 +1584,16 @@ Examples:
     p_sy = subparsers.add_parser(
         'interaction',
         aliases=['synergy'],
-        help='Analyze how mechanics appear together (co-occurrence).',
+        help='Analyze how often different mechanics appear together.',
         description="""
-Analyzes how different mechanics (like Flying, Kicker, or Flashback) appear
-together on the same cards. It identifies frequent pairings and calculates
-a 'Lift Score' to measure the interaction between them.
+Analyzes how different mechanics (like Flying and Trample) appear together
+on the same cards. It identifies frequent pairings and calculates a
+'Lift Score' to measure how often they appear together compared to
+what would happen by random chance.
 
-The Lift Score measures if two mechanics appear together more often than
-expected by chance:
-- Score > 1.0: The mechanics appear together MORE often than expected (interaction).
-- Score = 1.0: The mechanics appear together exactly as often as expected by chance.
+The Lift Score shows the relationship between two mechanics:
+- Score > 1.0: The mechanics appear together MORE often than expected.
+- Score = 1.0: The mechanics appear together exactly as often as expected.
 - Score < 1.0: The mechanics appear together LESS often than expected.
 """,
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -1610,7 +1610,16 @@ expected by chance:
     p_ac.set_defaults(func=handle_actions)
 
     # lexicon
-    p_le = subparsers.add_parser('lexicon', help='Identify "signature words" for each Magic color.')
+    p_le = subparsers.add_parser(
+        'lexicon',
+        help='Identify words that are used more often in specific colors.',
+        description="""
+Identifies "signature words" for each Magic color by comparing how often
+words appear in one color versus all others. This helps identify the
+thematic language used for each part of the color pie.
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_le)
     p_le.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
     p_le.add_argument('--top', type=int, default=10, help='Number of signature words to show per color (Default: 10).')
