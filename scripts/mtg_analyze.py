@@ -61,17 +61,23 @@ GUILD_LABELS = {
 
 # --- Shared Helpers ---
 
+def _normalized_color_identity(card):
+    identity = getattr(card, 'color_identity', '')
+    if isinstance(identity, str):
+        if identity:
+            return identity
+    elif isinstance(identity, (list, tuple)):
+        if identity:
+            return ''.join(identity)
+    colors = getattr(getattr(card, 'cost', None), 'colors', None)
+    if colors:
+        return ''.join(colors)
+    return ''
+
+
 def get_color_group(card):
     """Categorizes a card by color identity (W, U, B, R, G, Multi, Colorless)."""
-    identity = getattr(card, 'color_identity', '')
-    if isinstance(identity, str) and identity:
-        pass
-    elif isinstance(identity, (list, tuple)) and identity:
-        identity = ''.join(identity)
-    else:
-        colors = getattr(getattr(card, 'cost', None), 'colors', None)
-        identity = ''.join(colors) if colors else ''
-
+    identity = _normalized_color_identity(card)
     if len(identity) > 1: return 'M'
     if len(identity) == 1: return identity[0]
     return 'A'
@@ -1120,7 +1126,6 @@ def handle_tokens(args):
         rows.append([n, pt, cl, ty, t['abilities'], cnt])
     datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','l','l','l','r']), indent=2)
 
-
 def handle_profile(args):
     target_cards = cli_utils.load_and_filter_cards(args)
     if not check_cards(target_cards, args): return
@@ -1665,36 +1670,7 @@ expected by chance:
     p_sub.set_defaults(func=handle_subtypes)
 
     # profile
-    p_prof = subparsers.add_parser(
-        'profile',
-        help='Identify the "Mechanical Identity" (signature features) of a card subset.',
-        description="""
-Identifies the "Mechanical Identity" (signature features) of a card subset by
-comparing it against a global baseline. This highlights what makes a specific
-group of cards unique.
-
-It calculates Avg CMC, Power, Toughness, and Complexity deltas, and identifies
-over-represented Mechanics, Actions, and Subtypes using a 'Lift Score'.
-
-The Lift Score measures how much more common a feature is in the subset
-compared to the baseline:
-- Score > 1.0: The feature is MORE common in the subset (signature feature).
-- Score = 1.0: The feature appears exactly as often as in the baseline.
-- Score < 1.0: The feature is LESS common in the subset.
-""",
-        epilog="""
-Examples:
-  # Profile Green Rare cards to see their defining mechanics
-  python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors G --rarity rare
-
-  # Profile a specific set to see its mechanical themes
-  python3 scripts/mtg_analyze.py profile data/AllPrintings.json --set MOM
-
-  # See the top 20 signature features for a decklist
-  python3 scripts/mtg_analyze.py profile my_deck.txt --top 20
-""",
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
+    p_prof = subparsers.add_parser('profile', help='Identify the "Mechanical Identity" (signature features) of a card subset.')
     add_std(p_prof)
     p_prof.add_argument('--top', type=int, default=10, help='Number of signature features to show per category (Default: 10).')
     p_prof.set_defaults(func=handle_profile)

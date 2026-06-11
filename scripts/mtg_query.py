@@ -57,6 +57,8 @@ FIELD_MAP = {
     'complexity': {'header': 'Complexity', 'align': 'r', 'aliases': ['score']},
     'rating': {'header': 'Rating', 'align': 'r', 'aliases': ['power_rating']},
     'fair_cmc': {'header': 'Fair MV', 'align': 'r', 'aliases': ['fcmc', 'fair_cost', 'fair_mv', 'recommended_cmc']},
+    'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
+    'tokens': {'header': 'Tokens', 'align': 'l', 'aliases': ['creates']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
@@ -155,17 +157,45 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
             res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
         return res
     elif canon == 'rating':
-        res = str(card.power_rating)
+        res = f"{card.power_rating:.3f}"
         if ansi_color:
-            res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.RED)
+            color = ""
+            if card.power_rating > 1.2: color = utils.Ansi.BOLD + utils.Ansi.GREEN
+            elif card.power_rating < 0.8: color = utils.Ansi.BOLD + utils.Ansi.RED
+            if color: res = utils.colorize(res, color)
         return res
     elif canon == 'fair_cmc':
         val = card.recommended_cmc
         res = str(val) if val > 0 else ""
         if res and ansi_color:
-            color = utils.Ansi.GREEN if card.cost.cmc >= val else utils.Ansi.RED
-            res = utils.colorize(res, utils.Ansi.BOLD + color)
+            color = utils.Ansi.BOLD + (utils.Ansi.GREEN if card.cost.cmc >= val else utils.Ansi.RED)
+            res = utils.colorize(res, color)
         return res
+    elif canon == 'produced':
+        produced = card.produced_colors
+        if not produced: return ""
+        p_order = "WUBRGC"
+        p_list = sorted(list(produced), key=lambda x: p_order.find(x) if x in p_order else 99)
+        if "Any" in produced:
+            res = "Any"
+            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+        elif ansi_color:
+            res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in p_list])
+        else:
+            res = "".join(p_list)
+        return res
+    elif canon == 'tokens':
+        tokens = card.tokens
+        if not tokens: return ""
+        t_names = [t['name'] for t in tokens]
+        # Deduplicate names while preserving order
+        seen = set()
+        res = []
+        for n in t_names:
+            if n not in seen:
+                res.append(n)
+                seen.add(n)
+        return ", ".join(res)
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
     elif canon == 'encoded':
@@ -619,10 +649,10 @@ def _execute_oracle(cards, args):
                     act_val = utils.colorize(act_val, utils.Ansi.CYAN)
                 footer_lines.append(f"{fmt_label('ACTIONS:')} {act_val}")
 
-            # 5. Tokens Line
-            all_tokens = [t['name'] for t in c.tokens]
+            all_tokens = c.tokens
             if all_tokens:
-                tok_val = ', '.join(all_tokens)
+                t_names = sorted(list(set(t['name'] for t in all_tokens)))
+                tok_val = ', '.join(t_names)
                 if use_color:
                     tok_val = utils.colorize(tok_val, utils.Ansi.CYAN)
                 footer_lines.append(f"{fmt_label('TOKENS:')} {tok_val}")
@@ -1050,9 +1080,12 @@ def handle_compare_cards(args):
             ('Type', 'type'),
             ('Stats', 'stats'),
             ('Rarity', 'rarity'),
+            ('Identity', 'identity'),
+            ('Produced', 'produced'),
+            ('Tokens', 'tokens'),
             ('Mechanics', 'mechanics'),
             ('Actions', 'actions'),
-            ('Tokens', 'tokens'),
+            ('Signature', 'signature'),
             ('Fair MV', 'fair_cmc'),
             ('Rating', 'rating'),
             ('Complexity', 'complexity'),
@@ -1065,23 +1098,69 @@ def handle_compare_cards(args):
             header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
         rows.append(header)
 
+        # Signature logic: identify unique mechanical features
+        m1 = card1.mechanics | card1.actions
+        m2 = card2.mechanics | card2.actions
+        sig1_list = sorted(list(m1 - m2))
+        sig2_list = sorted(list(m2 - m1))
+
+        def wrap_ansi(text, width):
+            if not text: return ""
+            lines = []
+            for line in text.split('\n'):
+                if not line:
+                    lines.append("")
+                    continue
+                words = line.split(' ')
+                curr_line = []
+                curr_len = 0
+                for w in words:
+                    w_len = utils.visible_len(w)
+                    if curr_len + w_len + (1 if curr_line else 0) <= width:
+                        curr_line.append(w)
+                        curr_len += w_len + (1 if curr_line else 0)
+                    else:
+                        lines.append(" ".join(curr_line))
+                        curr_line = [w]
+                        curr_len = w_len
+                if curr_line:
+                    lines.append(" ".join(curr_line))
+            return "\n".join(lines)
+
+        import shutil
+        term_width = shutil.get_terminal_size().columns
+        # Column A (~12 chars) + spacers (6 chars) + Column B & C
+        wrap_width = max(30, (term_width - 20) // 2)
+
         for label, field in fields:
-            v1 = get_field_value(card1, field, ansi_color=False)
-            v2 = get_field_value(card2, field, ansi_color=False)
+            if field == 'signature':
+                v1, v2 = ", ".join(sig1_list), ", ".join(sig2_list)
+                display_v1, display_v2 = v1, v2
+                if use_color:
+                    if display_v1: display_v1 = utils.colorize(display_v1, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                    if display_v2: display_v2 = utils.colorize(display_v2, utils.Ansi.BOLD + utils.Ansi.GREEN)
+            else:
+                v1 = get_field_value(card1, field, ansi_color=False)
+                v2 = get_field_value(card2, field, ansi_color=False)
+                display_v1 = get_field_value(card1, field, ansi_color=use_color)
+                display_v2 = get_field_value(card2, field, ansi_color=use_color)
 
-            display_v1 = get_field_value(card1, field, ansi_color=use_color)
-            display_v2 = get_field_value(card2, field, ansi_color=use_color)
+            # Apply wrapping to multi-line or potentially long fields
+            if field in ['text', 'tokens', 'mechanics', 'actions', 'signature']:
+                display_v1 = wrap_ansi(display_v1, wrap_width)
+                display_v2 = wrap_ansi(display_v2, wrap_width)
 
-            # Strip newlines for table view for better alignment
-            if field == 'text':
-                display_v1 = display_v1.replace('\n', ' ')
-                display_v2 = display_v2.replace('\n', ' ')
-
+            # Highlight differences or matches
             if v1 != v2:
                 if use_color:
                     label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+            elif use_color:
+                label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
 
-            rows.append([label, display_v1, display_v2])
+            # Always show basic identifying rows; hide others only if both are empty
+            is_identifying = field in ['name', 'cost', 'cmc', 'type', 'rarity', 'fair_cmc', 'rating', 'complexity', 'text']
+            if is_identifying or display_v1 or display_v2:
+                rows.append([label, display_v1, display_v2])
 
         datalib.add_separator_row(rows)
         datalib.printrows(datalib.padrows(rows, aligns=['l', 'l', 'l']), indent=2)
