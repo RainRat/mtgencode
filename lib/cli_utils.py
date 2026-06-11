@@ -118,8 +118,11 @@ def load_and_filter_cards(args):
     infile = getattr(args, 'infile', '-')
     outfile = getattr(args, 'outfile', None)
     
+    # If the command is 'compare', we handle infile resolution separately
+    if getattr(args, 'command', None) == 'compare':
+        pass
     # Logic from mtg_search.py for smart infile handling
-    if infile and infile != '-' and not os.path.exists(infile):
+    elif infile and infile != '-' and not os.path.exists(infile):
         # If there are 2 positional arguments and the first isn't a file but the second is, swap them.
         if outfile and os.path.exists(outfile):
             query = infile

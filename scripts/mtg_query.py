@@ -1006,11 +1006,28 @@ def handle_functional(args):
 # --- Compare Logic ---
 
 def handle_compare_cards(args):
-    # Smart positional argument handling for infile
-    if args.card2 and os.path.exists(args.card2) and (args.infile == '-' or not os.path.exists(args.infile)):
-        temp = args.card2
-        args.card2 = args.infile if args.infile != '-' else None
-        args.infile = temp
+    # Smart argument redistribution
+    card_names = []
+    infile = '-'
+    for arg in args.query_args:
+        if os.path.exists(arg) and infile == '-':
+            infile = arg
+        else:
+            card_names.append(arg)
+
+    if infile == '-':
+        # Try to find default dataset if no file was specified
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        options = [
+            'data/AllPrintings.json',
+            os.path.join(script_dir, '../data/AllPrintings.json')
+        ]
+        for opt in options:
+            if os.path.exists(opt):
+                infile = opt
+                break
+
+    args.infile = infile
 
     # Load all cards to perform fuzzy matching
     all_cards = cli_utils.load_and_filter_cards(args)
@@ -1051,23 +1068,51 @@ def handle_compare_cards(args):
 
         return None
 
-    card1 = resolve_card(args.card1, all_cards)
-    card2 = resolve_card(args.card2, all_cards)
+    display_cards = []
 
-    if not card1 or not card2:
-        if not card1 and not args.quiet:
-            print(f"Error: Could not find card '{args.card1}'", file=sys.stderr)
-        if not card2 and not args.quiet:
-            print(f"Error: Could not find card '{args.card2}'", file=sys.stderr)
+    # 1. Resolve specified names
+    for name in card_names:
+        c = resolve_card(name, all_cards)
+        if c:
+            display_cards.append(c)
+        elif not args.quiet:
+            print(f"Error: Could not find card '{name}'", file=sys.stderr)
+
+    # 2. Automatic Similarity: If only one card is resolved, find its nearest neighbor
+    if len(display_cards) == 1:
+        target = display_cards[0]
+        nd = namediff.Namediff(verbose=False, cards=all_cards)
+        results = nd.nearest_card(target, n=2)
+        # nearest_card returns [(ratio, name), ...]
+        for ratio, name in results:
+            if name.lower() != target.name.lower():
+                neighbor = resolve_card(name, all_cards)
+                if neighbor:
+                    display_cards.append(neighbor)
+                    if not args.quiet:
+                        print(f"Notice: Comparing '{target.display_name}' against most mechanically similar match: '{neighbor.display_name}'", file=sys.stderr)
+                break
+
+    # 3. Pool Comparison: If no cards are specified, use the first two from the filtered dataset
+    if not display_cards:
+        if len(all_cards) >= 2:
+            display_cards = all_cards[:2]
+            if not args.quiet:
+                print(f"Notice: Comparing first two cards matching filters: '{display_cards[0].display_name}' and '{display_cards[1].display_name}'", file=sys.stderr)
+        elif len(all_cards) == 1:
+            display_cards = all_cards
+        else:
+            if not args.quiet:
+                print("Error: Not enough cards found to perform a comparison.", file=sys.stderr)
+            return
+
+    if not display_cards:
         return
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
 
     if args.json:
-        diff_data = {
-            'card1': card1.to_dict(),
-            'card2': card2.to_dict(),
-        }
+        diff_data = {f"card{i+1}": c.to_dict() for i, c in enumerate(display_cards)}
         print(json.dumps(diff_data, indent=4))
     else:
         if not args.quiet:
@@ -1075,6 +1120,7 @@ def handle_compare_cards(args):
 
         fields = [
             ('Name', 'name'),
+            ('Set', 'set'),
             ('Cost', 'cost'),
             ('CMC', 'cmc'),
             ('Type', 'type'),
@@ -1093,16 +1139,20 @@ def handle_compare_cards(args):
         ]
 
         rows = []
-        header = ["Field", cardlib.titlecase(card1.name.replace(utils.dash_marker, '-')), cardlib.titlecase(card2.name.replace(utils.dash_marker, '-'))]
+        header = ["Field"] + [cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) for c in display_cards]
         if use_color:
             header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
         rows.append(header)
 
-        # Signature logic: identify unique mechanical features
-        m1 = card1.mechanics | card1.actions
-        m2 = card2.mechanics | card2.actions
-        sig1_list = sorted(list(m1 - m2))
-        sig2_list = sorted(list(m2 - m1))
+        # Signature logic: identify unique mechanical features for each card
+        mechanic_sets = [c.mechanics | c.actions for c in display_cards]
+        signatures = []
+        for i in range(len(mechanic_sets)):
+            unique = set(mechanic_sets[i])
+            for j in range(len(mechanic_sets)):
+                if i == j: continue
+                unique -= mechanic_sets[j]
+            signatures.append(sorted(list(unique)))
 
         def wrap_ansi(text, width):
             if not text: return ""
@@ -1129,41 +1179,46 @@ def handle_compare_cards(args):
 
         import shutil
         term_width = shutil.get_terminal_size().columns
-        # Column A (~12 chars) + spacers (6 chars) + Column B & C
-        wrap_width = max(30, (term_width - 20) // 2)
+        # Column A (~12 chars) + spacers (6 chars) + N columns
+        num_cols = len(display_cards)
+        wrap_width = max(20, (term_width - 20) // num_cols)
 
         for label, field in fields:
+            vals = []
+            display_vals = []
+
             if field == 'signature':
-                v1, v2 = ", ".join(sig1_list), ", ".join(sig2_list)
-                display_v1, display_v2 = v1, v2
-                if use_color:
-                    if display_v1: display_v1 = utils.colorize(display_v1, utils.Ansi.BOLD + utils.Ansi.GREEN)
-                    if display_v2: display_v2 = utils.colorize(display_v2, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                for i in range(len(display_cards)):
+                    v = ", ".join(signatures[i])
+                    vals.append(v)
+                    if use_color and v:
+                        display_vals.append(utils.colorize(v, utils.Ansi.BOLD + utils.Ansi.GREEN))
+                    else:
+                        display_vals.append(v)
             else:
-                v1 = get_field_value(card1, field, ansi_color=False)
-                v2 = get_field_value(card2, field, ansi_color=False)
-                display_v1 = get_field_value(card1, field, ansi_color=use_color)
-                display_v2 = get_field_value(card2, field, ansi_color=use_color)
+                for c in display_cards:
+                    vals.append(get_field_value(c, field, ansi_color=False))
+                    display_vals.append(get_field_value(c, field, ansi_color=use_color))
 
             # Apply wrapping to multi-line or potentially long fields
             if field in ['text', 'tokens', 'mechanics', 'actions', 'signature']:
-                display_v1 = wrap_ansi(display_v1, wrap_width)
-                display_v2 = wrap_ansi(display_v2, wrap_width)
+                display_vals = [wrap_ansi(v, wrap_width) for v in display_vals]
 
             # Highlight differences or matches
-            if v1 != v2:
+            all_same = all(v == vals[0] for v in vals)
+            if not all_same:
                 if use_color:
                     label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
             elif use_color:
                 label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
 
-            # Always show basic identifying rows; hide others only if both are empty
-            is_identifying = field in ['name', 'cost', 'cmc', 'type', 'rarity', 'fair_cmc', 'rating', 'complexity', 'text']
-            if is_identifying or display_v1 or display_v2:
-                rows.append([label, display_v1, display_v2])
+            # Always show basic identifying rows; hide others only if all are empty
+            is_identifying = field in ['name', 'set', 'cost', 'cmc', 'type', 'rarity', 'fair_cmc', 'rating', 'complexity', 'text']
+            if is_identifying or any(v for v in display_vals):
+                rows.append([label] + display_vals)
 
         datalib.add_separator_row(rows)
-        datalib.printrows(datalib.padrows(rows, aligns=['l', 'l', 'l']), indent=2)
+        datalib.printrows(datalib.padrows(rows, aligns=['l'] * (len(display_cards) + 1)), indent=2)
 
 # --- Main Entry Point ---
 
@@ -1350,10 +1405,8 @@ Usage Examples:
   python3 scripts/mtg_query.py compare "Grizzly Bears" "Balduvian Bears" my_cards.json
 """
     )
-    p_compare.add_argument('card1', help='First card name to compare.')
-    p_compare.add_argument('card2', help='Second card name to compare.')
-    p_compare.add_argument('infile', nargs='?', default='-',
-                         help='Input card data. Defaults to data/AllPrintings.json if available.')
+    p_compare.add_argument('query_args', nargs='*',
+                         help='Card names to compare. If only one name is provided, it will be compared against its most mechanically similar relative. If a file path is included, it will be used as the dataset.')
     cli_utils.add_standard_filters(p_compare)
     cli_utils.add_standard_output_args(p_compare)
     p_compare.set_defaults(func=handle_compare_cards)
