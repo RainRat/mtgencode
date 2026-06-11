@@ -56,6 +56,15 @@ class TestMtgValidateGaps(unittest.TestCase):
         c = cardlib.Card({"name": "Polukranos", "types": ["Creature"], "text": "{X}{X}{G}: Monstrosity X."})
         self.assertTrue(mtg_validate.check_X(c))
 
+    def test_check_X_multi_line(self):
+        # Card where X is defined on one line and used on another
+        c = cardlib.Card({
+            "name": "X Manager",
+            "types": ["Enchantment"],
+            "text": "X is the number of creatures you control.\nAt the beginning of your upkeep, gain X life."
+        })
+        self.assertTrue(mtg_validate.check_X(c))
+
     def test_check_triggered_variants(self):
         c = cardlib.Card({"name": "Upkeep", "types": ["Enchantment"], "text": "At the beginning of your upkeep, gain 1 life."})
         self.assertTrue(mtg_validate.check_triggered(c))
