@@ -581,13 +581,22 @@ python3 scripts/mtg_query.py functional --dedupe unique_cards.json
 ---
 
 #### **Subcommand: `compare`**
-Side-by-side card comparison for identifying design differences. Supports fuzzy matching and multi-faced cards.
+Side-by-side card comparison for identifying design differences. Supports N-way comparison (any number of cards), fuzzy matching, and automatic similarity finding.
 
 ```bash
 # Compare two cards by name
 python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre"
 
-# Compare two cards in a specific file and highlight differences
+# Compare one card against its most mechanically similar match
+python3 scripts/mtg_query.py compare "Grizzly Bears"
+
+# Compare multiple cards (N-way)
+python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre" "Balduvian Bears"
+
+# Compare a pool of cards matching filters
+python3 scripts/mtg_query.py compare --set MOM --rarity rare
+
+# Compare cards in a specific file
 python3 scripts/mtg_query.py compare "Uthros" "Invasion" testdata/ --color
 ```
 
