@@ -17,8 +17,8 @@ def test_mtg_tokens_basic():
     tokens = json.loads(result.stdout)
 
     # Verify we found the expected number of unique tokens
-    # (1/1 Soldier, 2/2 Drake, 3/3 Beast, Food, Treasure)
-    assert len(tokens) == 5
+    # (1/1 Soldier, 2/2 Drake, 3/3 Beast, 4/4 Rhino, Food, Treasure)
+    assert len(tokens) == 6
 
     # Verify specific token properties
     names = [t['name'] for t in tokens]
