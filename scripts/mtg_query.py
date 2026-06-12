@@ -58,7 +58,6 @@ FIELD_MAP = {
     'rating': {'header': 'Rating', 'align': 'r', 'aliases': ['power_rating']},
     'fair_cmc': {'header': 'Fair MV', 'align': 'r', 'aliases': ['fcmc', 'fair_cost', 'fair_mv', 'recommended_cmc']},
     'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
-    'tokens': {'header': 'Tokens', 'align': 'l', 'aliases': ['creates']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
@@ -128,34 +127,42 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         if ansi_color and res:
             res = utils.colorize(res, utils.Ansi.get_rarity_color(res))
     elif canon == 'mechanics':
-        return ", ".join(sorted(list(card.mechanics)))
+        res = ", ".join(sorted(list(card.mechanics)))
     elif canon == 'actions':
-        return ", ".join(sorted(list(card.actions)))
+        res = ", ".join(sorted(list(card.actions)))
     elif canon == 'tokens':
-        res = ", ".join([t['name'] for t in card.get_face_tokens()])
+        tokens = card.tokens
+        if tokens:
+            t_names = [t['name'] for t in tokens]
+            # Deduplicate names while preserving order
+            seen = set()
+            deduped = []
+            for n in t_names:
+                if n not in seen:
+                    deduped.append(n)
+                    seen.add(n)
+            res = ", ".join(deduped)
     elif canon == 'identity':
         res = card.color_identity
         if ansi_color and res:
             res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in res])
-        return res
     elif canon == 'id_count':
         res = len(card.color_identity)
         if ansi_color:
             res = utils.colorize(str(res), utils.Ansi.BOLD + utils.Ansi.YELLOW)
-        return str(res)
+        res = str(res)
     elif canon == 'set':
-        return card.set_code if card.set_code else ""
+        res = card.set_code if card.set_code else ""
     elif canon == 'number':
-        return card.number if card.number else ""
+        res = card.number if card.number else ""
     elif canon == 'pack':
-        return str(getattr(card, 'pack_id', ""))
+        res = str(getattr(card, 'pack_id', ""))
     elif canon == 'box':
-        return str(getattr(card, 'box_id', ""))
+        res = str(getattr(card, 'box_id', ""))
     elif canon == 'complexity':
         res = str(card.complexity_score)
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
-        return res
     elif canon == 'rating':
         res = f"{card.power_rating:.3f}"
         if ansi_color:
@@ -163,51 +170,34 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
             if card.power_rating > 1.2: color = utils.Ansi.BOLD + utils.Ansi.GREEN
             elif card.power_rating < 0.8: color = utils.Ansi.BOLD + utils.Ansi.RED
             if color: res = utils.colorize(res, color)
-        return res
     elif canon == 'fair_cmc':
         val = card.recommended_cmc
         res = str(val) if val > 0 else ""
         if res and ansi_color:
             color = utils.Ansi.BOLD + (utils.Ansi.GREEN if card.cost.cmc >= val else utils.Ansi.RED)
             res = utils.colorize(res, color)
-        return res
     elif canon == 'produced':
         produced = card.produced_colors
-        if not produced: return ""
-        p_order = "WUBRGC"
-        p_list = sorted(list(produced), key=lambda x: p_order.find(x) if x in p_order else 99)
-        if "Any" in produced:
-            res = "Any"
-            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.YELLOW)
-        elif ansi_color:
-            res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in p_list])
-        else:
-            res = "".join(p_list)
-        return res
-    elif canon == 'tokens':
-        tokens = card.tokens
-        if not tokens: return ""
-        t_names = [t['name'] for t in tokens]
-        # Deduplicate names while preserving order
-        seen = set()
-        res = []
-        for n in t_names:
-            if n not in seen:
-                res.append(n)
-                seen.add(n)
-        return ", ".join(res)
+        if produced:
+            p_order = "WUBRGC"
+            p_list = sorted(list(produced), key=lambda x: p_order.find(x) if x in p_order else 99)
+            if "Any" in produced:
+                res = "Any"
+                if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+            elif ansi_color:
+                res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in p_list])
+            else:
+                res = "".join(p_list)
     elif canon == 'summary':
-        return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
+        res = card.summary(ansi_color=ansi_color).replace('\u2014', '-')
     elif canon == 'encoded':
         res = card.encode()
     else:
-        return ""
+        res = ""
 
     if card.bside:
-        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary', 'tokens']:
-            if canon == 'tokens':
-                all_tokens = [t['name'] for t in card.tokens]
-                return ", ".join(all_tokens)
+        # Already recursive or per-face fields where we only want the primary face value
+        if canon in ['rarity', 'set', 'number', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'actions', 'tokens', 'complexity', 'rating', 'fair_cmc', 'produced', 'summary']:
             return str(res)
         b_res = get_field_value(card.bside, field, ansi_color, multi_sep=multi_sep)
         if res and b_res:
