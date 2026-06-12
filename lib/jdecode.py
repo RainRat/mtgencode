@@ -846,6 +846,7 @@ def mtg_open_file(fname, verbose = False,
                   pows=None, tous=None, loys=None,
                   mechanics=None,
                   actions=None,
+                  color_pie_break=False,
                   identities=None, id_counts=None,
                   shuffle=False, seed=None,
                   decklist_file=None,
@@ -1175,7 +1176,7 @@ def mtg_open_file(fname, verbose = False,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                    decklist_names=decklist_names)
 
-    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or actions or identities or id_counts:
+    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or actions or identities or id_counts or color_pie_break:
         # Sanitize queries to match internal representations (hyphens are dash_marker)
         greps = _compile_patterns(grep, sanitize=True)
         vgreps = _compile_patterns(vgrep, sanitize=True)
@@ -1380,6 +1381,13 @@ def mtg_open_file(fname, verbose = False,
                         match_id_count = True
                         break
                 if not match_id_count:
+                    return False
+
+            # Color Pie Break filtering
+            if color_pie_break:
+                res = card.check_color_pie()
+                # If it's a string, it's a break
+                if not isinstance(res, str):
                     return False
 
             return True

@@ -58,7 +58,7 @@ FIELD_MAP = {
     'rating': {'header': 'Rating', 'align': 'r', 'aliases': ['power_rating']},
     'fair_cmc': {'header': 'Fair MV', 'align': 'r', 'aliases': ['fcmc', 'fair_cost', 'fair_mv', 'recommended_cmc']},
     'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
-    'tokens': {'header': 'Tokens', 'align': 'l', 'aliases': ['creates']},
+    'color_pie': {'header': 'Color Pie', 'align': 'l', 'aliases': ['break', 'violation']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
@@ -196,6 +196,18 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
                 res.append(n)
                 seen.add(n)
         return ", ".join(res)
+    elif canon == 'color_pie':
+        res = card.check_color_pie()
+        if res is True or res is None:
+            res = "Valid"
+            if ansi_color:
+                res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
+        else:
+            if ansi_color:
+                res = utils.colorize(str(res), utils.Ansi.BOLD + utils.Ansi.RED)
+            else:
+                res = str(res)
+        return res
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
     elif canon == 'encoded':
@@ -656,6 +668,13 @@ def _execute_oracle(cards, args):
                 if use_color:
                     tok_val = utils.colorize(tok_val, utils.Ansi.CYAN)
                 footer_lines.append(f"{fmt_label('TOKENS:')} {tok_val}")
+
+            cp_res = c.check_color_pie()
+            if isinstance(cp_res, str):
+                cp_val = cp_res
+                if use_color:
+                    cp_val = utils.colorize(cp_val, utils.Ansi.BOLD + utils.Ansi.RED)
+                footer_lines.append(f"{fmt_label('COLOR PIE:')} {cp_val}")
 
             print() # Spacer before footer
             for line in footer_lines:
@@ -1234,7 +1253,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
     p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
                         help='Comma-separated list of fields to extract. Available fields:\n'
                              '  - Basic: name, cost, cmc, type, stats, text, rarity\n'
-                             '  - Analysis: mechanics, actions, tokens, identity, complexity, rating, fair_mv\n'
+                             '  - Analysis: mechanics, actions, tokens, identity, complexity, rating, fair_mv, color_pie\n'
                              '  - Metadata: set, number, pack, box')
     p_search.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
