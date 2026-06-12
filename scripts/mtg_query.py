@@ -1006,11 +1006,15 @@ def handle_functional(args):
 # --- Compare Logic ---
 
 def handle_compare_cards(args):
-    # Smart positional argument handling for infile
-    if args.card2 and os.path.exists(args.card2) and (args.infile == '-' or not os.path.exists(args.infile)):
-        temp = args.card2
-        args.card2 = args.infile if args.infile != '-' else None
-        args.infile = temp
+    # Custom redistribution for compare because it can take N names
+    # and the last positional argument might be a file.
+    names = getattr(args, 'names', [])
+    infile = getattr(args, 'infile', '-')
+
+    if names and (infile == '-' or not os.path.exists(infile)):
+        if os.path.exists(names[-1]):
+            infile = names.pop()
+            setattr(args, 'infile', infile)
 
     # Load all cards to perform fuzzy matching
     all_cards = cli_utils.load_and_filter_cards(args)
@@ -1042,7 +1046,6 @@ def handle_compare_cards(args):
 
         # 3. Fuzzy match
         search_names = {c.name.lower(): c for c in expanded_pool}
-        # Use a more lenient cutoff or also check titlecased versions for fuzzy matching
         close = difflib.get_close_matches(name.lower().replace('-', ' '), list(search_names.keys()), n=1, cutoff=0.5)
         if close:
             if not args.quiet:
@@ -1051,23 +1054,43 @@ def handle_compare_cards(args):
 
         return None
 
-    card1 = resolve_card(args.card1, all_cards)
-    card2 = resolve_card(args.card2, all_cards)
+    comparison_cards = []
+    for name in names:
+        c = resolve_card(name, all_cards)
+        if c:
+            comparison_cards.append(c)
+        elif not args.quiet:
+            print(f"Error: Could not find card '{name}'", file=sys.stderr)
 
-    if not card1 or not card2:
-        if not card1 and not args.quiet:
-            print(f"Error: Could not find card '{args.card1}'", file=sys.stderr)
-        if not card2 and not args.quiet:
-            print(f"Error: Could not find card '{args.card2}'", file=sys.stderr)
-        return
+    # Auto-similarity: compare against closest mechanical match if only one card provided
+    if len(comparison_cards) == 1:
+        target = comparison_cards[0]
+        if not args.quiet:
+            print(f"Notice: Only one card provided. Finding most mechanically similar card to {target.display_name}...", file=sys.stderr)
+        nd = namediff.Namediff(verbose=False, cards=all_cards)
+        results = nd.nearest_card(target, n=2) # 1st is always itself
+        for ratio, name in results:
+            if name.lower() != target.name.lower():
+                match = resolve_card(name, all_cards)
+                if match:
+                    comparison_cards.append(match)
+                    break
+
+    # Pool comparison: if no names provided, use the filtered result pool
+    if not comparison_cards:
+        limit = args.limit if args.limit > 0 else 5
+        comparison_cards = all_cards[:limit]
+        if not comparison_cards:
+            if not args.quiet:
+                print("Error: No cards matching criteria for comparison.", file=sys.stderr)
+            return
+        if not args.quiet:
+            print(f"Notice: Comparing pool of {len(comparison_cards)} cards.", file=sys.stderr)
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
 
     if args.json:
-        diff_data = {
-            'card1': card1.to_dict(),
-            'card2': card2.to_dict(),
-        }
+        diff_data = {f"card{i+1}": c.to_dict() for i, c in enumerate(comparison_cards)}
         print(json.dumps(diff_data, indent=4))
     else:
         if not args.quiet:
@@ -1075,6 +1098,7 @@ def handle_compare_cards(args):
 
         fields = [
             ('Name', 'name'),
+            ('Set', 'set'),
             ('Cost', 'cost'),
             ('CMC', 'cmc'),
             ('Type', 'type'),
@@ -1093,16 +1117,20 @@ def handle_compare_cards(args):
         ]
 
         rows = []
-        header = ["Field", cardlib.titlecase(card1.name.replace(utils.dash_marker, '-')), cardlib.titlecase(card2.name.replace(utils.dash_marker, '-'))]
+        header = ["Field"] + [cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) for c in comparison_cards]
         if use_color:
             header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
         rows.append(header)
 
         # Signature logic: identify unique mechanical features
-        m1 = card1.mechanics | card1.actions
-        m2 = card2.mechanics | card2.actions
-        sig1_list = sorted(list(m1 - m2))
-        sig2_list = sorted(list(m2 - m1))
+        card_features = [c.mechanics | c.actions for c in comparison_cards]
+        signatures = []
+        for i in range(len(comparison_cards)):
+            others_features = set()
+            for j in range(len(comparison_cards)):
+                if i == j: continue
+                others_features |= card_features[j]
+            signatures.append(sorted(list(card_features[i] - others_features)))
 
         def wrap_ansi(text, width):
             if not text: return ""
@@ -1129,41 +1157,44 @@ def handle_compare_cards(args):
 
         import shutil
         term_width = shutil.get_terminal_size().columns
-        # Column A (~12 chars) + spacers (6 chars) + Column B & C
-        wrap_width = max(30, (term_width - 20) // 2)
+        num_cards = len(comparison_cards)
+        wrap_width = max(25, (term_width - 20) // num_cards)
 
         for label, field in fields:
-            if field == 'signature':
-                v1, v2 = ", ".join(sig1_list), ", ".join(sig2_list)
-                display_v1, display_v2 = v1, v2
-                if use_color:
-                    if display_v1: display_v1 = utils.colorize(display_v1, utils.Ansi.BOLD + utils.Ansi.GREEN)
-                    if display_v2: display_v2 = utils.colorize(display_v2, utils.Ansi.BOLD + utils.Ansi.GREEN)
-            else:
-                v1 = get_field_value(card1, field, ansi_color=False)
-                v2 = get_field_value(card2, field, ansi_color=False)
-                display_v1 = get_field_value(card1, field, ansi_color=use_color)
-                display_v2 = get_field_value(card2, field, ansi_color=use_color)
+            display_vals = []
+            raw_vals = []
 
-            # Apply wrapping to multi-line or potentially long fields
-            if field in ['text', 'tokens', 'mechanics', 'actions', 'signature']:
-                display_v1 = wrap_ansi(display_v1, wrap_width)
-                display_v2 = wrap_ansi(display_v2, wrap_width)
+            if field == 'signature':
+                for i, sig_list in enumerate(signatures):
+                    v = ", ".join(sig_list)
+                    raw_vals.append(v)
+                    if use_color and v:
+                        v = utils.colorize(v, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                    display_vals.append(wrap_ansi(v, wrap_width))
+            else:
+                for c in comparison_cards:
+                    v_raw = get_field_value(c, field, ansi_color=False)
+                    v_display = get_field_value(c, field, ansi_color=use_color)
+                    raw_vals.append(v_raw)
+                    if field in ['text', 'tokens', 'mechanics', 'actions']:
+                        v_display = wrap_ansi(v_display, wrap_width)
+                    display_vals.append(v_display)
 
             # Highlight differences or matches
-            if v1 != v2:
+            is_all_same = all(v == raw_vals[0] for v in raw_vals)
+            if not is_all_same:
                 if use_color:
                     label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
             elif use_color:
                 label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
 
-            # Always show basic identifying rows; hide others only if both are empty
+            # Always show basic identifying rows; hide others only if all are empty
             is_identifying = field in ['name', 'cost', 'cmc', 'type', 'rarity', 'fair_cmc', 'rating', 'complexity', 'text']
-            if is_identifying or display_v1 or display_v2:
-                rows.append([label, display_v1, display_v2])
+            if is_identifying or any(v for v in raw_vals):
+                rows.append([label] + display_vals)
 
         datalib.add_separator_row(rows)
-        datalib.printrows(datalib.padrows(rows, aligns=['l', 'l', 'l']), indent=2)
+        datalib.printrows(datalib.padrows(rows, aligns=['l'] * (num_cards + 1)), indent=2)
 
 # --- Main Entry Point ---
 
@@ -1339,19 +1370,27 @@ Usage Examples:
     # Compare Subparser
     p_compare = subparsers.add_parser(
         'compare',
-        help='Compare two cards side-by-side by name.',
+        help='Compare multiple cards side-by-side.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
   # Compare two cards by name
   python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre"
 
-  # Compare two cards in a specific file
-  python3 scripts/mtg_query.py compare "Grizzly Bears" "Balduvian Bears" my_cards.json
+  # Compare one card against its most mechanically similar match
+  python3 scripts/mtg_query.py compare "Grizzly Bears"
+
+  # N-way comparison
+  python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre" "Balduvian Bears"
+
+  # Pool comparison (compare cards matching filters)
+  python3 scripts/mtg_query.py compare --set MOM --rarity rare
+
+  # Compare cards in a specific file
+  python3 scripts/mtg_query.py compare "Uthros" "Invasion of Tarkir" testdata/
 """
     )
-    p_compare.add_argument('card1', help='First card name to compare.')
-    p_compare.add_argument('card2', help='Second card name to compare.')
+    p_compare.add_argument('names', nargs='*', help='Card names to compare. Supports N-way comparison. If one name is provided, it is compared against its closest mechanical match. If no names are provided, the filtered result pool is used.')
     p_compare.add_argument('infile', nargs='?', default='-',
                          help='Input card data. Defaults to data/AllPrintings.json if available.')
     cli_utils.add_standard_filters(p_compare)
