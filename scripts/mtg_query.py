@@ -693,7 +693,7 @@ def handle_shell(args):
 
         def completer(text, state):
             if text.startswith('/'):
-                commands = ['/search ', '/help', '/exit', '/quit']
+                commands = ['/search ', '/help', '/exit', '/quit', '/random', '/clear', '/q']
                 options = [c for c in commands if c.startswith(text)]
             else:
                 options = [n for n in card_names if n.lower().startswith(text.lower())]
@@ -724,19 +724,37 @@ def handle_shell(args):
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
 
-    welcome = "MTG Interactive Shell. Type a card name for official rules text, or /search for bulk queries."
+    dataset_name = os.path.basename(args.infile)
+    welcome = f"MTG Interactive Shell | Dataset: {dataset_name} ({len(all_cards)} cards)"
     if use_color:
         welcome = utils.colorize(welcome, utils.Ansi.BOLD + utils.Ansi.CYAN)
     print(welcome)
+    print("Type a card name for official rules text, or /search for bulk queries.")
     print("Type '/help' for commands, or 'exit' to leave.\n")
+
+    prompt = "mtg> "
+    if use_color:
+        prompt = utils.colorize(prompt, utils.Ansi.BOLD + utils.Ansi.CYAN)
 
     while True:
         try:
-            line = input("> ").strip()
+            line = input(prompt).strip()
             if not line:
                 continue
-            if line.lower() in ['exit', 'quit', '/exit', '/quit']:
+            if line.lower() in ['exit', 'quit', '/exit', '/quit', 'q', '/q']:
                 break
+
+            if line.startswith('/clear'):
+                os.system('cls' if os.name == 'nt' else 'clear')
+                continue
+
+            if line.startswith('/random'):
+                random_card = [random.choice(all_cards)]
+                o_args = copy.copy(args)
+                o_args.query = None
+                if not hasattr(o_args, 'limit'): o_args.limit = 0
+                _execute_oracle(random_card, o_args)
+                continue
 
             if line.startswith('/search '):
                 query = line[8:].strip()
@@ -755,9 +773,12 @@ def handle_shell(args):
                 _execute_search(matched_cards, s_args)
             elif line.startswith('/help'):
                 print("Commands:")
-                print("  <card name>   - Show official rules text for a card.")
-                print("  /search <q>   - Search for cards matching <q>.")
-                print("  /exit, /quit  - Exit the shell.")
+                print("  <card name>     - Show official rules text for a specific card.")
+                print("  /search <q>     - Search for cards matching <q> (displays a table).")
+                print("  /random         - Show a random card from the dataset.")
+                print("  /clear          - Clear the terminal screen.")
+                print("  /help           - Show this help message.")
+                print("  /exit, /quit, q - Exit the interactive shell.")
             else:
                 # Oracle lookup
                 o_args = copy.copy(args)
