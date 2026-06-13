@@ -7,6 +7,7 @@ import json
 import math
 import re
 import csv
+import textwrap
 from collections import defaultdict, Counter, OrderedDict
 from contextlib import redirect_stdout
 
@@ -1481,25 +1482,34 @@ def handle_compare(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Unified MTG analysis tool.",
+        description="Unified MTG analysis tool for exploring and auditing Magic card data.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Show general statistics for a dataset
-  python3 scripts/mtg_analyze.py summary data/AllPrintings.json
+        epilog=textwrap.dedent("""
+            Usage Examples:
+              # Show general statistics for a dataset
+              python3 scripts/mtg_analyze.py summary data/AllPrintings.json
 
-  # Analyze the mana curve of a specific set
-  python3 scripts/mtg_analyze.py curve data/AllPrintings.json --set MOM
+              # Analyze the mana curve of a specific set
+              python3 scripts/mtg_analyze.py curve data/AllPrintings.json --set MOM
 
-  # Calculate As-Fan statistics for a generated set
-  python3 scripts/mtg_analyze.py asfan generated.txt
+              # Calculate As-Fan statistics (average cards per pack)
+              python3 scripts/mtg_analyze.py asfan generated.txt
 
-  # Analyze mechanical interaction in a card pool
-  python3 scripts/mtg_analyze.py interaction my_cards.json --min-freq 5
+              # Analyze mechanical interaction (synergy) in a card pool
+              python3 scripts/mtg_analyze.py interaction my_cards.json --min-freq 5
 
-  # Compare the color lexicon of two datasets
-  python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
-"""
+              # Compare the color lexicon of two datasets
+              python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
+
+              # Perform a design health check on a card set
+              python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM
+
+              # Identify the signature features of Green Rare cards
+              python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors G --rarity rare
+
+              # Find the most combat-efficient creatures in a set
+              python3 scripts/mtg_analyze.py power data/AllPrintings.json --set MOM --limit 10
+        """)
     )
     subparsers = parser.add_subparsers(dest='command', help='Analysis command to run')
 
@@ -1510,7 +1520,17 @@ Examples:
         p.add_argument('infile', nargs='?', default='-', help='Input card data.')
 
     # summary
-    p_sum = subparsers.add_parser('summary', help='Show statistics and reports on mechanics and word variety.')
+    p_sum = subparsers.add_parser(
+        'summary',
+        help='Show general statistics and mechanical reports for a dataset.',
+        description=textwrap.dedent("""
+            Provides a high-level overview of a card dataset. It reports on
+            color distribution, card types, rarities, and frequently used
+            mechanics. It also identifies unusual "outlier" cards that differ
+            significantly from the rest of the data.
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_sum)
     p_sum.add_argument('outfile', nargs='?', default=None, help='Save statistics to a file (JSON or CSV).')
     p_sum.add_argument('-x', '--outliers', action='store_true', help='Show extra details and unusual cards (outliers).')
@@ -1585,17 +1605,17 @@ Examples:
         'interaction',
         aliases=['synergy'],
         help='Analyze how often different mechanics appear together.',
-        description="""
-Analyzes how different mechanics (like Flying and Trample) appear together
-on the same cards. It identifies frequent pairings and calculates a
-'Lift Score' to measure how often they appear together compared to
-what would happen by random chance.
+        description=textwrap.dedent("""
+            Analyzes how different mechanics (like Flying and Trample) appear together
+            on the same cards. It identifies frequent pairings and calculates a
+            'Lift Score' to measure how often they appear together compared to
+            what would happen by random chance.
 
-The Lift Score shows the relationship between two mechanics:
-- Score > 1.0: The mechanics appear together MORE often than expected.
-- Score = 1.0: The mechanics appear together exactly as often as expected.
-- Score < 1.0: The mechanics appear together LESS often than expected.
-""",
+            The Lift Score shows the relationship between two mechanics:
+            - Score > 1.0: The mechanics appear together MORE often than expected.
+            - Score = 1.0: The mechanics appear together exactly as often as expected.
+            - Score < 1.0: The mechanics appear together LESS often than expected.
+        """),
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     add_std(p_sy)
@@ -1604,7 +1624,17 @@ The Lift Score shows the relationship between two mechanics:
     p_sy.set_defaults(func=handle_interaction)
 
     # actions
-    p_ac = subparsers.add_parser('actions', help='Analyze and categorize functional card effects (Removal, Buffs, etc).')
+    p_ac = subparsers.add_parser(
+        'actions',
+        help='Analyze and categorize functional card effects (Removal, Buffs, etc).',
+        description=textwrap.dedent("""
+            Analyzes and categorizes functional card effects like Removal,
+            Protection, Buffs, Card Advantage, Disruption, and Mana. This
+            tool identifies how cards interact with the game state, providing
+            a profile of a set's interactivity.
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_ac)
     p_ac.add_argument('outfile', nargs='?', default=None, help='Save action analysis to a file.')
     p_ac.set_defaults(func=handle_actions)
@@ -1613,11 +1643,11 @@ The Lift Score shows the relationship between two mechanics:
     p_le = subparsers.add_parser(
         'lexicon',
         help='Identify words that are used more often in specific colors.',
-        description="""
-Identifies "signature words" for each Magic color by comparing how often
-words appear in one color versus all others. This helps identify the
-thematic language used for each part of the color pie.
-""",
+        description=textwrap.dedent("""
+            Identifies "signature words" for each Magic color by comparing how often
+            words appear in one color versus all others. This helps identify the
+            thematic language used for each part of the color pie.
+        """),
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     add_std(p_le)
@@ -1633,13 +1663,35 @@ thematic language used for each part of the color pie.
     p_st.set_defaults(func=handle_stats)
 
     # power
-    p_po = subparsers.add_parser('power', help='Analyze creature power balance and efficiency relative to CMC.')
+    p_po = subparsers.add_parser(
+        'power',
+        help='Analyze creature combat efficiency relative to mana cost.',
+        description=textwrap.dedent("""
+            Analyzes the creature power balance in a dataset. It calculates a
+            'Power Rating' relative to mana cost to identify cards that are
+            significantly above or below the expected combat strength for their cost.
+
+            A rating of 1.0 represents a basic 2/2 creature with no abilities for
+            2 mana. Keywords like Flying or Indestructible increase the rating.
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_po)
     p_po.add_argument('outfile', nargs='?', default=None, help='Save power analysis to a file.')
     p_po.set_defaults(func=handle_power)
 
     # archetypes
-    p_ar = subparsers.add_parser('archetypes', help='Profile the ten primary two-color archetypes.')
+    p_ar = subparsers.add_parser(
+        'archetypes',
+        help='Profile the themes and key mechanics of the ten primary two-color pairs.',
+        description=textwrap.dedent("""
+            Analyzes the ten primary two-color combinations (archetypes) in a dataset.
+            It identifies the most important cards, signature mechanics, and
+            average stats for each color pair to help you understand the themes
+            of a set.
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_ar)
     p_ar.add_argument('outfile', nargs='?', default=None, help='Save archetype analysis to a file.')
     p_ar.add_argument('--min-cards', type=int, default=5, help='Minimum number of cards required to profile an archetype (Default: 5).')
@@ -1647,7 +1699,17 @@ thematic language used for each part of the color pie.
     p_ar.set_defaults(func=handle_archetypes)
 
     # balance
-    p_ba = subparsers.add_parser('balance', help='Compare how color pairs are distributed between datasets.')
+    p_ba = subparsers.add_parser(
+        'balance',
+        help='Compare how color pairs are distributed between datasets.',
+        description=textwrap.dedent("""
+            Analyzes and compares the distribution of two-color pairs (archetypes)
+            between different datasets. This helps you verify if a generated or
+            custom set maintains the same color balance as the original official
+            data.
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     p_ba.add_argument('infiles', nargs='*', help='One or more card data files to compare.')
     p_ba.add_argument('--set', action='append', help='Filter inputs by set code.')
     p_ba.add_argument('--rarity', action='append', help='Filter inputs by rarity.')
@@ -1660,7 +1722,17 @@ thematic language used for each part of the color pie.
     p_ba.set_defaults(func=handle_balance)
 
     # asfan
-    p_as = subparsers.add_parser('asfan', help='Calculate "As-Fan" (average cards per pack) statistics.')
+    p_as = subparsers.add_parser(
+        'asfan',
+        help='Calculate "As-Fan" (average cards per pack) statistics.',
+        description=textwrap.dedent("""
+            Calculates "As-Fan" (As-fanned) statistics for a card dataset.
+            As-Fan represents the average number of cards with a certain
+            characteristic (like a specific color, type, or mechanic) a player
+            can expect to see in a single 15-card booster pack.
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_as)
     p_as.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
     p_as.add_argument('outfile', nargs='?', default=None, help='Save As-Fan stats to a file.')
@@ -1679,13 +1751,33 @@ thematic language used for each part of the color pie.
     p_sub.set_defaults(func=handle_subtypes)
 
     # profile
-    p_prof = subparsers.add_parser('profile', help='Identify the "Mechanical Identity" (signature features) of a card subset.')
+    p_prof = subparsers.add_parser(
+        'profile',
+        help='Identify the "Mechanical Identity" (signature features) of a card subset.',
+        description=textwrap.dedent("""
+            Identifies the defining characteristics of a card subset by comparing
+            it against a global baseline. It highlights "signature features"
+            (mechanics, actions, or subtypes) that appear significantly more
+            often in your selected cards than in the rest of the dataset.
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_prof)
     p_prof.add_argument('--top', type=int, default=10, help='Number of signature features to show per category (Default: 10).')
     p_prof.set_defaults(func=handle_profile)
 
     # audit
-    p_audit = subparsers.add_parser('audit', help='Perform a comprehensive design health audit of a card dataset.')
+    p_audit = subparsers.add_parser(
+        'audit',
+        help='Perform a comprehensive design health check of a card dataset.',
+        description=textwrap.dedent("""
+            Performs a design "Health Check" for card datasets. It reports on
+            core metrics like creature density and average complexity, evaluates
+            functional coverage (removal, card advantage, mana fixing), and
+            identifies potential color pie violations.
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_audit)
     p_audit.set_defaults(func=handle_audit)
 
