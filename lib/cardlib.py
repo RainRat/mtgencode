@@ -1437,7 +1437,7 @@ class Card:
         return outstr
 
     def search(self, pattern):
-        """Returns True if the pattern matches any of the card's fields."""
+        """Returns True if the pattern matches any of the card's fields (name, types, text, cost, stats, or rarity)."""
         if self.search_name(pattern):
             return True
         if self.search_types(pattern):
@@ -1449,6 +1449,8 @@ class Card:
         if self.search_pt(pattern):
             return True
         if self.search_loyalty(pattern):
+            return True
+        if self.search_rarity(pattern):
             return True
         return False
 
@@ -1467,6 +1469,9 @@ class Card:
         if any(pattern.search(t) for t in self.types):
             return True
         if any(pattern.search(t) for t in self.subtypes):
+            return True
+        # Also check the full type line to support multi-word searches (e.g. "Legendary Creature")
+        if pattern.search(self.get_type_line()):
             return True
         if self.bside:
             return self.bside.search_types(pattern)
@@ -1502,6 +1507,16 @@ class Card:
             return True
         if self.bside:
             return self.bside.search_loyalty(pattern)
+        return False
+
+    def search_rarity(self, pattern):
+        """Returns True if the pattern matches the card's rarity."""
+        if self.rarity and pattern.search(self.rarity):
+            return True
+        if self.rarity_name and pattern.search(self.rarity_name):
+            return True
+        if self.bside:
+            return self.bside.search_rarity(pattern)
         return False
 
     def header(self, ansi_color=False, recursive=True):
