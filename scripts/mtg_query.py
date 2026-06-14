@@ -58,7 +58,6 @@ FIELD_MAP = {
     'rating': {'header': 'Rating', 'align': 'r', 'aliases': ['power_rating']},
     'fair_cmc': {'header': 'Fair MV', 'align': 'r', 'aliases': ['fcmc', 'fair_cost', 'fair_mv', 'recommended_cmc']},
     'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
-    'tokens': {'header': 'Tokens', 'align': 'l', 'aliases': ['creates']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
@@ -157,6 +156,7 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
             res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
         return res
     elif canon == 'rating':
+        if not card.is_creature: return ""
         res = f"{card.power_rating:.3f}"
         if ansi_color:
             color = ""
@@ -1097,7 +1097,6 @@ def handle_compare_cards(args):
             utils.print_header("CARD COMPARISON", use_color=use_color)
 
         fields = [
-            ('Name', 'name'),
             ('Set', 'set'),
             ('Cost', 'cost'),
             ('CMC', 'cmc'),
@@ -1123,7 +1122,12 @@ def handle_compare_cards(args):
         rows.append(header)
 
         # Signature logic: identify unique mechanical features
-        card_features = [c.mechanics | c.actions for c in comparison_cards]
+        def get_all_features(c):
+            f = c.mechanics | c.actions | set(c.types) | set(c.subtypes) | c.produced_colors
+            for t in c.tokens: f.add(t['name'])
+            return f
+
+        card_features = [get_all_features(c) for c in comparison_cards]
         signatures = []
         for i in range(len(comparison_cards)):
             others_features = set()
@@ -1189,7 +1193,8 @@ def handle_compare_cards(args):
                 label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
 
             # Always show basic identifying rows; hide others only if all are empty
-            is_identifying = field in ['name', 'cost', 'cmc', 'type', 'rarity', 'fair_cmc', 'rating', 'complexity', 'text']
+            # We also hide Stats, Rating, and Fair MV if they are empty for everyone
+            is_identifying = field in ['cost', 'cmc', 'type', 'rarity', 'complexity', 'text']
             if is_identifying or any(v for v in raw_vals):
                 rows.append([label] + display_vals)
 

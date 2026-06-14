@@ -13,7 +13,6 @@ def test_query_compare_basic():
     assert "Uthros Research Craft" in result.stdout
     assert "Invasion of Alara" in result.stdout
     assert "CMC" in result.stdout
-    assert "Fair MV" in result.stdout
 
 def test_query_compare_json():
     """Test JSON output for comparison."""
@@ -41,7 +40,8 @@ def test_query_compare_multi_face():
     cmd = ["python3", SCRIPT_PATH, "compare", "Double Front", "Double Back", "testdata/manual.json", "--no-color"]
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 0
-    assert "Double Front // Double Back" in result.stdout
+    # Headers show face names
+    assert "Double Front" in result.stdout
     assert "Double Back" in result.stdout
     # Check that they are identified as different in the table
     # Since Double Front matches the whole card (both faces) and Double Back matches only one face
