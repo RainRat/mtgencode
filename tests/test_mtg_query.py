@@ -49,3 +49,19 @@ def test_query_extract_basic():
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert "invasion of tarkir" in data['name'].lower()
+
+def test_query_random_basic():
+    """Test basic random card picking."""
+    cmd = ["python3", SCRIPT_PATH, "random", "testdata/uthros.json", "--no-color"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "Uthros Research Craft" in result.stdout
+    assert "COMPLEXITY:" in result.stdout
+
+def test_query_random_table():
+    """Test random card picking in table format."""
+    cmd = ["python3", SCRIPT_PATH, "random", "testdata/uthros.json", "--table", "--no-color"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "Uthros Research Craft" in result.stdout
+    assert "CMC" in result.stdout

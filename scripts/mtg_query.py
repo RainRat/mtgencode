@@ -1196,6 +1196,44 @@ def handle_compare_cards(args):
         datalib.add_separator_row(rows)
         datalib.printrows(datalib.padrows(rows, aligns=['l'] * (num_cards + 1)), indent=2)
 
+def handle_random(args):
+    """Handler for picking random cards."""
+    # Force shuffle for randomness
+    args.shuffle = True
+
+    # Handle pack shorthand
+    if getattr(args, 'pack', False):
+        args.booster = 1
+        args.limit = 0 # load_and_filter_cards handles the booster distribution
+    elif getattr(args, 'booster', 0) > 0:
+        args.limit = 0
+    elif not getattr(args, 'limit', 0) and not getattr(args, 'sample', 0):
+        # Default to 1 card if no limit/sample specified
+        args.limit = 1
+
+    cards = cli_utils.load_and_filter_cards(args)
+    if not cards:
+        return
+
+    # Determine if we should use Oracle view or Search view
+    # We default to Oracle (detailed) if no specific search-oriented flags or output formats are set
+    is_search_format = any([
+        getattr(args, 'table', False),
+        getattr(args, 'json', False),
+        getattr(args, 'jsonl', False),
+        getattr(args, 'csv', False),
+        getattr(args, 'summary', False),
+        getattr(args, 'md_table', False),
+        getattr(args, 'text', False),
+        getattr(args, 'outfile', None) is not None
+    ])
+
+    if is_search_format:
+        _execute_search(cards, args)
+    else:
+        # Default to detailed Oracle view for random discovery
+        _execute_oracle(cards, args)
+
 # --- Main Entry Point ---
 
 def main():
@@ -1396,6 +1434,48 @@ Usage Examples:
     cli_utils.add_standard_filters(p_compare)
     cli_utils.add_standard_output_args(p_compare)
     p_compare.set_defaults(func=handle_compare_cards)
+
+    # Random Subparser
+    p_random = subparsers.add_parser(
+        'random',
+        help='Pick one or more random cards from the dataset.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Show a random card from the default dataset
+  python3 scripts/mtg_query.py random
+
+  # Show a random Elf (using Automatic Search)
+  python3 scripts/mtg_query.py random "Elf"
+
+  # Show 3 random rare Goblins
+  python3 scripts/mtg_query.py random --rarity rare --grep "Goblin" -n 3
+
+  # Simulate opening a random booster pack (15 cards, standard distribution)
+  python3 scripts/mtg_query.py random --pack
+
+  # Show a random legendary creature in a table format
+  python3 scripts/mtg_query.py random --grep "Legendary" --grep "Creature" --table
+"""
+    )
+    p_random.add_argument('infile', nargs='?', default='-',
+                        help='Input card data. Defaults to data/AllPrintings.json if available.')
+    p_random.add_argument('outfile', nargs='?', default=None,
+                        help='Optional output file.')
+    p_random.add_argument('-b', '--pack', action='store_true',
+                        help='Pick 15 cards following a standard booster distribution (10C, 3U, 1R, 1L).')
+    p_random.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                        help='Comma-separated list of fields to extract for search views.')
+    cli_utils.add_standard_filters(p_random)
+    cli_utils.add_standard_output_args(p_random)
+    p_random.add_argument('--text', action='store_true', help='Force plain text output.')
+    p_random.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
+    p_random.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format.')
+    p_random.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary.')
+    p_random.add_argument('-G', '--gatherer', action='store_true', help='Use official card formatting.')
+    p_random.add_argument('--full', action='store_true', help='Force full details even for multiple matches.')
+    p_random.add_argument('--no-rulings', action='store_true', help='Suppress display of card rulings.')
+    p_random.set_defaults(func=handle_random)
 
     # Shell Subparser
     p_shell = subparsers.add_parser(
