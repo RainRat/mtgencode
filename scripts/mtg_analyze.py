@@ -1685,7 +1685,29 @@ thematic language used for each part of the color pie.
     p_prof.set_defaults(func=handle_profile)
 
     # audit
-    p_audit = subparsers.add_parser('audit', help='Perform a comprehensive design health audit of a card dataset.')
+    p_audit = subparsers.add_parser(
+        'audit',
+        help='Perform a comprehensive design health audit of a card dataset.',
+        description="""
+Performs a comprehensive 'Health Check' for card datasets. It evaluates
+core design metrics and identifies potential issues.
+
+The audit includes:
+- Core Metrics: Creature density, average mana cost, and complexity.
+- Functional Coverage: Density of removal, card advantage, and mana fixing.
+- Complexity Analysis: Identification of the most wordy or complex cards.
+- Rules Integrity: Detection of mechanical color pie violations.
+""",
+        epilog="""
+Examples:
+  # Perform a health audit for a generated set
+  python3 scripts/mtg_analyze.py audit generated.txt
+
+  # Audit a specific set and output results to JSON
+  python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM --json > audit.json
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_audit)
     p_audit.set_defaults(func=handle_audit)
 
