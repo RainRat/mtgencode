@@ -60,6 +60,7 @@ FIELD_MAP = {
     'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
     'tokens': {'header': 'Tokens', 'align': 'l', 'aliases': ['creates']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
+    'color_pie': {'header': 'Color Pie', 'align': 'l', 'aliases': ['break']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
 
@@ -198,6 +199,17 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ", ".join(res)
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
+    elif canon == 'color_pie':
+        status = card.check_color_pie()
+        if status is True:
+            res = "Valid"
+            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
+        elif isinstance(status, str):
+            res = status
+            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.RED)
+        else:
+            res = ""
+        return res
     elif canon == 'encoded':
         res = card.encode()
     else:
@@ -610,10 +622,14 @@ def _execute_oracle(cards, args):
 
             footer_lines.append(" \u2022 ".join(id_parts))
 
-            # 2. Design Metrics Line (Complexity, Rating, Fair MV)
+            # 2. Design Analytics Line (Complexity, Rating, Fair MV, Color Pie)
             comp_val = str(c.complexity_score)
             rate_val = f"{c.power_rating:.3f}"
             fair_val = str(c.recommended_cmc)
+            pie_val = ""
+            pie_status = c.check_color_pie()
+            if pie_status is True: pie_val = "Valid"
+            elif isinstance(pie_status, str): pie_val = pie_status
 
             if use_color:
                 comp_val = utils.colorize(comp_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
@@ -628,9 +644,14 @@ def _execute_oracle(cards, args):
                 f_color = utils.Ansi.BOLD + (utils.Ansi.GREEN if c.cost.cmc >= c.recommended_cmc else utils.Ansi.RED)
                 fair_val = utils.colorize(fair_val, f_color)
 
+                if pie_status is True: pie_val = utils.colorize(pie_val, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                elif isinstance(pie_status, str): pie_val = utils.colorize(pie_val, utils.Ansi.BOLD + utils.Ansi.RED)
+
             score_line = f"{fmt_label('COMPLEXITY:')} {comp_val}"
             if c.is_creature:
                 score_line += f" \u2022 {fmt_label('RATING:')} {rate_val} \u2022 {fmt_label('FAIR MV:')} {fair_val}"
+            if pie_val:
+                score_line += f" \u2022 {fmt_label('COLOR PIE:')} {pie_val}"
             footer_lines.append(score_line)
 
             # 3. Mechanics Line
@@ -1113,6 +1134,7 @@ def handle_compare_cards(args):
             ('Fair MV', 'fair_cmc'),
             ('Rating', 'rating'),
             ('Complexity', 'complexity'),
+            ('Color Pie', 'color_pie'),
             ('Text', 'text')
         ]
 
@@ -1234,7 +1256,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
     p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
                         help='Comma-separated list of fields to extract. Available fields:\n'
                              '  - Basic: name, cost, cmc, type, stats, text, rarity\n'
-                             '  - Analysis: mechanics, actions, tokens, identity, complexity, rating, fair_mv\n'
+                             '  - Analysis: mechanics, actions, tokens, identity, complexity, rating, fair_mv, color_pie\n'
                              '  - Metadata: set, number, pack, box')
     p_search.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')

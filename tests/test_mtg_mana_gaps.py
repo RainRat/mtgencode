@@ -119,6 +119,7 @@ class TestMtgManaGaps(unittest.TestCase):
                                     sets=None, rarities=None, colors=None, cmcs=None,
                                     pows=None, tous=None, loys=None, mechanics=None,
                                     actions=None,
+                                    color_pie_break=False,
                                     identities=None, id_counts=None, decklist_file=None, shuffle=False, seed=None,
                                     booster=0, box=0)
 
