@@ -58,7 +58,6 @@ FIELD_MAP = {
     'rating': {'header': 'Rating', 'align': 'r', 'aliases': ['power_rating']},
     'fair_cmc': {'header': 'Fair MV', 'align': 'r', 'aliases': ['fcmc', 'fair_cost', 'fair_mv', 'recommended_cmc']},
     'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
-    'tokens': {'header': 'Tokens', 'align': 'l', 'aliases': ['creates']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
@@ -131,8 +130,6 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ", ".join(sorted(list(card.mechanics)))
     elif canon == 'actions':
         return ", ".join(sorted(list(card.actions)))
-    elif canon == 'tokens':
-        res = ", ".join([t['name'] for t in card.get_face_tokens()])
     elif canon == 'identity':
         res = card.color_identity
         if ansi_color and res:
@@ -204,10 +201,7 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ""
 
     if card.bside:
-        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary', 'tokens']:
-            if canon == 'tokens':
-                all_tokens = [t['name'] for t in card.tokens]
-                return ", ".join(all_tokens)
+        if canon == 'rarity':
             return str(res)
         b_res = get_field_value(card.bside, field, ansi_color, multi_sep=multi_sep)
         if res and b_res:
