@@ -1499,6 +1499,9 @@ Examples:
 
   # Compare the color lexicon of two datasets
   python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
+
+  # Perform a design health audit for a card dataset
+  python3 scripts/mtg_analyze.py audit generated.txt
 """
     )
     subparsers = parser.add_subparsers(dest='command', help='Analysis command to run')
@@ -1685,7 +1688,40 @@ thematic language used for each part of the color pie.
     p_prof.set_defaults(func=handle_profile)
 
     # audit
-    p_audit = subparsers.add_parser('audit', help='Perform a comprehensive design health audit of a card dataset.')
+    p_audit = subparsers.add_parser(
+        'audit',
+        help='Perform a comprehensive design health audit of a card dataset.',
+        description="""
+Performs a comprehensive design health audit of a card dataset.
+This tool calculates several core metrics and functional coverage
+statistics, comparing them against standard design targets:
+
+Core Metrics:
+- Creature Density (Target: 50%)
+- Average CMC (Target: 3.0)
+- Average Complexity (Target: 40)
+
+Functional Coverage:
+- Removal Density (Target: 10%)
+- Card Advantage (Target: 8%)
+- Mana Fixing (Target: 5%)
+
+The audit also identifies complexity outliers and detects
+mechanical color pie violations.
+""",
+        epilog="""
+Usage Examples:
+  # Perform a health audit for a generated set
+  python3 scripts/mtg_analyze.py audit generated.txt
+
+  # Audit a specific set from the official dataset
+  python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM
+
+  # Output audit results as structured JSON
+  python3 scripts/mtg_analyze.py audit generated.txt --json > audit.json
+""",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     add_std(p_audit)
     p_audit.set_defaults(func=handle_audit)
 
