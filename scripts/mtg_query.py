@@ -573,7 +573,7 @@ def _execute_oracle(cards, args):
                     return utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
                 return label
 
-            # 1. Identification Line (Set, Identity, URL)
+            # 1. Identification Block (Set, URL)
             id_parts = []
             if c.set_code:
                 set_info = f"{fmt_label('SET:')} {c.set_code.upper()}"
@@ -581,13 +581,22 @@ def _execute_oracle(cards, args):
                     set_info += f" #{c.number}"
                 id_parts.append(set_info)
 
+            url = utils.get_scryfall_url(c.set_code, c.number)
+            if url:
+                id_parts.append(f"{fmt_label('URL:')} {url}")
+
+            if id_parts:
+                footer_lines.append(" \u2022 ".join(id_parts))
+
+            # 2. Mechanical Identity Block (Identity, Produced)
+            mech_id_parts = []
             identity = c.color_identity
             if not identity: identity = "C"
             if use_color:
                 colored_id = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in identity])
-                id_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
+                mech_id_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
             else:
-                id_parts.append(f"IDENTITY: {identity}")
+                mech_id_parts.append(f"IDENTITY: {identity}")
 
             produced = c.produced_colors
             if produced:
@@ -602,38 +611,12 @@ def _execute_oracle(cards, args):
                     p_str = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in p_list])
                 else:
                     p_str = "".join(p_list)
-                id_parts.append(f"{fmt_label('PRODUCED:')} {p_str}")
+                mech_id_parts.append(f"{fmt_label('PRODUCED:')} {p_str}")
 
-            url = utils.get_scryfall_url(c.set_code, c.number)
-            if url:
-                id_parts.append(f"{fmt_label('URL:')} {url}")
+            if mech_id_parts:
+                footer_lines.append(" \u2022 ".join(mech_id_parts))
 
-            footer_lines.append(" \u2022 ".join(id_parts))
-
-            # 2. Design Metrics Line (Complexity, Rating, Fair MV)
-            comp_val = str(c.complexity_score)
-            rate_val = f"{c.power_rating:.3f}"
-            fair_val = str(c.recommended_cmc)
-
-            if use_color:
-                comp_val = utils.colorize(comp_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
-
-                # Rating Color: Green if efficient/powerful (> 1.2), Red if weak (< 0.8)
-                r_color = ""
-                if c.power_rating > 1.2: r_color = utils.Ansi.BOLD + utils.Ansi.GREEN
-                elif c.power_rating < 0.8: r_color = utils.Ansi.BOLD + utils.Ansi.RED
-                if r_color: rate_val = utils.colorize(rate_val, r_color)
-
-                # Fair MV Color: Green if "fair" (actual cost >= recommended), Red if "pushed" (cost < recommended)
-                f_color = utils.Ansi.BOLD + (utils.Ansi.GREEN if c.cost.cmc >= c.recommended_cmc else utils.Ansi.RED)
-                fair_val = utils.colorize(fair_val, f_color)
-
-            score_line = f"{fmt_label('COMPLEXITY:')} {comp_val}"
-            if c.is_creature:
-                score_line += f" \u2022 {fmt_label('RATING:')} {rate_val} \u2022 {fmt_label('FAIR MV:')} {fair_val}"
-            footer_lines.append(score_line)
-
-            # 3. Mechanics Line
+            # Mechanics, Actions, Tokens (separate lines for readability in detailed view if block is dense)
             all_mechanics = sorted(list(c.mechanics))
             if all_mechanics:
                 mech_val = ', '.join(all_mechanics)
@@ -641,7 +624,6 @@ def _execute_oracle(cards, args):
                     mech_val = utils.colorize(mech_val, utils.Ansi.CYAN)
                 footer_lines.append(f"{fmt_label('MECHANICS:')} {mech_val}")
 
-            # 4. Actions Line
             all_actions = sorted(list(c.actions))
             if all_actions:
                 act_val = ', '.join(all_actions)
@@ -656,6 +638,47 @@ def _execute_oracle(cards, args):
                 if use_color:
                     tok_val = utils.colorize(tok_val, utils.Ansi.CYAN)
                 footer_lines.append(f"{fmt_label('TOKENS:')} {tok_val}")
+
+            # 3. Design Analytics Block (Complexity, Rating, Fair MV, Color Pie)
+            analytics_parts = []
+            comp_val = str(c.complexity_score)
+            if use_color:
+                comp_val = utils.colorize(comp_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
+            analytics_parts.append(f"{fmt_label('COMPLEXITY:')} {comp_val}")
+
+            if c.is_creature:
+                rate_val = f"{c.power_rating:.3f}"
+                if use_color:
+                    r_color = ""
+                    if c.power_rating > 1.2: r_color = utils.Ansi.BOLD + utils.Ansi.GREEN
+                    elif c.power_rating < 0.8: r_color = utils.Ansi.BOLD + utils.Ansi.RED
+                    if r_color: rate_val = utils.colorize(rate_val, r_color)
+                analytics_parts.append(f"{fmt_label('RATING:')} {rate_val}")
+
+                fair_val = str(c.recommended_cmc)
+                if use_color:
+                    f_color = utils.Ansi.BOLD + (utils.Ansi.GREEN if c.cost.cmc >= c.recommended_cmc else utils.Ansi.RED)
+                    fair_val = utils.colorize(fair_val, f_color)
+                analytics_parts.append(f"{fmt_label('FAIR MV:')} {fair_val}")
+
+            # Color Pie Check
+            cp_res = c.check_color_pie()
+            if isinstance(cp_res, str):
+                # Violation: Make the label RED to stand out
+                cp_label = "COLOR PIE:"
+                cp_val = cp_res.replace("Color Pie Break: ", "")
+                if use_color:
+                    cp_label = utils.colorize(cp_label, utils.Ansi.BOLD + utils.Ansi.RED)
+                    cp_val = utils.colorize(cp_val, utils.Ansi.BOLD + utils.Ansi.RED)
+                analytics_parts.append(f"{cp_label} {cp_val}")
+            elif cp_res is True:
+                # Valid
+                cp_val = "Valid"
+                if use_color:
+                    cp_val = utils.colorize(cp_val, utils.Ansi.GREEN)
+                analytics_parts.append(f"{fmt_label('COLOR PIE:')} {cp_val}")
+
+            footer_lines.append(" \u2022 ".join(analytics_parts))
 
             print() # Spacer before footer
             for line in footer_lines:
