@@ -1771,10 +1771,33 @@ def main():
         'audit',
         help='Perform a comprehensive design health check of a card dataset.',
         description=textwrap.dedent("""
-            Performs a design "Health Check" for card datasets. It reports on
-            core metrics like creature density and average complexity, evaluates
-            functional coverage (removal, card advantage, mana fixing), and
-            identifies potential color pie violations.
+            Performs a comprehensive design health check of a card dataset.
+            This tool calculates several core metrics and functional coverage
+            statistics, comparing them against standard design targets:
+
+            Core Metrics:
+            - Creature Density (Target: 50%)
+            - Average CMC (Target: 3.0)
+            - Average Complexity (Target: 40)
+
+            Functional Coverage:
+            - Removal Density (Target: 10%)
+            - Card Advantage (Target: 8%)
+            - Mana Fixing (Target: 5%)
+
+            The audit also identifies complexity outliers and detects
+            mechanical color pie violations.
+        """),
+        epilog=textwrap.dedent("""
+            Usage Examples:
+              # Perform a health audit for a generated set
+              python3 scripts/mtg_analyze.py audit generated.txt
+
+              # Audit a specific set from the official dataset
+              python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM
+
+              # Output audit results as structured JSON
+              python3 scripts/mtg_analyze.py audit generated.txt --json > audit.json
         """),
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
