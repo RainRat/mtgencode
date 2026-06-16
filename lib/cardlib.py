@@ -1450,6 +1450,12 @@ class Card:
             return True
         if self.search_loyalty(pattern):
             return True
+        if self.search_rarity(pattern):
+            return True
+        if self.search_mechanics(pattern):
+            return True
+        if self.search_actions(pattern):
+            return True
         return False
 
     def search_name(self, pattern):
@@ -1467,6 +1473,8 @@ class Card:
         if any(pattern.search(t) for t in self.types):
             return True
         if any(pattern.search(t) for t in self.subtypes):
+            return True
+        if pattern.search(self.get_type_line()):
             return True
         if self.bside:
             return self.bside.search_types(pattern)
@@ -1502,6 +1510,32 @@ class Card:
             return True
         if self.bside:
             return self.bside.search_loyalty(pattern)
+        return False
+
+    def search_rarity(self, pattern):
+        """Returns True if the pattern matches the card's rarity."""
+        if self.rarity and pattern.search(self.rarity):
+            return True
+        if self.rarity_name and pattern.search(self.rarity_name):
+            return True
+        if self.bside:
+            return self.bside.search_rarity(pattern)
+        return False
+
+    def search_mechanics(self, pattern):
+        """Returns True if the pattern matches any of the card's mechanics."""
+        if any(pattern.search(m) for m in self.mechanics):
+            return True
+        if self.bside:
+            return self.bside.search_mechanics(pattern)
+        return False
+
+    def search_actions(self, pattern):
+        """Returns True if the pattern matches any of the card's functional actions."""
+        if any(pattern.search(a) for a in self.actions):
+            return True
+        if self.bside:
+            return self.bside.search_actions(pattern)
         return False
 
     def header(self, ansi_color=False, recursive=True):
