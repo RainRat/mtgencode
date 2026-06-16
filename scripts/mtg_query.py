@@ -60,6 +60,7 @@ FIELD_MAP = {
     'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
     'tokens': {'header': 'Tokens', 'align': 'l', 'aliases': ['creates']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
+    'color_pie': {'header': 'Color Pie', 'align': 'l', 'aliases': ['break']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
 
@@ -198,6 +199,17 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ", ".join(res)
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
+    elif canon == 'color_pie':
+        status = card.check_color_pie()
+        if status is True:
+            res = "Valid"
+            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
+        elif isinstance(status, str):
+            res = status
+            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.RED)
+        else:
+            res = ""
+        return res
     elif canon == 'encoded':
         res = card.encode()
     else:
@@ -1160,6 +1172,7 @@ def handle_compare_cards(args):
             ('Fair MV', 'fair_cmc'),
             ('Rating', 'rating'),
             ('Complexity', 'complexity'),
+            ('Color Pie', 'color_pie'),
             ('Text', 'text')
         ]
 
@@ -1281,7 +1294,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
     p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
                         help='Comma-separated list of fields to extract. Available fields:\n'
                              '  - Basic: name, cost, cmc, type, stats, text, rarity\n'
-                             '  - Analysis: mechanics, actions, tokens, identity, complexity, rating, fair_mv\n'
+                             '  - Analysis: mechanics, actions, tokens, identity, complexity, rating, fair_mv, color_pie\n'
                              '  - Metadata: set, number, pack, box')
     p_search.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
