@@ -169,6 +169,15 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
             color = utils.Ansi.BOLD + (utils.Ansi.GREEN if card.cost.cmc >= val else utils.Ansi.RED)
             res = utils.colorize(res, color)
         return res
+    elif canon == 'color_pie':
+        val = card.check_color_pie()
+        if isinstance(val, str):
+            res = val
+            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.RED)
+        else:
+            res = "Valid"
+            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
+        return res
     elif canon == 'produced':
         produced = card.produced_colors
         if not produced: return ""
@@ -1177,7 +1186,18 @@ def handle_compare_cards(args):
         rows.append(header)
 
         # Signature logic: identify unique mechanical features
-        card_features = [c.mechanics | c.actions for c in comparison_cards]
+        def get_features(c):
+            f = c.mechanics | c.actions
+            f.update(set(t.title() for t in c.types))
+            f.update(set(titlecase(s.replace(utils.dash_marker, '-')) for s in c.subtypes))
+            produced = c.produced_colors
+            if produced:
+                if "Any" in produced: f.add("Produces Any Color")
+                else: f.add("Produces " + "".join(sorted(list(produced))))
+            f.update(set(t['name'] for t in c.tokens))
+            return f
+
+        card_features = [get_features(c) for c in comparison_cards]
         signatures = []
         for i in range(len(comparison_cards)):
             others_features = set()
