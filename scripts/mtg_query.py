@@ -812,6 +812,24 @@ def handle_shell(args):
                 s_args.table = True
                 if not hasattr(s_args, 'limit'): s_args.limit = 0
                 _execute_search(matched_cards, s_args)
+            elif line.startswith('/random'):
+                parts = line.split()
+                count = 1
+                if len(parts) > 1:
+                    try:
+                        count = int(parts[1])
+                    except ValueError:
+                        count = 1
+
+                if not all_cards:
+                    print("No cards loaded.")
+                    continue
+
+                sampled = random.sample(all_cards, min(count, len(all_cards)))
+                r_args = copy.copy(args)
+                r_args.query = None
+                if not hasattr(r_args, 'limit'): r_args.limit = 0
+                _execute_oracle(sampled, r_args)
             elif line.startswith('/help'):
                 print("Commands:")
                 print("  <card name>     - Show official rules text for a specific card.")
@@ -1064,6 +1082,29 @@ def handle_functional(args):
             print("-" * 20)
             print(group[0].summary(ansi_color=use_color).replace('\u2014', '-'))
             print()
+
+def handle_random(args):
+    cards = cli_utils.load_and_filter_cards(args)
+    if not cards:
+        if not args.quiet:
+            print("No cards found matching the criteria.", file=sys.stderr)
+        return
+
+    count = args.count
+    if count > len(cards):
+        count = len(cards)
+
+    if count <= 0:
+        return
+
+    sampled = random.sample(cards, count)
+
+    # If any search-specific output format is requested, use search display
+    search_formats = ['json', 'jsonl', 'csv', 'table', 'md_table', 'summary', 'text']
+    if any(getattr(args, f, False) for f in search_formats) or getattr(args, 'outfile', None):
+        _execute_search(sampled, args)
+    else:
+        _execute_oracle(sampled, args)
 
 # --- Compare Logic ---
 
@@ -1353,6 +1394,43 @@ Usage Examples:
     p_oracle.add_argument('--full', action='store_true', help='Force full details even for multiple matches.')
     p_oracle.add_argument('--no-rulings', action='store_true', help='Suppress display of card rulings.')
     p_oracle.set_defaults(func=handle_oracle)
+
+    # Random Subparser
+    p_random = subparsers.add_parser(
+        'random',
+        help='Display one or more random cards matching the filters.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # See a random card
+  python3 scripts/mtg_query.py random
+
+  # See 5 random rare creatures
+  python3 scripts/mtg_query.py random 5 --rarity rare --grep "Creature"
+
+  # Output 10 random Goblins in a table
+  python3 scripts/mtg_query.py random 10 --grep "Goblin" --table
+"""
+    )
+    p_random.add_argument('count', nargs='?', type=int, default=1,
+                         help='Number of random cards to display (Default: 1).')
+    p_random.add_argument('infile', nargs='?', default='-',
+                         help='Input card data file. Defaults to the official dataset.')
+    cli_utils.add_standard_filters(p_random)
+    cli_utils.add_standard_output_args(p_random)
+    p_random.add_argument('--text', action='store_true', help='Force plain text output.')
+    p_random.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
+    p_random.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format.')
+    p_random.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
+    p_random.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                        help='Comma-separated list of fields to extract (when using table/csv/json).')
+    p_random.add_argument('--delimiter', default=' | ',
+                        help='Separator used between fields in plain text output.')
+    p_random.add_argument('-G', '--gatherer', action='store_true',
+                        help='Use official card formatting (emulating the Gatherer website).')
+    p_random.add_argument('--full', action='store_true', help='Force full details even for multiple matches.')
+    p_random.add_argument('--no-rulings', action='store_true', help='Suppress display of card rulings.')
+    p_random.set_defaults(func=handle_random)
 
     # Extract Subparser
     p_extract = subparsers.add_parser(
