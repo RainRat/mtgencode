@@ -356,7 +356,10 @@ def _execute_search(cards, args):
                 writer.writerow([get_field_value(c, f, ansi_color=False) for f in field_list])
     elif getattr(args, 'table', False) or getattr(args, 'md_table', False):
         header = [FIELD_MAP.get(get_field_canonical_name(f), {}).get('header', f) for f in field_list]
-        rows = [header]
+        display_header = header
+        if getattr(args, 'table', False) and use_color:
+            display_header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+        rows = [display_header]
         for c in cards:
             rows.append([get_field_value(c, f, ansi_color=use_color) for f in field_list])
         
