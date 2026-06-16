@@ -438,8 +438,8 @@ python3 scripts/mtg_analyze.py summary encoded_output.txt summary.json
 *   **Options:**
     *   `-x`, `--outliers`: Show extra details and unusual cards.
     *   `-a`, `--all`: Show all information, including dumping invalid cards.
-    *   `-t N`, `--top N`: Limit the number of entries in breakdown tables (Default: 10).
-    *   `--sort CRITERIA`: Sort cards before summarizing.
+    *   `--top N`: Limit the number of entries in breakdown tables (Default: 10).
+    *   `--sort CRITERIA`: Sort cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, `complexity`, or `score` before summarizing.
     *   `--booster N`: Simulate opening N booster packs and summarize the contents.
     *   `--box N`: Simulate opening N booster boxes (36 packs each) and summarize the contents.
     *   `-j`, `--json`: Force JSON output.
@@ -781,7 +781,7 @@ python3 scripts/mtg_analyze.py subtypes data/AllPrintings.json --top 20
 python3 scripts/mtg_analyze.py subtypes data/AllPrintings.json --json > subtypes.json
 ```
 *   **Options:**
-    *   `-t N`, `--top N`: Number of entries to show in tables (Default: 10).
+    *   `--top N`: Number of entries to show in tables (Default: 10).
     *   `--json`: Output results in structured JSON format.
     *   `--csv`: Output results in CSV format.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
@@ -847,7 +847,7 @@ python3 scripts/mtg_analyze.py mechanics data/AllPrintings.json --set MOM
 ```
 *   **Options:**
     *   `--sort {name,count}`: Sort results by name or frequency.
-    *   `--limit N`: Only show the top N mechanics.
+    *   `--top N`: Only show the top N mechanics.
     *   Supports standard **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
 
 ### `mtg_analyze.py colorpie`
@@ -875,7 +875,7 @@ python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json
 python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
 ```
 *   **Options:**
-    *   `-t N`, `--top N`: Number of signature words to show per color (Default: 10).
+    *   `--top N`: Number of signature words to show per color (Default: 10).
     *   `--min-len N`: Minimum word length to include in analysis (Default: 4).
     *   `--compare FILE`: Side-by-side comparison with a second dataset.
     *   **Filtering:** Supports standard **Advanced Filtering** flags.
