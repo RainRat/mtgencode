@@ -789,14 +789,6 @@ def handle_shell(args):
                 os.system('cls' if os.name == 'nt' else 'clear')
                 continue
 
-            if line.startswith('/random'):
-                random_card = [random.choice(all_cards)]
-                o_args = copy.copy(args)
-                o_args.query = None
-                if not hasattr(o_args, 'limit'): o_args.limit = 0
-                _execute_oracle(random_card, o_args)
-                continue
-
             if line.startswith('/search '):
                 query = line[8:].strip()
                 # Proper filtering for shell search
