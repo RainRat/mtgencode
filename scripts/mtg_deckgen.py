@@ -153,6 +153,8 @@ Usage Examples:
                         help='Only include cards with specific Loyalty or Defense values.')
     filter_group.add_argument('--mechanic', action='append',
                         help='Only include cards with specific mechanical features (e.g., Flying, ETB Effect).')
+    filter_group.add_argument('--produces', action='append',
+                        help="Only include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).")
 
     # Group: Processing & Debugging
     proc_group = parser.add_argument_group('Processing & Debugging')
@@ -209,6 +211,7 @@ Usage Examples:
                                      colors=args.colors, cmcs=args.cmc,
                                      pows=args.pow, tous=args.tou, loys=args.loy,
                                      mechanics=args.mechanic,
+                                     produces=args.produces,
                                      identities=args.identity,
                                      shuffle=args.shuffle, seed=args.seed)
     

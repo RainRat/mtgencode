@@ -97,6 +97,8 @@ Example Usage:
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--mechanic', action='append',
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
+    filter_group.add_argument('--produces', action='append',
+                        help="Only include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).")
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file.')
     filter_group.add_argument('--booster', type=int, default=0,
@@ -129,6 +131,7 @@ Example Usage:
                                   colors=args.colors, cmcs=args.cmc,
                                   pows=args.pow, tous=args.tou, loys=args.loy,
                                   mechanics=args.mechanic,
+                                  produces=args.produces,
                                   identities=args.identity, id_counts=args.id_count,
                                   decklist_file=args.deck,
                                   booster=args.booster, box=args.box,

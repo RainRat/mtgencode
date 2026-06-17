@@ -157,6 +157,8 @@ Usage Examples:
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--mechanic', action='append',
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
+    filter_group.add_argument('--produces', action='append',
+                        help="Only include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).")
 
     # Color options
     color_group = parser.add_mutually_exclusive_group()
@@ -186,6 +188,7 @@ Usage Examples:
                                   sets=args.set, rarities=args.rarity,
                                   colors=args.colors, cmcs=args.cmc, pows=args.pow,
                                   tous=args.tou, loys=args.loy, mechanics=args.mechanic,
+                                  produces=args.produces,
                                   identities=args.identity, id_counts=args.id_count)
 
     if args.verbose:

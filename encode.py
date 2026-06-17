@@ -20,6 +20,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          sets=None, rarities=None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
          mechanics=None,
+         produces=None,
          identities=None, id_counts=None,
          seed=None, decklist_file=None, booster=0, box=0):
     fmt_ordered = cardlib.fmt_ordered_default
@@ -82,6 +83,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   colors=colors, cmcs=cmcs,
                                   pows=pows, tous=tous, loys=loys,
                                   mechanics=mechanics,
+                                  produces=produces,
                                   identities=identities, id_counts=id_counts,
                                   shuffle=not stable, seed=seed if seed is not None else 1371367,
                                   decklist_file=decklist_file, booster=booster, box=box)
@@ -247,6 +249,8 @@ Usage Examples:
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--mechanic', action='append',
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
+    filter_group.add_argument('--produces', action='append',
+                        help="Only include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).")
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
 
@@ -278,6 +282,7 @@ Usage Examples:
          sets=args.set, rarities=args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
+         produces=args.produces,
          identities=args.identity, id_counts=args.id_count,
          seed=args.seed, decklist_file=args.deck, booster=args.booster, box=args.box)
     exit(0)

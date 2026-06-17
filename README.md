@@ -294,6 +294,7 @@ Filter cards using search patterns, set codes, rarities, or decklist files. Thes
     *   `--rarity NAME`: Include cards of specific rarities (e.g., `common`, `rare`). You can use full names or shorthands: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), or `L` (Basic Land).
     *   `--colors SYMBOLS`: Include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
     *   `--identity SYMBOLS`: Include cards with specific colors in their color identity.
+    *   `--produces COLORS`: Include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).
     *   **Numerical Filters:** These flags support exact values (`5`), inequalities (`>3`, `<=2`, `!=0`), and ranges (`1-4`).
         *   `--id-count VALUE`: Filter by the number of colors in a card's color identity.
         *   `--cmc VALUE`: Filter by mana value (Converted Mana Cost).
@@ -328,6 +329,12 @@ python3 scripts/mtg_query.py search data/AllPrintings.json --rarity rare --cmc "
 
 # Find rare cards from the MOM set that provide Card Advantage
 python3 scripts/mtg_query.py search data/AllPrintings.json --set MOM --rarity rare --action "Card Advantage"
+
+# Find all cards that produce Green mana (includes Birds of Paradise and Forests)
+python3 scripts/mtg_query.py search --produces G
+
+# Find all cards that can produce any color of mana
+python3 scripts/mtg_query.py search --produces Any
 ```
 
 ---

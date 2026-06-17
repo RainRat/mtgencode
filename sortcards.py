@@ -254,6 +254,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          sets = None, rarities = None, colors=None, cmcs=None,
          pows=None, tous=None, loys=None,
          mechanics=None,
+         produces=None,
          identities=None, id_counts=None,
          shuffle = False, seed = None, decklist_file = None,
          booster = 0, box = 0):
@@ -289,6 +290,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                                   colors=colors, cmcs=cmcs,
                                   pows=pows, tous=tous, loys=loys,
                                   mechanics=mechanics,
+                                  produces=produces,
                                   identities=identities, id_counts=id_counts,
                                   exclude_sets=lambda x: False,
                                   exclude_types=lambda x: False,
@@ -484,6 +486,8 @@ Usage Examples:
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--mechanic', action='append',
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
+    filter_group.add_argument('--produces', action='append',
+                        help="Only include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).")
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
     filter_group.add_argument('--booster', type=int, default=0,
@@ -542,6 +546,7 @@ Usage Examples:
          sets = args.set, rarities = args.rarity, colors=args.colors, cmcs=args.cmc,
          pows=args.pow, tous=args.tou, loys=args.loy,
          mechanics=args.mechanic,
+         produces=args.produces,
          identities=args.identity, id_counts=args.id_count,
          shuffle = args.shuffle, seed = args.seed, decklist_file = args.deck,
          booster = args.booster, box = args.box)

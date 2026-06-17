@@ -846,6 +846,7 @@ def mtg_open_file(fname, verbose = False,
                   pows=None, tous=None, loys=None,
                   mechanics=None,
                   actions=None,
+                  produces=None,
                   color_pie_break=False,
                   identities=None, id_counts=None,
                   shuffle=False, seed=None,
@@ -1176,7 +1177,7 @@ def mtg_open_file(fname, verbose = False,
                                    exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                    decklist_names=decklist_names)
 
-    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or actions or color_pie_break or identities or id_counts:
+    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or actions or produces or color_pie_break or identities or id_counts:
         # Sanitize queries to match internal representations (hyphens are dash_marker)
         greps = _compile_patterns(grep, sanitize=True)
         vgreps = _compile_patterns(vgrep, sanitize=True)
@@ -1207,6 +1208,7 @@ def mtg_open_file(fname, verbose = False,
         target_colors = [c.upper() for c in colors] if colors else None
         target_mechanics = [m.lower() for m in mechanics] if mechanics else None
         target_actions = [a.lower() for a in actions] if actions else None
+        target_produces = [c.upper() if c.lower() != 'any' else 'Any' for c in produces] if produces else None
         target_identities = [c.upper() for c in identities] if identities else None
 
         # Initialize NumericFilters
@@ -1359,6 +1361,19 @@ def mtg_open_file(fname, verbose = False,
                         match_action = True
                         break
                 if not match_action:
+                    return False
+
+            # Produced Mana filtering
+            if target_produces:
+                produced = card.produced_colors
+                match_produced = False
+                for tp in target_produces:
+                    if tp == 'Any':
+                        if 'Any' in produced: match_produced = True
+                    elif tp in produced or 'Any' in produced:
+                        match_produced = True
+                    if match_produced: break
+                if not match_produced:
                     return False
 
             # Identity filtering
