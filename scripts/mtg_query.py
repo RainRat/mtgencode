@@ -1114,18 +1114,53 @@ def handle_superior(args):
         if not (t_types & c_types):
             return False
 
+        # If target is creature/planeswalker/battle, candidate must also be one
+        if target.is_creature and not candidate.is_creature:
+            return False
+        if target.is_planeswalker and not candidate.is_planeswalker:
+            return False
+        if target.is_battle and not candidate.is_battle:
+            return False
+
         # 2. Mana Cost comparison
         t_cmc = target.cost.cmc
         c_cmc = candidate.cost.cmc
         if c_cmc > t_cmc:
             return False
 
-        # Pip check: candidate must not require more of any color than target
-        t_pips = target.cost.allsymbols
-        c_pips = candidate.cost.allsymbols
-        for color in 'WUBRGC':
-            if c_pips.get(color, 0) > t_pips.get(color, 0):
-                return False
+        # Color requirement check: match each candidate pip requirement to a target requirement
+        def parse_colored_reqs(cost):
+            reqs = []
+            for sym, count in cost.allsymbols.items():
+                if count <= 0:
+                    continue
+                colors = set(c for c in sym if c in 'WUBRGC')
+                if colors:
+                    for _ in range(count):
+                        reqs.append(colors)
+            return reqs
+
+        c_reqs = parse_colored_reqs(candidate.cost)
+        t_reqs = parse_colored_reqs(target.cost)
+
+        def match_mana(c_idx, used_t_indices, found_strict):
+            if c_idx == len(c_reqs):
+                return True, found_strict
+            c_req = c_reqs[c_idx]
+            for t_idx, t_req in enumerate(t_reqs):
+                if t_idx not in used_t_indices:
+                    if t_req.issubset(c_req):
+                        is_strict = len(t_req) < len(c_req)
+                        used_t_indices.add(t_idx)
+                        success, strict = match_mana(c_idx + 1, used_t_indices, found_strict or is_strict)
+                        if success:
+                            return True, strict
+                        used_t_indices.remove(t_idx)
+            return False, False
+
+        success, strict_mana = match_mana(0, set(), False)
+        if not success:
+            return False
 
         # 3. Stats check
         # Creatures
@@ -1152,9 +1187,8 @@ def handle_superior(args):
 
         # 5. Strictly better check: must be better in at least one metric
         is_strictly_better = False
-        if c_cmc < t_cmc: is_strictly_better = True
-        for color in 'WUBRGC':
-            if c_pips.get(color, 0) < t_pips.get(color, 0): is_strictly_better = True
+        if (c_cmc < t_cmc) or (len(c_reqs) < len(t_reqs)) or strict_mana:
+            is_strictly_better = True
         if target.is_creature and candidate.is_creature:
             if c_p > t_p or c_t > t_t: is_strictly_better = True
         if (target.is_planeswalker or target.is_battle) and (candidate.is_planeswalker or candidate.is_battle):

@@ -78,6 +78,36 @@ class TestMtgSuperior(unittest.TestCase):
                             "power": "3",
                             "toughness": "3",
                             "rarity": "common"
+                        },
+                        {
+                            "name": "Steel Bear",
+                            "manaCost": "{2}",
+                            "types": ["Artifact", "Creature"],
+                            "power": "2",
+                            "toughness": "2",
+                            "rarity": "common"
+                        },
+                        {
+                            "name": "Steel Box",
+                            "manaCost": "{1}",
+                            "types": ["Artifact"],
+                            "rarity": "common"
+                        },
+                        {
+                            "name": "Off-color Bear",
+                            "manaCost": "{W}",
+                            "types": ["Creature"],
+                            "power": "2",
+                            "toughness": "2",
+                            "rarity": "common"
+                        },
+                        {
+                            "name": "Hybrid Bear",
+                            "manaCost": "{W/U}",
+                            "types": ["Creature"],
+                            "power": "2",
+                            "toughness": "2",
+                            "rarity": "common"
                         }
                     ]
                 }
@@ -164,6 +194,28 @@ class TestMtgSuperior(unittest.TestCase):
 
             output = fake_err.getvalue()
             self.assertIn("Error: Could not find reference card 'Nonexistent Card'", output)
+
+    def test_superior_types_and_hybrid(self):
+        # Steel Box (non-creature artifact, CMC 1) is NOT superior to Steel Bear (artifact creature, CMC 2)
+        with patch('sys.stdout', new=io.StringIO()) as fake_out, \
+             patch('sys.stderr', new=io.StringIO()) as fake_err:
+            test_args = ['mtg_query.py', 'superior', 'Steel Bear', self.test_file, '--fields', 'name']
+            with patch('sys.argv', test_args):
+                mtg_query.main()
+            output = fake_out.getvalue()
+            err_output = fake_err.getvalue()
+            self.assertNotIn("Steel Box", output)
+            self.assertIn("No cards found that are superior to Steel Bear.", err_output)
+
+        # Off-color Bear (CMC 1, requires W) is NOT superior to Grizzly Bears (CMC 2, requires 1G)
+        # Hybrid Bear (CMC 1, requires W/U) is NOT superior to Grizzly Bears (CMC 2, requires 1G)
+        with patch('sys.stdout', new=io.StringIO()) as fake_out:
+            test_args = ['mtg_query.py', 'superior', 'Grizzly Bears', self.test_file, '--fields', 'name']
+            with patch('sys.argv', test_args):
+                mtg_query.main()
+            output = fake_out.getvalue()
+            self.assertNotIn("Off-color Bear", output)
+            self.assertNotIn("Hybrid Bear", output)
 
 if __name__ == '__main__':
     unittest.main()
