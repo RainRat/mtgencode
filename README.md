@@ -522,6 +522,7 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `sets`: List and filter sets in an MTGJSON file.
 *   `functional`: Identify and group cards with the same mechanics but different names.
 *   `compare`: Compare two cards side-by-side by name to identify differences.
+*   `superior`: Find cards that are strictly better or generally superior to a reference card.
 *   `extract`: Extract a single card object from a large JSON database.
 *   `shell`: Launch an interactive terminal for quick card lookups and searches.
 
@@ -623,6 +624,22 @@ python3 scripts/mtg_query.py compare --set MOM --rarity rare
 
 # Compare cards in a specific file
 python3 scripts/mtg_query.py compare "Uthros" "Invasion" testdata/ --color
+```
+
+---
+
+#### **Subcommand: `superior`**
+Identifies "strictly better" or generally superior cards by comparing mana cost, stats, and abilities. A card is superior if it has easier or identical mana cost, better or equal stats, and its abilities are a superset of the reference card.
+
+```bash
+# Find cards better than Grizzly Bears
+python3 scripts/mtg_query.py superior "Grizzly Bears"
+
+# Find better cards that are also Goblins
+python3 scripts/mtg_query.py superior "Grizzly Bears" --grep "Goblin"
+
+# Find better cards in a specific set
+python3 scripts/mtg_query.py superior "Grizzly Bears" --set MOM
 ```
 
 ---
