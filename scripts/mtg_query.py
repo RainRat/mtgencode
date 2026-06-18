@@ -1077,13 +1077,21 @@ def handle_functional(args):
             print()
 
 def handle_random(args):
+    # Smart Positional Argument Handling
+    if args.count and not str(args.count).isdigit() and os.path.exists(str(args.count)) and args.infile == '-':
+        args.infile = str(args.count)
+        args.count = 1
+
     cards = cli_utils.load_and_filter_cards(args)
     if not cards:
         if not args.quiet:
             print("No cards found matching the criteria.", file=sys.stderr)
         return
 
-    count = args.count
+    try:
+        count = int(args.count)
+    except (ValueError, TypeError):
+        count = 1
     if count > len(cards):
         count = len(cards)
 
@@ -1413,7 +1421,7 @@ Usage Examples:
   python3 scripts/mtg_query.py random 10 --grep "Goblin" --table
 """
     )
-    p_random.add_argument('count', nargs='?', type=int, default=1,
+    p_random.add_argument('count', nargs='?', default=1,
                          help='Number of random cards to display (Default: 1).')
     p_random.add_argument('infile', nargs='?', default='-',
                          help='Input card data file. Defaults to the official dataset.')
