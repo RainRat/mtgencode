@@ -518,6 +518,7 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 #### **Commands:**
 *   `search`: Search card data and extract specific fields.
 *   `oracle`: Look up a card by name and display its full rules text.
+*   `random`: Display one or more random cards matching the filters.
 *   `sets`: List and filter sets in an MTGJSON file.
 *   `functional`: Identify and group cards with the same mechanics but different names.
 *   `compare`: Compare two cards side-by-side by name to identify differences.
@@ -557,6 +558,23 @@ python3 scripts/mtg_query.py oracle --set MOM --rarity rare --grep "Battle"
 # Find cards mechanically similar to a specific card
 python3 scripts/mtg_query.py oracle "Giant Growth" --similar
 ```
+
+---
+
+#### **Subcommand: `random`**
+Display one or more random cards from the dataset. Supports all **Advanced Filtering** flags.
+
+```bash
+# See a random card
+python3 scripts/mtg_query.py random
+
+# See 5 random rare creatures
+python3 scripts/mtg_query.py random 5 --rarity rare --grep "Creature"
+
+# Output 10 random Goblins in a table
+python3 scripts/mtg_query.py random 10 --grep "Goblin" --table
+```
+*   **Options:** `count`, `--table`, `--json`, `--jsonl`, `--csv`, `--summary`, `--fields`.
 
 ---
 
