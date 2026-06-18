@@ -206,17 +206,6 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ", ".join(res)
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
-    elif canon == 'color_pie':
-        status = card.check_color_pie()
-        if status is True:
-            res = "Valid"
-            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
-        elif isinstance(status, str):
-            res = status
-            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.RED)
-        else:
-            res = ""
-        return res
     elif canon == 'encoded':
         res = card.encode()
     else:
