@@ -170,3 +170,58 @@ def test_json2csv_text_unpassing():
 
         assert len(rows) == 1
         assert rows[0]['text'].strip() == '+1: Put a loyalty counter on Gideon.'
+
+def test_json2csv_via_mtg_csv_json():
+    card_data = {
+        "data": {
+            "TEST": {
+                "name": "Test Set",
+                "code": "TEST",
+                "type": "expansion",
+                "cards": [
+                    {
+                        "name": "Grizzly Bears",
+                        "manaCost": "{1}{G}",
+                        "types": ["Creature"],
+                        "subtypes": ["Bear"],
+                        "rarity": "Common",
+                        "power": "2",
+                        "toughness": "2",
+                        "text": "When Grizzly Bears enters the battlefield, you win."
+                    }
+                ]
+            }
+        }
+    }
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        json_path = os.path.join(tmpdir, 'input.json')
+        csv_path = os.path.join(tmpdir, 'output.csv')
+
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(card_data, f)
+
+        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'mtg_csv_json.py'))
+        
+        # 1. Test via subcommand json2csv
+        subprocess.run([sys.executable, script_path, 'json2csv', json_path, csv_path], check=True)
+
+        with open(csv_path, 'r', encoding='utf-8', newline='') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+
+        assert len(rows) == 1
+        assert rows[0]['name'] == 'grizzly bears'
+
+        # Clear output
+        os.remove(csv_path)
+
+        # 2. Test via autodetection mode
+        subprocess.run([sys.executable, script_path, json_path, csv_path], check=True)
+
+        with open(csv_path, 'r', encoding='utf-8', newline='') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+
+        assert len(rows) == 1
+        assert rows[0]['name'] == 'grizzly bears'

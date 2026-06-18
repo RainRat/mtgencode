@@ -128,3 +128,32 @@ def test_csv2json_padding_and_empty():
         assert cards[0]['rarity'] == '' # Default for padded rarity
         assert cards[1]['name'] == 'Multi Short'
         assert cards[1]['bside']['name'] == 'Card'
+
+def test_mtg_csv_json_direct():
+    from scripts.mtg_csv_json import main as main_direct
+    csv_content = 'name,manaCost,types,subtypes,text,pt,rarity\n"Test","{0}","Artifact","","Rules","","C"\n'
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, 'test.csv')
+        json_path = os.path.join(tmpdir, 'test.json')
+
+        with open(csv_path, 'w', encoding='utf-8') as f:
+            f.write(csv_content)
+
+        # 1. Test explicit subcommand mode
+        with patch('sys.argv', ['mtg_csv_json.py', 'csv2json', csv_path, json_path]):
+            main_direct()
+
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        assert data['data']['CUS']['cards'][0]['name'] == 'Test'
+
+        # Clear output
+        os.remove(json_path)
+
+        # 2. Test autodetection mode
+        with patch('sys.argv', ['mtg_csv_json.py', csv_path, json_path]):
+            main_direct()
+
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        assert data['data']['CUS']['cards'][0]['name'] == 'Test'
