@@ -198,7 +198,9 @@ Usage Examples:
     # Load and filter cards
     cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose,
                                   grep=args.grep, sets=args.set, rarities=args.rarity,
-                                  cmcs=args.cmc, decklist_file=args.deck)
+                                  cmcs=args.cmc,
+                                  produces=getattr(args, 'produces', None),
+                                  decklist_file=args.deck)
 
     if not cards:
         if not args.quiet:

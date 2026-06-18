@@ -261,6 +261,7 @@ Usage Examples:
     filter_group.add_argument('--grep', action='append', help='Filter cards by search pattern.')
     filter_group.add_argument('--set', action='append', help='Filter cards by set code.')
     filter_group.add_argument('--rarity', action='append', help='Filter cards by rarity.')
+    filter_group.add_argument('--produces', action='append', help='Filter cards by produced mana color.')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -296,7 +297,7 @@ Usage Examples:
                 print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
 
     # Load cards
-    cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, grep=args.grep, sets=args.set, rarities=args.rarity)
+    cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, grep=args.grep, sets=args.set, rarities=args.rarity, produces=args.produces)
     if args.limit > 0:
         cards = cards[:args.limit]
 

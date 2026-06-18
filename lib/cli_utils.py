@@ -51,6 +51,9 @@ def add_standard_filters(parser):
     filter_group.add_argument('--identity', action='append',
                         help="Only include cards with specific colors in their color identity (W, U, B, R, G). "
                              "Use 'C' or 'A' for colorless. Supports multiple values (OR logic).")
+    filter_group.add_argument('--produces', action='append',
+                        help="Only include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any). "
+                             "Matching a specific color also includes cards that produce 'Any'. Supports multiple values (OR logic).")
     filter_group.add_argument('--id-count', action='append',
                         help='Only include cards with specific color identity counts. Supports exact values ("2"), '
                              'inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
@@ -188,6 +191,7 @@ def load_and_filter_cards(args):
                                   loys=getattr(args, 'loy', None),
                                   mechanics=getattr(args, 'mechanic', None),
                                   actions=getattr(args, 'action', None),
+                                  produces=getattr(args, 'produces', None),
                                   color_pie_break=getattr(args, 'color_pie_break', False),
                                   identities=getattr(args, 'identity', None), 
                                   id_counts=getattr(args, 'id_count', None),
