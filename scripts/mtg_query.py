@@ -155,6 +155,7 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
             res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
         return res
     elif canon == 'rating':
+        if not card.is_creature: return ""
         res = f"{card.power_rating:.3f}"
         if ansi_color:
             color = ""
@@ -1192,7 +1193,6 @@ def handle_compare_cards(args):
             utils.print_header("CARD COMPARISON", use_color=use_color)
 
         fields = [
-            ('Name', 'name'),
             ('Set', 'set'),
             ('Cost', 'cost'),
             ('CMC', 'cmc'),
@@ -1212,8 +1212,14 @@ def handle_compare_cards(args):
             ('Text', 'text')
         ]
 
+        def get_full_name(c):
+            res = cardlib.titlecase(c.name.replace(utils.dash_marker, '-'))
+            if c.bside:
+                res += " // " + get_full_name(c.bside)
+            return res
+
         rows = []
-        header = ["Field"] + [cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) for c in comparison_cards]
+        header = ["Field"] + [get_full_name(c) for c in comparison_cards]
         if use_color:
             header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
         rows.append(header)
@@ -1222,12 +1228,15 @@ def handle_compare_cards(args):
         def get_features(c):
             f = c.mechanics | c.actions
             f.update(set(t.title() for t in c.types))
+            f.update(set(s.title() for s in c.supertypes))
             f.update(set(titlecase(s.replace(utils.dash_marker, '-')) for s in c.subtypes))
             produced = c.produced_colors
             if produced:
                 if "Any" in produced: f.add("Produces Any Color")
                 else: f.add("Produces " + "".join(sorted(list(produced))))
             f.update(set(t['name'] for t in c.tokens))
+            if c.bside:
+                f.update(get_features(c.bside))
             return f
 
         card_features = [get_features(c) for c in comparison_cards]
@@ -1296,7 +1305,7 @@ def handle_compare_cards(args):
                 label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
 
             # Always show basic identifying rows; hide others only if all are empty
-            is_identifying = field in ['name', 'cost', 'cmc', 'type', 'rarity', 'fair_cmc', 'rating', 'complexity', 'text']
+            is_identifying = field in ['cost', 'cmc', 'type', 'rarity', 'text']
             if is_identifying or any(v for v in raw_vals):
                 rows.append([label] + display_vals)
 

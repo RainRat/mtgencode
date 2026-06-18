@@ -13,7 +13,6 @@ def test_query_compare_basic():
     assert "Uthros Research Craft" in result.stdout
     assert "Invasion of Alara" in result.stdout
     assert "CMC" in result.stdout
-    assert "Fair MV" in result.stdout
 
 def test_query_compare_json():
     """Test JSON output for comparison."""
