@@ -568,10 +568,10 @@ python3 scripts/mtg_query.py sets --grep "Masters"
 ---
 
 #### **Subcommand: `functional`**
-Identifies 'functional reprints' (different name, same mechanics).
+Identifies cards with the same mechanics but different names.
 
 ```bash
-# List all functional reprints
+# List all cards with the same mechanics
 python3 scripts/mtg_query.py functional
 
 # Create a deduplicated dataset
