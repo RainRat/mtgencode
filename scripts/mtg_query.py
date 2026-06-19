@@ -100,15 +100,9 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.GREEN)
     elif canon == 'pt':
-        res = utils.from_unary(card.pt) if card.pt else ""
-        if res and ansi_color:
-            res = utils.colorize(res, utils.Ansi.RED)
+        res = card._get_pt_display(ansi_color=ansi_color)
     elif canon == 'stats':
-        res = utils.from_unary(card.pt) if card.pt else ""
-        if not res:
-            res = utils.from_unary(card.loyalty) if card.loyalty else ""
-        if res and ansi_color:
-            res = utils.colorize(res, utils.Ansi.RED)
+        res = card._get_pt_display(ansi_color=ansi_color) or card._get_loyalty_display(ansi_color=ansi_color)
     elif canon == 'power':
         res = utils.from_unary(card.pt_p) if card.pt_p else ""
         if res and ansi_color:
@@ -118,9 +112,7 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         if res and ansi_color:
             res = utils.colorize(res, utils.Ansi.RED)
     elif canon == 'loyalty':
-        res = utils.from_unary(card.loyalty) if card.loyalty else ""
-        if res and ansi_color:
-            res = utils.colorize(res, utils.Ansi.RED)
+        res = card._get_loyalty_display(ansi_color=ansi_color)
     elif canon == 'text':
         res = card.get_text(force_unpass=True, ansi_color=ansi_color)
     elif canon == 'rarity':
