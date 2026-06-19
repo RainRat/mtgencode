@@ -207,16 +207,16 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
     elif canon == 'encoded':
-        res = card.encode()
+        return card.encode()
     else:
         return ""
 
     if card.bside:
-        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary']:
+        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary', 'tokens', 'actions']:
             return str(res)
         b_res = get_field_value(card.bside, field, ansi_color, multi_sep=multi_sep)
         if res and b_res:
-            sep = "\n\n" if canon in ['text', 'encoded'] else multi_sep
+            sep = "\n\n" if canon == 'text' else multi_sep
             return f"{res}{sep}{b_res}"
         return str(res or b_res)
     return str(res)
