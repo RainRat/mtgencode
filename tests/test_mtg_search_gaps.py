@@ -90,14 +90,14 @@ class TestMtgSearchGaps(unittest.TestCase):
         card = Card({"name": "Test", "power": "2", "toughness": "3", "types": ["Creature"]})
         self.assertEqual(get_field_value(card, "power"), "2")
         self.assertEqual(get_field_value(card, "toughness"), "3")
-        self.assertEqual(get_field_value(card, "pt"), "2/3")
+        self.assertEqual(get_field_value(card, "pt"), "(2/3)")
 
     def test_get_field_value_loyalty(self):
         from scripts.mtg_query import get_field_value
         from lib.cardlib import Card
         card = Card({"name": "Test", "loyalty": "5", "types": ["Planeswalker"]})
-        self.assertEqual(get_field_value(card, "loyalty"), "5")
-        self.assertEqual(get_field_value(card, "stats"), "5")
+        self.assertEqual(get_field_value(card, "loyalty"), "(5)")
+        self.assertEqual(get_field_value(card, "stats"), "(5)")
 
 if __name__ == '__main__':
     unittest.main()
