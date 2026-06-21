@@ -68,6 +68,13 @@ for k, v in FIELD_MAP.items():
     for alias in v.get('aliases', []):
         _CANONICAL_MAP[alias] = k
 
+FIELDS_HELP = """Comma-separated list of fields to extract. Supported fields:
+  - Basic: name, cost, cmc, colors, type, text, rarity
+  - Advanced: mechanics, actions, tokens, identity, id_count, produced, color_pie
+  - Stats: stats, pt, power, toughness, loyalty, fair_cmc, rating, complexity
+  - Metadata: set, number, pack, box
+  - System: summary, supertypes, types, subtypes, encoded"""
+
 def get_field_canonical_name(field):
     f = field.lower().strip()
     return _CANONICAL_MAP.get(f, f)
@@ -1185,18 +1192,18 @@ def handle_superior(args):
         if not target.actions.issubset(candidate.actions):
             return False
 
-        # 5. Strictly better check: must be better in at least one metric
-        is_strictly_better = False
+        # 5. Superiority check: must be better in at least one metric
+        is_superior_card = False
         if (c_cmc < t_cmc) or (len(c_reqs) < len(t_reqs)) or strict_mana:
-            is_strictly_better = True
+            is_superior_card = True
         if target.is_creature and candidate.is_creature:
-            if c_p > t_p or c_t > t_t: is_strictly_better = True
+            if c_p > t_p or c_t > t_t: is_superior_card = True
         if (target.is_planeswalker or target.is_battle) and (candidate.is_planeswalker or candidate.is_battle):
-            if c_l > t_l: is_strictly_better = True
-        if len(candidate.mechanics) > len(target.mechanics): is_strictly_better = True
-        if len(candidate.actions) > len(target.actions): is_strictly_better = True
+            if c_l > t_l: is_superior_card = True
+        if len(candidate.mechanics) > len(target.mechanics): is_superior_card = True
+        if len(candidate.actions) > len(target.actions): is_superior_card = True
 
-        return is_strictly_better
+        return is_superior_card
 
     superior_cards = [c for c in cards if is_superior(c, target_card)]
 
@@ -1488,10 +1495,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
     p_search.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the search results. If not provided, results print to the console.')
     p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                        help='Comma-separated list of fields to extract. Available fields:\n'
-                             '  - Basic: name, cost, cmc, type, stats, text, rarity\n'
-                             '  - Analysis: mechanics, actions, tokens, identity, complexity, rating, fair_mv, color_pie\n'
-                             '  - Metadata: set, number, pack, box')
+                        help=FIELDS_HELP)
     p_search.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     cli_utils.add_standard_filters(p_search)
@@ -1564,7 +1568,7 @@ Usage Examples:
     p_random.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format.')
     p_random.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
     p_random.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                        help='Comma-separated list of fields to extract (when using table/csv/json).')
+                        help=FIELDS_HELP)
     p_random.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     p_random.add_argument('-G', '--gatherer', action='store_true',
@@ -1646,7 +1650,7 @@ Usage Examples:
     p_functional.add_argument('--dedupe', nargs='?', const='-',
                             help='Create a deduplicated dataset (one card per functional group) and save to the specified file.')
     p_functional.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                            help='Comma-separated list of fields to extract when using --dedupe.')
+                            help=FIELDS_HELP)
     p_functional.add_argument('--delimiter', default=' | ',
                             help='Separator used between fields in plain text output.')
     p_functional.add_argument('--text', action='store_true', help='Force plain text output.')
@@ -1673,7 +1677,7 @@ Usage Examples:
   # Compare one card against its most mechanically similar match
   python3 scripts/mtg_query.py compare "Grizzly Bears"
 
-  # N-way comparison
+  # Comparing any number of cards
   python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre" "Balduvian Bears"
 
   # Pool comparison (compare cards matching filters)
@@ -1683,7 +1687,7 @@ Usage Examples:
   python3 scripts/mtg_query.py compare "Uthros" "Invasion of Tarkir" testdata/
 """
     )
-    p_compare.add_argument('names', nargs='*', help='Card names to compare. Supports N-way comparison. If one name is provided, it is compared against its closest mechanical match. If no names are provided, the filtered result pool is used.')
+    p_compare.add_argument('names', nargs='*', help='Card names to compare. Supports comparing any number of cards. If one name is provided, it is compared against its closest mechanical match. If no names are provided, the filtered result pool is used.')
     p_compare.add_argument('infile', nargs='?', default='-',
                          help='Input card data. Defaults to data/AllPrintings.json if available.')
     cli_utils.add_standard_filters(p_compare)
@@ -1693,10 +1697,10 @@ Usage Examples:
     # Superior Subparser
     p_superior = subparsers.add_parser(
         'superior',
-        help='Find cards that are strictly better or generally superior to a reference card.',
+        help='Find cards that are generally better or superior to a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Finds "strictly better" cards by comparing mana cost, stats, and abilities.
+Finds "superior" cards by comparing mana cost, stats, and abilities.
 A card is considered superior if it has easier or identical mana cost,
 equal or better stats (P/T or Loyalty), and its abilities are a superset
 of the reference card.
@@ -1718,7 +1722,7 @@ Usage Examples:
     cli_utils.add_standard_filters(p_superior)
     cli_utils.add_standard_output_args(p_superior)
     p_superior.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                           help='Fields to display in the output table.')
+                           help=FIELDS_HELP)
     p_superior.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'rating'],
                            help='Sort the resulting superior cards.')
     p_superior.add_argument('--delimiter', default=' | ',
@@ -1743,7 +1747,7 @@ Usage Examples:
     p_shell.add_argument('infile', nargs='?', default='-',
                         help='Input card data. Defaults to data/AllPrintings.json if available.')
     p_shell.add_argument('-f', '--fields', default='name,cost,type,stats,rarity',
-                        help='Default fields to show during /search commands.')
+                        help=FIELDS_HELP)
     cli_utils.add_standard_output_args(p_shell)
     p_shell.set_defaults(func=handle_shell)
 
