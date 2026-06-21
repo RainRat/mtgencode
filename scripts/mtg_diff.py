@@ -41,14 +41,14 @@ def compare_cards(c1, c2):
         diffs.append(('Type', c1.get_type_line(), c2.get_type_line()))
 
     # 3. Stats (P/T)
-    s1 = c1._get_pt_display(include_parens=False)
-    s2 = c2._get_pt_display(include_parens=False)
+    s1 = c1.get_pt_display(include_parens=False)
+    s2 = c2.get_pt_display(include_parens=False)
     if s1 != s2:
         diffs.append(('P/T', s1, s2))
 
     # 4. Loyalty / Defense
-    l1 = c1._get_loyalty_display(include_parens=False)
-    l2 = c2._get_loyalty_display(include_parens=False)
+    l1 = c1.get_loyalty_display(include_parens=False)
+    l2 = c2.get_loyalty_display(include_parens=False)
     if l1 != l2:
         diffs.append(('Loyalty/Defense', l1, l2))
 
