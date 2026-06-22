@@ -55,7 +55,7 @@ class TestMtgQueryCompareEnhanced(unittest.TestCase):
         self.assertIn('Uthros Research Craft', output)
 
     def test_compare_json(self):
-        """Test JSON output for N-way comparison."""
+        """Test JSON output for comparing any number of cards."""
         output, _ = self.run_compare(['Beast Summoner', 'Black Lotus', 'Double Front', self.testdata_path, '--json'])
         data = json.loads(output)
         self.assertIn('card1', data)

@@ -806,7 +806,7 @@ Usage Examples:
     # We provide a --raw flag to disable it.
     # We also keep -g for backward compatibility but make it a no-op that ensures True.
     content_group.add_argument('-g', '--gatherer', action='store_true', default=True,
-                        help='Format text like the official Gatherer website (Default). This applies modern wording and capitalization.')
+                        help='Format text like the official card database (Default). This applies modern wording and capitalization.')
     content_group.add_argument('--raw', '--no-gatherer', dest='gatherer', action='store_false',
                         help='Output raw text exactly as it appears in the encoded data.')
 

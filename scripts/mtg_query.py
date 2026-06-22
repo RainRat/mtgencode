@@ -1185,18 +1185,18 @@ def handle_superior(args):
         if not target.actions.issubset(candidate.actions):
             return False
 
-        # 5. Strictly better check: must be better in at least one metric
-        is_strictly_better = False
+        # 5. Superiority check: must be better in at least one metric
+        is_superior_match = False
         if (c_cmc < t_cmc) or (len(c_reqs) < len(t_reqs)) or strict_mana:
-            is_strictly_better = True
+            is_superior_match = True
         if target.is_creature and candidate.is_creature:
-            if c_p > t_p or c_t > t_t: is_strictly_better = True
+            if c_p > t_p or c_t > t_t: is_superior_match = True
         if (target.is_planeswalker or target.is_battle) and (candidate.is_planeswalker or candidate.is_battle):
-            if c_l > t_l: is_strictly_better = True
-        if len(candidate.mechanics) > len(target.mechanics): is_strictly_better = True
-        if len(candidate.actions) > len(target.actions): is_strictly_better = True
+            if c_l > t_l: is_superior_match = True
+        if len(candidate.mechanics) > len(target.mechanics): is_superior_match = True
+        if len(candidate.actions) > len(target.actions): is_superior_match = True
 
-        return is_strictly_better
+        return is_superior_match
 
     superior_cards = [c for c in cards if is_superior(c, target_card)]
 
@@ -1531,7 +1531,7 @@ Usage Examples:
     p_oracle.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
                         help="Sort cards by a specific field. Use 'complexity' for design complexity score.")
     p_oracle.add_argument('-s', '--similar', action='store_true', help='Show mechanically similar cards instead of direct matches.')
-    p_oracle.add_argument('-G', '--gatherer', action='store_true', help='Use official card formatting (emulating the Gatherer website).')
+    p_oracle.add_argument('-G', '--gatherer', action='store_true', help='Use official card formatting (emulating the official card database).')
     p_oracle.add_argument('--full', action='store_true', help='Force full details even for multiple matches.')
     p_oracle.add_argument('--no-rulings', action='store_true', help='Suppress display of card rulings.')
     p_oracle.set_defaults(func=handle_oracle)
@@ -1568,7 +1568,7 @@ Usage Examples:
     p_random.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     p_random.add_argument('-G', '--gatherer', action='store_true',
-                        help='Use official card formatting (emulating the Gatherer website).')
+                        help='Use official card formatting (emulating the official card database).')
     p_random.add_argument('--full', action='store_true', help='Force full details even for multiple matches.')
     p_random.add_argument('--no-rulings', action='store_true', help='Suppress display of card rulings.')
     p_random.set_defaults(func=handle_random)
@@ -1673,7 +1673,7 @@ Usage Examples:
   # Compare one card against its most mechanically similar match
   python3 scripts/mtg_query.py compare "Grizzly Bears"
 
-  # N-way comparison
+  # Comparing any number of cards
   python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre" "Balduvian Bears"
 
   # Pool comparison (compare cards matching filters)
@@ -1683,7 +1683,7 @@ Usage Examples:
   python3 scripts/mtg_query.py compare "Uthros" "Invasion of Tarkir" testdata/
 """
     )
-    p_compare.add_argument('names', nargs='*', help='Card names to compare. Supports N-way comparison. If one name is provided, it is compared against its closest mechanical match. If no names are provided, the filtered result pool is used.')
+    p_compare.add_argument('names', nargs='*', help='Card names to compare. Supports comparing any number of cards. If one name is provided, it is compared against its closest mechanical match. If no names are provided, the filtered result pool is used.')
     p_compare.add_argument('infile', nargs='?', default='-',
                          help='Input card data. Defaults to data/AllPrintings.json if available.')
     cli_utils.add_standard_filters(p_compare)
@@ -1693,10 +1693,10 @@ Usage Examples:
     # Superior Subparser
     p_superior = subparsers.add_parser(
         'superior',
-        help='Find cards that are strictly better or generally superior to a reference card.',
+        help='Find cards that are generally better or superior to a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Finds "strictly better" cards by comparing mana cost, stats, and abilities.
+Finds generally better cards by comparing mana cost, stats, and abilities.
 A card is considered superior if it has easier or identical mana cost,
 equal or better stats (P/T or Loyalty), and its abilities are a superset
 of the reference card.
