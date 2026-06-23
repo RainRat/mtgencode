@@ -47,8 +47,8 @@ class TestMtgQueryRandom(unittest.TestCase):
         card.rulings = []
         card.bside = None
         card.get_type_line.return_value = "Creature - Bear"
-        card._get_pt_display.return_value = "2/2"
-        card._get_loyalty_display.return_value = ""
+        card.get_pt_display.return_value = "2/2"
+        card.get_loyalty_display.return_value = ""
         card.get_face_tokens.return_value = []
         card.pt = "&&/&&"
         card.pt_p = "&&"

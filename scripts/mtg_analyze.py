@@ -981,7 +981,7 @@ def handle_power(args):
                 fair_mv = utils.colorize(fair_mv, utils.Ansi.BOLD + color)
 
             rar = c.rarity_name
-            rows.append([utils.colorize(c.display_name, c._get_ansi_color()) if use_color else c.display_name, rt, c.cost.format(ansi_color=use_color), fair_mv, c._get_pt_display(ansi_color=use_color, include_parens=False), utils.colorize(rar, utils.Ansi.get_rarity_color(rar)) if use_color else rar])
+            rows.append([utils.colorize(c.display_name, c._get_ansi_color()) if use_color else c.display_name, rt, c.cost.format(ansi_color=use_color), fair_mv, c.get_pt_display(ansi_color=use_color, include_parens=False), utils.colorize(rar, utils.Ansi.get_rarity_color(rar)) if use_color else rar])
         datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','l','r','r','l']), indent=4)
 
 def handle_archetypes(args):
