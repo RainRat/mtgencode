@@ -30,9 +30,8 @@ RECOGNIZED_MECHANICS = [
 # Functional categories for card effects
 ACTION_CATEGORIES = {
     'Removal': [
-        r'\bdestroy\b', r'\bexile target\b', r'sacrifice (a|target|an)\b',
-        r'deals? \d+ damage to (target|each) (creature|planeswalker|permanent)',
-        r'deals? &[\^]+ damage to (target|each) (creature|planeswalker|permanent)',
+        r'\bdestroy\b', r'\bexile (target|each|all|any)\b', r'sacrifice (a|target|an)\b',
+        r'deals? [\d&^]+ damage to (target|each|any|any target) (creature|planeswalker|permanent|target|any)',
         r'return (target|each) [^:]* to (its|their) owner\'s hand',
         r'gets? \-&[\^]+/\-&[\^]+'
     ],
@@ -44,10 +43,12 @@ ACTION_CATEGORIES = {
         r'target creature gets \+', r'creatures you control get \+'
     ],
     'Card Advantage': [
-        r'\bdraw(s|ing)? (a|&[\^]+) cards?\b', r'\bsearch your library\b', r'\breturn (target|a) card from your graveyard\b'
+        r'\bdraw(s|ing)? (a|&[\^]+) cards?\b', r'\bsearch your library\b', r'\breturn (target|a) card from your graveyard\b',
+        r'\bexile .* you may (play|cast) .*\b'
     ],
     'Disruption': [
-        r'\bdiscard(s|ing)? (a|&[\^]+)?\b', r'\buncast target\b', r'\btap target\b', r'can\'t attack or block'
+        r'\bdiscard(s|ing)? (a|&[\^]+)?\b', r'\buncast target\b', r'\btap (target|all|each)\b',
+        r'can\'t (attack|block)', r'don\'t untap during (its|their) [^.]* untap step'
     ]
 }
 
@@ -88,7 +89,7 @@ ACTION_COLORS = {
     'Buffs': 'WGRBC',
     'Card Advantage': 'UBGRWC',
     'Disruption': 'BURWC',
-    'Mana': 'GRRC' # Acceleration/Fixing (R for rituals)
+    'Mana': 'WGRC' # Acceleration/Fixing (W for treasures/taxing, R for rituals)
 }
 
 # Heuristic weights for calculating power rating
@@ -788,7 +789,7 @@ class Card:
         text = self.get_text(force_unpass=True).lower()
         any_patterns = ["any color", "any chosen color", "one mana of any color", "any combination of colors", "any one color"]
         if any(p in text for p in any_patterns):
-            return {"Any"}
+            produced.add("Any")
 
         for match in re.finditer(r'[Aa]dd\s+([^.]+)', text):
             symbols = re.findall(r'\{([^}]+)\}', match.group(1))
@@ -801,6 +802,9 @@ class Card:
         for color_name, char in color_map.items():
             if re.search(r'[Aa]dd\s+(?:one|two|three|[Xx])\s+' + color_name, text):
                 produced.add(char)
+
+        if "treasure" in text or "gold token" in text:
+            produced.add("Any")
 
         return produced
 
