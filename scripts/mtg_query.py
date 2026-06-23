@@ -10,6 +10,7 @@ import re
 import random
 import io
 import copy
+import shlex
 import atexit
 from collections import Counter, defaultdict, OrderedDict
 from contextlib import redirect_stdout
@@ -28,6 +29,189 @@ import sortlib
 from titlecase import titlecase
 
 # --- Search Logic (from mtg_search.py) ---
+
+def _resolve_reference_card(args, cards, name=None):
+    """Centralizes logic for identifying target cards for comparison commands."""
+    query = name or getattr(args, 'query', None)
+    if not query:
+        return None
+
+    query_sanitized = query.lower().replace('-', utils.dash_marker)
+
+    # Expand pool to include all faces for the initial pool
+    expanded_pool = []
+    for c in cards:
+        curr = c
+        while curr:
+            expanded_pool.append(curr)
+            curr = curr.bside
+
+    # 1. Exact match in current pool
+    matches = [c for c in expanded_pool if c.name.lower() == query_sanitized]
+    if matches: return matches[0]
+
+    # 2. Partial match in current pool
+    matches = [c for c in expanded_pool if query_sanitized in c.name.lower()]
+    if matches: return matches[0]
+
+    # 3. Search in full dataset if possible
+    all_cards = None
+    infile = getattr(args, 'infile', '-')
+    if infile and infile != '-':
+        # If infile is a directory, cli_utils.load_and_filter_cards already handled it,
+        # but we might need to re-open it if we are only looking at a filtered 'cards' list.
+        if os.path.isdir(infile):
+            all_cards = jdecode.mtg_open_file(infile, verbose=False)
+        elif os.path.exists(infile):
+            all_cards = jdecode.mtg_open_file(infile, verbose=False)
+
+        if all_cards:
+            full_pool = []
+            for c in all_cards:
+                curr = c
+                while curr:
+                    full_pool.append(curr)
+                    curr = curr.bside
+
+            matches = [c for c in full_pool if c.name.lower() == query_sanitized]
+            if matches: return matches[0]
+
+            matches = [c for c in full_pool if query_sanitized in c.name.lower()]
+            if matches: return matches[0]
+
+            expanded_pool = full_pool # for fuzzy matching
+
+    # 4. Fuzzy match
+    search_names = {c.name.lower(): c for c in expanded_pool}
+    close = difflib.get_close_matches(query.lower().replace('-', ' '), list(search_names.keys()), n=1, cutoff=0.5)
+    if close:
+        target_card = search_names[close[0]]
+        if not getattr(args, 'quiet', False):
+            print(f"Notice: Card '{query}' not found. Using best match: {target_card.display_name}", file=sys.stderr)
+        return target_card
+
+    return None
+
+def is_superior_card(candidate, target):
+    """Identifies if a candidate card is strictly better or generally superior to a target card."""
+    if candidate.name.lower() == target.name.lower():
+        return False
+
+    # 1. Type compatibility: must share at least one primary type
+    t_types = set(target.types)
+    c_types = set(candidate.types)
+    if not (t_types & c_types):
+        return False
+
+    # If target is creature/planeswalker/battle, candidate must also be one
+    if target.is_creature and not candidate.is_creature:
+        return False
+    if target.is_planeswalker and not candidate.is_planeswalker:
+        return False
+    if target.is_battle and not candidate.is_battle:
+        return False
+
+    # 2. Mana Cost comparison
+    t_cmc = target.cost.cmc
+    c_cmc = candidate.cost.cmc
+    if c_cmc > t_cmc:
+        return False
+
+    # Color requirement check: match each candidate pip requirement to a target requirement
+    def parse_colored_reqs(cost):
+        reqs = []
+        for sym, count in cost.allsymbols.items():
+            if count <= 0:
+                continue
+            colors = set(c for c in sym if c in 'WUBRGC')
+            if colors:
+                for _ in range(count):
+                    reqs.append(colors)
+        return reqs
+
+    c_reqs = parse_colored_reqs(candidate.cost)
+    t_reqs = parse_colored_reqs(target.cost)
+
+    def match_mana(c_idx, used_t_indices, found_strict):
+        if c_idx == len(c_reqs):
+            return True, found_strict
+        c_req = c_reqs[c_idx]
+        for t_idx, t_req in enumerate(t_reqs):
+            if t_idx not in used_t_indices:
+                if t_req.issubset(c_req):
+                    is_strict = len(t_req) < len(c_req)
+                    used_t_indices.add(t_idx)
+                    success, strict = match_mana(c_idx + 1, used_t_indices, found_strict or is_strict)
+                    if success:
+                        return True, strict
+                    used_t_indices.remove(t_idx)
+        return False, False
+
+    success, strict_mana = match_mana(0, set(), False)
+    if not success:
+        return False
+
+    # 3. Stats check
+    # Creatures
+    if target.is_creature and candidate.is_creature:
+        t_p = utils.from_unary_single(target.pt_p) or 0
+        t_t = utils.from_unary_single(target.pt_t) or 0
+        c_p = utils.from_unary_single(candidate.pt_p) or 0
+        c_t = utils.from_unary_single(candidate.pt_t) or 0
+        # If they are strings, comparison might be weird, but usually these are numeric
+        try:
+            if float(c_p) < float(t_p) or float(c_t) < float(t_t):
+                return False
+        except (ValueError, TypeError):
+            if c_p != t_p: return False # fallback for * stats
+
+    # Planeswalkers (higher loyalty is better)
+    if target.is_planeswalker and candidate.is_planeswalker:
+        t_l = utils.from_unary_single(target.loyalty) or 0
+        c_l = utils.from_unary_single(candidate.loyalty) or 0
+        try:
+            if float(c_l) < float(t_l):
+                return False
+        except (ValueError, TypeError):
+            if c_l != t_l: return False
+
+    # Battles (lower defense is better)
+    if target.is_battle and candidate.is_battle:
+        t_l = utils.from_unary_single(target.loyalty) or 0
+        c_l = utils.from_unary_single(candidate.loyalty) or 0
+        try:
+            if float(c_l) > float(t_l):
+                return False
+        except (ValueError, TypeError):
+            if c_l != t_l: return False
+
+    # 4. Mechanics and Actions: candidate must be a superset
+    if not target.mechanics.issubset(candidate.mechanics):
+        return False
+    if not target.actions.issubset(candidate.actions):
+        return False
+
+    # 5. Strictly better check: must be better in at least one metric
+    is_strictly_better = False
+    if (c_cmc < t_cmc) or (len(c_reqs) < len(t_reqs)) or strict_mana:
+        is_strictly_better = True
+    if target.is_creature and candidate.is_creature:
+        try:
+            if float(c_p) > float(t_p) or float(c_t) > float(t_t): is_strictly_better = True
+        except (ValueError, TypeError): pass
+    if target.is_planeswalker and candidate.is_planeswalker:
+        try:
+            if float(c_l) > float(t_l): is_strictly_better = True
+        except (ValueError, TypeError): pass
+    if target.is_battle and candidate.is_battle:
+        try:
+            if float(c_l) < float(t_l): is_strictly_better = True
+        except (ValueError, TypeError): pass
+    if len(candidate.mechanics) > len(target.mechanics): is_strictly_better = True
+    if len(candidate.actions) > len(target.actions): is_strictly_better = True
+
+    return is_strictly_better
+
 
 FIELD_MAP = {
     'name': {'header': 'Name', 'align': 'l', 'aliases': []},
@@ -724,7 +908,7 @@ def handle_shell(args):
 
         def completer(text, state):
             if text.startswith('/'):
-                commands = ['/search ', '/help', '/exit', '/quit', '/random', '/clear', '/q']
+                commands = ['/search ', '/superior ', '/inferior ', '/compare ', '/help', '/exit', '/quit', '/random', '/clear', '/q']
                 options = [c for c in commands if c.startswith(text)]
             else:
                 options = [n for n in card_names if n.lower().startswith(text.lower())]
@@ -795,7 +979,7 @@ def handle_shell(args):
                 if not hasattr(s_args, 'limit'): s_args.limit = 0
                 _execute_search(matched_cards, s_args)
             elif line.startswith('/random'):
-                parts = line.split()
+                parts = shlex.split(line)
                 count = 1
                 if len(parts) > 1:
                     try:
@@ -812,14 +996,46 @@ def handle_shell(args):
                 r_args.query = None
                 if not hasattr(r_args, 'limit'): r_args.limit = 0
                 _execute_oracle(sampled, r_args)
+            elif line.startswith('/superior '):
+                query = line[10:].strip()
+                s_args = copy.copy(args)
+                s_args.query = query
+                target_card = _resolve_reference_card(s_args, all_cards)
+                if target_card:
+                    superior_cards = [c for c in all_cards if is_superior_card(c, target_card)]
+                    s_args.fields = getattr(args, 'fields', 'name,cost,type,stats,rarity,mechanics')
+                    s_args.table = True
+                    _execute_search(superior_cards, s_args)
+            elif line.startswith('/inferior '):
+                query = line[10:].strip()
+                i_args = copy.copy(args)
+                i_args.query = query
+                target_card = _resolve_reference_card(i_args, all_cards)
+                if target_card:
+                    inferior_cards = [c for c in all_cards if is_superior_card(target_card, c)]
+                    i_args.fields = getattr(args, 'fields', 'name,cost,type,stats,rarity,mechanics')
+                    i_args.table = True
+                    _execute_search(inferior_cards, i_args)
+            elif line.startswith('/compare '):
+                query = line[9:].strip()
+                names = shlex.split(query)
+                c_args = copy.copy(args)
+                c_args.names = names
+                # For shell comparison, we want it to be snappy and use current cards
+                # But handle_compare_cards is a bit complex with its names/infile logic.
+                # We can call it directly, it will reload cards but it's consistent.
+                handle_compare_cards(c_args)
             elif line.startswith('/help'):
                 print("Commands:")
-                print("  <card name>     - Show official rules text for a specific card.")
-                print("  /search <q>     - Search for cards matching <q> (displays a table).")
-                print("  /random         - Show a random card from the dataset.")
-                print("  /clear          - Clear the terminal screen.")
-                print("  /help           - Show this help message.")
-                print("  /exit, /quit, q - Exit the interactive shell.")
+                print("  <card name>      - Show official rules text for a specific card.")
+                print("  /search <q>      - Search for cards matching <q> (displays a table).")
+                print("  /superior <name> - Find cards better than <name>.")
+                print("  /inferior <name> - Find cards worse than <name>.")
+                print("  /compare <names> - Side-by-side comparison of multiple cards.")
+                print("  /random [count]  - Show random card(s) from the dataset.")
+                print("  /clear           - Clear the terminal screen.")
+                print("  /help            - Show this help message.")
+                print("  /exit, /quit, q  - Exit the interactive shell.")
             else:
                 # Oracle lookup
                 o_args = copy.copy(args)
@@ -1078,127 +1294,13 @@ def handle_superior(args):
             print("No cards found in the dataset.", file=sys.stderr)
         return
 
-    query = args.query
-    if not query:
-        if not args.quiet:
-            print("Error: No reference card name provided.", file=sys.stderr)
+    target_card = _resolve_reference_card(args, cards)
+    if not target_card:
+        if not args.quiet and getattr(args, 'query', None):
+            print(f"Error: Could not find reference card '{args.query}'", file=sys.stderr)
         return
 
-    query_sanitized = query.lower().replace('-', utils.dash_marker)
-    target_card = next((c for c in cards if c.name.lower() == query_sanitized), None)
-    if not target_card:
-        # Try finding in the full dataset if not in the filtered pool
-        all_cards = jdecode.mtg_open_file(args.infile, verbose=False)
-        target_card = next((c for c in all_cards if c.name.lower() == query_sanitized), None)
-        if not target_card:
-            # Fuzzy match
-            search_names = {c.name.lower(): c for c in all_cards}
-            close = difflib.get_close_matches(query.lower(), list(search_names.keys()), n=1, cutoff=0.6)
-            if close:
-                target_card = search_names[close[0]]
-                if not args.quiet:
-                    print(f"Notice: Card '{query}' not found. Using best match: {target_card.display_name}", file=sys.stderr)
-
-    if not target_card:
-        if not args.quiet:
-            print(f"Error: Could not find reference card '{query}'", file=sys.stderr)
-        return
-
-    def is_superior(candidate, target):
-        if candidate.name.lower() == target.name.lower():
-            return False
-
-        # 1. Type compatibility: must share at least one primary type
-        t_types = set(target.types)
-        c_types = set(candidate.types)
-        if not (t_types & c_types):
-            return False
-
-        # If target is creature/planeswalker/battle, candidate must also be one
-        if target.is_creature and not candidate.is_creature:
-            return False
-        if target.is_planeswalker and not candidate.is_planeswalker:
-            return False
-        if target.is_battle and not candidate.is_battle:
-            return False
-
-        # 2. Mana Cost comparison
-        t_cmc = target.cost.cmc
-        c_cmc = candidate.cost.cmc
-        if c_cmc > t_cmc:
-            return False
-
-        # Color requirement check: match each candidate pip requirement to a target requirement
-        def parse_colored_reqs(cost):
-            reqs = []
-            for sym, count in cost.allsymbols.items():
-                if count <= 0:
-                    continue
-                colors = set(c for c in sym if c in 'WUBRGC')
-                if colors:
-                    for _ in range(count):
-                        reqs.append(colors)
-            return reqs
-
-        c_reqs = parse_colored_reqs(candidate.cost)
-        t_reqs = parse_colored_reqs(target.cost)
-
-        def match_mana(c_idx, used_t_indices, found_strict):
-            if c_idx == len(c_reqs):
-                return True, found_strict
-            c_req = c_reqs[c_idx]
-            for t_idx, t_req in enumerate(t_reqs):
-                if t_idx not in used_t_indices:
-                    if t_req.issubset(c_req):
-                        is_strict = len(t_req) < len(c_req)
-                        used_t_indices.add(t_idx)
-                        success, strict = match_mana(c_idx + 1, used_t_indices, found_strict or is_strict)
-                        if success:
-                            return True, strict
-                        used_t_indices.remove(t_idx)
-            return False, False
-
-        success, strict_mana = match_mana(0, set(), False)
-        if not success:
-            return False
-
-        # 3. Stats check
-        # Creatures
-        if target.is_creature and candidate.is_creature:
-            t_p = utils.from_unary_single(target.pt_p) or 0
-            t_t = utils.from_unary_single(target.pt_t) or 0
-            c_p = utils.from_unary_single(candidate.pt_p) or 0
-            c_t = utils.from_unary_single(candidate.pt_t) or 0
-            if c_p < t_p or c_t < t_t:
-                return False
-
-        # Planeswalkers / Battles
-        if (target.is_planeswalker or target.is_battle) and (candidate.is_planeswalker or candidate.is_battle):
-            t_l = utils.from_unary_single(target.loyalty) or 0
-            c_l = utils.from_unary_single(candidate.loyalty) or 0
-            if c_l < t_l:
-                return False
-
-        # 4. Mechanics and Actions: candidate must be a superset
-        if not target.mechanics.issubset(candidate.mechanics):
-            return False
-        if not target.actions.issubset(candidate.actions):
-            return False
-
-        # 5. Strictly better check: must be better in at least one metric
-        is_strictly_better = False
-        if (c_cmc < t_cmc) or (len(c_reqs) < len(t_reqs)) or strict_mana:
-            is_strictly_better = True
-        if target.is_creature and candidate.is_creature:
-            if c_p > t_p or c_t > t_t: is_strictly_better = True
-        if (target.is_planeswalker or target.is_battle) and (candidate.is_planeswalker or candidate.is_battle):
-            if c_l > t_l: is_strictly_better = True
-        if len(candidate.mechanics) > len(target.mechanics): is_strictly_better = True
-        if len(candidate.actions) > len(target.actions): is_strictly_better = True
-
-        return is_strictly_better
-
-    superior_cards = [c for c in cards if is_superior(c, target_card)]
+    superior_cards = [c for c in cards if is_superior_card(c, target_card)]
 
     if not superior_cards:
         if not args.quiet:
@@ -1207,6 +1309,35 @@ def handle_superior(args):
 
     # Use search display for results
     _execute_search(superior_cards, args)
+
+def handle_inferior(args):
+    # Smart positional argument handling
+    if args.query and os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
+        temp = args.query
+        args.query = args.infile if args.infile != '-' else None
+        args.infile = temp
+
+    cards = cli_utils.load_and_filter_cards(args)
+    if not cards:
+        if not args.quiet:
+            print("No cards found in the dataset.", file=sys.stderr)
+        return
+
+    target_card = _resolve_reference_card(args, cards)
+    if not target_card:
+        if not args.quiet and getattr(args, 'query', None):
+            print(f"Error: Could not find reference card '{args.query}'", file=sys.stderr)
+        return
+
+    inferior_cards = [c for c in cards if is_superior_card(target_card, c)]
+
+    if not inferior_cards:
+        if not args.quiet:
+            print(f"No cards found that are inferior to {target_card.display_name}.", file=sys.stderr)
+        return
+
+    # Use search display for results
+    _execute_search(inferior_cards, args)
 
 def handle_random(args):
     # Smart Positional Argument Handling
@@ -1724,6 +1855,38 @@ Usage Examples:
     p_superior.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     p_superior.set_defaults(func=handle_superior)
+
+    # Inferior Subparser
+    p_inferior = subparsers.add_parser(
+        'inferior',
+        help='Find cards that are strictly worse or generally inferior to a reference card.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Finds "strictly worse" cards by comparing mana cost, stats, and abilities.
+A card is considered inferior if it has more difficult or identical mana cost,
+equal or worse stats (P/T or Loyalty), and its abilities are a subset
+of the reference card.
+
+Usage Examples:
+  # Find cards worse than Siege Rhino
+  python3 scripts/mtg_query.py inferior "Siege Rhino"
+
+  # Find worse cards that are also Creatures
+  python3 scripts/mtg_query.py inferior "Siege Rhino" --grep "Creature"
+"""
+    )
+    p_inferior.add_argument('query', help='The card name to use as a reference for comparison.')
+    p_inferior.add_argument('infile', nargs='?', default='-',
+                           help='Input card data file. Defaults to data/AllPrintings.json.')
+    cli_utils.add_standard_filters(p_inferior)
+    cli_utils.add_standard_output_args(p_inferior)
+    p_inferior.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                           help='Fields to display in the output table.')
+    p_inferior.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'rating'],
+                           help='Sort the resulting inferior cards.')
+    p_inferior.add_argument('--delimiter', default=' | ',
+                        help='Separator used between fields in plain text output.')
+    p_inferior.set_defaults(func=handle_inferior)
 
     # Shell Subparser
     p_shell = subparsers.add_parser(

@@ -523,6 +523,7 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `functional`: Identify and group cards with the same mechanics but different names.
 *   `compare`: Compare two cards side-by-side by name to identify differences.
 *   `superior`: Find cards that are strictly better or generally superior to a reference card.
+*   `inferior`: Find cards that are strictly worse or generally inferior to a reference card.
 *   `extract`: Extract a single card object from a large JSON database.
 *   `shell`: Launch an interactive terminal for quick card lookups and searches.
 
@@ -644,6 +645,19 @@ python3 scripts/mtg_query.py superior "Grizzly Bears" --set MOM
 
 ---
 
+#### **Subcommand: `inferior`**
+Identifies "strictly worse" or generally inferior cards by comparing mana cost, stats, and abilities. A card is inferior if it has more difficult or identical mana cost, equal or worse stats, and its abilities are a subset of the reference card.
+
+```bash
+# Find cards worse than Siege Rhino
+python3 scripts/mtg_query.py inferior "Siege Rhino"
+
+# Find worse cards in a specific set
+python3 scripts/mtg_query.py inferior "Siege Rhino" --set KTK
+```
+
+---
+
 #### **Subcommand: `extract`**
 Extracts a single card object for debugging or testing.
 
@@ -666,6 +680,10 @@ python3 scripts/mtg_query.py shell my_cards.json --fields "name,cost,type,pt,rar
 *   **In-Shell Commands:**
     *   `<card name>`: Type any card name to see its official rules text.
     *   `/search <query>`: Perform a bulk search and display results in a table.
+    *   `/superior <name>`: Find cards better than the specified card.
+    *   `/inferior <name>`: Find cards worse than the specified card.
+    *   `/compare <names>`: Compare multiple cards side-by-side.
+    *   `/random [count]`: Show random card(s).
     *   `/help`: Show available commands.
     *   `exit` or `quit`: Leave the shell.
 
