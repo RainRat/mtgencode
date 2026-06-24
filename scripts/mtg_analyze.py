@@ -1495,7 +1495,7 @@ def main():
               # Calculate As-Fan statistics (average cards per pack)
               python3 scripts/mtg_analyze.py asfan generated.txt
 
-              # Analyze mechanical interaction (synergy) in a card pool
+              # Analyze mechanical interactions in a card pool
               python3 scripts/mtg_analyze.py interaction my_cards.json --min-freq 5
 
               # Compare the color lexicon of two datasets

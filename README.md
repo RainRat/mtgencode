@@ -123,7 +123,7 @@ Customization options for formatting data:
 ### `decode.py` (Viewing Results)
 Options for formatting the output. While primarily used for AI output, this tool also supports other card data formats (**JSON, XML, CSV, etc.**) for easy conversion.
 
-*   `-g`, `--gatherer`: Formats text like the official Gatherer website (Default). This applies modern wording and capitalization.
+*   `-g`, `--gatherer`: Formats text like the official card database (Default). This applies modern wording and capitalization.
 *   `--raw`: Shows raw text without special formatting.
 *   `-t`, `--table`: Creates a formatted table for terminal view.
 *   `-H`, `--html`: Creates a webpage with card images.
@@ -522,7 +522,7 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `sets`: List and filter sets in an MTGJSON file.
 *   `functional`: Identify and group cards with the same mechanics but different names.
 *   `compare`: Compare two cards side-by-side by name to identify differences.
-*   `superior`: Find cards that are strictly better or generally superior to a reference card.
+*   `superior`: Find cards that are generally better than a reference card.
 *   `extract`: Extract a single card object from a large JSON database.
 *   `shell`: Launch an interactive terminal for quick card lookups and searches.
 
@@ -607,7 +607,7 @@ python3 scripts/mtg_query.py functional --dedupe unique_cards.json
 ---
 
 #### **Subcommand: `compare`**
-Side-by-side card comparison for identifying design differences. Supports N-way comparison (any number of cards), fuzzy matching, and automatic similarity finding.
+Side-by-side card comparison for identifying design differences. Supports comparing any number of cards, fuzzy matching, and automatic similarity finding.
 
 ```bash
 # Compare two cards by name
@@ -629,7 +629,7 @@ python3 scripts/mtg_query.py compare "Uthros" "Invasion" testdata/ --color
 ---
 
 #### **Subcommand: `superior`**
-Identifies "strictly better" or generally superior cards by comparing mana cost, stats, and abilities. A card is superior if it has easier or identical mana cost, better or equal stats, and its abilities are a superset of the reference card.
+Identifies cards that are generally better than a reference card by comparing mana cost, stats, and abilities. A card is considered superior if it has easier or identical mana cost, better or equal stats, and its abilities include all of the reference card's mechanics and actions.
 
 ```bash
 # Find cards better than Grizzly Bears
