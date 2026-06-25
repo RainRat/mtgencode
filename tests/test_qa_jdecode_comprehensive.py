@@ -29,20 +29,7 @@ class TestJDecodeComprehensiveQA(unittest.TestCase):
 
     def test_mse_loyalty_reconstruction(self):
         # Triggers lines 606-607, 614: MSE loyalty cost reconstruction
-        mse_content = """card:
-	name: Jace
-	casting cost: 1UU
-	super type: Planeswalker
-	rarity: mythic
-	loyalty: 3
-	rule text:
-		Draw.
-
-		Mill.
-		Ult.
-	loyalty cost 1: +1
-	loyalty cost 2: -2
-"""
+        mse_content = "card:\n\tname: Jace\n\tcasting cost: 1UU\n\tsuper type: Planeswalker\n\trarity: mythic\n\tloyalty: 3\n\trule text:\n\t\tDraw.\n\t\t\n\t\tMill.\n\t\tUlt.\n\tloyalty cost 1: +1\n\tloyalty cost 2: -2\n"
         srcs, _ = jdecode.mtg_open_mse_content(mse_content)
         card_dict = srcs["jace"][0]
         # card_dict is raw dict, reconstruction happened in mtg_open_mse_content
