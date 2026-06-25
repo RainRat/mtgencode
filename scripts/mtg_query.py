@@ -1136,11 +1136,18 @@ def is_superior(candidate, target):
         if c_p < t_p or c_t < t_t:
             return False
 
-    # Planeswalkers / Battles
-    if (target.is_planeswalker or target.is_battle) and (candidate.is_planeswalker or candidate.is_battle):
+    # Planeswalkers
+    if target.is_planeswalker and candidate.is_planeswalker:
         t_l = utils.from_unary_single(target.loyalty) or 0
         c_l = utils.from_unary_single(candidate.loyalty) or 0
         if c_l < t_l:
+            return False
+
+    # Battles
+    if target.is_battle and candidate.is_battle:
+        t_d = utils.from_unary_single(target.loyalty) or 0
+        c_d = utils.from_unary_single(candidate.loyalty) or 0
+        if c_d > t_d: # Lower defense is superior
             return False
 
     # 4. Mechanics and Actions: candidate must be a superset
@@ -1155,8 +1162,10 @@ def is_superior(candidate, target):
         is_strictly_better = True
     if target.is_creature and candidate.is_creature:
         if c_p > t_p or c_t > t_t: is_strictly_better = True
-    if (target.is_planeswalker or target.is_battle) and (candidate.is_planeswalker or candidate.is_battle):
+    if target.is_planeswalker and candidate.is_planeswalker:
         if c_l > t_l: is_strictly_better = True
+    if target.is_battle and candidate.is_battle:
+        if c_d < t_d: is_strictly_better = True
     if len(candidate.mechanics) > len(target.mechanics): is_strictly_better = True
     if len(candidate.actions) > len(target.actions): is_strictly_better = True
 
