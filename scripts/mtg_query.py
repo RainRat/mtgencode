@@ -9,6 +9,7 @@ import difflib
 import re
 import random
 import io
+import shlex
 import copy
 import atexit
 from collections import Counter, defaultdict, OrderedDict
@@ -727,7 +728,7 @@ def handle_shell(args):
 
         def completer(text, state):
             if text.startswith('/'):
-                commands = ['/search ', '/help', '/exit', '/quit', '/random', '/clear', '/q']
+                commands = ['/search ', '/compare ', '/superior ', '/inferior ', '/random', '/help', '/clear', '/exit', '/quit', '/q']
                 options = [c for c in commands if c.startswith(text)]
             else:
                 options = [n for n in card_names if n.lower().startswith(text.lower())]
@@ -782,47 +783,70 @@ def handle_shell(args):
                 os.system('cls' if os.name == 'nt' else 'clear')
                 continue
 
-            if line.startswith('/search '):
-                query = line[8:].strip()
-                # Proper filtering for shell search
-                # We reuse the open_file logic but pass our already loaded cards
-                # Wait, mtg_open_file doesn't take a list of cards.
-                # Let's do a simple grep on our own.
-                query_pat = re.compile(re.escape(query.replace('-', utils.dash_marker)), re.IGNORECASE)
-                matched_cards = [c for c in all_cards if c.search(query_pat)]
-
-                # Create a fake args object for search display
-                s_args = copy.copy(args)
-                s_args.fields = getattr(args, 'fields', 'name,cost,type,stats')
-                s_args.table = True
-                if not hasattr(s_args, 'limit'): s_args.limit = 0
-                _execute_search(matched_cards, s_args)
-            elif line.startswith('/random'):
-                parts = line.split()
-                count = 1
-                if len(parts) > 1:
-                    try:
-                        count = int(parts[1])
-                    except ValueError:
-                        count = 1
-
-                if not all_cards:
-                    print("No cards loaded.")
+            if line.startswith('/'):
+                try:
+                    parts = shlex.split(line)
+                except ValueError as e:
+                    print(f"Error: {e}")
                     continue
+                cmd = parts[0].lower()
+                cmd_args = parts[1:]
 
-                sampled = random.sample(all_cards, min(count, len(all_cards)))
-                r_args = copy.copy(args)
-                r_args.query = None
-                if not hasattr(r_args, 'limit'): r_args.limit = 0
-                _execute_oracle(sampled, r_args)
-            elif line.startswith('/help'):
-                print("Commands:")
-                print("  <card name>     - Show official rules text for a specific card.")
-                print("  /search <q>     - Search for cards matching <q> (displays a table).")
-                print("  /random         - Show a random card from the dataset.")
-                print("  /clear          - Clear the terminal screen.")
-                print("  /help           - Show this help message.")
-                print("  /exit, /quit, q - Exit the interactive shell.")
+                if cmd == '/search':
+                    query = " ".join(cmd_args)
+                    query_pat = re.compile(re.escape(query.replace('-', utils.dash_marker)), re.IGNORECASE)
+                    matched_cards = [c for c in all_cards if c.search(query_pat)]
+                    s_args = copy.copy(args)
+                    s_args.fields = getattr(args, 'fields', 'name,cost,type,stats')
+                    s_args.table = True
+                    if not hasattr(s_args, 'limit'): s_args.limit = 0
+                    _execute_search(matched_cards, s_args)
+                elif cmd == '/compare':
+                    c_args = copy.copy(args)
+                    c_args.names = cmd_args
+                    handle_compare_cards(c_args)
+                elif cmd == '/superior':
+                    if not cmd_args:
+                        print("Error: /superior requires a card name.")
+                        continue
+                    sup_args = copy.copy(args)
+                    sup_args.query = " ".join(cmd_args)
+                    handle_superior(sup_args)
+                elif cmd == '/inferior':
+                    if not cmd_args:
+                        print("Error: /inferior requires a card name.")
+                        continue
+                    inf_args = copy.copy(args)
+                    inf_args.query = " ".join(cmd_args)
+                    handle_inferior(inf_args)
+                elif cmd == '/random':
+                    if not all_cards:
+                        print("No cards loaded.")
+                        continue
+                    count = 1
+                    if cmd_args:
+                        try:
+                            count = int(cmd_args[0])
+                        except ValueError:
+                            count = 1
+                    sampled = random.sample(all_cards, min(count, len(all_cards)))
+                    r_args = copy.copy(args)
+                    r_args.query = None
+                    if not hasattr(r_args, 'limit'): r_args.limit = 0
+                    _execute_oracle(sampled, r_args)
+                elif cmd == '/help':
+                    print("Commands:")
+                    print("  <card name>      - Show official rules text for a specific card.")
+                    print("  /search <q>      - Search for cards matching <q> (displays a table).")
+                    print("  /compare <n1> <n2>... - Compare multiple cards side-by-side.")
+                    print("  /superior <name> - Find cards generally better than the named card.")
+                    print("  /inferior <name> - Find cards generally worse than the named card.")
+                    print("  /random [n]      - Show [n] random cards from the dataset.")
+                    print("  /clear           - Clear the terminal screen.")
+                    print("  /help            - Show this help message.")
+                    print("  /exit, /quit, q  - Exit the interactive shell.")
+                else:
+                    print(f"Unknown command: {cmd}. Type /help for assistance.")
             else:
                 # Oracle lookup
                 o_args = copy.copy(args)
