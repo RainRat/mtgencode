@@ -6,9 +6,10 @@ import json
 import torch
 from collections import OrderedDict
 
-# Add lib directory to path
-libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
-sys.path.append(libdir)
+# Add lib and root directories to path
+script_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(script_dir, '../lib'))
+sys.path.append(os.path.join(script_dir, '..'))
 
 import utils
 import cardlib
@@ -18,20 +19,21 @@ from train import CharRNN, generate_text
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Automated AI model quality assessment. Generates a sample of cards and runs them through the validation suite.",
+        description="Check the quality of an AI model by generating and validating cards.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-This tool automates the evaluation of AI model checkpoints. It generates a batch of cards,
-validates them using scripts/mtg_validate.py logic, and calculates a 'Mechanical Accuracy Score'.
+This tool evaluates AI model checkpoints. It generates a batch of cards,
+checks if they follow the rules using scripts/mtg_validate.py, and calculates
+an 'Accuracy Score'.
 
 Usage Examples:
   # Evaluate a checkpoint by generating 100 cards
   python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --count 100
 
-  # Evaluate with higher creativity (temperature)
+  # Evaluate with higher creativity (temp)
   python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
 
-  # Save detailed failure information for debugging
+  # Save details for cards that failed validation
   python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --dump
 """
     )
@@ -41,7 +43,7 @@ Usage Examples:
     model_group.add_argument('-c', '--checkpoint', default='checkpoint.pt',
                         help='Path to the model checkpoint file (Default: checkpoint.pt).')
     model_group.add_argument('-t', '--temp', type=float, default=0.8,
-                        help='Creativity temperature for generation (Default: 0.8).')
+                        help='Creativity level for generation (Higher is more creative, Default: 0.8).')
     model_group.add_argument('--seed', type=int,
                         help='Seed for the random number generator.')
 
@@ -173,7 +175,7 @@ Usage Examples:
     print()
 
     # Accuracy Highlight
-    acc_label = "Mechanical Accuracy Score:"
+    acc_label = "Accuracy Score:"
     acc_val = f"{accuracy:.1f}%"
     if use_color:
         acc_label = utils.colorize(acc_label, utils.Ansi.BOLD + utils.Ansi.CYAN)
@@ -185,7 +187,7 @@ Usage Examples:
     print()
 
     # Breakdown Table
-    header = ["Property", "Checked", "Good", "Bad", "Success %", "Chart"]
+    header = ["Rule Check", "Checked", "Passed", "Failed", "Success %", "Chart"]
     if use_color:
         header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
 

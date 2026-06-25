@@ -479,12 +479,12 @@ python3 scripts/mtg_validate.py data/AllPrintings.json --dump
     *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_eval.py`
-Automates AI model quality assessment by generating a sample of cards and running them through the validation suite. This provides a single 'Mechanical Accuracy Score' for a given model checkpoint.
+Check the quality of an AI model by generating a sample of cards and running them through a validation check. This calculates an 'Accuracy Score' for the model.
 ```bash
 # Evaluate a checkpoint by generating 100 cards
 python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --count 100
 
-# Evaluate with higher creativity (temperature)
+# Evaluate with higher creativity (temp)
 python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
 ```
 *   **Options:**
