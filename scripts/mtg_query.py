@@ -1512,7 +1512,7 @@ def main():
     # UI/UX Improvement: Intelligent Subcommand Defaults
     # If no subcommand is provided, we intelligently default to 'shell', 'oracle', or 'search'.
     valid_subcommands = ['search', 'oracle', 'random', 'extract', 'sets', 'functional',
-                         'compare', 'superior', 'shell', 'interactive', 'repl']
+                         'compare', 'superior', 'inferior', 'shell', 'interactive', 'repl']
 
     has_subcommand = any(arg in valid_subcommands for arg in sys.argv[1:])
 
