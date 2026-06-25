@@ -536,6 +536,7 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `functional`: Identify and group cards with the same mechanics but different names.
 *   `compare`: Compare two cards side-by-side by name to identify differences.
 *   `superior`: Find cards that are generally better than a reference card.
+*   `inferior`: Find cards that are generally worse than a reference card.
 *   `extract`: Extract a single card object from a large JSON database.
 *   `shell`: Launch an interactive terminal for quick card lookups and searches.
 
@@ -653,6 +654,19 @@ python3 scripts/mtg_query.py superior "Grizzly Bears" --grep "Goblin"
 
 # Find better cards in a specific set
 python3 scripts/mtg_query.py superior "Grizzly Bears" --set MOM
+```
+
+---
+
+#### **Subcommand: `inferior`**
+Identifies "strictly worse" or generally inferior cards by comparing mana cost, stats, and abilities. A card is inferior if the reference card has easier or identical mana cost, equal or better stats, and its abilities are a superset of the candidate card's abilities.
+
+```bash
+# Find cards worse than Black Vise
+python3 scripts/mtg_query.py inferior "Black Vise"
+
+# Find worse cards in a specific set
+python3 scripts/mtg_query.py inferior "Lightning Bolt" --set MOM
 ```
 
 ---
