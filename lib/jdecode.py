@@ -884,8 +884,9 @@ def mtg_open_file(fname, verbose = False,
             print(f"Loaded decklist from {decklist_file} with {len(decklist_names)} unique cards.", file=sys.stderr)
 
     # Directory Handling
-    if fname != '-' and (os.path.isdir(fname) or fname.endswith('.zip')):
-        is_zip = fname.endswith('.zip')
+    fname_lc = fname.lower()
+    if fname != '-' and (os.path.isdir(fname) or fname_lc.endswith('.zip')):
+        is_zip = fname_lc.endswith('.zip')
         if verbose:
             if is_zip:
                 print(f"Opening ZIP archive {fname}...", file=sys.stderr)
@@ -900,9 +901,10 @@ def mtg_open_file(fname, verbose = False,
             # Inner helper to avoid duplication between ZIP and directory
             srcs, bad = {}, set()
             t_cards = []
+            f_lc = f.lower()
 
-            if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.xml'):
-                if f.endswith('.mse-set'):
+            if f_lc.endswith('.json') or f_lc.endswith('.csv') or f_lc.endswith('.jsonl') or f_lc.endswith('.mse-set') or f_lc.endswith('.xml'):
+                if f_lc.endswith('.mse-set'):
                     # Nested ZIP handling
                     with zipfile.ZipFile(io.BytesIO(content if is_zip else open(f, 'rb').read()), 'r') as nested_zf:
                         try:
@@ -912,20 +914,20 @@ def mtg_open_file(fname, verbose = False,
                         except KeyError:
                             if verbose:
                                 print(f"Warning: 'set' file not found in nested MSE file {f}", file=sys.stderr)
-                elif f.endswith('.json'):
+                elif f_lc.endswith('.json'):
                     try:
                         jobj = json.loads(content if is_zip else open(f, 'r', encoding='utf8').read())
                         srcs, bad = mtg_open_json_obj(jobj, verbose=False)
                     except json.JSONDecodeError:
                         pass
-                elif f.endswith('.jsonl'):
+                elif f_lc.endswith('.jsonl'):
                     srcs, bad = mtg_open_jsonl_content(content if is_zip else open(f, 'r', encoding='utf8').read(), verbose=False)
-                elif f.endswith('.xml'):
+                elif f_lc.endswith('.xml'):
                     srcs, bad = mtg_open_xml_content(content if is_zip else open(f, 'r', encoding='utf8').read(), verbose=False)
                 else: # .csv
                     reader = csv.DictReader(io.StringIO(content if is_zip else open(f, 'r', encoding='utf8').read()))
                     srcs, bad = mtg_open_csv_reader(reader, verbose=False)
-            elif f.endswith('.txt'):
+            elif f_lc.endswith('.txt'):
                 text = content if is_zip else open(f, 'r', encoding='utf8').read()
                 if utils.fieldsep in text:
                     for card_src in text.split(utils.cardsep):
@@ -943,12 +945,12 @@ def mtg_open_file(fname, verbose = False,
 
         if is_zip:
             with zipfile.ZipFile(fname, 'r') as zf:
-                files = sorted([f for f in zf.namelist() if not f.endswith('/') and (f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt') or f.endswith('.xml'))])
+                files = sorted([f for f in zf.namelist() if not f.endswith('/') and (f.lower().endswith('.json') or f.lower().endswith('.csv') or f.lower().endswith('.jsonl') or f.lower().endswith('.mse-set') or f.lower().endswith('.txt') or f.lower().endswith('.xml'))])
                 for f in files:
                     if verbose:
                         print(f"  Loading {f} from ZIP...", file=sys.stderr)
                     with zf.open(f) as zfile:
-                        content = zfile.read().decode('utf-8') if not f.endswith('.mse-set') else zfile.read()
+                        content = zfile.read().decode('utf-8') if not f.lower().endswith('.mse-set') else zfile.read()
                         srcs, bad, t_cards = process_file_content(f, content, True)
                         aggregated_bad_sets.update(bad)
                         for key, val in srcs.items():
@@ -960,7 +962,7 @@ def mtg_open_file(fname, verbose = False,
         else:
             for root, dirs, filenames in os.walk(fname):
                 for f in sorted(filenames):
-                    if f.endswith('.json') or f.endswith('.csv') or f.endswith('.jsonl') or f.endswith('.mse-set') or f.endswith('.txt') or f.endswith('.xml'):
+                    if f.lower().endswith('.json') or f.lower().endswith('.csv') or f.lower().endswith('.jsonl') or f.lower().endswith('.mse-set') or f.lower().endswith('.txt') or f.lower().endswith('.xml'):
                         full_path = os.path.join(root, f)
                         if verbose:
                             print(f"Loading {full_path}...", file=sys.stderr)
@@ -994,7 +996,7 @@ def mtg_open_file(fname, verbose = False,
         cards.extend(processed_txt)
 
     # Single JSON File Handling
-    elif fname.endswith('.json'):
+    elif fname_lc.endswith('.json'):
         if verbose:
             print('This looks like a json file: ' + fname, file=sys.stderr)
         json_srcs, bad_sets = mtg_open_json(fname, verbose)
@@ -1004,7 +1006,7 @@ def mtg_open_file(fname, verbose = False,
                                    decklist_names=decklist_names)
 
     # Single CSV File Handling
-    elif fname.endswith('.csv'):
+    elif fname_lc.endswith('.csv'):
         if verbose:
             print('This looks like a csv file: ' + fname, file=sys.stderr)
         csv_srcs, bad_sets = mtg_open_csv(fname, verbose)
@@ -1014,7 +1016,7 @@ def mtg_open_file(fname, verbose = False,
                                    decklist_names=decklist_names)
 
     # Single JSONL File Handling
-    elif fname.endswith('.jsonl'):
+    elif fname_lc.endswith('.jsonl'):
         if verbose:
             print('This looks like a jsonl file: ' + fname, file=sys.stderr)
         jsonl_srcs, bad_sets = mtg_open_jsonl(fname, verbose)
@@ -1024,7 +1026,7 @@ def mtg_open_file(fname, verbose = False,
                                    decklist_names=decklist_names)
 
     # Single XML File Handling
-    elif fname.endswith('.xml'):
+    elif fname_lc.endswith('.xml'):
         if verbose:
             print('This looks like an xml file: ' + fname, file=sys.stderr)
         xml_srcs, bad_sets = mtg_open_xml(fname, verbose)
@@ -1034,7 +1036,7 @@ def mtg_open_file(fname, verbose = False,
                                    decklist_names=decklist_names)
 
     # Single MSE File Handling
-    elif fname.endswith('.mse-set'):
+    elif fname_lc.endswith('.mse-set'):
         if verbose:
             print('This looks like an MSE set file: ' + fname, file=sys.stderr)
         mse_srcs, bad_sets = mtg_open_mse(fname, verbose)
@@ -1044,7 +1046,7 @@ def mtg_open_file(fname, verbose = False,
                                    decklist_names=decklist_names)
 
     # Encoded Text or Decklist File Handling
-    elif fname == '-' or (not fname.endswith('.json') and not fname.endswith('.mse-set')):
+    elif fname == '-' or (not fname_lc.endswith('.json') and not fname_lc.endswith('.mse-set')):
         if fname == '-':
             text = sys.stdin.read()
             # Stdin Format Detection
@@ -1111,7 +1113,7 @@ def mtg_open_file(fname, verbose = False,
                     pass
         else:
             # Check if it's a decklist file based on extension or content
-            is_decklist = fname.endswith('.deck') or fname.endswith('.dek')
+            is_decklist = fname_lc.endswith('.deck') or fname_lc.endswith('.dek')
             if not is_decklist:
                 try:
                     with open(fname, 'rt', encoding='utf8') as f:
@@ -1166,16 +1168,6 @@ def mtg_open_file(fname, verbose = False,
             if verbose:
                  print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
                         + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
-
-    # Single JSON File Handling
-    else:
-        if verbose:
-            print('This looks like a json file: ' + fname, file=sys.stderr)
-        json_srcs, bad_sets = mtg_open_json(fname, verbose)
-
-        cards = _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
-                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
-                                   decklist_names=decklist_names)
 
     if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or actions or produces or color_pie_break or identities or id_counts:
         # Sanitize queries to match internal representations (hyphens are dash_marker)
