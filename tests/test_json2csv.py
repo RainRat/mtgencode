@@ -1,9 +1,14 @@
 import json
 import os
-import subprocess
 import tempfile
 import csv
 import sys
+from unittest.mock import patch
+from scripts.mtg_csv_json import main
+
+def run_json2csv(*args):
+    with patch('sys.argv', ['mtg_csv_json.py', 'json2csv'] + list(args)):
+        main()
 
 def test_json2csv_basic_conversion():
     card_data = {
@@ -35,8 +40,7 @@ def test_json2csv_basic_conversion():
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(card_data, f)
 
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'json2csv.py'))
-        subprocess.run([sys.executable, script_path, json_path, csv_path], check=True)
+        run_json2csv(json_path, csv_path)
 
         with open(csv_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
@@ -84,8 +88,7 @@ def test_json2csv_stats_handling():
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(card_data, f)
 
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'json2csv.py'))
-        subprocess.run([sys.executable, script_path, json_path, csv_path], check=True)
+        run_json2csv(json_path, csv_path)
 
         with open(csv_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
@@ -122,8 +125,7 @@ def test_json2csv_set_filtering():
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(card_data, f)
 
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'json2csv.py'))
-        subprocess.run([sys.executable, script_path, json_path, csv_path, '--set', 'SET1'], check=True)
+        run_json2csv(json_path, csv_path, '--set', 'SET1')
 
         with open(csv_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
@@ -133,25 +135,6 @@ def test_json2csv_set_filtering():
         assert rows[0]['name'] == 'card a'
 
 def test_json2csv_text_unpassing():
-    card_data = {
-        "data": {
-            "TEST": {
-                "name": "Gideon",
-                "code": "TEST",
-                "type": "expansion",
-                "cards": [
-                    {
-                        "name": "Gideon",
-                        "types": ["Planeswalker"],
-                        "rarity": "Mythic",
-                        "text": "+1: Put a % counter on @.",
-                        "loyalty": "4"
-                    }
-                ]
-            }
-        }
-    }
-
     encoded_text = "|1Gideon|5Planeswalker|7mythic|8|9+1: put a % counter on @. \\ countertype % loyalty|3|0Y|"
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -161,8 +144,7 @@ def test_json2csv_text_unpassing():
         with open(txt_path, 'w', encoding='utf-8') as f:
             f.write(encoded_text)
 
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'json2csv.py'))
-        subprocess.run([sys.executable, script_path, txt_path, csv_path], check=True)
+        run_json2csv(txt_path, csv_path)
 
         with open(csv_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
@@ -170,6 +152,106 @@ def test_json2csv_text_unpassing():
 
         assert len(rows) == 1
         assert rows[0]['text'].strip() == '+1: Put a loyalty counter on Gideon.'
+
+def test_json2csv_multi_face():
+    card_data = {
+        "data": {
+            "TEST": {
+                "name": "Test Set",
+                "code": "TEST",
+                "type": "expansion",
+                "cards": [
+                    {
+                        "name": "Fire",
+                        "manaCost": "{1}{R}",
+                        "types": ["Instant"],
+                        "rarity": "Uncommon",
+                        "text": "Fire deals 2 damage.",
+                        "bside": {
+                            "name": "Ice",
+                            "manaCost": "{1}{U}",
+                            "types": ["Instant"],
+                            "text": "Tap target permanent. Draw a card."
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        json_path = os.path.join(tmpdir, 'input.json')
+        csv_path = os.path.join(tmpdir, 'output.csv')
+
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(card_data, f)
+
+        run_json2csv(json_path, csv_path)
+
+        with open(csv_path, 'r', encoding='utf-8', newline='') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+
+        assert len(rows) == 1
+        row = rows[0]
+        assert row['name'] == 'fire // ice'
+        assert row['mana_cost'] == '{1}{R} // {1}{U}'
+        assert row['type'] == 'instant // instant'
+        assert row['text'] == 'Fire deals 2 damage. // Tap target permanent. Draw a card.'
+
+def test_json2csv_color_filtering():
+    card_data = {
+        "data": {
+            "TEST": {
+                "name": "Test Set",
+                "code": "TEST",
+                "type": "expansion",
+                "cards": [
+                    {
+                        "name": "Red Card",
+                        "manaCost": "{R}",
+                        "colors": ["R"],
+                        "types": ["Instant"],
+                        "rarity": "Common"
+                    },
+                    {
+                        "name": "Blue Card",
+                        "manaCost": "{U}",
+                        "colors": ["U"],
+                        "types": ["Instant"],
+                        "rarity": "Common"
+                    }
+                ]
+            }
+        }
+    }
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        json_path = os.path.join(tmpdir, 'input.json')
+        csv_path = os.path.join(tmpdir, 'output.csv')
+
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(card_data, f)
+
+        # Filter for Red cards
+        run_json2csv(json_path, csv_path, '--colors', 'R')
+
+        with open(csv_path, 'r', encoding='utf-8', newline='') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+
+        assert len(rows) == 1
+        assert rows[0]['name'] == 'red card'
+
+        # Filter for Blue cards
+        run_json2csv(json_path, csv_path, '--colors', 'U')
+
+        with open(csv_path, 'r', encoding='utf-8', newline='') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+
+        assert len(rows) == 1
+        assert rows[0]['name'] == 'blue card'
 
 def test_json2csv_via_mtg_csv_json():
     card_data = {
@@ -201,10 +283,8 @@ def test_json2csv_via_mtg_csv_json():
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(card_data, f)
 
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts', 'mtg_csv_json.py'))
-        
         # 1. Test via subcommand json2csv
-        subprocess.run([sys.executable, script_path, 'json2csv', json_path, csv_path], check=True)
+        run_json2csv(json_path, csv_path)
 
         with open(csv_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
@@ -217,7 +297,8 @@ def test_json2csv_via_mtg_csv_json():
         os.remove(csv_path)
 
         # 2. Test via autodetection mode
-        subprocess.run([sys.executable, script_path, json_path, csv_path], check=True)
+        with patch('sys.argv', ['mtg_csv_json.py', json_path, csv_path]):
+            main()
 
         with open(csv_path, 'r', encoding='utf-8', newline='') as f:
             reader = csv.DictReader(f)
