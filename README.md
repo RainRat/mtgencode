@@ -495,19 +495,32 @@ python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
     *   `-j`, `--json`: Output results in structured JSON format.
 
 ### `mtg_llm_validate.py`
-Validates the mechanical integrity of cards using a local Large Language Model (LLM). This tool asks the AI to judge if a card's text follows Magic's rules logic and provides a reason for its decision.
+Validates the mechanical integrity of cards using a Large Language Model (LLM). This tool asks the AI to judge if a card's text follows Magic's rules logic and provides a reason for its decision. It supports both local models and remote APIs.
+
 ```bash
-# Validate cards in a file using the default model (TinyLlama)
+# Validate cards using the default local model (TinyLlama)
 python3 scripts/mtg_llm_validate.py generated_cards.txt
+
+# Use a remote API (e.g., OpenRouter)
+python3 scripts/mtg_llm_validate.py generated.txt --provider api --api-url "https://openrouter.ai/api/v1/chat/completions" --model "meta-llama/llama-3-8b-instruct" --api-key "YOUR_KEY"
+
+# Use a local API (e.g., Ollama)
+python3 scripts/mtg_llm_validate.py generated.txt --provider api --api-url "http://localhost:11434/v1/chat/completions" --model "llama3"
 
 # Validate specific cards and output valid ones to a JSON file
 python3 scripts/mtg_llm_validate.py generated.txt --grep "Grizzly Bears" --only-valid --json > valid.json
 ```
-*   **Requirements:** Requires `transformers`, `torch`, and `accelerate` (installed via `requirements.txt`).
+
+*   **Requirements:**
+    *   **Local Models:** Requires `transformers`, `torch`, and `accelerate` (installed via `requirements.txt`).
+    *   **API Providers:** Only requires the standard Python library (no heavy dependencies).
 *   **Options:**
-    *   `--model MODEL`: The HuggingFace model to use (Default: `TinyLlama/TinyLlama-1.1B-Chat-v1.0`).
-    *   `--device DEVICE`: Device to run on (`cuda`, `cpu`, or `mps`).
-    *   `--batch-size N`: Number of cards to process at once.
+    *   `--provider {transformers,api}`: The backend provider to use (Default: `transformers`).
+    *   `--api-url URL`: The endpoint for the API (Required for `api` provider).
+    *   `--api-key KEY`: Optional authentication token for the API.
+    *   `--model MODEL`: The model to use (e.g., a HuggingFace path or an API model name).
+    *   `--device DEVICE`: Device for local models (`cuda`, `cpu`, or `mps`).
+    *   `--batch-size N`: Number of cards to process at once (Local models only).
     *   `--only-valid`: Filter output to only include cards the LLM judged as valid.
     *   Supports all **Advanced Filtering** flags and multiple output formats (`--json`, `--csv`, `--table`).
 
