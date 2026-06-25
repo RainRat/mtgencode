@@ -38,15 +38,7 @@ class TestJDecodeFinalCoverage(unittest.TestCase):
 
     def test_mtg_open_mse_content_reconstruct_loyalty_edge_cases(self):
         # Covers lines 604-607 (empty lines) and 614 (no loyalty cost key)
-        mse_content = """card:
-	name: PW
-	super type: Legendary Planeswalker
-	rule text:
-		Line 1
-
-		Line 3
-	loyalty cost 1: +1
-"""
+        mse_content = "card:\n\tname: PW\n\tsuper type: Legendary Planeswalker\n\trule text:\n\t\tLine 1\n\t\t\n\t\tLine 3\n\tloyalty cost 1: +1\n"
         srcs, _ = jdecode.mtg_open_mse_content(mse_content)
         card_dict = srcs["pw"][0]
         # Line 1 should have +1: prefix
