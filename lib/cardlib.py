@@ -956,9 +956,9 @@ class Card:
             typeline = utils.colorize(typeline, utils.Ansi.GREEN)
 
         # Stats (P/T or Loyalty/Defense)
-        stats = self._get_pt_display(ansi_color=ansi_color, include_parens=False)
+        stats = self.get_pt_display(ansi_color=ansi_color, include_parens=False)
         if not stats:
-            stats = self._get_loyalty_display(ansi_color=ansi_color, include_parens=False)
+            stats = self.get_loyalty_display(ansi_color=ansi_color, include_parens=False)
 
         # Text
         text = ""
@@ -1158,7 +1158,7 @@ class Card:
             return utils.json_rarity_unmap[self.rarity]
         return self.rarity
 
-    def _get_pt_display(self, ansi_color=False, include_parens=True, unary=False):
+    def get_pt_display(self, ansi_color=False, include_parens=True, unary=False):
         """Helper to format Power/Toughness for display."""
         if not self.pt:
             return ""
@@ -1168,7 +1168,7 @@ class Card:
             res = utils.colorize(res, utils.Ansi.RED)
         return res
 
-    def _get_loyalty_display(self, ansi_color=False, double_paren=False, include_parens=True, unary=False):
+    def get_loyalty_display(self, ansi_color=False, double_paren=False, include_parens=True, unary=False):
         """Helper to format Loyalty or Defense for display."""
         if not self.loyalty:
             return ""
@@ -1585,9 +1585,9 @@ class Card:
             typeline = utils.colorize(typeline, utils.Ansi.GREEN)
 
         # P/T or Loyalty
-        stats = self._get_pt_display(ansi_color=ansi_color)
+        stats = self.get_pt_display(ansi_color=ansi_color)
         if not stats:
-            stats = self._get_loyalty_display(ansi_color=ansi_color)
+            stats = self.get_loyalty_display(ansi_color=ansi_color)
 
         # Construct final header string with consistent bullet separators
         res = f'{status}{rarity_indicator}{cardname}{coststr} \u2022 {typeline}'
@@ -1744,11 +1744,11 @@ class Card:
             outstr += ' (' + rarity_display.lower() + ')'
 
         if gatherer:
-            stats = self._get_pt_display(ansi_color=ansi_color)
+            stats = self.get_pt_display(ansi_color=ansi_color)
             if stats:
                 outstr += ' ' + stats
 
-            stats = self._get_loyalty_display(ansi_color=ansi_color, double_paren=True)
+            stats = self.get_loyalty_display(ansi_color=ansi_color, double_paren=True)
             if stats:
                 outstr += ' ' + stats
 
@@ -1760,11 +1760,11 @@ class Card:
             outstr += linebreak + formatted_mtext
 
         if not gatherer:
-            stats = self._get_pt_display(ansi_color=ansi_color)
+            stats = self.get_pt_display(ansi_color=ansi_color)
             if stats:
                 outstr += linebreak + stats
 
-            stats = self._get_loyalty_display(ansi_color=ansi_color, double_paren=True)
+            stats = self.get_loyalty_display(ansi_color=ansi_color, double_paren=True)
             if stats:
                 outstr += linebreak + stats
 
@@ -1816,9 +1816,9 @@ class Card:
     def _get_face_csv_data(self):
         """Returns the 7 canonical CSV fields for this card face."""
         # P/T or Loyalty/Defense
-        pt_val = self._get_pt_display(include_parens=False)
+        pt_val = self.get_pt_display(include_parens=False)
         if not pt_val:
-            pt_val = self._get_loyalty_display(include_parens=False)
+            pt_val = self.get_loyalty_display(include_parens=False)
 
         # Rarity shorthand
         rarity_short = RARITY_MAP.get(self.rarity, self.rarity)
@@ -1872,7 +1872,7 @@ class Card:
             d['subtypes'] = self.display_subtypes
 
         # Power / Toughness
-        pt_str = self._get_pt_display(include_parens=False)
+        pt_str = self.get_pt_display(include_parens=False)
         if pt_str:
             if '/' in pt_str:
                 p, t = pt_str.split('/', 1)
@@ -1882,7 +1882,7 @@ class Card:
                 d['pt'] = pt_str
 
         # Loyalty / Defense
-        loyalty_val = self._get_loyalty_display(include_parens=False)
+        loyalty_val = self.get_loyalty_display(include_parens=False)
         if loyalty_val:
             if self.is_battle:
                 d['defense'] = loyalty_val
@@ -2107,7 +2107,7 @@ class Card:
             outstr += ' '
 
         if self.loyalty:
-            outstr += self._get_loyalty_display(double_paren=True, unary=True) + ' '
+            outstr += self.get_loyalty_display(double_paren=True, unary=True) + ' '
             
         outstr += self.__dict__[field_text].vectorize()
 

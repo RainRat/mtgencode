@@ -100,27 +100,21 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.GREEN)
     elif canon == 'pt':
-        res = utils.from_unary(card.pt) if card.pt else ""
-        if res and ansi_color:
-            res = utils.colorize(res, utils.Ansi.RED)
+        res = card.get_pt_display(ansi_color=ansi_color, include_parens=False)
     elif canon == 'stats':
-        res = utils.from_unary(card.pt) if card.pt else ""
+        res = card.get_pt_display(ansi_color=ansi_color)
         if not res:
-            res = utils.from_unary(card.loyalty) if card.loyalty else ""
-        if res and ansi_color:
-            res = utils.colorize(res, utils.Ansi.RED)
+            res = card.get_loyalty_display(ansi_color=ansi_color)
     elif canon == 'power':
-        res = utils.from_unary(card.pt_p) if card.pt_p else ""
-        if res and ansi_color:
-            res = utils.colorize(res, utils.Ansi.RED)
+        res = card.get_pt_display(ansi_color=ansi_color, include_parens=False)
+        if '/' in res:
+            res = res.split('/')[0]
     elif canon == 'toughness':
-        res = utils.from_unary(card.pt_t) if card.pt_t else ""
-        if res and ansi_color:
-            res = utils.colorize(res, utils.Ansi.RED)
+        res = card.get_pt_display(ansi_color=ansi_color, include_parens=False)
+        if '/' in res:
+            res = res.split('/')[-1]
     elif canon == 'loyalty':
-        res = utils.from_unary(card.loyalty) if card.loyalty else ""
-        if res and ansi_color:
-            res = utils.colorize(res, utils.Ansi.RED)
+        res = card.get_loyalty_display(ansi_color=ansi_color, include_parens=False)
     elif canon == 'text':
         res = card.get_text(force_unpass=True, ansi_color=ansi_color)
     elif canon == 'rarity':
@@ -558,7 +552,7 @@ def _execute_oracle(cards, args):
                         face_name = utils.colorize(face_name, face._get_ansi_color())
 
                     face_info = face.get_type_line(separator='-')
-                    stats = face._get_pt_display(ansi_color=use_color) or face._get_loyalty_display(ansi_color=use_color)
+                    stats = face.get_pt_display(ansi_color=use_color) or face.get_loyalty_display(ansi_color=use_color)
                     if stats:
                         face_info += f" • {stats}"
                     if use_color:

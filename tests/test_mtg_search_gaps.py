@@ -97,7 +97,7 @@ class TestMtgSearchGaps(unittest.TestCase):
         from lib.cardlib import Card
         card = Card({"name": "Test", "loyalty": "5", "types": ["Planeswalker"]})
         self.assertEqual(get_field_value(card, "loyalty"), "5")
-        self.assertEqual(get_field_value(card, "stats"), "5")
+        self.assertEqual(get_field_value(card, "stats"), "(5)")
 
 if __name__ == '__main__':
     unittest.main()
