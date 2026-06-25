@@ -518,6 +518,14 @@ def _execute_oracle(cards, args):
     if not display_cards:
         return
 
+    # UI/UX Improvement: Support data output formats in oracle command
+    search_formats = ['json', 'jsonl', 'csv', 'table', 'md_table', 'summary', 'text']
+    if any(getattr(args, f, False) for f in search_formats) or getattr(args, 'outfile', None):
+        if not hasattr(args, 'fields'):
+            args.fields = 'name,cost,type,stats,rarity,text'
+        _execute_search(display_cards, args)
+        return
+
     prelimit_count = len(display_cards)
     if args.limit > 0:
         display_cards = display_cards[:args.limit]
@@ -561,7 +569,8 @@ def _execute_oracle(cards, args):
                 else:
                     print("  " + "-" * 40)
 
-                print("  " + face.get_text(ansi_color=use_color).replace('\u2014', '-').replace('\n', '\n  '))
+                # Ensure internal markers are unpassed (e.g. % -> charge)
+                print("  " + face.get_text(ansi_color=use_color, force_unpass=True).replace('\u2014', '-').replace('\n', '\n  '))
                 if face.bside:
                     print_face(face.bside, is_bside=True)
 
@@ -1449,6 +1458,27 @@ def handle_compare_cards(args):
 # --- Main Entry Point ---
 
 def main():
+    # UI/UX Improvement: Intelligent Subcommand Defaults
+    # If no subcommand is provided, we intelligently default to 'shell', 'oracle', or 'search'.
+    valid_subcommands = ['search', 'oracle', 'random', 'extract', 'sets', 'functional',
+                         'compare', 'superior', 'shell', 'interactive', 'repl']
+
+    has_subcommand = any(arg in valid_subcommands for arg in sys.argv[1:])
+
+    if not has_subcommand:
+        if len(sys.argv) == 1:
+            # No arguments: launch shell if in a TTY, otherwise show help
+            if sys.stdin.isatty() and sys.stdout.isatty():
+                sys.argv.insert(1, 'shell')
+        elif sys.argv[1] in ['-h', '--help']:
+            pass
+        elif not sys.argv[1].startswith('-'):
+            # First argument is not a subcommand or a flag: assume it's a card name for oracle lookup
+            sys.argv.insert(1, 'oracle')
+        else:
+            # Flags present but no subcommand: assume 'search'
+            sys.argv.insert(1, 'search')
+
     parser = argparse.ArgumentParser(
         description="Unified tool for searching card data, looking up rules text, and listing set contents.",
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -1520,6 +1550,8 @@ Usage Examples:
     p_oracle.add_argument('query', nargs='?', help='The card name to look up. Supports partial names and fuzzy matching (e.g., "Grizly Bears").')
     p_oracle.add_argument('infile', nargs='?', default='-',
                         help='Input card data file. Defaults to the official dataset (data/AllPrintings.json).')
+    p_oracle.add_argument('-f', '--fields', default='name,cost,type,stats,rarity,text',
+                        help='Fields to extract when using structured output formats.')
     cli_utils.add_standard_filters(p_oracle)
     cli_utils.add_standard_output_args(p_oracle)
     p_oracle.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
