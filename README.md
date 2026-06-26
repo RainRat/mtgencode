@@ -301,6 +301,9 @@ Filter cards using search patterns, set codes, rarities, or decklist files. Thes
         *   `--pow VALUE`: Filter by Power.
         *   `--tou VALUE`: Filter by Toughness.
         *   `--loy VALUE`: Filter by Loyalty or Defense.
+        *   `--complexity VALUE`: Filter by design complexity score.
+        *   `--rating VALUE`: Filter by power rating (efficiency relative to cost).
+        *   `--fair-mv VALUE`: Filter by recommended Fair Mana Value.
     *   `--mechanic NAME`: Include cards with specific keyword abilities or features (e.g., `Flying`, `Activated`, `ETB Effect`).
     *   `--action NAME`: Include cards with specific functional actions (e.g., `Removal`, `Protection`, `Buffs`, `Card Advantage`, `Disruption`, or `Mana`).
     *   `--deck-filter FILE`: Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.

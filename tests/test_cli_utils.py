@@ -132,7 +132,8 @@ def test_load_and_filter_cards_all_args(mock_exists, mock_open):
         mechanics=['M'], actions=['A'], produces=None, color_pie_break=False,
         identities=['I'], id_counts=['1'],
         decklist_file='deck.txt', booster=1, box=1,
-        shuffle=True, seed=42
+        shuffle=True, seed=42,
+        complexities=None, ratings=None, fair_mvs=None
     )
 
 @patch('lib.cli_utils.jdecode.mtg_open_file')

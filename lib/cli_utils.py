@@ -69,6 +69,12 @@ def add_standard_filters(parser):
     filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
                         help='Only include cards with specific Loyalty or Defense values. Supports exact values, '
                              'inequalities, ranges, and multiple values (OR logic).')
+    filter_group.add_argument('--complexity', '--score', action='append',
+                        help='Only include cards with specific design complexity scores. Supports inequalities and ranges.')
+    filter_group.add_argument('--rating', '--power-rating', action='append', dest='rating',
+                        help='Only include cards with specific power ratings (efficiency vs CMC). Supports inequalities and ranges.')
+    filter_group.add_argument('--fair-mv', '--fcmc', '--recommended-cmc', action='append', dest='fair_mv',
+                        help='Only include cards with specific recommended Fair Mana Values. Supports inequalities and ranges.')
     filter_group.add_argument('--mechanic', action='append',
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). '
                              'Supports multiple values (OR logic).')
@@ -195,6 +201,9 @@ def load_and_filter_cards(args):
                                   color_pie_break=getattr(args, 'color_pie_break', False),
                                   identities=getattr(args, 'identity', None), 
                                   id_counts=getattr(args, 'id_count', None),
+                                  complexities=getattr(args, 'complexity', None),
+                                  ratings=getattr(args, 'rating', None),
+                                  fair_mvs=getattr(args, 'fair_mv', None),
                                   decklist_file=getattr(args, 'deck', None),
                                   booster=getattr(args, 'booster', 0), 
                                   box=getattr(args, 'box', 0),
