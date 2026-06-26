@@ -630,7 +630,7 @@ python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre"
 # Compare one card against its most mechanically similar match
 python3 scripts/mtg_query.py compare "Grizzly Bears"
 
-# Compare multiple cards (N-way)
+# Compare any number of cards
 python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre" "Balduvian Bears"
 
 # Compare a pool of cards matching filters
@@ -659,7 +659,7 @@ python3 scripts/mtg_query.py superior "Grizzly Bears" --set MOM
 ---
 
 #### **Subcommand: `inferior`**
-Identifies "strictly worse" or generally inferior cards by comparing mana cost, stats, and abilities. A card is inferior if the reference card has easier or identical mana cost, equal or better stats, and its abilities are a superset of the candidate card's abilities.
+Identifies generally inferior cards by comparing mana cost, stats, and abilities. A card is inferior if the reference card has easier or identical mana cost, equal or better stats, and its abilities include all of the candidate card's mechanics and actions.
 
 ```bash
 # Find cards worse than Black Vise

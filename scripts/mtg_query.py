@@ -1814,13 +1814,13 @@ Usage Examples:
     # Inferior Subparser
     p_inferior = subparsers.add_parser(
         'inferior',
-        help='Find cards that are strictly worse or generally inferior to a reference card.',
+        help='Find cards that are generally inferior to a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Finds "strictly worse" cards by comparing mana cost, stats, and abilities.
+Finds generally inferior cards by comparing mana cost, stats, and abilities.
 A card is considered inferior if the reference card has easier or identical mana cost,
-equal or better stats (P/T or Loyalty), and its abilities are a superset
-of the candidate card's abilities.
+equal or better stats (P/T or Loyalty), and its abilities include all
+of the candidate card's mechanics and actions.
 
 Usage Examples:
   # Find cards worse than Black Vise
