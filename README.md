@@ -693,6 +693,11 @@ python3 scripts/mtg_query.py shell my_cards.json --fields "name,cost,type,pt,rar
 *   **In-Shell Commands:**
     *   `<card name>`: Type any card name to see its official rules text.
     *   `/search <query>`: Perform a bulk search and display results in a table.
+    *   `/compare <n1> <n2>...`: Compare multiple cards side-by-side.
+    *   `/superior <name>`: Find cards that are generally better than the reference card.
+    *   `/inferior <name>`: Find cards that are generally worse than the reference card.
+    *   `/random [n]`: Show one or more random cards from the dataset.
+    *   `/clear`: Clear the terminal screen.
     *   `/help`: Show available commands.
     *   `exit` or `quit`: Leave the shell.
 
