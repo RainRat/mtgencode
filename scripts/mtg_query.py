@@ -728,7 +728,11 @@ def handle_shell(args):
 
         def completer(text, state):
             if text.startswith('/'):
-                commands = ['/search ', '/compare ', '/superior ', '/inferior ', '/random', '/help', '/clear', '/exit', '/quit', '/q']
+                commands = [
+                    '/search ', '/s ', '/compare ', '/c ', '/superior ', '/sup ',
+                    '/inferior ', '/inf ', '/similar ', '/sim ', '/random', '/r',
+                    '/help', '/h', '/?', '/clear', '/exit', '/quit', '/q'
+                ]
                 options = [c for c in commands if c.startswith(text)]
             else:
                 options = [n for n in card_names if n.lower().startswith(text.lower())]
@@ -792,7 +796,7 @@ def handle_shell(args):
                 cmd = parts[0].lower()
                 cmd_args = parts[1:]
 
-                if cmd == '/search':
+                if cmd in ['/search', '/s']:
                     query = " ".join(cmd_args)
                     query_pat = re.compile(re.escape(query.replace('-', utils.dash_marker)), re.IGNORECASE)
                     matched_cards = [c for c in all_cards if c.search(query_pat)]
@@ -801,25 +805,32 @@ def handle_shell(args):
                     s_args.table = True
                     if not hasattr(s_args, 'limit'): s_args.limit = 0
                     _execute_search(matched_cards, s_args)
-                elif cmd == '/compare':
+                elif cmd in ['/compare', '/c']:
                     c_args = copy.copy(args)
                     c_args.names = cmd_args
                     handle_compare_cards(c_args)
-                elif cmd == '/superior':
+                elif cmd in ['/superior', '/sup']:
                     if not cmd_args:
-                        print("Error: /superior requires a card name.")
+                        print(f"Error: {cmd} requires a card name.")
                         continue
                     sup_args = copy.copy(args)
                     sup_args.query = " ".join(cmd_args)
                     handle_superior(sup_args)
-                elif cmd == '/inferior':
+                elif cmd in ['/inferior', '/inf']:
                     if not cmd_args:
-                        print("Error: /inferior requires a card name.")
+                        print(f"Error: {cmd} requires a card name.")
                         continue
                     inf_args = copy.copy(args)
                     inf_args.query = " ".join(cmd_args)
                     handle_inferior(inf_args)
-                elif cmd == '/random':
+                elif cmd in ['/similar', '/sim']:
+                    if not cmd_args:
+                        print(f"Error: {cmd} requires a card name.")
+                        continue
+                    sim_args = copy.copy(args)
+                    sim_args.query = " ".join(cmd_args)
+                    handle_similar(sim_args)
+                elif cmd in ['/random', '/r']:
                     if not all_cards:
                         print("No cards loaded.")
                         continue
@@ -834,17 +845,21 @@ def handle_shell(args):
                     r_args.query = None
                     if not hasattr(r_args, 'limit'): r_args.limit = 0
                     _execute_oracle(sampled, r_args)
-                elif cmd == '/help':
+                elif cmd in ['/help', '/h', '/?']:
+                    h_cmd = lambda c: utils.colorize(c, utils.Ansi.BOLD + utils.Ansi.CYAN) if use_color else c
+                    h_alias = lambda a: utils.colorize(a, utils.Ansi.CYAN) if use_color else a
+
                     print("Commands:")
-                    print("  <card name>      - Show official rules text for a specific card.")
-                    print("  /search <q>      - Search for cards matching <q> (displays a table).")
-                    print("  /compare <n1> <n2>... - Compare multiple cards side-by-side.")
-                    print("  /superior <name> - Find cards generally better than the named card.")
-                    print("  /inferior <name> - Find cards generally worse than the named card.")
-                    print("  /random [n]      - Show [n] random cards from the dataset.")
-                    print("  /clear           - Clear the terminal screen.")
-                    print("  /help            - Show this help message.")
-                    print("  /exit, /quit, q  - Exit the interactive shell.")
+                    print(f"  <card name>           - Show official rules text for a specific card.")
+                    print(f"  {h_cmd('/search')} {h_alias('(/s)')} <q>   - Search for cards matching <q> (displays a table).")
+                    print(f"  {h_cmd('/compare')} {h_alias('(/c)')} <n>... - Compare multiple cards side-by-side.")
+                    print(f"  {h_cmd('/superior')} {h_alias('(/sup)')} <n> - Find cards generally better than the named card.")
+                    print(f"  {h_cmd('/inferior')} {h_alias('(/inf)')} <n> - Find cards generally worse than the named card.")
+                    print(f"  {h_cmd('/similar')} {h_alias('(/sim)')} <n>  - Find cards mechanically similar to the named card.")
+                    print(f"  {h_cmd('/random')} {h_alias('(/r)')} [n]    - Show [n] random cards from the dataset.")
+                    print(f"  {h_cmd('/clear')}              - Clear the terminal screen.")
+                    print(f"  {h_cmd('/help')} {h_alias('(/h, /?)')}    - Show this help message.")
+                    print(f"  {h_cmd('/exit')} {h_alias('(/quit, /q)')} - Exit the interactive shell.")
                 else:
                     print(f"Unknown command: {cmd}. Type /help for assistance.")
             else:
@@ -1092,6 +1107,48 @@ def handle_functional(args):
             print(group[0].summary(ansi_color=use_color).replace('\u2014', '-'))
             print()
 
+def _resolve_target_from_args(args):
+    """Consolidates target card resolution for superior, inferior, and similar subcommands."""
+    # Smart positional argument handling
+    if args.query and os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
+        temp = args.query
+        args.query = args.infile if args.infile != '-' else None
+        args.infile = temp
+
+    cards = cli_utils.load_and_filter_cards(args)
+    if not cards:
+        if not args.quiet:
+            print("No cards found in the dataset.", file=sys.stderr)
+        return None, []
+
+    query = args.query
+    if not query:
+        if not args.quiet:
+            print("Error: No reference card name provided.", file=sys.stderr)
+        return None, cards
+
+    query_sanitized = query.lower().replace('-', utils.dash_marker)
+    target_card = next((c for c in cards if c.name.lower() == query_sanitized), None)
+    if not target_card:
+        # Try finding in the full dataset if not in the filtered pool
+        all_cards = jdecode.mtg_open_file(args.infile, verbose=False)
+        target_card = next((c for c in all_cards if c.name.lower() == query_sanitized), None)
+        if not target_card:
+            # Fuzzy match
+            search_names = {c.name.lower(): c for c in all_cards}
+            close = difflib.get_close_matches(query.lower(), list(search_names.keys()), n=1, cutoff=0.6)
+            if close:
+                target_card = search_names[close[0]]
+                if not args.quiet:
+                    print(f"Notice: Card '{query}' not found. Using best match: {target_card.display_name}", file=sys.stderr)
+
+    if not target_card:
+        if not args.quiet:
+            print(f"Error: Could not find reference card '{query}'", file=sys.stderr)
+        return None, cards
+
+    return target_card, cards
+
 def is_superior(candidate, target):
     if candidate.name.lower() == target.name.lower():
         return False
@@ -1196,44 +1253,9 @@ def is_superior(candidate, target):
     return is_strictly_better
 
 def handle_superior(args):
-    # Smart positional argument handling
-    if args.query and os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
-        temp = args.query
-        args.query = args.infile if args.infile != '-' else None
-        args.infile = temp
-
-    cards = cli_utils.load_and_filter_cards(args)
-    if not cards:
-        if not args.quiet:
-            print("No cards found in the dataset.", file=sys.stderr)
-        return
-
-    query = args.query
-    if not query:
-        if not args.quiet:
-            print("Error: No reference card name provided.", file=sys.stderr)
-        return
-
-    query_sanitized = query.lower().replace('-', utils.dash_marker)
-    target_card = next((c for c in cards if c.name.lower() == query_sanitized), None)
+    target_card, cards = _resolve_target_from_args(args)
     if not target_card:
-        # Try finding in the full dataset if not in the filtered pool
-        all_cards = jdecode.mtg_open_file(args.infile, verbose=False)
-        target_card = next((c for c in all_cards if c.name.lower() == query_sanitized), None)
-        if not target_card:
-            # Fuzzy match
-            search_names = {c.name.lower(): c for c in all_cards}
-            close = difflib.get_close_matches(query.lower(), list(search_names.keys()), n=1, cutoff=0.6)
-            if close:
-                target_card = search_names[close[0]]
-                if not args.quiet:
-                    print(f"Notice: Card '{query}' not found. Using best match: {target_card.display_name}", file=sys.stderr)
-
-    if not target_card:
-        if not args.quiet:
-            print(f"Error: Could not find reference card '{query}'", file=sys.stderr)
         return
-
 
     superior_cards = [c for c in cards if is_superior(c, target_card)]
 
@@ -1246,42 +1268,8 @@ def handle_superior(args):
     _execute_search(superior_cards, args)
 
 def handle_inferior(args):
-    # Smart positional argument handling
-    if args.query and os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
-        temp = args.query
-        args.query = args.infile if args.infile != '-' else None
-        args.infile = temp
-
-    cards = cli_utils.load_and_filter_cards(args)
-    if not cards:
-        if not args.quiet:
-            print("No cards found in the dataset.", file=sys.stderr)
-        return
-
-    query = args.query
-    if not query:
-        if not args.quiet:
-            print("Error: No reference card name provided.", file=sys.stderr)
-        return
-
-    query_sanitized = query.lower().replace('-', utils.dash_marker)
-    target_card = next((c for c in cards if c.name.lower() == query_sanitized), None)
+    target_card, cards = _resolve_target_from_args(args)
     if not target_card:
-        # Try finding in the full dataset if not in the filtered pool
-        all_cards = jdecode.mtg_open_file(args.infile, verbose=False)
-        target_card = next((c for c in all_cards if c.name.lower() == query_sanitized), None)
-        if not target_card:
-            # Fuzzy match
-            search_names = {c.name.lower(): c for c in all_cards}
-            close = difflib.get_close_matches(query.lower(), list(search_names.keys()), n=1, cutoff=0.6)
-            if close:
-                target_card = search_names[close[0]]
-                if not args.quiet:
-                    print(f"Notice: Card '{query}' not found. Using best match: {target_card.display_name}", file=sys.stderr)
-
-    if not target_card:
-        if not args.quiet:
-            print(f"Error: Could not find reference card '{query}'", file=sys.stderr)
         return
 
     # A card is inferior if the target card is superior to it
@@ -1294,6 +1282,34 @@ def handle_inferior(args):
 
     # Use search display for results
     _execute_search(inferior_cards, args)
+
+def handle_similar(args):
+    target_card, cards = _resolve_target_from_args(args)
+    if not target_card:
+        return
+
+    # Finding similar cards in the pool
+    nd = namediff.Namediff(verbose=False, cards=cards)
+    sim_limit = args.limit if args.limit > 0 else 20
+    results = nd.nearest_card(target_card, n=sim_limit + 1) # Include extra for itself
+
+    similar_names = [name.lower() for ratio, name in results if name.lower() != target_card.name.lower()]
+    similar_cards = []
+
+    # Preserve Namediff ranking order
+    for name_lower in similar_names:
+        for c in cards:
+            if c.name.lower() == name_lower:
+                similar_cards.append(c)
+                break
+
+    if not similar_cards:
+        if not args.quiet:
+            print(f"No mechanically similar cards found for {target_card.display_name}.", file=sys.stderr)
+        return
+
+    # Use search display for results
+    _execute_search(similar_cards, args)
 
 def handle_random(args):
     # Smart Positional Argument Handling
@@ -1544,8 +1560,10 @@ def handle_compare_cards(args):
 def main():
     # UI/UX Improvement: Intelligent Subcommand Defaults
     # If no subcommand is provided, we intelligently default to 'shell', 'oracle', or 'search'.
-    valid_subcommands = ['search', 'oracle', 'random', 'extract', 'sets', 'functional',
-                         'compare', 'superior', 'inferior', 'shell', 'interactive', 'repl']
+    valid_subcommands = ['search', 's', 'oracle', 'o', 'random', 'r', 'extract', 'e',
+                         'sets', 'st', 'functional', 'f', 'compare', 'c',
+                         'superior', 'sup', 'inferior', 'inf', 'similar', 'sim',
+                         'shell', 'sh', 'interactive', 'repl']
 
     has_subcommand = any(arg in valid_subcommands for arg in sys.argv[1:])
 
@@ -1572,6 +1590,7 @@ def main():
     # Search Subparser
     p_search = subparsers.add_parser(
         'search',
+        aliases=['s'],
         help='Search card data and extract specific fields.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1617,6 +1636,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
     # Oracle Subparser
     p_oracle = subparsers.add_parser(
         'oracle',
+        aliases=['o'],
         help='Search for a card by name and display its full official rules text.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1649,6 +1669,7 @@ Usage Examples:
     # Random Subparser
     p_random = subparsers.add_parser(
         'random',
+        aliases=['r'],
         help='Display one or more random cards matching the filters.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1686,6 +1707,7 @@ Usage Examples:
     # Extract Subparser
     p_extract = subparsers.add_parser(
         'extract',
+        aliases=['e'],
         help='Extract a single card object from a large JSON database.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1704,6 +1726,7 @@ Usage Examples:
     # Sets Subparser
     p_sets = subparsers.add_parser(
         'sets',
+        aliases=['st'],
         help='List and filter card sets from a data file.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1737,6 +1760,7 @@ Usage Examples:
     # Functional Subparser
     p_functional = subparsers.add_parser(
         'functional',
+        aliases=['f'],
         help='Identify and group cards with the same mechanics but different names.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1773,6 +1797,7 @@ Usage Examples:
     # Compare Subparser
     p_compare = subparsers.add_parser(
         'compare',
+        aliases=['c'],
         help='Compare multiple cards side-by-side.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1803,6 +1828,7 @@ Usage Examples:
     # Superior Subparser
     p_superior = subparsers.add_parser(
         'superior',
+        aliases=['sup'],
         help='Find cards that are generally better than a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1838,6 +1864,7 @@ Usage Examples:
     # Inferior Subparser
     p_inferior = subparsers.add_parser(
         'inferior',
+        aliases=['inf'],
         help='Find cards that are generally inferior to a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1867,10 +1894,44 @@ Usage Examples:
                         help='Separator used between fields in plain text output.')
     p_inferior.set_defaults(func=handle_inferior)
 
+    # Similar Subparser
+    p_similar = subparsers.add_parser(
+        'similar',
+        aliases=['sim'],
+        help='Find cards mechanically similar to a reference card.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Finds cards with similar mechanics, stats, and mana costs using
+weighted string similarity on encoded card data.
+
+Usage Examples:
+  # Find cards similar to Giant Growth
+  python3 scripts/mtg_query.py similar "Giant Growth"
+
+  # Find similar cards that are also Goblins
+  python3 scripts/mtg_query.py similar "Grizzly Bears" --grep "Goblin"
+
+  # Find similar cards in a specific set
+  python3 scripts/mtg_query.py similar "Lightning Bolt" --set MOM
+"""
+    )
+    p_similar.add_argument('query', help='The card name to use as a reference for comparison.')
+    p_similar.add_argument('infile', nargs='?', default='-',
+                           help='Input card data file. Defaults to data/AllPrintings.json.')
+    cli_utils.add_standard_filters(p_similar)
+    cli_utils.add_standard_output_args(p_similar)
+    p_similar.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                           help='Fields to display in the output table.')
+    p_similar.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'rating'],
+                           help='Sort the resulting similar cards (defaults to similarity ranking).')
+    p_similar.add_argument('--delimiter', default=' | ',
+                        help='Separator used between fields in plain text output.')
+    p_similar.set_defaults(func=handle_similar)
+
     # Shell Subparser
     p_shell = subparsers.add_parser(
         'shell',
-        aliases=['interactive', 'repl'],
+        aliases=['sh', 'interactive', 'repl'],
         help='Launch an interactive shell for quick card lookups and searches.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
