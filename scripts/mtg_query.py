@@ -12,6 +12,7 @@ import io
 import shlex
 import copy
 import atexit
+import textwrap
 from collections import Counter, defaultdict, OrderedDict
 from contextlib import redirect_stdout
 
@@ -1564,8 +1565,42 @@ def main():
             sys.argv.insert(1, 'search')
 
     parser = argparse.ArgumentParser(
-        description="Unified tool for searching card data, looking up rules text, and listing set contents.",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        description="Unified MTG tool for searching card data, looking up rules text, and exploring datasets.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent("""
+            Smart Features:
+              This tool includes "smart" logic to make common tasks faster and easier.
+
+              1. Intelligent Subcommand Defaults:
+                 If you don't specify a command, the tool will pick one for you:
+                 - No arguments: Starts the interactive 'shell' (if in a terminal).
+                 - One name: Assumes you want to look up a card's 'oracle' rules text.
+                 - Search flags: Assumes you want to perform a 'search' and extract data.
+
+              2. Automatic Dataset Detection:
+                 If you don't provide an input file, the tool automatically looks for
+                 the official card database at 'data/AllPrintings.json'.
+
+              3. Flexible Argument Handling:
+                 You can often skip the --grep flag or swap the order of arguments.
+                 If an argument isn't a valid file, it's treated as a search query.
+
+            Usage Examples:
+              # Quick card lookup (fuzzy matching supported)
+              python3 scripts/mtg_query.py "Grizly Beers"
+
+              # Search for all Goblins in a table
+              python3 scripts/mtg_query.py search "Goblin" --table
+
+              # Start the interactive terminal
+              python3 scripts/mtg_query.py shell
+
+              # Compare cards side-by-side
+              python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre"
+
+              # Find cards generally better than Grizzly Bears
+              python3 scripts/mtg_query.py superior "Grizzly Bears"
+        """)
     )
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
