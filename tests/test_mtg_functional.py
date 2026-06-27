@@ -132,5 +132,34 @@ class TestMtgFunctional(unittest.TestCase):
             self.assertIn("GROUPS OF CARDS WITH THE SAME MECHANICS (1 match)", out)
             self.assertIn("Split A, Split B", out)
 
+    def test_functional_dedupe(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_file = os.path.join(tmpdir, "test_dedupe.json")
+            out_file = os.path.join(tmpdir, "unique.json")
+            with open(test_file, "w") as f:
+                json.dump([
+                    {"name": "A1", "manaCost": "{W}", "types": ["Creature"], "power": "1", "toughness": "1"},
+                    {"name": "A2", "manaCost": "{W}", "types": ["Creature"], "power": "1", "toughness": "1"},
+                    {"name": "B1", "manaCost": "{U}", "types": ["Creature"], "power": "1", "toughness": "1"}
+                ], f)
+
+            # Test dedupe to stdout
+            code, out, err = self.run_main([test_file, "--dedupe", "--json", "--no-color"])
+            self.assertEqual(code, 0)
+            data = json.loads(out)
+            self.assertEqual(len(data), 2)
+            names = [c['name'] for c in data]
+            self.assertIn("A1", names)
+            self.assertIn("B1", names)
+            self.assertNotIn("A2", names)
+
+            # Test dedupe to file
+            code, out, err = self.run_main([test_file, "--dedupe", out_file, "--json", "--no-color"])
+            self.assertEqual(code, 0)
+            self.assertTrue(os.path.exists(out_file))
+            with open(out_file, "r") as f:
+                data = json.loads(f.read())
+            self.assertEqual(len(data), 2)
+
 if __name__ == '__main__':
     unittest.main()
