@@ -728,7 +728,7 @@ def handle_shell(args):
 
         def completer(text, state):
             if text.startswith('/'):
-                commands = ['/search ', '/compare ', '/superior ', '/inferior ', '/random', '/help', '/clear', '/exit', '/quit', '/q']
+                commands = ['/search ', '/s ', '/compare ', '/c ', '/superior ', '/sup ', '/inferior ', '/inf ', '/random', '/r', '/help', '/h', '/?', '/clear', '/exit', '/quit', '/q']
                 options = [c for c in commands if c.startswith(text)]
             else:
                 options = [n for n in card_names if n.lower().startswith(text.lower())]
@@ -792,7 +792,7 @@ def handle_shell(args):
                 cmd = parts[0].lower()
                 cmd_args = parts[1:]
 
-                if cmd == '/search':
+                if cmd in ['/search', '/s']:
                     query = " ".join(cmd_args)
                     query_pat = re.compile(re.escape(query.replace('-', utils.dash_marker)), re.IGNORECASE)
                     matched_cards = [c for c in all_cards if c.search(query_pat)]
@@ -801,25 +801,25 @@ def handle_shell(args):
                     s_args.table = True
                     if not hasattr(s_args, 'limit'): s_args.limit = 0
                     _execute_search(matched_cards, s_args)
-                elif cmd == '/compare':
+                elif cmd in ['/compare', '/c']:
                     c_args = copy.copy(args)
                     c_args.names = cmd_args
                     handle_compare_cards(c_args)
-                elif cmd == '/superior':
+                elif cmd in ['/superior', '/sup']:
                     if not cmd_args:
-                        print("Error: /superior requires a card name.")
+                        print(f"Error: {cmd} requires a card name.")
                         continue
                     sup_args = copy.copy(args)
                     sup_args.query = " ".join(cmd_args)
                     handle_superior(sup_args)
-                elif cmd == '/inferior':
+                elif cmd in ['/inferior', '/inf']:
                     if not cmd_args:
-                        print("Error: /inferior requires a card name.")
+                        print(f"Error: {cmd} requires a card name.")
                         continue
                     inf_args = copy.copy(args)
                     inf_args.query = " ".join(cmd_args)
                     handle_inferior(inf_args)
-                elif cmd == '/random':
+                elif cmd in ['/random', '/r']:
                     if not all_cards:
                         print("No cards loaded.")
                         continue
@@ -834,17 +834,22 @@ def handle_shell(args):
                     r_args.query = None
                     if not hasattr(r_args, 'limit'): r_args.limit = 0
                     _execute_oracle(sampled, r_args)
-                elif cmd == '/help':
+                elif cmd in ['/help', '/h', '/?']:
+                    def fmt_cmd(c, desc):
+                        if use_color:
+                            c = utils.colorize(c, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                        return f"  {c:<18} - {desc}"
+
                     print("Commands:")
-                    print("  <card name>      - Show official rules text for a specific card.")
-                    print("  /search <q>      - Search for cards matching <q> (displays a table).")
-                    print("  /compare <n1> <n2>... - Compare multiple cards side-by-side.")
-                    print("  /superior <name> - Find cards generally better than the named card.")
-                    print("  /inferior <name> - Find cards generally worse than the named card.")
-                    print("  /random [n]      - Show [n] random cards from the dataset.")
-                    print("  /clear           - Clear the terminal screen.")
-                    print("  /help            - Show this help message.")
-                    print("  /exit, /quit, q  - Exit the interactive shell.")
+                    print(fmt_cmd("<card name>", "Show official rules text for a specific card."))
+                    print(fmt_cmd("/search, /s <q>", "Search for cards matching <q> (displays a table)."))
+                    print(fmt_cmd("/compare, /c <ns>", "Compare multiple cards side-by-side."))
+                    print(fmt_cmd("/superior, /sup <n>", "Find cards generally better than the named card."))
+                    print(fmt_cmd("/inferior, /inf <n>", "Find cards generally worse than the named card."))
+                    print(fmt_cmd("/random, /r [n]", "Show [n] random cards from the dataset."))
+                    print(fmt_cmd("/clear", "Clear the terminal screen."))
+                    print(fmt_cmd("/help, /h, /?", "Show this help message."))
+                    print(fmt_cmd("/exit, /quit, q", "Exit the interactive shell."))
                 else:
                     print(f"Unknown command: {cmd}. Type /help for assistance.")
             else:
@@ -1544,8 +1549,10 @@ def handle_compare_cards(args):
 def main():
     # UI/UX Improvement: Intelligent Subcommand Defaults
     # If no subcommand is provided, we intelligently default to 'shell', 'oracle', or 'search'.
-    valid_subcommands = ['search', 'oracle', 'random', 'extract', 'sets', 'functional',
-                         'compare', 'superior', 'inferior', 'shell', 'interactive', 'repl']
+    valid_subcommands = ['search', 's', 'oracle', 'o', 'random', 'r', 'extract', 'e',
+                         'sets', 'st', 'functional', 'f', 'compare', 'c',
+                         'superior', 'sup', 'inferior', 'inf',
+                         'shell', 'sh', 'interactive', 'repl']
 
     has_subcommand = any(arg in valid_subcommands for arg in sys.argv[1:])
 
@@ -1572,6 +1579,7 @@ def main():
     # Search Subparser
     p_search = subparsers.add_parser(
         'search',
+        aliases=['s'],
         help='Search card data and extract specific fields.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1617,6 +1625,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
     # Oracle Subparser
     p_oracle = subparsers.add_parser(
         'oracle',
+        aliases=['o'],
         help='Search for a card by name and display its full official rules text.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1649,6 +1658,7 @@ Usage Examples:
     # Random Subparser
     p_random = subparsers.add_parser(
         'random',
+        aliases=['r'],
         help='Display one or more random cards matching the filters.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1686,6 +1696,7 @@ Usage Examples:
     # Extract Subparser
     p_extract = subparsers.add_parser(
         'extract',
+        aliases=['e'],
         help='Extract a single card object from a large JSON database.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1704,6 +1715,7 @@ Usage Examples:
     # Sets Subparser
     p_sets = subparsers.add_parser(
         'sets',
+        aliases=['st'],
         help='List and filter card sets from a data file.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1737,6 +1749,7 @@ Usage Examples:
     # Functional Subparser
     p_functional = subparsers.add_parser(
         'functional',
+        aliases=['f'],
         help='Identify and group cards with the same mechanics but different names.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1773,6 +1786,7 @@ Usage Examples:
     # Compare Subparser
     p_compare = subparsers.add_parser(
         'compare',
+        aliases=['c'],
         help='Compare multiple cards side-by-side.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1803,6 +1817,7 @@ Usage Examples:
     # Superior Subparser
     p_superior = subparsers.add_parser(
         'superior',
+        aliases=['sup'],
         help='Find cards that are generally better than a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1838,6 +1853,7 @@ Usage Examples:
     # Inferior Subparser
     p_inferior = subparsers.add_parser(
         'inferior',
+        aliases=['inf'],
         help='Find cards that are generally inferior to a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1870,7 +1886,7 @@ Usage Examples:
     # Shell Subparser
     p_shell = subparsers.add_parser(
         'shell',
-        aliases=['interactive', 'repl'],
+        aliases=['sh', 'interactive', 'repl'],
         help='Launch an interactive shell for quick card lookups and searches.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
