@@ -412,9 +412,9 @@ python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "El
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `mtg_analyze.py profile`
-Identifies the "Mechanical Identity" (signature features) of a card subset by comparing it against a global baseline. This highlights what makes a specific group of cards unique.
+Find what makes a group of cards unique by comparing them to the whole collection. This highlights "signature features" (like mechanics or card types) that appear more often in your selected cards than usual.
 ```bash
-# Profile Green Rare cards to see their defining mechanics
+# Find what makes Green Rare cards unique
 python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors G --rarity rare
 
 # Profile a specific set to see its mechanical themes
@@ -424,11 +424,11 @@ python3 scripts/mtg_analyze.py profile data/AllPrintings.json --set MOM
 python3 scripts/mtg_analyze.py profile my_deck.txt --top 20
 ```
 *   **Metrics:** Calculates Avg CMC, Power, Toughness, and Complexity deltas.
-*   **Signature Features:** Identifies over-represented Mechanics, Actions, and Subtypes using a 'Lift' score (Relative Frequency vs. Baseline).
+*   **Unique Features:** Identifies mechanics and card types that appear more often than usual.
 *   **Options:** Supports all **Advanced Filtering** flags and the `--top N` argument.
 
 ### `mtg_analyze.py summary`
-Shows statistics and reports on mechanics and word variety for your card data. It works with any card data (JSON, CSV, XML, encoded text, etc.).
+Shows general statistics and mechanics for your card data. It works with any card data (JSON, CSV, XML, encoded text, etc.).
 ```bash
 # View statistics for the entire official dataset
 python3 scripts/mtg_analyze.py summary data/AllPrintings.json
@@ -479,7 +479,7 @@ python3 scripts/mtg_validate.py data/AllPrintings.json --dump
     *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_eval.py`
-Check the quality of an AI model by generating a sample of cards and running them through a validation check. This calculates an 'Accuracy Score' for the model.
+Check the quality of an AI model by generating some cards and checking them. This gives the model an 'Accuracy Score'.
 ```bash
 # Evaluate a checkpoint by generating 100 cards
 python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --count 100
@@ -495,10 +495,10 @@ python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
     *   `-j`, `--json`: Output results in structured JSON format.
 
 ### `mtg_llm_validate.py`
-Validates the mechanical integrity of cards using a Large Language Model (LLM). This tool asks the AI to judge if a card's text follows Magic's rules logic and provides a reason for its decision. It supports both local models and remote APIs.
+Checks if cards follow Magic's rules using an AI model. The AI judges if a card's text makes sense within the game rules and explains its decision. It supports both local models and remote APIs.
 
 ```bash
-# Validate cards using the default local model (TinyLlama)
+# Check cards using the default local AI model (TinyLlama)
 python3 scripts/mtg_llm_validate.py generated_cards.txt
 
 # Use a remote API (e.g., OpenRouter)
@@ -526,7 +526,7 @@ python3 scripts/mtg_llm_validate.py generated.txt --grep "Grizzly Bears" --only-
 
 
 ### `mtg_query.py`
-A unified tool for searching, extracting, and listing card data. It consolidates several previous scripts into a single interface using subcommands.
+A single tool for searching, extracting, and listing card data. It combines several features into one interface using subcommands.
 
 #### **Commands:**
 *   `search`: Search card data and extract specific fields.
@@ -764,9 +764,9 @@ python3 scripts/mtg_manabase.py my_deck.txt --include-text
     *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_analyze.py power`
-Analyzes the creature power balance and curve efficiency in a dataset. It calculates a 'Power Rating' relative to CMC to identify outliers (cards that are significantly above or below the expected power curve for their cost).
+Analyzes how strong creatures are for their mana cost. It calculates a 'Power Rating' to identify cards that are significantly stronger or weaker than expected for their cost.
 ```bash
-# Find the most efficient creatures in a specific set
+# Find the strongest creatures for their cost in a set
 python3 scripts/mtg_analyze.py power data/AllPrintings.json --set MOM --limit 10
 
 # Compare average creature efficiency across rarities
@@ -779,7 +779,7 @@ python3 scripts/mtg_analyze.py power generated_cards.txt --json
 *   **Options:** Supports `--json`, `--csv`, and all standard **Advanced Filtering** flags.
 
 ### `mtg_analyze.py asfan`
-Calculates "As-Fan" (As fanned) statistics for a card dataset. As-Fan represents the average number of cards with a certain characteristic (like a specific color, type, or mechanic) a player can expect to see in a single 15-card booster pack.
+Calculates "As-Fan" statistics for a card dataset. This represents the average number of cards with a certain feature (like a specific color or mechanic) a player can expect to see in a single 15-card booster pack.
 ```bash
 # Analyze As-Fan for a specific set
 python3 scripts/mtg_analyze.py asfan data/AllPrintings.json --set MOM
@@ -810,7 +810,7 @@ python3 scripts/mtg_analyze.py interaction generated.txt --min-freq 5
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 ### `mtg_analyze.py types`
-Generates a Type vs. Color heatmap (matrix) cross-referencing card types with Color Identity (W, U, B, R, G, Colorless, Multicolored). This is essential for verifying color-pie balance and archetypal distribution in a set.
+Generates a table showing how card types are spread across different colors. This is useful for checking the balance and themes of a set.
 ```bash
 # Analyze the type/color distribution of a specific set
 python3 scripts/mtg_analyze.py types data/AllPrintings.json --set MOM
@@ -825,7 +825,7 @@ python3 scripts/mtg_analyze.py types data/AllPrintings.json --compare generated.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 ### `mtg_analyze.py audit`
-Performs a comprehensive design 'Health Check' for card datasets. It reports on core metrics (creature density, average CMC, complexity), functional coverage (removal, card advantage, mana fixing), identifies complexity outliers, and flags mechanical color pie violations.
+Performs a complete design check for a card set. It reports on main measurements (like creature density and complexity) and checks for important card effects (like removal and mana fixing). It also identifies overly complex cards and color pie violations.
 ```bash
 # Perform a health audit for a generated set
 python3 scripts/mtg_analyze.py audit generated.txt
@@ -838,7 +838,7 @@ python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM --json > a
 *   **Options:** Supports all **Advanced Filtering** flags and `--json` output.
 
 ### `mtg_analyze.py subtypes`
-Analyzes the distribution of card subtypes (like Creature types, Artifact types, or Spell types) in a dataset. It identifies the most popular subtypes and calculates 'Signature' subtypes for each color identity (types that appear significantly more often in one color than others).
+Analyzes how often different card subtypes (like Elf or Equipment) appear. It identifies the most popular subtypes and finds "signature" types that appear much more often in one color than others.
 ```bash
 # Analyze subtypes for the March of the Machine set
 python3 scripts/mtg_analyze.py subtypes data/AllPrintings.json --set MOM
@@ -891,7 +891,7 @@ python3 scripts/mtg_subset.py data/AllPrintings.json tiny.json --rarity rare --g
 *   Supports all **Advanced Filtering** flags and sorting.
 
 ### `mtg_analyze.py grid`
-Provides a generic 2D cross-tabulation tool for card datasets. This allows you to cross-reference attributes like color, rarity, type, cmc, power, toughness, and mechanic to see how they are distributed.
+Generates a 2D table to compare different card features. This lets you cross-reference things like color, rarity, type, and mechanics to see how they are spread out.
 ```bash
 # Analyze Card Type vs Color Identity for a specific set
 python3 scripts/mtg_analyze.py grid type color --set MOM
@@ -974,7 +974,7 @@ python3 scripts/mtg_analyze.py skeleton data/AllPrintings.json --identity "W"
 *   Supports all **Advanced Filtering** flags, sorting, and booster/box simulation.
 
 ### `mtg_analyze.py archetypes`
-Analyzes the 10 primary two-color pairs in a dataset. It identifies the most important cards and themes for each color combination.
+Analyzes the ten main two-color pairs in a set. It identifies the most important cards and themes for each color combination.
 ```bash
 # Analyze archetypes in a specific set
 python3 scripts/mtg_analyze.py archetypes data/AllPrintings.json --set MOM
@@ -1002,7 +1002,7 @@ python3 scripts/mtg_analyze.py balance my_cards.json
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `mtg_complexity.py`
-Analyzes the heuristic design complexity of cards in a dataset. It calculates a "Complexity Score" based on word count, line count, mechanical density, and color identity, helping designers identify "wordy" or overly complex cards.
+Analyzes how complex cards are. It calculates a "Complexity Score" based on things like word count and mechanics, helping you find cards that are too "wordy".
 ```bash
 # Find the most complex cards in a set
 python3 scripts/mtg_complexity.py data/AllPrintings.json --set MOM --limit 10
@@ -1037,7 +1037,7 @@ python3 scripts/mtg_analyze.py curve data/AllPrintings.json --grep-type "Creatur
     *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_analyze.py mana`
-Identifies mana-producing cards using rules text patterns (e.g., 'Add {G}', 'any color') and intrinsic basic land types. It categorizes producers into Creatures, Artifacts, Lands, and Spells, profiles produced colors, and identifies color-fixing density.
+Finds cards that produce mana using their rules text. It groups them by type and color, and shows how well the set helps you get the colors you need.
 ```bash
 # Analyze mana production for a specific set
 python3 scripts/mtg_analyze.py mana data/AllPrintings.json --set MOM
@@ -1052,7 +1052,7 @@ python3 scripts/mtg_analyze.py mana data/AllPrintings.json --compare generated.t
     *   Supports all **Advanced Filtering** flags and simulation.
 
 ### `mtg_analyze.py costs`
-Analyzes the mana cost intensity (colored pips relative to CMC) and color commitment (distribution of Single, Double, Triple pips) in a dataset. This helps designers identify 'pip-heavy' outliers and ensure the set's requirements match its intended archetypes.
+Analyzes how many colored symbols cards need. This helps you find cards that are hard to cast and see if the set's costs match its themes.
 ```bash
 # Analyze cost intensity for a set
 python3 scripts/mtg_analyze.py costs data/AllPrintings.json --set MOM
@@ -1080,7 +1080,7 @@ python3 scripts/mtg_analyze.py stats data/AllPrintings.json --rarity rare --grep
     *   Supports standard **Advanced Filtering** flags and simulation.
 
 ### `mtg_analyze.py actions`
-Analyzes and categorizes functional card effects (Removal, Protection, Buffs, Card Advantage, Disruption, and Mana) in a dataset. This tool identifies how cards interact with the game state, providing a profile of a set's interactivity.
+Analyzes and groups card effects (Removal, Protection, Buffs, Card Advantage, Disruption, and Mana). This tool shows how cards interact with the game, giving you a profile of how much interaction the set has.
 ```bash
 # Analyze actions for a specific set
 python3 scripts/mtg_analyze.py actions data/AllPrintings.json --set MOM

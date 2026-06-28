@@ -1482,7 +1482,7 @@ def handle_compare(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Unified MTG analysis tool for exploring and auditing Magic card data.",
+        description="Unified tool for exploring and checking Magic card data.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent("""
             Usage Examples:
@@ -1492,7 +1492,7 @@ def main():
               # Analyze the mana curve of a specific set
               python3 scripts/mtg_analyze.py curve data/AllPrintings.json --set MOM
 
-              # Calculate As-Fan statistics (average cards per pack)
+              # Calculate As-Fan statistics (average cards per booster pack)
               python3 scripts/mtg_analyze.py asfan generated.txt
 
               # Analyze mechanical interactions in a card pool
@@ -1501,10 +1501,10 @@ def main():
               # Compare the color lexicon of two datasets
               python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
 
-              # Perform a design health check on a card set
+              # Perform a design check on a card set
               python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM
 
-              # Identify the signature features of Green Rare cards
+              # Find what makes Green Rare cards unique
               python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors G --rarity rare
 
               # Find the most combat-efficient creatures in a set
@@ -1522,7 +1522,7 @@ def main():
     # summary
     p_sum = subparsers.add_parser(
         'summary',
-        help='Show general statistics and mechanical reports for a dataset.',
+        help='Show general statistics and mechanics for a dataset.',
         description=textwrap.dedent("""
             Provides a high-level overview of a card dataset. It reports on
             color distribution, card types, rarities, and frequently used
@@ -1541,18 +1541,18 @@ def main():
     p_sum.set_defaults(func=handle_summary)
 
     # curve
-    p_cur = subparsers.add_parser('curve', help='Analyze and visualize the mana curve (mana cost distribution).')
+    p_cur = subparsers.add_parser('curve', help='Analyze and show the mana curve (mana cost distribution).')
     add_std(p_cur)
     p_cur.set_defaults(func=handle_curve)
 
     # colorpie
-    p_cp = subparsers.add_parser('colorpie', help='Generate a Color Pie chart showing which mechanics appear in each color.')
+    p_cp = subparsers.add_parser('colorpie', help='Generate a chart showing which mechanics appear in each color.')
     add_std(p_cp)
     p_cp.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
     p_cp.set_defaults(func=handle_colorpie)
 
     # grid
-    p_gr = subparsers.add_parser('grid', help='Generate a 2D table to cross-reference card attributes (like color vs. rarity).')
+    p_gr = subparsers.add_parser('grid', help='Generate a 2D table to compare card features (like color vs. rarity).')
     p_gr.add_argument('row_dim', choices=DIMENSIONS.keys(), help='Dimension to use for rows (e.g., color, rarity, type).')
     p_gr.add_argument('col_dim', choices=DIMENSIONS.keys(), help='Dimension to use for columns (e.g., cmc, mechanic).')
     add_std(p_gr)
@@ -1565,19 +1565,19 @@ def main():
     p_ty.set_defaults(func=handle_types)
 
     # skeleton
-    p_sk = subparsers.add_parser('skeleton', help='Generate a "Design Skeleton" bucketing cards by type and CMC.')
+    p_sk = subparsers.add_parser('skeleton', help='Generate a "Design Skeleton" grouping cards by type and mana cost.')
     add_std(p_sk)
     p_sk.add_argument('outfile', nargs='?', default=None, help='Save the skeleton to a file.')
     p_sk.set_defaults(func=handle_skeleton)
 
     # mana
-    p_ma = subparsers.add_parser('mana', help='Identify and profile mana-producing cards.')
+    p_ma = subparsers.add_parser('mana', help='Identify and show cards that produce mana.')
     add_std(p_ma)
     p_ma.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
     p_ma.set_defaults(func=handle_mana)
 
     # pips
-    p_pi = subparsers.add_parser('pips', help='Analyze the distribution of mana symbols (pips).')
+    p_pi = subparsers.add_parser('pips', help='Analyze the distribution of mana symbols.')
     add_std(p_pi)
     p_pi.add_argument('outfile', nargs='?', default=None, help='Save pip distribution to a file.')
     p_pi.add_argument('--include-text', action='store_true', help='Include mana symbols found in rules text (e.g., activation costs).')
@@ -1586,13 +1586,13 @@ def main():
     p_pi.set_defaults(func=handle_pips)
 
     # costs
-    p_co = subparsers.add_parser('costs', help='Analyze how many colored mana symbols cards require relative to their total cost.')
+    p_co = subparsers.add_parser('costs', help='Analyze how many colored mana symbols cards need compared to their total cost.')
     add_std(p_co)
     p_co.add_argument('outfile', nargs='?', default=None, help='Save cost analysis to a file.')
     p_co.set_defaults(func=handle_costs)
 
     # mechanics
-    p_me = subparsers.add_parser('mechanics', help='List recognized mechanics and calculate their frequency.')
+    p_me = subparsers.add_parser('mechanics', help='List recognized mechanics and how often they appear.')
     add_std(p_me)
     p_me.add_argument('--compare', '-c', help='Compare frequencies with a second dataset.')
     p_me.add_argument('--sort', choices=['name','count'], default='name', help='Sort mechanics by name or count.')
@@ -1608,8 +1608,8 @@ def main():
         description=textwrap.dedent("""
             Analyzes how different mechanics (like Flying and Trample) appear together
             on the same cards. It identifies frequent pairings and calculates a
-            'Lift Score' to measure how often they appear together compared to
-            what would happen by random chance.
+            'Lift Score' to see if these mechanics appear together more often
+            than they would by random chance.
 
             The Lift Score shows the relationship between two mechanics:
             - Score > 1.0: The mechanics appear together MORE often than expected.
@@ -1626,9 +1626,9 @@ def main():
     # actions
     p_ac = subparsers.add_parser(
         'actions',
-        help='Analyze and categorize functional card effects (Removal, Buffs, etc).',
+        help='Analyze and group card effects (Removal, Buffs, etc).',
         description=textwrap.dedent("""
-            Analyzes and categorizes functional card effects like Removal,
+            Analyzes and groups card effects like Removal,
             Protection, Buffs, Card Advantage, Disruption, and Mana. This
             tool identifies how cards interact with the game state, providing
             a profile of a set's interactivity.
@@ -1657,7 +1657,7 @@ def main():
     p_le.set_defaults(func=handle_lexicon)
 
     # stats
-    p_st = subparsers.add_parser('stats', help='Analyze creature combat stats (P/T) and Planeswalker loyalty.')
+    p_st = subparsers.add_parser('stats', help='Analyze creature combat stats (P/T) and Planeswalker loyalty/defense.')
     add_std(p_st)
     p_st.add_argument('outfile', nargs='?', default=None, help='Save combat stats to a file.')
     p_st.set_defaults(func=handle_stats)
@@ -1665,11 +1665,11 @@ def main():
     # power
     p_po = subparsers.add_parser(
         'power',
-        help='Analyze creature combat efficiency relative to mana cost.',
+        help='Analyze how strong creatures are for their mana cost.',
         description=textwrap.dedent("""
             Analyzes the creature power balance in a dataset. It calculates a
             'Power Rating' relative to mana cost to identify cards that are
-            significantly above or below the expected combat strength for their cost.
+            significantly stronger or weaker than expected for their cost.
 
             A rating of 1.0 represents a basic 2/2 creature with no abilities for
             2 mana. Keywords like Flying or Indestructible increase the rating.
@@ -1683,9 +1683,9 @@ def main():
     # archetypes
     p_ar = subparsers.add_parser(
         'archetypes',
-        help='Profile the themes and key mechanics of the ten primary two-color pairs.',
+        help='Show the main themes and mechanics for the ten two-color pairs.',
         description=textwrap.dedent("""
-            Analyzes the ten primary two-color combinations (archetypes) in a dataset.
+            Analyzes the ten primary two-color combinations in a dataset.
             It identifies the most important cards, signature mechanics, and
             average stats for each color pair to help you understand the themes
             of a set.
@@ -1701,9 +1701,9 @@ def main():
     # balance
     p_ba = subparsers.add_parser(
         'balance',
-        help='Compare how color pairs are distributed between datasets.',
+        help='Compare how color pairs are spread between datasets.',
         description=textwrap.dedent("""
-            Analyzes and compares the distribution of two-color pairs (archetypes)
+            Analyzes and compares the distribution of two-color pairs
             between different datasets. This helps you verify if a generated or
             custom set maintains the same color balance as the original official
             data.
@@ -1724,7 +1724,7 @@ def main():
     # asfan
     p_as = subparsers.add_parser(
         'asfan',
-        help='Calculate "As-Fan" (average cards per pack) statistics.',
+        help='Calculate "As-Fan" (average cards per booster pack) statistics.',
         description=textwrap.dedent("""
             Calculates "As-Fan" (As-fanned) statistics for a card dataset.
             As-Fan represents the average number of cards with a certain
@@ -1739,12 +1739,12 @@ def main():
     p_as.set_defaults(func=handle_asfan)
 
     # tokens
-    p_to = subparsers.add_parser('tokens', help='Extract and summarize token definitions from rules text.')
+    p_to = subparsers.add_parser('tokens', help='Find and summarize token descriptions from rules text.')
     add_std(p_to)
     p_to.set_defaults(func=handle_tokens)
 
     # subtypes
-    p_sub = subparsers.add_parser('subtypes', help='Analyze the distribution of card subtypes.')
+    p_sub = subparsers.add_parser('subtypes', help='Analyze how often different card subtypes appear.')
     add_std(p_sub)
     p_sub.add_argument('outfile', nargs='?', default=None, help='Save subtype analysis to a file.')
     p_sub.add_argument('--top', type=int, default=10, help='Number of entries to show in tables (Default: 10).')
@@ -1753,12 +1753,12 @@ def main():
     # profile
     p_prof = subparsers.add_parser(
         'profile',
-        help='Identify the "Mechanical Identity" (signature features) of a card subset.',
+        help='Find what makes a group of cards unique by comparing them to the whole collection.',
         description=textwrap.dedent("""
-            Identifies the defining characteristics of a card subset by comparing
-            it against a global baseline. It highlights "signature features"
+            Identifies the defining features of a card subset by comparing
+            it against the rest of the dataset. It highlights "signature features"
             (mechanics, actions, or subtypes) that appear significantly more
-            often in your selected cards than in the rest of the dataset.
+            often in your selected cards than usual.
         """),
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -1769,23 +1769,24 @@ def main():
     # audit
     p_audit = subparsers.add_parser(
         'audit',
-        help='Perform a comprehensive design health check of a card dataset.',
+        help='Perform a complete check of how well a card set is designed.',
         description=textwrap.dedent("""
-            Performs a comprehensive design health check of a card dataset.
-            This tool calculates several core metrics and functional coverage
-            statistics, comparing them against standard design targets:
+            Performs a complete design check of a card dataset.
+            This tool calculates several main measurements and checks the
+            density of card effects, comparing them against standard
+            design targets:
 
-            Core Metrics:
+            Main Measurements:
             - Creature Density (Target: 50%)
             - Average CMC (Target: 3.0)
             - Average Complexity (Target: 40)
 
-            Functional Coverage:
+            Card Effects:
             - Removal Density (Target: 10%)
             - Card Advantage (Target: 8%)
             - Mana Fixing (Target: 5%)
 
-            The audit also identifies complexity outliers and detects
+            The audit also identifies overly complex cards and detects
             mechanical color pie violations.
         """),
         epilog=textwrap.dedent("""
@@ -1805,7 +1806,7 @@ def main():
     p_audit.set_defaults(func=handle_audit)
 
     # compare
-    p_comp = subparsers.add_parser('compare', help='Provide a side-by-side statistical comparison of two or more datasets.')
+    p_comp = subparsers.add_parser('compare', help='Compare two or more datasets side-by-side.')
     p_comp.add_argument('infiles', nargs='+', help='Two or more card data files to compare.')
     add_std(p_comp)
     p_comp.set_defaults(func=handle_compare)

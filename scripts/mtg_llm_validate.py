@@ -203,11 +203,11 @@ def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, ver
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Validate card mechanical integrity using a Large Language Model.",
+        description="Check if cards follow Magic's rules using an AI model.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
-  # Validate cards in a file using the default local Transformers model
+  # Check cards in a file using the default local AI model
   python3 scripts/mtg_llm_validate.py generated_cards.txt
 
   # Validate specific cards by name
@@ -246,7 +246,7 @@ Usage Examples:
     model_group.add_argument('--device', default=default_device,
                         help='Device to run the model on (cuda, cpu, mps). Default: cuda if available.')
     model_group.add_argument('--batch-size', type=int, default=1,
-                        help='Number of cards to process in each LLM batch. Default: 1.')
+                        help='Number of cards to process in each AI batch. Default: 1.')
 
     # Group: Output Format
     fmt_group = parser.add_argument_group('Output Format')
