@@ -90,7 +90,7 @@ class TestMtgProfile(unittest.TestCase):
                 output = fake_out.getvalue()
 
                 # Check for key sections
-                self.assertIn("MECHANICAL IDENTITY PROFILE", output)
+                self.assertIn("UNIQUE FEATURES PROFILE", output)
                 self.assertIn("Avg CMC", output)
                 self.assertIn("Signature Mechanics", output)
                 self.assertIn("Flying", output)
