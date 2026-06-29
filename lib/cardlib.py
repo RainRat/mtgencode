@@ -645,6 +645,7 @@ class Card:
         self.set_code = None
         self.number = None
         self.rulings = []
+        self.legalities = {}
 
         self.bside = None
         # format-independent view of processed input
@@ -656,6 +657,7 @@ class Card:
             self.set_code = src.get('setCode')
             self.number = src.get('number')
             self.rulings = src.get('rulings', [])
+            self.legalities = src.get('legalities', {})
             if utils.json_field_bside in src:
                 self.bside = Card(src[utils.json_field_bside],
                                   fmt_ordered = fmt_ordered,
@@ -1928,6 +1930,9 @@ class Card:
 
         if self.rulings:
             d['rulings'] = self.rulings
+
+        if self.legalities:
+            d['legalities'] = self.legalities
 
         if hasattr(self, 'box_id'):
             d['box_id'] = self.box_id

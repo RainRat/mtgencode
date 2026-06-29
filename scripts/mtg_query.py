@@ -61,6 +61,7 @@ FIELD_MAP = {
     'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'color_pie': {'header': 'Color Pie', 'align': 'l', 'aliases': ['break']},
+    'legalities': {'header': 'Legalities', 'align': 'l', 'aliases': ['formats', 'legal']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
 
@@ -173,6 +174,12 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         else:
             res = "Valid"
             if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
+        return res
+    elif canon == 'legalities':
+        legal_formats = sorted([f.title() for f, l in card.legalities.items() if l == 'legal'])
+        if not legal_formats: return "None"
+        res = ", ".join(legal_formats)
+        if ansi_color: res = utils.colorize(res, utils.Ansi.CYAN)
         return res
     elif canon == 'produced':
         produced = card.produced_colors
@@ -691,6 +698,15 @@ def _execute_oracle(cards, args):
                 analytics_parts.append(f"{fmt_label('COLOR PIE:')} {cp_val}")
 
             footer_lines.append(" \u2022 ".join(analytics_parts))
+
+            # Legality
+            if c.legalities:
+                legal_formats = sorted([f.upper() for f, l in c.legalities.items() if l == 'legal'])
+                if legal_formats:
+                    leg_val = ", ".join(legal_formats)
+                    if use_color:
+                        leg_val = utils.colorize(leg_val, utils.Ansi.CYAN)
+                    footer_lines.append(f"{fmt_label('LEGALITIES:')} {leg_val}")
 
             print() # Spacer before footer
             for line in footer_lines:
