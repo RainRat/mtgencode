@@ -203,7 +203,7 @@ def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, ver
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Validate card mechanical integrity using a Large Language Model.",
+        description="Check how well cards follow rules using an AI model.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:

@@ -1501,10 +1501,10 @@ def main():
               # Compare the color lexicon of two datasets
               python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
 
-              # Perform a design health check on a card set
+              # Perform a check of how well a card set is designed
               python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM
 
-              # Identify the signature features of Green Rare cards
+              # Identify the unique features of Green Rare cards
               python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors G --rarity rare
 
               # Find the most combat-efficient creatures in a set
@@ -1565,7 +1565,7 @@ def main():
     p_ty.set_defaults(func=handle_types)
 
     # skeleton
-    p_sk = subparsers.add_parser('skeleton', help='Generate a "Design Skeleton" bucketing cards by type and CMC.')
+    p_sk = subparsers.add_parser('skeleton', help='Generate a "Design Skeleton" (grouping cards by type and mana cost).')
     add_std(p_sk)
     p_sk.add_argument('outfile', nargs='?', default=None, help='Save the skeleton to a file.')
     p_sk.set_defaults(func=handle_skeleton)
@@ -1604,9 +1604,9 @@ def main():
     p_sy = subparsers.add_parser(
         'interaction',
         aliases=['synergy'],
-        help='Analyze how often different mechanics appear together.',
+        help='Analyze how different mechanics appear together.',
         description=textwrap.dedent("""
-            Analyzes how different mechanics (like Flying and Trample) appear together
+            Analyzes how different mechanics appear together
             on the same cards. It identifies frequent pairings and calculates a
             'Lift Score' to measure how often they appear together compared to
             what would happen by random chance.
@@ -1665,9 +1665,9 @@ def main():
     # power
     p_po = subparsers.add_parser(
         'power',
-        help='Analyze creature combat efficiency relative to mana cost.',
+        help='Analyze how strong creatures are for their mana cost.',
         description=textwrap.dedent("""
-            Analyzes the creature power balance in a dataset. It calculates a
+            Analyzes how strong creatures are for their mana cost. It calculates a
             'Power Rating' relative to mana cost to identify cards that are
             significantly above or below the expected combat strength for their cost.
 
@@ -1724,9 +1724,9 @@ def main():
     # asfan
     p_as = subparsers.add_parser(
         'asfan',
-        help='Calculate "As-Fan" (average cards per pack) statistics.',
+        help='Calculate "As-Fan" (average cards per booster pack) statistics.',
         description=textwrap.dedent("""
-            Calculates "As-Fan" (As-fanned) statistics for a card dataset.
+            Calculates "As-Fan" (average cards per booster pack) statistics.
             As-Fan represents the average number of cards with a certain
             characteristic (like a specific color, type, or mechanic) a player
             can expect to see in a single 15-card booster pack.
@@ -1753,7 +1753,7 @@ def main():
     # profile
     p_prof = subparsers.add_parser(
         'profile',
-        help='Identify the "Mechanical Identity" (signature features) of a card subset.',
+        help='Identify the unique features of a card subset.',
         description=textwrap.dedent("""
             Identifies the defining characteristics of a card subset by comparing
             it against a global baseline. It highlights "signature features"
@@ -1769,9 +1769,9 @@ def main():
     # audit
     p_audit = subparsers.add_parser(
         'audit',
-        help='Perform a comprehensive design health check of a card dataset.',
+        help='Perform a check of how well a card set is designed.',
         description=textwrap.dedent("""
-            Performs a comprehensive design health check of a card dataset.
+            Performs a check of how well a card set is designed.
             This tool calculates several core metrics and functional coverage
             statistics, comparing them against standard design targets:
 

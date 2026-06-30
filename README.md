@@ -412,7 +412,7 @@ python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "El
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `mtg_analyze.py profile`
-Identifies the "Mechanical Identity" (signature features) of a card subset by comparing it against a global baseline. This highlights what makes a specific group of cards unique.
+Identifies the unique features of a card subset by comparing it against a global baseline. This highlights what makes a specific group of cards unique.
 ```bash
 # Profile Green Rare cards to see their defining mechanics
 python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors G --rarity rare
@@ -495,7 +495,7 @@ python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
     *   `-j`, `--json`: Output results in structured JSON format.
 
 ### `mtg_llm_validate.py`
-Validates the mechanical integrity of cards using a Large Language Model (LLM). This tool asks the AI to judge if a card's text follows Magic's rules logic and provides a reason for its decision. It supports both local models and remote APIs.
+Checks how well cards follow rules using an AI model. This tool asks the AI to judge if a card's text follows Magic's rules logic and provides a reason for its decision. It supports both local models and remote APIs.
 
 ```bash
 # Validate cards using the default local model (TinyLlama)
@@ -825,7 +825,7 @@ python3 scripts/mtg_analyze.py types data/AllPrintings.json --compare generated.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 ### `mtg_analyze.py audit`
-Performs a comprehensive design 'Health Check' for card datasets. It reports on core metrics (creature density, average CMC, complexity), functional coverage (removal, card advantage, mana fixing), identifies complexity outliers, and flags mechanical color pie violations.
+Performs a check of how well a card set is designed. It reports on core metrics (creature density, average CMC, complexity), functional coverage (removal, card advantage, mana fixing), identifies complexity outliers, and flags mechanical color pie violations.
 ```bash
 # Perform a health audit for a generated set
 python3 scripts/mtg_analyze.py audit generated.txt
