@@ -106,14 +106,12 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         res = card.get_pt_display(ansi_color=ansi_color)
         if not res:
             res = card.get_loyalty_display(ansi_color=ansi_color)
-    elif canon == 'power':
-        res = card.get_pt_display(ansi_color=ansi_color, include_parens=False)
+    elif canon == 'power' or canon == 'toughness':
+        res = card.get_pt_display(ansi_color=False, include_parens=False)
         if '/' in res:
-            res = res.split('/')[0]
-    elif canon == 'toughness':
-        res = card.get_pt_display(ansi_color=ansi_color, include_parens=False)
-        if '/' in res:
-            res = res.split('/')[-1]
+            res = res.split('/')[0] if canon == 'power' else res.split('/')[-1]
+        if ansi_color and res:
+            res = utils.colorize(res, utils.Ansi.RED)
     elif canon == 'loyalty':
         res = card.get_loyalty_display(ansi_color=ansi_color, include_parens=False)
     elif canon == 'text':
