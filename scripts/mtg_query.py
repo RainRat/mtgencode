@@ -61,6 +61,8 @@ FIELD_MAP = {
     'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'color_pie': {'header': 'Color Pie', 'align': 'l', 'aliases': ['break']},
+    'legendary': {'header': 'Legendary', 'align': 'l', 'aliases': []},
+    'permanent': {'header': 'Permanent', 'align': 'l', 'aliases': []},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
 
@@ -173,6 +175,16 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         else:
             res = "Valid"
             if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
+        return res
+    elif canon == 'legendary':
+        res = "Yes" if card.is_legendary else "No"
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.BOLD + (utils.Ansi.YELLOW if card.is_legendary else utils.Ansi.WHITE))
+        return res
+    elif canon == 'permanent':
+        res = "Yes" if card.is_permanent else "No"
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.BOLD + (utils.Ansi.CYAN if card.is_permanent else utils.Ansi.WHITE))
         return res
     elif canon == 'produced':
         produced = card.produced_colors
@@ -728,7 +740,7 @@ def handle_shell(args):
 
         def completer(text, state):
             if text.startswith('/'):
-                commands = ['/search ', '/compare ', '/superior ', '/inferior ', '/random', '/help', '/clear', '/exit', '/quit', '/q']
+                commands = ['/search ', '/compare ', '/reprints ', '/superior ', '/inferior ', '/random', '/help', '/clear', '/exit', '/quit', '/q']
                 options = [c for c in commands if c.startswith(text)]
             else:
                 options = [n for n in card_names if n.lower().startswith(text.lower())]
@@ -805,6 +817,13 @@ def handle_shell(args):
                     c_args = copy.copy(args)
                     c_args.names = cmd_args
                     handle_compare_cards(c_args)
+                elif cmd == '/reprints':
+                    if not cmd_args:
+                        print("Error: /reprints requires a card name.")
+                        continue
+                    rep_args = copy.copy(args)
+                    rep_args.query = " ".join(cmd_args)
+                    handle_reprints(rep_args)
                 elif cmd == '/superior':
                     if not cmd_args:
                         print("Error: /superior requires a card name.")
@@ -839,6 +858,7 @@ def handle_shell(args):
                     print("  <card name>      - Show official rules text for a specific card.")
                     print("  /search <q>      - Search for cards matching <q> (displays a table).")
                     print("  /compare <n1> <n2>... - Compare multiple cards side-by-side.")
+                    print("  /reprints <name> - Find cards with identical mechanics/cost to <name>.")
                     print("  /superior <name> - Find cards generally better than the named card.")
                     print("  /inferior <name> - Find cards generally worse than the named card.")
                     print("  /random [n]      - Show [n] random cards from the dataset.")
@@ -1295,6 +1315,56 @@ def handle_inferior(args):
     # Use search display for results
     _execute_search(inferior_cards, args)
 
+def handle_reprints(args):
+    # Smart positional argument handling
+    if args.query and os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
+        temp = args.query
+        args.query = args.infile if args.infile != '-' else None
+        args.infile = temp
+
+    cards = cli_utils.load_and_filter_cards(args)
+    if not cards:
+        if not args.quiet:
+            print("No cards found in the dataset.", file=sys.stderr)
+        return
+
+    query = args.query
+    if not query:
+        if not args.quiet:
+            print("Error: No reference card name provided.", file=sys.stderr)
+        return
+
+    query_sanitized = query.lower().replace('-', utils.dash_marker)
+    target_card = next((c for c in cards if c.name.lower() == query_sanitized), None)
+    if not target_card:
+        # Try finding in the full dataset if not in the filtered pool
+        all_cards = jdecode.mtg_open_file(args.infile, verbose=False)
+        target_card = next((c for c in all_cards if c.name.lower() == query_sanitized), None)
+        if not target_card:
+            # Fuzzy match
+            search_names = {c.name.lower(): c for c in all_cards}
+            close = difflib.get_close_matches(query.lower(), list(search_names.keys()), n=1, cutoff=0.6)
+            if close:
+                target_card = search_names[close[0]]
+                if not args.quiet:
+                    print(f"Notice: Card '{query}' not found. Using best match: {target_card.display_name}", file=sys.stderr)
+
+    if not target_card:
+        if not args.quiet:
+            print(f"Error: Could not find reference card '{query}'", file=sys.stderr)
+        return
+
+    target_key = get_functional_key(target_card)
+    reprints = [c for c in cards if get_functional_key(c) == target_key and c.name.lower() != target_card.name.lower()]
+
+    if not reprints:
+        if not args.quiet:
+            print(f"No functional reprints found for {target_card.display_name}.", file=sys.stderr)
+        return
+
+    # Use search display for results
+    _execute_search(reprints, args)
+
 def handle_random(args):
     # Smart Positional Argument Handling
     if args.count and not str(args.count).isdigit() and os.path.exists(str(args.count)) and args.infile == '-':
@@ -1545,7 +1615,7 @@ def main():
     # UI/UX Improvement: Intelligent Subcommand Defaults
     # If no subcommand is provided, we intelligently default to 'shell', 'oracle', or 'search'.
     valid_subcommands = ['search', 'oracle', 'random', 'extract', 'sets', 'functional',
-                         'compare', 'superior', 'inferior', 'shell', 'interactive', 'repl']
+                         'reprints', 'compare', 'superior', 'inferior', 'shell', 'interactive', 'repl']
 
     has_subcommand = any(arg in valid_subcommands for arg in sys.argv[1:])
 
@@ -1834,6 +1904,36 @@ Usage Examples:
     p_superior.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     p_superior.set_defaults(func=handle_superior)
+
+    # Reprints Subparser
+    p_reprints = subparsers.add_parser(
+        'reprints',
+        help='Find functional reprints (identical mechanics) of a reference card.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Finds cards with identical mana cost, types, stats, and mechanics/text
+as the reference card, excluding the reference card itself.
+
+Usage Examples:
+  # Find reprints of Grizzly Bears
+  python3 scripts/mtg_query.py reprints "Grizzly Bears"
+
+  # Find reprints of Lightning Bolt in a specific set
+  python3 scripts/mtg_query.py reprints "Lightning Bolt" --set MOM
+"""
+    )
+    p_reprints.add_argument('query', help='The card name to use as a reference for comparison.')
+    p_reprints.add_argument('infile', nargs='?', default='-',
+                           help='Input card data file. Defaults to data/AllPrintings.json.')
+    cli_utils.add_standard_filters(p_reprints)
+    cli_utils.add_standard_output_args(p_reprints)
+    p_reprints.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                           help='Fields to display in the output table.')
+    p_reprints.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'rating'],
+                           help='Sort the resulting reprint cards.')
+    p_reprints.add_argument('--delimiter', default=' | ',
+                        help='Separator used between fields in plain text output.')
+    p_reprints.set_defaults(func=handle_reprints)
 
     # Inferior Subparser
     p_inferior = subparsers.add_parser(

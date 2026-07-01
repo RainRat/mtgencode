@@ -708,6 +708,11 @@ class Card:
         tn = type_name.lower()
         return tn in self.types or any(t.lower() == tn for t in self.types)
 
+    def _has_supertype(self, supertype_name):
+        """Returns True if the card has the specified supertype (case-insensitive)."""
+        sn = supertype_name.lower()
+        return sn in self.supertypes or any(s.lower() == sn for s in self.supertypes)
+
     def _has_subtype(self, subtype_name):
         """Returns True if the card has the specified subtype (case-insensitive)."""
         sn = subtype_name.lower()
@@ -717,6 +722,11 @@ class Card:
     def is_artifact(self):
         """Returns True if the card is an artifact."""
         return self._has_type('artifact')
+
+    @property
+    def is_legendary(self):
+        """Returns True if the card is legendary."""
+        return self._has_supertype('legendary')
 
     @property
     def is_creature(self):
@@ -752,6 +762,11 @@ class Card:
     def is_sorcery(self):
         """Returns True if the card is a sorcery."""
         return self._has_type('sorcery')
+
+    @property
+    def is_permanent(self):
+        """Returns True if the card is a permanent (Artifact, Creature, Enchantment, Land, Planeswalker, or Battle)."""
+        return self.is_artifact or self.is_creature or self.is_enchantment or self.is_land or self.is_planeswalker or self.is_battle
 
     @property
     def tokens(self):
