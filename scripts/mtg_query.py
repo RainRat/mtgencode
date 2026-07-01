@@ -728,7 +728,7 @@ def handle_shell(args):
 
         def completer(text, state):
             if text.startswith('/'):
-                commands = ['/search ', '/compare ', '/superior ', '/inferior ', '/random', '/help', '/clear', '/exit', '/quit', '/q']
+                commands = ['/search ', '/s ', '/compare ', '/c ', '/superior ', '/sup ', '/inferior ', '/inf ', '/random', '/r', '/help', '/h', '/?', '/clear', '/exit', '/quit', '/q']
                 options = [c for c in commands if c.startswith(text)]
             else:
                 options = [n for n in card_names if n.lower().startswith(text.lower())]
@@ -792,7 +792,7 @@ def handle_shell(args):
                 cmd = parts[0].lower()
                 cmd_args = parts[1:]
 
-                if cmd == '/search':
+                if cmd in ['/search', '/s']:
                     query = " ".join(cmd_args)
                     query_pat = re.compile(re.escape(query.replace('-', utils.dash_marker)), re.IGNORECASE)
                     matched_cards = [c for c in all_cards if c.search(query_pat)]
@@ -801,25 +801,25 @@ def handle_shell(args):
                     s_args.table = True
                     if not hasattr(s_args, 'limit'): s_args.limit = 0
                     _execute_search(matched_cards, s_args)
-                elif cmd == '/compare':
+                elif cmd in ['/compare', '/c']:
                     c_args = copy.copy(args)
                     c_args.names = cmd_args
                     handle_compare_cards(c_args)
-                elif cmd == '/superior':
+                elif cmd in ['/superior', '/sup']:
                     if not cmd_args:
                         print("Error: /superior requires a card name.")
                         continue
                     sup_args = copy.copy(args)
                     sup_args.query = " ".join(cmd_args)
                     handle_superior(sup_args)
-                elif cmd == '/inferior':
+                elif cmd in ['/inferior', '/inf']:
                     if not cmd_args:
                         print("Error: /inferior requires a card name.")
                         continue
                     inf_args = copy.copy(args)
                     inf_args.query = " ".join(cmd_args)
                     handle_inferior(inf_args)
-                elif cmd == '/random':
+                elif cmd in ['/random', '/r']:
                     if not all_cards:
                         print("No cards loaded.")
                         continue
@@ -834,17 +834,26 @@ def handle_shell(args):
                     r_args.query = None
                     if not hasattr(r_args, 'limit'): r_args.limit = 0
                     _execute_oracle(sampled, r_args)
-                elif cmd == '/help':
+                elif cmd in ['/help', '/h', '/?']:
+                    def fmt_cmd(c, aliases, desc):
+                        cmd_str = f"  {c}"
+                        if aliases:
+                            cmd_str += f" ({', '.join(aliases)})"
+                        if use_color:
+                            cmd_str = utils.colorize(cmd_str, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                        padding = " " * (30 - utils.visible_len(cmd_str))
+                        return f"{cmd_str}{padding} - {desc}"
+
                     print("Commands:")
-                    print("  <card name>      - Show official rules text for a specific card.")
-                    print("  /search <q>      - Search for cards matching <q> (displays a table).")
-                    print("  /compare <n1> <n2>... - Compare multiple cards side-by-side.")
-                    print("  /superior <name> - Find cards generally better than the named card.")
-                    print("  /inferior <name> - Find cards generally worse than the named card.")
-                    print("  /random [n]      - Show [n] random cards from the dataset.")
-                    print("  /clear           - Clear the terminal screen.")
-                    print("  /help            - Show this help message.")
-                    print("  /exit, /quit, q  - Exit the interactive shell.")
+                    print(fmt_cmd("<card name>", [], "Show official rules text for a specific card."))
+                    print(fmt_cmd("/search <q>", ["/s"], "Search for cards matching <q> (displays a table)."))
+                    print(fmt_cmd("/compare <n1> <n2>...", ["/c"], "Compare multiple cards side-by-side."))
+                    print(fmt_cmd("/superior <name>", ["/sup"], "Find cards generally better than the named card."))
+                    print(fmt_cmd("/inferior <name>", ["/inf"], "Find cards generally worse than the named card."))
+                    print(fmt_cmd("/random [n]", ["/r"], "Show [n] random cards from the dataset."))
+                    print(fmt_cmd("/clear", [], "Clear the terminal screen."))
+                    print(fmt_cmd("/help", ["/h", "/?"], "Show this help message."))
+                    print(fmt_cmd("/exit", ["/quit", "/q", "exit", "quit", "q"], "Exit the interactive shell."))
                 else:
                     print(f"Unknown command: {cmd}. Type /help for assistance.")
             else:
