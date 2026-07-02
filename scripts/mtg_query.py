@@ -760,8 +760,18 @@ def handle_shell(args):
 
         def completer(text, state):
             if text.startswith('/'):
-                commands = ['/search ', '/compare ', '/reprints ', '/superior ', '/inferior ', '/random', '/help', '/clear', '/exit', '/quit', '/q']
-                options = [c for c in commands if c.startswith(text)]
+                commands = [
+                    '/search ', '/s ',
+                    '/compare ', '/c ',
+                    '/reprints ', '/rep ',
+                    '/superior ', '/sup ',
+                    '/inferior ', '/inf ',
+                    '/random ', '/r ',
+                    '/help', '/h', '/?',
+                    '/clear',
+                    '/exit', '/quit', '/q'
+                ]
+                options = [c for c in commands if c.startswith(text.lower())]
             else:
                 options = [n for n in card_names if n.lower().startswith(text.lower())]
 
@@ -824,43 +834,52 @@ def handle_shell(args):
                 cmd = parts[0].lower()
                 cmd_args = parts[1:]
 
-                if cmd == '/search':
+                if cmd in ['/search', '/s']:
                     query = " ".join(cmd_args)
                     query_pat = re.compile(re.escape(query.replace('-', utils.dash_marker)), re.IGNORECASE)
                     matched_cards = [c for c in all_cards if c.search(query_pat)]
                     s_args = copy.copy(args)
-                    s_args.fields = getattr(args, 'fields', 'name,cost,type,stats')
+                    # Use same default fields as shell subcommand
+                    s_args.fields = getattr(args, 'fields', 'name,cost,type,stats,rarity')
                     s_args.table = True
                     if not hasattr(s_args, 'limit'): s_args.limit = 0
                     _execute_search(matched_cards, s_args)
-                elif cmd == '/compare':
+                elif cmd in ['/compare', '/c']:
                     c_args = copy.copy(args)
                     c_args.names = cmd_args
                     handle_compare_cards(c_args)
-                elif cmd == '/reprints':
+                elif cmd in ['/reprints', '/rep']:
                     if not cmd_args:
-                        print("Error: /reprints requires a card name.")
+                        err_msg = "Error: /reprints requires a card name."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
                         continue
                     rep_args = copy.copy(args)
                     rep_args.query = " ".join(cmd_args)
                     handle_reprints(rep_args)
-                elif cmd == '/superior':
+                elif cmd in ['/superior', '/sup']:
                     if not cmd_args:
-                        print("Error: /superior requires a card name.")
+                        err_msg = "Error: /superior requires a card name."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
                         continue
                     sup_args = copy.copy(args)
                     sup_args.query = " ".join(cmd_args)
                     handle_superior(sup_args)
-                elif cmd == '/inferior':
+                elif cmd in ['/inferior', '/inf']:
                     if not cmd_args:
-                        print("Error: /inferior requires a card name.")
+                        err_msg = "Error: /inferior requires a card name."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
                         continue
                     inf_args = copy.copy(args)
                     inf_args.query = " ".join(cmd_args)
                     handle_inferior(inf_args)
-                elif cmd == '/random':
+                elif cmd in ['/random', '/r']:
                     if not all_cards:
-                        print("No cards loaded.")
+                        err_msg = "No cards loaded."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
                         continue
                     count = 1
                     if cmd_args:
@@ -873,20 +892,38 @@ def handle_shell(args):
                     r_args.query = None
                     if not hasattr(r_args, 'limit'): r_args.limit = 0
                     _execute_oracle(sampled, r_args)
-                elif cmd == '/help':
-                    print("Commands:")
-                    print("  <card name>      - Show official rules text for a specific card.")
-                    print("  /search <q>      - Search for cards matching <q> (displays a table).")
-                    print("  /compare <n1> <n2>... - Compare multiple cards side-by-side.")
-                    print("  /reprints <name> - Find cards with identical mechanics/cost to <name>.")
-                    print("  /superior <name> - Find cards generally better than the named card.")
-                    print("  /inferior <name> - Find cards generally worse than the named card.")
-                    print("  /random [n]      - Show [n] random cards from the dataset.")
-                    print("  /clear           - Clear the terminal screen.")
-                    print("  /help            - Show this help message.")
-                    print("  /exit, /quit, q  - Exit the interactive shell.")
+                elif cmd in ['/help', '/h', '/?']:
+                    utils.print_header("SHELL COMMANDS", use_color=use_color)
+
+                    def fmt_cmd(name, alias, desc):
+                        c_part = f"  {name}"
+                        if alias:
+                            c_part += f" ({alias})"
+
+                        pad_len = 22 - utils.visible_len(c_part)
+                        if use_color:
+                            c_part = utils.colorize(c_part, utils.Ansi.BOLD + utils.Ansi.CYAN)
+
+                        print(f"{c_part}{' ' * max(0, pad_len)} - {desc}")
+
+                    name_label = "  <card name>"
+                    name_pad = 22 - utils.visible_len(name_label)
+                    print(f"{name_label}{' ' * max(0, name_pad)} - Show official rules text for a specific card.")
+
+                    fmt_cmd("/search <q>", "/s", "Search for cards matching <q> (displays a table).")
+                    fmt_cmd("/compare <n>...", "/c", "Compare multiple cards side-by-side.")
+                    fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
+                    fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
+                    fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
+                    fmt_cmd("/random [n]", "/r", "Show [n] random cards from the dataset.")
+                    fmt_cmd("/clear", None, "Clear the terminal screen.")
+                    fmt_cmd("/help", "/h, /?", "Show this help message.")
+                    fmt_cmd("/exit", "/quit, /q", "Exit the interactive shell.")
+                    print()
                 else:
-                    print(f"Unknown command: {cmd}. Type /help for assistance.")
+                    err_msg = f"Unknown command: {cmd}. Type /help for assistance."
+                    if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                    print(err_msg)
             else:
                 # Oracle lookup
                 o_args = copy.copy(args)
