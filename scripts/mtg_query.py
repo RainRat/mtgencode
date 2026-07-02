@@ -1346,42 +1346,8 @@ def handle_inferior(args):
     _execute_search(inferior_cards, args)
 
 def handle_reprints(args):
-    # Smart positional argument handling
-    if args.query and os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
-        temp = args.query
-        args.query = args.infile if args.infile != '-' else None
-        args.infile = temp
-
-    cards = cli_utils.load_and_filter_cards(args)
-    if not cards:
-        if not args.quiet:
-            print("No cards found in the dataset.", file=sys.stderr)
-        return
-
-    query = args.query
-    if not query:
-        if not args.quiet:
-            print("Error: No reference card name provided.", file=sys.stderr)
-        return
-
-    query_sanitized = query.lower().replace('-', utils.dash_marker)
-    target_card = next((c for c in cards if c.name.lower() == query_sanitized), None)
+    target_card, cards = _resolve_target_from_args(args)
     if not target_card:
-        # Try finding in the full dataset if not in the filtered pool
-        all_cards = jdecode.mtg_open_file(args.infile, verbose=False)
-        target_card = next((c for c in all_cards if c.name.lower() == query_sanitized), None)
-        if not target_card:
-            # Fuzzy match
-            search_names = {c.name.lower(): c for c in all_cards}
-            close = difflib.get_close_matches(query.lower(), list(search_names.keys()), n=1, cutoff=0.6)
-            if close:
-                target_card = search_names[close[0]]
-                if not args.quiet:
-                    print(f"Notice: Card '{query}' not found. Using best match: {target_card.display_name}", file=sys.stderr)
-
-    if not target_card:
-        if not args.quiet:
-            print(f"Error: Could not find reference card '{query}'", file=sys.stderr)
         return
 
     target_key = get_functional_key(target_card)
