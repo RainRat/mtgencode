@@ -19,7 +19,7 @@ class TestMtgLlmValidateGaps(unittest.TestCase):
         mock_card = MagicMock(spec=cardlib.Card)
         res = mtg_llm_validate.parse_llm_response("Malformed output", mock_card)
         self.assertEqual(res['judgment'], 'UNKNOWN')
-        self.assertEqual(res['reason'], 'Reason not found in LLM response.')
+        self.assertEqual(res['reason'], 'Reason not found in AI model response.')
 
     @patch('urllib.request.urlopen')
     def test_validate_cards_llm_api_error_handling(self, mock_urlopen):

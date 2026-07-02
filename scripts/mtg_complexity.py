@@ -17,10 +17,10 @@ import cardlib
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Analyze the design complexity of cards in a dataset. This tool calculates a 'Complexity Score' to help identify 'wordy' or mechanically dense cards.",
+        description="Analyze how complex cards are. This tool calculates a 'Complexity Score' to help identify 'wordy' or mechanically dense cards.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-The Complexity Score is a heuristic that measures how difficult a card is to read and understand. Higher scores indicate "wordier" cards or those with many mechanical features.
+The Complexity Score measures how difficult a card is to read and understand. Higher scores indicate "wordier" cards or those with many mechanical features.
 
 How the score is calculated:
   - Each word in the rules text: +1 point

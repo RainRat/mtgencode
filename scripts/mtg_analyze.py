@@ -1174,7 +1174,7 @@ def handle_profile(args):
     b_metrics = get_metrics(baseline_cards)
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
-    utils.print_header("MECHANICAL IDENTITY PROFILE", count=f"{t_metrics['cnt']} cards", use_color=use_color)
+    utils.print_header("UNIQUE FEATURES PROFILE", count=f"{t_metrics['cnt']} cards", use_color=use_color)
 
     stats_rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Metric", "Subset", "Baseline", "Delta"]]]
     for label, key, reverse in [("Avg CMC", 'cmc', True), ("Avg Power", 'pow', False), ("Avg Toughness", 'tou', False), ("Avg Complexity", 'comp', True)]:
@@ -1269,7 +1269,7 @@ def handle_audit(args):
         color_counts[get_color_group(c)] += 1
         rarity_counts[c.rarity_name.title()] += 1
 
-    # 2. Functional Coverage
+    # 2. Common Card Effects
     actions = Counter()
     fixing_cards = 0
     for c in cards:
@@ -1338,7 +1338,7 @@ def handle_audit(args):
     print_stat("Average CMC", audit_data['avg_cmc'], target=3.0)
     print_stat("Average Complexity", audit_data['avg_complexity'], target=40)
 
-    print(f"\n  {datalib.color_line('Functional Coverage:', use_color)}")
+    print(f"\n  {datalib.color_line('Common Card Effects:', use_color)}")
     print_stat("Removal Density", audit_data['functional_coverage'].get('Removal', 0), target=10, unit="%")
     print_stat("Card Advantage", audit_data['functional_coverage'].get('Card Advantage', 0), target=8, unit="%")
     print_stat("Mana Fixing", audit_data['fixing_density'], target=5, unit="%")
@@ -1492,22 +1492,22 @@ def main():
               # Analyze the mana curve of a specific set
               python3 scripts/mtg_analyze.py curve data/AllPrintings.json --set MOM
 
-              # Calculate As-Fan statistics (average cards per pack)
+              # Calculate average cards per booster pack (As-Fan) statistics
               python3 scripts/mtg_analyze.py asfan generated.txt
 
-              # Analyze mechanical interactions in a card pool
+              # Analyze how often different mechanics work together
               python3 scripts/mtg_analyze.py interaction my_cards.json --min-freq 5
 
               # Compare the color lexicon of two datasets
               python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
 
-              # Perform a design health check on a card set
+              # Check how well a card set is designed
               python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM
 
-              # Identify the signature features of Green Rare cards
+              # Identify the unique features of Green Rare cards
               python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors G --rarity rare
 
-              # Find the most combat-efficient creatures in a set
+              # Find the strongest creatures for their mana cost
               python3 scripts/mtg_analyze.py power data/AllPrintings.json --set MOM --limit 10
         """)
     )
@@ -1565,7 +1565,7 @@ def main():
     p_ty.set_defaults(func=handle_types)
 
     # skeleton
-    p_sk = subparsers.add_parser('skeleton', help='Generate a "Design Skeleton" bucketing cards by type and CMC.')
+    p_sk = subparsers.add_parser('skeleton', help='Group cards by their type and mana cost (Design Skeleton).')
     add_std(p_sk)
     p_sk.add_argument('outfile', nargs='?', default=None, help='Save the skeleton to a file.')
     p_sk.set_defaults(func=handle_skeleton)
@@ -1604,12 +1604,12 @@ def main():
     p_sy = subparsers.add_parser(
         'interaction',
         aliases=['synergy'],
-        help='Analyze how often different mechanics appear together.',
+        help='Analyze how often different mechanics work together.',
         description=textwrap.dedent("""
-            Analyzes how different mechanics (like Flying and Trample) appear together
-            on the same cards. It identifies frequent pairings and calculates a
-            'Lift Score' to measure how often they appear together compared to
-            what would happen by random chance.
+            Analyzes how often different mechanics (like Flying and Trample) appear
+            together on the same cards. It identifies frequent pairings and
+            calculates a 'Lift Score' to measure how often they appear together
+            compared to what would happen by random chance.
 
             The Lift Score shows the relationship between two mechanics:
             - Score > 1.0: The mechanics appear together MORE often than expected.
@@ -1665,11 +1665,11 @@ def main():
     # power
     p_po = subparsers.add_parser(
         'power',
-        help='Analyze creature combat efficiency relative to mana cost.',
+        help='Analyze how strong creatures are for their mana cost.',
         description=textwrap.dedent("""
             Analyzes the creature power balance in a dataset. It calculates a
             'Power Rating' relative to mana cost to identify cards that are
-            significantly above or below the expected combat strength for their cost.
+            significantly above or below the expected strength for their cost.
 
             A rating of 1.0 represents a basic 2/2 creature with no abilities for
             2 mana. Keywords like Flying or Indestructible increase the rating.
@@ -1724,7 +1724,7 @@ def main():
     # asfan
     p_as = subparsers.add_parser(
         'asfan',
-        help='Calculate "As-Fan" (average cards per pack) statistics.',
+        help='Calculate average cards per booster pack (As-Fan) statistics.',
         description=textwrap.dedent("""
             Calculates "As-Fan" (As-fanned) statistics for a card dataset.
             As-Fan represents the average number of cards with a certain
@@ -1753,10 +1753,10 @@ def main():
     # profile
     p_prof = subparsers.add_parser(
         'profile',
-        help='Identify the "Mechanical Identity" (signature features) of a card subset.',
+        help='Identify the unique features of a card subset.',
         description=textwrap.dedent("""
-            Identifies the defining characteristics of a card subset by comparing
-            it against a global baseline. It highlights "signature features"
+            Identifies the unique features of a card subset by comparing
+            it against the rest of the cards. It highlights "signature features"
             (mechanics, actions, or subtypes) that appear significantly more
             often in your selected cards than in the rest of the dataset.
         """),
@@ -1769,18 +1769,18 @@ def main():
     # audit
     p_audit = subparsers.add_parser(
         'audit',
-        help='Perform a comprehensive design health check of a card dataset.',
+        help='Check how well a card set is designed.',
         description=textwrap.dedent("""
-            Performs a comprehensive design health check of a card dataset.
-            This tool calculates several core metrics and functional coverage
-            statistics, comparing them against standard design targets:
+            Performs a comprehensive check of how well a card set is designed.
+            This tool calculates several core metrics and how often common
+            card effects appear, comparing them against standard design targets:
 
             Core Metrics:
             - Creature Density (Target: 50%)
             - Average CMC (Target: 3.0)
             - Average Complexity (Target: 40)
 
-            Functional Coverage:
+            Common Card Effects:
             - Removal Density (Target: 10%)
             - Card Advantage (Target: 8%)
             - Mana Fixing (Target: 5%)

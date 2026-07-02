@@ -415,7 +415,7 @@ python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "El
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `mtg_analyze.py profile`
-Identifies the "Mechanical Identity" (signature features) of a card subset by comparing it against a global baseline. This highlights what makes a specific group of cards unique.
+Identifies the unique features of a card subset by comparing it against the rest of the cards. This highlights what makes a specific group of cards unique.
 ```bash
 # Profile Green Rare cards to see their defining mechanics
 python3 scripts/mtg_analyze.py profile data/AllPrintings.json --colors G --rarity rare
@@ -498,7 +498,7 @@ python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
     *   `-j`, `--json`: Output results in structured JSON format.
 
 ### `mtg_llm_validate.py`
-Validates the mechanical integrity of cards using a Large Language Model (LLM). This tool asks the AI to judge if a card's text follows Magic's rules logic and provides a reason for its decision. It supports both local models and remote APIs.
+Checks how well cards follow rules using an AI model. This tool asks the AI to judge if a card's text follows Magic's rules logic and provides a reason for its decision. It supports both local models and remote APIs.
 
 ```bash
 # Validate cards using the default local model (TinyLlama)
@@ -782,12 +782,12 @@ python3 scripts/mtg_analyze.py power generated_cards.txt --json
 *   **Options:** Supports `--json`, `--csv`, and all standard **Advanced Filtering** flags.
 
 ### `mtg_analyze.py asfan`
-Calculates "As-Fan" (As fanned) statistics for a card dataset. As-Fan represents the average number of cards with a certain characteristic (like a specific color, type, or mechanic) a player can expect to see in a single 15-card booster pack.
+Calculates average cards per booster pack (As-Fan) statistics for a card dataset. As-Fan represents the average number of cards with a certain characteristic (like a specific color, type, or mechanic) a player can expect to see in a single 15-card booster pack.
 ```bash
-# Analyze As-Fan for a specific set
+# Calculate average cards per booster pack (As-Fan) for a specific set
 python3 scripts/mtg_analyze.py asfan data/AllPrintings.json --set MOM
 
-# Compare As-Fan of a generated set vs official data
+# Compare As-Fan statistics of a generated set vs official data
 python3 scripts/mtg_analyze.py asfan data/AllPrintings.json --compare generated.txt
 ```
 *   **Options:**
@@ -828,7 +828,7 @@ python3 scripts/mtg_analyze.py types data/AllPrintings.json --compare generated.
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 ### `mtg_analyze.py audit`
-Performs a comprehensive design 'Health Check' for card datasets. It reports on core metrics (creature density, average CMC, complexity), functional coverage (removal, card advantage, mana fixing), identifies complexity outliers, and flags mechanical color pie violations.
+Performs a comprehensive check of how well a card set is designed. It reports on core metrics (creature density, average CMC, complexity), common card effects (removal, card advantage, mana fixing), identifies complexity outliers, and flags mechanical color pie violations.
 ```bash
 # Perform a health audit for a generated set
 python3 scripts/mtg_analyze.py audit generated.txt
@@ -966,7 +966,7 @@ python3 scripts/mtg_analyze.py tokens data/AllPrintings.json --set MOM --json
     *   Supports standard **Advanced Filtering** flags (`--grep`, `--set`, `--rarity`).
 
 ### `mtg_analyze.py skeleton`
-Generates a "Design Skeleton" (Set Skeleton) for a dataset, bucketing cards by their type and CMC (Converted Mana Cost). This provides a high-level view of the mechanical curve and balance of a set.
+Groups cards by their type and mana cost (Design Skeleton). This provides a high-level view of the mechanical curve and balance of a set.
 ```bash
 # Generate skeleton for a dataset
 python3 scripts/mtg_analyze.py skeleton data/AllPrintings.json --set MOM
@@ -1005,7 +1005,7 @@ python3 scripts/mtg_analyze.py balance my_cards.json
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `mtg_complexity.py`
-Analyzes the heuristic design complexity of cards in a dataset. It calculates a "Complexity Score" based on word count, line count, mechanical density, and color identity, helping designers identify "wordy" or overly complex cards.
+Analyzes how complex cards are. It calculates a "Complexity Score" based on word count, line count, mechanical density, and color identity, helping designers identify "wordy" or overly complex cards.
 ```bash
 # Find the most complex cards in a set
 python3 scripts/mtg_complexity.py data/AllPrintings.json --set MOM --limit 10

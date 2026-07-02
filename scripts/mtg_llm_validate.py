@@ -43,7 +43,7 @@ def get_prompt_messages(card):
         {
             "role": "system",
             "content": (
-                "You are an expert Magic: The Gathering rules judge. Your task is to evaluate the mechanical validity of custom cards. "
+                "You are an expert Magic: The Gathering rules judge. Your task is to evaluate how well custom cards follow the rules. "
                 "A card is INVALID if it uses non-existent game terms, has nonsensical costs, or violates core rules logic. "
                 "A card is VALID if it follows MTG rules conventions, even if it is unique or powerful.\n\n"
                 "Respond strictly in this format:\n"
@@ -58,18 +58,18 @@ def get_prompt_messages(card):
     ]
 
 def get_prompt(card):
-    """Formats a card for LLM judgment (TinyLlama specific string format)."""
+    """Formats a card for AI model judgment (TinyLlama specific string format)."""
     messages = get_prompt_messages(card)
     prompt = f"<|system|>\n{messages[0]['content']}\n<|user|>\n{messages[1]['content']}\n<|assistant|>\n"
     return prompt
 
 def parse_llm_response(text, card):
-    """Extracts the judgment and reason from the LLM response text."""
+    """Extracts the judgment and reason from the AI model response text."""
     judgment_match = re.search(r'JUDGMENT:\s*(VALID|INVALID)', text, re.IGNORECASE)
     reason_match = re.search(r'REASON:\s*(.*)', text, re.IGNORECASE)
 
     judgment = judgment_match.group(1).upper() if judgment_match else "UNKNOWN"
-    reason = reason_match.group(1).strip() if reason_match else "Reason not found in LLM response."
+    reason = reason_match.group(1).strip() if reason_match else "Reason not found in AI model response."
 
     return {
         'card': card,
@@ -78,14 +78,14 @@ def parse_llm_response(text, card):
     }
 
 def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, verbose=False, provider='transformers', api_url=None, api_key=None):
-    """Processes cards through the LLM for validation."""
+    """Processes cards through the AI model for validation."""
     if provider == 'api':
         if not api_url:
             print("Error: --api-url is required when using the 'api' provider.", file=sys.stderr)
             sys.exit(1)
 
         results = []
-        for i in tqdm(range(len(cards)), disable=quiet or len(cards) < 2, desc="LLM API Validation"):
+        for i in tqdm(range(len(cards)), disable=quiet or len(cards) < 2, desc="AI API Validation"):
             card = cards[i]
             messages = get_prompt_messages(card)
 
@@ -119,7 +119,7 @@ def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, ver
         return results
 
     if pipeline is None:
-        print("Error: The 'transformers' and 'torch' libraries are required for LLM validation.", file=sys.stderr)
+        print("Error: The 'transformers' and 'torch' libraries are required for AI model validation.", file=sys.stderr)
         print("Install them with: pip install transformers torch", file=sys.stderr)
         sys.exit(1)
 
@@ -168,7 +168,7 @@ def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, ver
 
     results = []
     # Batch processing (manual because pipeline batching can be tricky with different prompt lengths)
-    for i in tqdm(range(0, len(cards), batch_size), disable=quiet or len(cards) < 2, desc="LLM Validation"):
+    for i in tqdm(range(0, len(cards), batch_size), disable=quiet or len(cards) < 2, desc="AI Validation"):
         batch = cards[i:i+batch_size]
         prompts = [get_prompt(c) for c in batch]
 
@@ -203,11 +203,11 @@ def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, ver
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Validate card mechanical integrity using a Large Language Model.",
+        description="Check how well cards follow rules using an AI model.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
-  # Validate cards in a file using the default local Transformers model
+  # Validate cards in a file using the default local AI model
   python3 scripts/mtg_llm_validate.py generated_cards.txt
 
   # Validate specific cards by name
@@ -246,7 +246,7 @@ Usage Examples:
     model_group.add_argument('--device', default=default_device,
                         help='Device to run the model on (cuda, cpu, mps). Default: cuda if available.')
     model_group.add_argument('--batch-size', type=int, default=1,
-                        help='Number of cards to process in each LLM batch. Default: 1.')
+                        help='Number of cards to process in each AI model batch. Default: 1.')
 
     # Group: Output Format
     fmt_group = parser.add_argument_group('Output Format')
@@ -306,7 +306,7 @@ Usage Examples:
             print("No cards found matching criteria.", file=sys.stderr)
         return
 
-    # Run LLM Validation
+    # Run AI Model Validation
     results = validate_cards_llm(
         cards,
         model_name=args.model,
