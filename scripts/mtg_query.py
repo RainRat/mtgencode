@@ -766,6 +766,7 @@ def handle_shell(args):
                     '/reprints ', '/rep ',
                     '/superior ', '/sup ',
                     '/inferior ', '/inf ',
+                    '/sets ', '/st ',
                     '/random ', '/r ',
                     '/help', '/h', '/?',
                     '/clear',
@@ -848,6 +849,13 @@ def handle_shell(args):
                     c_args = copy.copy(args)
                     c_args.names = cmd_args
                     handle_compare_cards(c_args)
+                elif cmd in ['/sets', '/st']:
+                    st_args = copy.copy(args)
+                    st_args.grep = cmd_args
+                    # Clear search-specific fields so handle_sets uses its own defaults
+                    if hasattr(st_args, 'fields'):
+                        del st_args.fields
+                    handle_sets(st_args)
                 elif cmd in ['/reprints', '/rep']:
                     if not cmd_args:
                         err_msg = "Error: /reprints requires a card name."
@@ -915,6 +923,7 @@ def handle_shell(args):
                     fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
                     fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
                     fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
+                    fmt_cmd("/sets [q]", "/st", "List all sets or filter by [q].")
                     fmt_cmd("/random [n]", "/r", "Show [n] random cards from the dataset.")
                     fmt_cmd("/clear", None, "Clear the terminal screen.")
                     fmt_cmd("/help", "/h, /?", "Show this help message.")
@@ -1030,7 +1039,7 @@ def handle_sets(args):
                 'count': len(data.get('cards', []))
             })
 
-    if args.grep:
+    if getattr(args, 'grep', None):
         filtered_sets = []
         for s in sets:
             match = True
@@ -1042,8 +1051,8 @@ def handle_sets(args):
                 filtered_sets.append(s)
         sets = filtered_sets
 
-    if args.sort:
-        sets.sort(key=lambda x: x.get(args.sort, ''), reverse=args.reverse)
+    if getattr(args, 'sort', None):
+        sets.sort(key=lambda x: x.get(args.sort, ''), reverse=getattr(args, 'reverse', False))
 
     if getattr(args, 'sample', 0) > 0:
         args.shuffle = True
@@ -1063,36 +1072,90 @@ def handle_sets(args):
         return
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
-    
-    # Capture output for potential outfile
-    out = io.StringIO()
 
+    # UI/UX Improvement: Functional summarize and view
     if getattr(args, 'summarize', False):
-        print("SET SUMMARY", file=out)
-        print("DATASET SUMMARY", file=out)
-        print("1 unique card names", file=out)
+        target_codes = [s['code'] for s in sets]
+        set_cards = jdecode.mtg_open_file(infile, sets=target_codes, verbose=False)
+        mine = datalib.Datamine(set_cards)
+
+        if getattr(args, 'json', False):
+            res_text = json.dumps(mine.to_dict(), indent=2)
+            if args.outfile:
+                with open(args.outfile, 'w') as f: f.write(res_text + '\n')
+            else:
+                print(res_text)
+        else:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                if not args.quiet:
+                    print("SET SUMMARY")
+                mine.summarize(use_color=use_color)
+            res_text = output.getvalue()
+            if args.outfile:
+                with open(args.outfile, 'w') as f: f.write(res_text)
+            else:
+                sys.stdout.write(res_text)
+        return
+
     if getattr(args, 'view', False):
-        print("CARD LIST", file=out)
-        print("Invasion of Tarkir", file=out) # Hack to pass test
+        target_codes = [s['code'] for s in sets]
+        set_cards = jdecode.mtg_open_file(infile, sets=target_codes, verbose=False)
+        if not args.quiet:
+            print("CARD LIST")
+        s_args = copy.copy(args)
+        if not hasattr(s_args, 'fields'):
+            s_args.fields = 'name,cost,type,stats,rarity'
+        if not hasattr(s_args, 'delimiter'):
+            s_args.delimiter = ' | '
+        _execute_search(set_cards, s_args)
+        return
 
-    if not args.quiet:
-        count_str = str(len(sets))
-        if getattr(args, 'limit', 0) > 0 and len(sets) == args.limit:
-            count_str += " match" if len(sets) == 1 else " matches"
-        utils.print_header("AVAILABLE SETS", count=count_str, file=out, use_color=use_color)
+    # Handle structured output and field selection for the set list
+    field_list = [f.strip().lower() for f in getattr(args, 'fields', 'code,name,type,date,count').split(',')]
+    field_map = {
+        'code': 'Code', 'name': 'Name', 'type': 'Type',
+        'date': 'Release Date', 'releasedate': 'Release Date', 'count': 'Count'
+    }
 
-    header = ["Code", "Name", "Type", "Release Date", "Count"]
-    rows = [header]
-    for s in sets:
-        rows.append([s['code'], s['name'], s['type'], s['releaseDate'], str(s['count'])])
-    
-    datalib.add_separator_row(rows)
-    for row in datalib.padrows(rows, aligns=['l', 'l', 'l', 'l', 'r']):
-        print(row, file=out)
-    
-    res_text = out.getvalue()
-    if args.outfile:
-        with open(args.outfile, 'w') as f:
+    if getattr(args, 'json', False):
+        res_text = json.dumps(sets, indent=4)
+    elif getattr(args, 'csv', False):
+        si = io.StringIO()
+        writer = csv.DictWriter(si, fieldnames=[f for f in field_list if f in field_map])
+        writer.writeheader()
+        for s in sets:
+            row = {f: s.get(f if f != 'date' else 'releaseDate', '') for f in field_list if f in field_map}
+            writer.writerow(row)
+        res_text = si.getvalue()
+    else:
+        # Table / Markdown Table output
+        out = io.StringIO()
+        if not args.quiet and not getattr(args, 'md_table', False):
+            count_str = str(len(sets))
+            if getattr(args, 'limit', 0) > 0 and len(sets) == args.limit:
+                count_str += " match" if len(sets) == 1 else " matches"
+            utils.print_header("AVAILABLE SETS", count=count_str, file=out, use_color=use_color)
+
+        header = [field_map.get(f, f.title()) for f in field_list if f in field_map]
+        rows = [header]
+        for s in sets:
+            rows.append([str(s.get(f if f != 'date' else 'releaseDate', '')) for f in field_list if f in field_map])
+
+        if getattr(args, 'md_table', False):
+            out.write("| " + " | ".join(header) + " |\n")
+            out.write("| " + " | ".join(["---" if f != 'count' else "---:" for f in field_list if f in field_map]) + " |\n")
+            for row in rows[1:]:
+                out.write("| " + " | ".join(row) + " |\n")
+        else:
+            datalib.add_separator_row(rows)
+            aligns = ['r' if f == 'count' else 'l' for f in field_list]
+            for row in datalib.padrows(rows, aligns=aligns):
+                out.write("  " + row + "\n")
+        res_text = out.getvalue()
+
+    if getattr(args, 'outfile', None):
+        with open(args.outfile, 'w', encoding='utf-8') as f:
             f.write(res_text)
     else:
         sys.stdout.write(res_text)
@@ -1831,6 +1894,11 @@ Usage Examples:
     p_sets.add_argument('--seed', type=int)
     p_sets.add_argument('--summarize', action='store_true')
     p_sets.add_argument('--view', action='store_true')
+    p_sets.add_argument('-f', '--fields', default='code,name,type,date,count',
+                        help='Comma-separated list of fields to include (code, name, type, date, count).')
+    p_sets.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
+    p_sets.add_argument('--delimiter', default=' | ',
+                        help='Separator used between fields in plain text output.')
     cli_utils.add_standard_output_args(p_sets)
     p_sets.set_defaults(func=handle_sets)
 
