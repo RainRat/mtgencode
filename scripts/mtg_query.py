@@ -1644,8 +1644,9 @@ def handle_compare_cards(args):
 def main():
     # UI/UX Improvement: Intelligent Subcommand Defaults
     # If no subcommand is provided, we intelligently default to 'shell', 'oracle', or 'search'.
-    valid_subcommands = ['search', 'oracle', 'random', 'extract', 'sets', 'functional',
-                         'reprints', 'compare', 'superior', 'inferior', 'shell', 'interactive', 'repl']
+    valid_subcommands = ['search', 's', 'oracle', 'o', 'random', 'r', 'extract', 'e', 'sets', 'st',
+                         'functional', 'f', 'reprints', 'rep', 'compare', 'c', 'superior', 'sup',
+                         'inferior', 'inf', 'shell', 'sh', 'interactive', 'repl']
 
     has_subcommand = any(arg in valid_subcommands for arg in sys.argv[1:])
 
@@ -1672,6 +1673,7 @@ def main():
     # Search Subparser
     p_search = subparsers.add_parser(
         'search',
+        aliases=['s'],
         help='Search card data and extract specific fields.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1717,6 +1719,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
     # Oracle Subparser
     p_oracle = subparsers.add_parser(
         'oracle',
+        aliases=['o'],
         help='Search for a card by name and display its full official rules text.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1749,6 +1752,7 @@ Usage Examples:
     # Random Subparser
     p_random = subparsers.add_parser(
         'random',
+        aliases=['r'],
         help='Display one or more random cards matching the filters.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1786,6 +1790,7 @@ Usage Examples:
     # Extract Subparser
     p_extract = subparsers.add_parser(
         'extract',
+        aliases=['e'],
         help='Extract a single card object from a large JSON database.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1804,6 +1809,7 @@ Usage Examples:
     # Sets Subparser
     p_sets = subparsers.add_parser(
         'sets',
+        aliases=['st'],
         help='List and filter card sets from a data file.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1837,6 +1843,7 @@ Usage Examples:
     # Functional Subparser
     p_functional = subparsers.add_parser(
         'functional',
+        aliases=['f'],
         help='Identify and group cards with the same mechanics but different names.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1873,6 +1880,7 @@ Usage Examples:
     # Compare Subparser
     p_compare = subparsers.add_parser(
         'compare',
+        aliases=['c'],
         help='Compare multiple cards side-by-side.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1903,6 +1911,7 @@ Usage Examples:
     # Superior Subparser
     p_superior = subparsers.add_parser(
         'superior',
+        aliases=['sup'],
         help='Find cards that are generally better than a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1938,6 +1947,7 @@ Usage Examples:
     # Reprints Subparser
     p_reprints = subparsers.add_parser(
         'reprints',
+        aliases=['rep'],
         help='Find functional reprints (identical mechanics) of a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -1968,6 +1978,7 @@ Usage Examples:
     # Inferior Subparser
     p_inferior = subparsers.add_parser(
         'inferior',
+        aliases=['inf'],
         help='Find cards that are generally inferior to a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -2000,7 +2011,7 @@ Usage Examples:
     # Shell Subparser
     p_shell = subparsers.add_parser(
         'shell',
-        aliases=['interactive', 'repl'],
+        aliases=['sh', 'interactive', 'repl'],
         help='Launch an interactive shell for quick card lookups and searches.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
