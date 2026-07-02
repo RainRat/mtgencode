@@ -130,6 +130,7 @@ def test_load_and_filter_cards_all_args(mock_exists, mock_open):
         sets=['S'], rarities=['R'], colors=['C'], cmcs=['3'],
         pows=['2'], tous=['2'], loys=['5'],
         mechanics=['M'], actions=['A'], produces=None, color_pie_break=False,
+        legalities=None,
         identities=['I'], id_counts=['1'],
         decklist_file='deck.txt', booster=1, box=1,
         shuffle=True, seed=42,

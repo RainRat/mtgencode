@@ -81,6 +81,9 @@ def add_standard_filters(parser):
     filter_group.add_argument('--action', action='append',
                         help='Only include cards with specific functional actions (Removal, Protection, Buffs, Card Advantage, Disruption, or Mana). '
                              'Supports multiple values (OR logic).')
+    filter_group.add_argument('--legal', '--format-legal', action='append',
+                        help='Only include cards that are legal in the specified format (e.g., standard, commander, legacy). '
+                             'Supports multiple values (AND logic).')
     filter_group.add_argument('--color-pie-break', action='store_true',
                         help='Only include cards that violate the mechanical color pie (e.g. Green cards with Haste).')
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
@@ -199,6 +202,7 @@ def load_and_filter_cards(args):
                                   actions=getattr(args, 'action', None),
                                   produces=getattr(args, 'produces', None),
                                   color_pie_break=getattr(args, 'color_pie_break', False),
+                                  legalities=getattr(args, 'legal', None),
                                   identities=getattr(args, 'identity', None), 
                                   id_counts=getattr(args, 'id_count', None),
                                   complexities=getattr(args, 'complexity', None),

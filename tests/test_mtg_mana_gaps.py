@@ -124,7 +124,8 @@ class TestMtgManaGaps(unittest.TestCase):
                                     identities=None, id_counts=None,
                                     decklist_file=None, booster=0, box=0,
                                     shuffle=False, seed=None,
-                                    complexities=None, ratings=None, fair_mvs=None)
+                                    complexities=None, ratings=None, fair_mvs=None,
+                                    legalities=None)
 
     @patch('mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)

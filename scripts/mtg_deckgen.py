@@ -13,6 +13,7 @@ import utils
 import jdecode
 import cardlib
 import datalib
+import cli_utils
 
 def get_color_identity_set(card):
     # Returns a set of characters like {'W', 'U'}
@@ -130,37 +131,10 @@ Usage Examples:
     deck_group.add_argument('--curve', help='Override mana curve for creatures. Format "1:5,2:10,3:10,4:8,5:5,6+:5"')
 
     # Group: Filtering Options (Standard across tools)
-    filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('-g', '--grep', action='append',
-                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
-    filter_group.add_argument('--vgrep', '--exclude', action='append', dest='vgrep',
-                        help='Skip cards matching a search pattern. Use multiple times for OR logic.')
-    filter_group.add_argument('--set', action='append',
-                        help='Only include cards from specific sets.')
-    filter_group.add_argument('--rarity', action='append',
-                        help="Only include cards of specific rarities (e.g., 'common', 'mythic').")
-    filter_group.add_argument('--colors', action='append',
-                        help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless.")
-    filter_group.add_argument('--identity', action='append',
-                        help="Only include cards with specific colors in their color identity.")
-    filter_group.add_argument('--cmc', action='append',
-                        help='Only include cards with specific CMC values (e.g., ">3", "2-4").')
-    filter_group.add_argument('--pow', '--power', action='append', dest='pow',
-                        help='Only include cards with specific Power values.')
-    filter_group.add_argument('--tou', '--toughness', action='append', dest='tou',
-                        help='Only include cards with specific Toughness values.')
-    filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
-                        help='Only include cards with specific Loyalty or Defense values.')
-    filter_group.add_argument('--mechanic', action='append',
-                        help='Only include cards with specific mechanical features (e.g., Flying, ETB Effect).')
-    filter_group.add_argument('--produces', action='append',
-                        help="Only include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).")
+    cli_utils.add_standard_filters(parser)
 
     # Group: Processing & Debugging
     proc_group = parser.add_argument_group('Processing & Debugging')
-    proc_group.add_argument('-n', '--limit', type=int, default=0, help='Limit input pool to first N cards.')
-    proc_group.add_argument('--shuffle', action='store_true', help='Shuffle the input pool before selection.')
-    proc_group.add_argument('--seed', type=int, help='Seed for the random number generator.')
     proc_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
     proc_group.add_argument('-q', '--quiet', action='store_true', help='Suppress non-critical status messages.')
     
@@ -205,15 +179,7 @@ Usage Examples:
         print(f"Loading cards from {args.infile}...", file=sys.stderr)
 
     # Load and filter cards
-    all_cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose,
-                                     grep=args.grep, vgrep=args.vgrep,
-                                     sets=args.set, rarities=args.rarity,
-                                     colors=args.colors, cmcs=args.cmc,
-                                     pows=args.pow, tous=args.tou, loys=args.loy,
-                                     mechanics=args.mechanic,
-                                     produces=args.produces,
-                                     identities=args.identity,
-                                     shuffle=args.shuffle, seed=args.seed)
+    all_cards = cli_utils.load_and_filter_cards(args)
     
     if args.limit > 0:
         all_cards = all_cards[:args.limit]

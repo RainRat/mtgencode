@@ -849,6 +849,7 @@ def mtg_open_file(fname, verbose = False,
                   produces=None,
                   color_pie_break=False,
                   identities=None, id_counts=None,
+                  legalities=None,
                   shuffle=False, seed=None,
                   decklist_file=None,
                   stats=None, booster=0, box=0,
@@ -1170,7 +1171,7 @@ def mtg_open_file(fname, verbose = False,
                  print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
                         + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
 
-    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or actions or produces or color_pie_break or identities or id_counts or complexities or ratings or fair_mvs:
+    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or actions or produces or color_pie_break or identities or id_counts or complexities or ratings or fair_mvs or legalities:
         # Sanitize queries to match internal representations (hyphens are dash_marker)
         greps = _compile_patterns(grep, sanitize=True)
         vgreps = _compile_patterns(vgrep, sanitize=True)
@@ -1199,6 +1200,7 @@ def mtg_open_file(fname, verbose = False,
                     target_rarities.append(r)
 
         target_colors = [c.upper() for c in colors] if colors else None
+        target_legalities = [l.lower() for l in legalities] if legalities else None
         target_mechanics = [m.lower() for m in mechanics] if mechanics else None
         target_actions = [a.lower() for a in actions] if actions else None
         target_produces = [c.upper() if c.lower() != 'any' else 'Any' for c in produces] if produces else None
@@ -1389,6 +1391,12 @@ def mtg_open_file(fname, verbose = False,
                 res = card.check_color_pie()
                 if not isinstance(res, str):
                     return False
+
+            # Legality filtering
+            if target_legalities:
+                for fmt in target_legalities:
+                    if card.legalities.get(fmt) != 'legal':
+                        return False
 
             # Identity Count filtering
             if id_count_filters:
