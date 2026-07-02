@@ -912,7 +912,7 @@ def handle_shell(args):
 
                     fmt_cmd("/search <q>", "/s", "Search for cards matching <q> (displays a table).")
                     fmt_cmd("/compare <n>...", "/c", "Compare multiple cards side-by-side.")
-                    fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
+                    fmt_cmd("/reprints <n>", "/rep", "Find cards that play exactly the same way as the named card.")
                     fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
                     fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
                     fmt_cmd("/random [n]", "/r", "Show [n] random cards from the dataset.")
@@ -1389,7 +1389,7 @@ def handle_reprints(args):
 
     if not reprints:
         if not args.quiet:
-            print(f"No functional reprints found for {target_card.display_name}.", file=sys.stderr)
+            print(f"No cards found with the same gameplay properties as {target_card.display_name}.", file=sys.stderr)
         return
 
     # Use search display for results
@@ -1938,11 +1938,12 @@ Usage Examples:
     # Reprints Subparser
     p_reprints = subparsers.add_parser(
         'reprints',
-        help='Find functional reprints (identical mechanics) of a reference card.',
+        help='Find cards with the same gameplay properties (cost, types, stats, and abilities) as a reference card.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Finds cards with identical mana cost, types, stats, and mechanics/text
-as the reference card, excluding the reference card itself.
+Finds cards that play exactly the same way as the named card. It looks
+for cards with the same mana cost, card types, power/toughness, and
+official rules text, but with a different name.
 
 Usage Examples:
   # Find reprints of Grizzly Bears
