@@ -19,12 +19,12 @@ from train import CharRNN, generate_text
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Check the quality of an AI model by generating and validating cards.",
+        description="Check how well an AI model works by creating and checking cards.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-This tool evaluates AI model checkpoints. It generates a batch of cards,
+This tool checks AI model files. It creates a batch of cards,
 checks if they follow the rules using scripts/mtg_validate.py, and calculates
-an 'Accuracy Score'.
+how many cards followed the rules.
 
 Usage Examples:
   # Evaluate a checkpoint by generating 100 cards

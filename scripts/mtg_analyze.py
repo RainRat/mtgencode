@@ -1500,8 +1500,7 @@ def main():
 
               # Compare the color lexicon of two datasets
               python3 scripts/mtg_analyze.py lexicon data/AllPrintings.json --compare generated.txt
-
-              # Check how well a card set is designed
+              # Perform a check of how well a card set is designed
               python3 scripts/mtg_analyze.py audit data/AllPrintings.json --set MOM
 
               # Identify the unique features of Green Rare cards
@@ -1564,8 +1563,7 @@ def main():
     p_ty.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
     p_ty.set_defaults(func=handle_types)
 
-    # skeleton
-    p_sk = subparsers.add_parser('skeleton', help='Group cards by their type and mana cost (Design Skeleton).')
+    p_sk = subparsers.add_parser('skeleton', help='Generate a "Design Skeleton" (grouping cards by type and mana cost).')
     add_std(p_sk)
     p_sk.add_argument('outfile', nargs='?', default=None, help='Save the skeleton to a file.')
     p_sk.set_defaults(func=handle_skeleton)
@@ -1604,12 +1602,12 @@ def main():
     p_sy = subparsers.add_parser(
         'interaction',
         aliases=['synergy'],
-        help='Analyze how often different mechanics work together.',
+        help='Analyze how different mechanics appear together.',
         description=textwrap.dedent("""
-            Analyzes how often different mechanics (like Flying and Trample) appear
-            together on the same cards. It identifies frequent pairings and
-            calculates a 'Lift Score' to measure how often they appear together
-            compared to what would happen by random chance.
+            Analyzes how different mechanics appear together
+            on the same cards. It identifies frequent pairings and calculates a
+            'Lift Score' to measure how often they appear together compared to
+            what would happen by random chance.
 
             The Lift Score shows the relationship between two mechanics:
             - Score > 1.0: The mechanics appear together MORE often than expected.
@@ -1667,7 +1665,7 @@ def main():
         'power',
         help='Analyze how strong creatures are for their mana cost.',
         description=textwrap.dedent("""
-            Analyzes the creature power balance in a dataset. It calculates a
+            Analyzes how strong creatures are for their mana cost. It calculates a
             'Power Rating' relative to mana cost to identify cards that are
             significantly above or below the expected strength for their cost.
 
@@ -1724,9 +1722,9 @@ def main():
     # asfan
     p_as = subparsers.add_parser(
         'asfan',
-        help='Calculate average cards per booster pack (As-Fan) statistics.',
+        help='Calculate "As-Fan" (average cards per booster pack) statistics.',
         description=textwrap.dedent("""
-            Calculates "As-Fan" (As-fanned) statistics for a card dataset.
+            Calculates "As-Fan" (average cards per booster pack) statistics.
             As-Fan represents the average number of cards with a certain
             characteristic (like a specific color, type, or mechanic) a player
             can expect to see in a single 15-card booster pack.
@@ -1769,11 +1767,11 @@ def main():
     # audit
     p_audit = subparsers.add_parser(
         'audit',
-        help='Check how well a card set is designed.',
+        help='Perform a check of how well a card set is designed.',
         description=textwrap.dedent("""
-            Performs a comprehensive check of how well a card set is designed.
-            This tool calculates several core metrics and how often common
-            card effects appear, comparing them against standard design targets:
+            Performs a check of how well a card set is designed.
+            This tool calculates several core metrics and functional coverage
+            statistics, comparing them against standard design targets:
 
             Core Metrics:
             - Creature Density (Target: 50%)
