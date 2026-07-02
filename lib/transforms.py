@@ -630,8 +630,9 @@ def randomize_lines(text):
 # Text unpasses, for decoding. All assume the text inside a Manatext, so don't do anything
 # weird with the mana cost symbol.
 
-choice_unpass_regex = re.compile(re.escape(choice_open_delimiter) + re.escape(unary_marker)
-                                 + r'.*' + re.escape(bullet_marker) + r'.*' + re.escape(choice_close_delimiter))
+choice_unpass_regex = re.compile(re.escape(choice_open_delimiter) + r'[^' + re.escape(choice_close_delimiter) + r']*'
+                                 + re.escape(bullet_marker) + r'[^' + re.escape(choice_close_delimiter) + r']*'
+                                 + re.escape(choice_close_delimiter))
 def text_unpass_1_choice(s, delimit = False):
     choices = re.findall(choice_unpass_regex, s)
     for choice in sorted(choices, key=len, reverse=True):
