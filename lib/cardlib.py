@@ -24,7 +24,14 @@ RECOGNIZED_MECHANICS = [
     'Phasing', 'Entwine', 'Buyback', 'Cascade', 'Exalted', 'Unearth',
     'Bestow', 'Monstrosity', 'Dash', 'Awaken', 'Surge', 'Investigate',
     'Surveil', 'Amass', 'Foretell', 'Learn', 'Toxic', 'Backup',
-    'Incubate', 'Discover', 'First Strike', 'Double Strike'
+    'Incubate', 'Discover', 'First Strike', 'Double Strike',
+    'Battalion', 'Bloodrush', 'Channel', 'Chroma', 'Cohort',
+    'Constellation', 'Converge', "Council's Dilemma", 'Delirium', 'Domain',
+    'Fateful Hour', 'Ferocious', 'Formidable', 'Grandeur', 'Hellbent',
+    'Heroic', 'Imprint', 'Inspired', 'Join Forces', 'Kinship',
+    'Landfall', 'Lieutenant', 'Metalcraft', 'Morbid', 'Parley',
+    'Radiance', 'Raid', 'Rally', 'Spell Mastery', 'Strive',
+    'Sweep', 'Tempting Offer', 'Threshold', 'Will of the Council'
 ]
 
 # Functional categories for card effects
@@ -505,6 +512,15 @@ def fields_from_json(src_json, linetrans = True):
         text_val = utils.to_unary(text_val)
         text_val = transforms.text_pass_4a_dashes(text_val)
         text_val = transforms.text_pass_4b_x(text_val)
+
+        # Detect and extract ability words before they are stripped
+        ability_words = []
+        for aw in transforms.abilitywords:
+            if re.search(r'\b' + re.escape(aw) + r'\b \u2014 ', text_val):
+                ability_words.append(titlecase(aw))
+        if ability_words:
+            fields['_ability_words'] = [(-1, ability_words)]
+
         text_val = transforms.text_pass_4c_abilitywords(text_val)
         text_val = transforms.text_pass_5_counters(text_val)
         text_val = transforms.text_pass_6_uncast(text_val)
@@ -582,6 +598,15 @@ def fields_from_format(src_text, fmt_ordered, fmt_labeled, fieldsep, linetrans =
             valid = valid and fval.valid
             addf(fields, fname, (idx, fval))
         elif fname in [field_text]:
+            # Detect and extract ability words before they might be stripped (though they shouldn't be here)
+            # In encoded format, ability words aren't usually stripped but we'll check for them anyway.
+            ability_words = []
+            for aw in transforms.abilitywords:
+                if re.search(r'\b' + re.escape(aw) + r'\b', textfield.lower()):
+                    ability_words.append(titlecase(aw))
+            if ability_words:
+                fields['_ability_words'] = [(-1, ability_words)]
+
             if linetrans:
                 textfield = transforms.text_pass_11_linetrans(textfield)
             fval = Manatext(textfield)
@@ -638,6 +663,7 @@ class Card:
         setattr(self, field_pt + '_t', None)
         setattr(self, field_text, Manatext(''))
         setattr(self, field_text + '_lines', [])
+        setattr(self, '_ability_words', [])
         setattr(self, field_text + '_words', [])
         setattr(self, field_text + '_lines_words', [])
         setattr(self, field_other, [])
@@ -1050,6 +1076,8 @@ class Card:
             m.add('Counters')
 
         # 2. Common Keyword Abilities
+        m.update(self._ability_words)
+
         keywords = [
             ('flying', 'Flying'), ('trample', 'Trample'), ('lifelink', 'Lifelink'),
             ('haste', 'Haste'), ('deathtouch', 'Deathtouch'), ('vigilance', 'Vigilance'),
