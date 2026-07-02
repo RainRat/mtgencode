@@ -851,7 +851,8 @@ def mtg_open_file(fname, verbose = False,
                   identities=None, id_counts=None,
                   shuffle=False, seed=None,
                   decklist_file=None,
-                  stats=None, booster=0, box=0):
+                  stats=None, booster=0, box=0,
+                  complexities=None, ratings=None, fair_mvs=None):
     """
     High-level entry point for loading card data from various formats.
     Supported formats: JSON, JSONL, CSV, Magic Set Editor (.mse-set),
@@ -1169,7 +1170,7 @@ def mtg_open_file(fname, verbose = False,
                  print((str(valid) + ' valid, ' + str(skipped) + ' skipped, '
                         + str(invalid) + ' invalid, ' + str(unparsed) + ' failed to parse.'), file=sys.stderr)
 
-    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or actions or produces or color_pie_break or identities or id_counts:
+    if grep or vgrep or sets or rarities or grep_name or vgrep_name or grep_types or vgrep_types or grep_text or vgrep_text or grep_cost or vgrep_cost or grep_pt or vgrep_pt or grep_loyalty or vgrep_loyalty or colors or cmcs or pows or tous or loys or mechanics or actions or produces or color_pie_break or identities or id_counts or complexities or ratings or fair_mvs:
         # Sanitize queries to match internal representations (hyphens are dash_marker)
         greps = _compile_patterns(grep, sanitize=True)
         vgreps = _compile_patterns(vgrep, sanitize=True)
@@ -1209,6 +1210,9 @@ def mtg_open_file(fname, verbose = False,
         pow_filters = [utils.NumericFilter(f) for f in pows] if pows else []
         tou_filters = [utils.NumericFilter(f) for f in tous] if tous else []
         loy_filters = [utils.NumericFilter(f) for f in loys] if loys else []
+        comp_filters = [utils.NumericFilter(f) for f in complexities] if complexities else []
+        rate_filters = [utils.NumericFilter(f) for f in ratings] if ratings else []
+        fmv_filters = [utils.NumericFilter(f) for f in fair_mvs] if fair_mvs else []
 
         def match_card(card):
             # Generic filtering (AND logic for greps, OR logic for vgreps)
@@ -1394,6 +1398,36 @@ def mtg_open_file(fname, verbose = False,
                         match_id_count = True
                         break
                 if not match_id_count:
+                    return False
+
+            # Complexity filtering
+            if comp_filters:
+                match_comp = False
+                for f in comp_filters:
+                    if f.evaluate(card.complexity_score):
+                        match_comp = True
+                        break
+                if not match_comp:
+                    return False
+
+            # Rating filtering
+            if rate_filters:
+                match_rate = False
+                for f in rate_filters:
+                    if f.evaluate(card.power_rating):
+                        match_rate = True
+                        break
+                if not match_rate:
+                    return False
+
+            # Fair MV filtering
+            if fmv_filters:
+                match_fmv = False
+                for f in fmv_filters:
+                    if f.evaluate(card.recommended_cmc):
+                        match_fmv = True
+                        break
+                if not match_fmv:
                     return False
 
             return True
