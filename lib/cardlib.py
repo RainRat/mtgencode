@@ -1573,7 +1573,7 @@ class Card:
 
     def search_mechanics(self, pattern):
         """Returns True if the pattern matches any of the card's mechanics."""
-        if any(pattern.search(m) for m in self.mechanics):
+        if any(pattern.search(m) for m in self.get_face_mechanics()):
             return True
         if self.bside:
             return self.bside.search_mechanics(pattern)
@@ -1581,7 +1581,7 @@ class Card:
 
     def search_actions(self, pattern):
         """Returns True if the pattern matches any of the card's functional actions."""
-        if any(pattern.search(a) for a in self.actions):
+        if any(pattern.search(a) for a in self.get_face_actions()):
             return True
         if self.bside:
             return self.bside.search_actions(pattern)
