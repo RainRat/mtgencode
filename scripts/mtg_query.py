@@ -1631,7 +1631,20 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="Unified tool for searching card data, looking up rules text, and listing set contents.",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Smart Features:
+  1. Smart Subcommand Defaults:
+     - If no arguments are provided and you are in a terminal, launches 'shell'.
+     - If a single name is provided, defaults to 'oracle' for a quick lookup.
+     - If flags are provided without a command, defaults to 'search'.
+  2. Smart Dataset Detection:
+     - Automatically looks for the official dataset at 'data/AllPrintings.json'
+       if no input file is specified and stdin is not being used.
+  3. Smart Positional Arguments:
+     - Automatically distinguishes between filenames and search queries based
+       on whether the argument exists as a file on your system.
+"""
     )
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
@@ -1795,8 +1808,10 @@ Usage Examples:
     p_sets.add_argument('--shuffle', action='store_true')
     p_sets.add_argument('--sample', type=int, default=0)
     p_sets.add_argument('--seed', type=int)
-    p_sets.add_argument('--summarize', action='store_true')
-    p_sets.add_argument('--view', action='store_true')
+    p_sets.add_argument('--summarize', action='store_true',
+                        help='Show a mechanical profile and statistics for the set.')
+    p_sets.add_argument('--view', action='store_true',
+                        help='Display a list of all cards in the set.')
     cli_utils.add_standard_output_args(p_sets)
     p_sets.set_defaults(func=handle_sets)
 
