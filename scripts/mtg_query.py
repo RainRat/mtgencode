@@ -58,6 +58,7 @@ FIELD_MAP = {
     'complexity': {'header': 'Complexity', 'align': 'r', 'aliases': ['score']},
     'rating': {'header': 'Rating', 'align': 'r', 'aliases': ['power_rating']},
     'fair_cmc': {'header': 'Fair MV', 'align': 'r', 'aliases': ['fcmc', 'fair_cost', 'fair_mv', 'recommended_cmc']},
+    'signature': {'header': 'Signature', 'align': 'l', 'aliases': ['unique', 'diff', 'diffs']},
     'produced': {'header': 'Produced', 'align': 'l', 'aliases': ['produced_mana', 'mana_produced']},
     'summary': {'header': 'Summary', 'align': 'l', 'aliases': ['view']},
     'color_pie': {'header': 'Color Pie', 'align': 'l', 'aliases': ['break']},
@@ -172,6 +173,8 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
             color = utils.Ansi.BOLD + (utils.Ansi.GREEN if card.cost.cmc >= val else utils.Ansi.RED)
             res = utils.colorize(res, color)
         return res
+    elif canon == 'signature':
+        return ""
     elif canon == 'color_pie':
         val = card.check_color_pie()
         if isinstance(val, str):
@@ -1525,25 +1528,32 @@ def handle_compare_cards(args):
         if not args.quiet:
             utils.print_header("CARD COMPARISON", use_color=use_color)
 
-        fields = [
-            ('Set', 'set'),
-            ('Cost', 'cost'),
-            ('CMC', 'cmc'),
-            ('Type', 'type'),
-            ('Stats', 'stats'),
-            ('Rarity', 'rarity'),
-            ('Identity', 'identity'),
-            ('Produced', 'produced'),
-            ('Tokens', 'tokens'),
-            ('Mechanics', 'mechanics'),
-            ('Actions', 'actions'),
-            ('Signature', 'signature'),
-            ('Fair MV', 'fair_cmc'),
-            ('Rating', 'rating'),
-            ('Complexity', 'complexity'),
-            ('Color Pie', 'color_pie'),
-            ('Text', 'text')
-        ]
+        if getattr(args, 'fields', None):
+            fields = []
+            for f in args.fields.split(','):
+                canon = get_field_canonical_name(f)
+                header = FIELD_MAP.get(canon, {}).get('header', f.title())
+                fields.append((header, canon))
+        else:
+            fields = [
+                ('Set', 'set'),
+                ('Cost', 'cost'),
+                ('CMC', 'cmc'),
+                ('Type', 'type'),
+                ('Stats', 'stats'),
+                ('Rarity', 'rarity'),
+                ('Identity', 'identity'),
+                ('Produced', 'produced'),
+                ('Tokens', 'tokens'),
+                ('Mechanics', 'mechanics'),
+                ('Actions', 'actions'),
+                ('Signature', 'signature'),
+                ('Fair MV', 'fair_cmc'),
+                ('Rating', 'rating'),
+                ('Complexity', 'complexity'),
+                ('Color Pie', 'color_pie'),
+                ('Text', 'text')
+            ]
 
         def get_full_name(c):
             res = cardlib.titlecase(c.name.replace(utils.dash_marker, '-'))
@@ -1637,9 +1647,10 @@ def handle_compare_cards(args):
             elif use_color:
                 label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
 
-            # Always show basic identifying rows; hide others only if all are empty
+            # Always show basic identifying rows; hide others only if all are empty.
+            # If the user explicitly requested fields, show all of them.
             is_identifying = field in ['cost', 'cmc', 'type', 'rarity', 'text']
-            if is_identifying or any(v for v in raw_vals):
+            if getattr(args, 'fields', None) or is_identifying or any(v for v in raw_vals):
                 rows.append([label] + display_vals)
 
         datalib.add_separator_row(rows)
@@ -1906,11 +1917,16 @@ Usage Examples:
 
   # Compare cards in a specific file
   python3 scripts/mtg_query.py compare "Uthros" "Invasion of Tarkir" testdata/
+
+  # Side-by-side comparison of specific fields
+  python3 scripts/mtg_query.py compare "Grizzly Bears" "Gray Ogre" --fields "name,cost,stats,signature"
 """
     )
     p_compare.add_argument('names', nargs='*', help='Card names to compare. Supports comparing any number of cards. If one name is provided, it is compared against its closest mechanical match. If no names are provided, the filtered result pool is used.')
     p_compare.add_argument('infile', nargs='?', default='-',
                          help='Input card data. Defaults to data/AllPrintings.json if available.')
+    p_compare.add_argument('-f', '--fields',
+                        help='Comma-separated list of fields to compare. If not provided, a comprehensive set of default fields is shown.')
     cli_utils.add_standard_filters(p_compare)
     cli_utils.add_standard_output_args(p_compare)
     p_compare.set_defaults(func=handle_compare_cards)
