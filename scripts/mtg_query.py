@@ -1706,9 +1706,10 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
                         help='Path to save the search results. If not provided, results print to the console.')
     p_search.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
                         help='Comma-separated list of fields to extract. Available fields:\n'
-                             '  - Basic: name, cost, cmc, type, stats, text, rarity\n'
-                             '  - Analysis: mechanics, actions, tokens, identity, complexity, rating, fair_mv, color_pie\n'
-                             '  - Metadata: set, number, pack, box')
+                             '  - Basic: name, cost, cmc, colors, type, supertypes, types, subtypes, pt, stats, power, toughness, loyalty, rarity, text\n'
+                             '  - Analysis: mechanics, actions, tokens, identity, id_count, produced, summary, color_pie\n'
+                             '  - Design: complexity, rating, fair_mv, legendary, permanent\n'
+                             '  - Metadata: set, number, pack, box, legalities, encoded')
     p_search.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     cli_utils.add_standard_filters(p_search)
@@ -1745,7 +1746,7 @@ Usage Examples:
     p_oracle.add_argument('infile', nargs='?', default='-',
                         help='Input card data file. Defaults to the official dataset (data/AllPrintings.json).')
     p_oracle.add_argument('-f', '--fields', default='name,cost,type,stats,rarity,text',
-                        help='Fields to extract when using structured output formats.')
+                        help='Fields to extract when using structured output formats (JSON, CSV, or Table). See the "search" command for a full list of available fields.')
     cli_utils.add_standard_filters(p_oracle)
     cli_utils.add_standard_output_args(p_oracle)
     p_oracle.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
@@ -1785,7 +1786,7 @@ Usage Examples:
     p_random.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format.')
     p_random.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
     p_random.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                        help='Comma-separated list of fields to extract (when using table/csv/json).')
+                        help='Comma-separated list of fields to extract (when using table/csv/json). See the "search" command for a full list of available fields.')
     p_random.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     p_random.add_argument('-G', '--gatherer', action='store_true',
@@ -1870,7 +1871,7 @@ Usage Examples:
     p_functional.add_argument('--dedupe', nargs='?', const='-',
                             help='Create a deduplicated dataset (one card per functional group) and save to the specified file.')
     p_functional.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                            help='Comma-separated list of fields to extract when using --dedupe.')
+                            help='Comma-separated list of fields to extract when using --dedupe. See the "search" command for a full list of available fields.')
     p_functional.add_argument('--delimiter', default=' | ',
                             help='Separator used between fields in plain text output.')
     p_functional.add_argument('--text', action='store_true', help='Force plain text output.')
@@ -1944,7 +1945,7 @@ Usage Examples:
     cli_utils.add_standard_filters(p_superior)
     cli_utils.add_standard_output_args(p_superior)
     p_superior.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                           help='Fields to display in the output table.')
+                           help='Fields to display in the output table. See the "search" command for a full list of available fields.')
     p_superior.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'rating'],
                            help='Sort the resulting superior cards.')
     p_superior.add_argument('--delimiter', default=' | ',
@@ -1975,7 +1976,7 @@ Usage Examples:
     cli_utils.add_standard_filters(p_reprints)
     cli_utils.add_standard_output_args(p_reprints)
     p_reprints.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                           help='Fields to display in the output table.')
+                           help='Fields to display in the output table. See the "search" command for a full list of available fields.')
     p_reprints.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'rating'],
                            help='Sort the resulting reprint cards.')
     p_reprints.add_argument('--delimiter', default=' | ',
@@ -2008,7 +2009,7 @@ Usage Examples:
     cli_utils.add_standard_filters(p_inferior)
     cli_utils.add_standard_output_args(p_inferior)
     p_inferior.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
-                           help='Fields to display in the output table.')
+                           help='Fields to display in the output table. See the "search" command for a full list of available fields.')
     p_inferior.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'rating'],
                            help='Sort the resulting inferior cards.')
     p_inferior.add_argument('--delimiter', default=' | ',
