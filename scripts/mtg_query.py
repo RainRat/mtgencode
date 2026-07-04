@@ -768,6 +768,7 @@ def handle_shell(args):
                     '/functional ', '/f ',
                     '/compare ', '/c ',
                     '/reprints ', '/rep ',
+                    '/substitutes ', '/sub ',
                     '/superior ', '/sup ',
                     '/inferior ', '/inf ',
                     '/extract ', '/e ',
@@ -917,6 +918,15 @@ def handle_shell(args):
                     inf_args = copy.copy(args)
                     inf_args.query = " ".join(cmd_args)
                     handle_inferior(inf_args)
+                elif cmd in ['/substitutes', '/sub']:
+                    if not cmd_args:
+                        err_msg = "Error: /substitutes requires a card name."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
+                        continue
+                    sub_args = copy.copy(args)
+                    sub_args.query = " ".join(cmd_args)
+                    handle_substitutes(sub_args)
                 elif cmd in ['/extract', '/e']:
                     if len(cmd_args) < 2:
                         err_msg = "Error: /extract requires <set_code> and <card_name>."
@@ -953,6 +963,7 @@ def handle_shell(args):
                     fmt_cmd("/functional [q]", "/f", "Identify groups of cards with the same mechanics.")
                     fmt_cmd("/compare <n>...", "/c", "Compare multiple cards side-by-side.")
                     fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
+                    fmt_cmd("/substitutes <n>", "/sub", "Find functional alternatives to the named card.")
                     fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
                     fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
                     fmt_cmd("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name.")
@@ -1401,6 +1412,87 @@ def handle_reprints(args):
     # Use search display for results
     _execute_search(reprints, args)
 
+def find_substitutes(target, pool, limit=10):
+    """Finds functional alternatives to a reference card."""
+    if not target or not pool:
+        return []
+
+    target_id = set(target.color_identity)
+    target_types = set(target.types)
+    target_actions = target.actions
+    target_cmc = target.cost.cmc
+
+    candidates = []
+    for c in pool:
+        if c.name.lower() == target.name.lower():
+            continue
+
+        # 1. Type compatibility: must share a primary type
+        if not (set(c.types) & target_types):
+            continue
+
+        # 2. Color compatibility: identity must be a subset (can go in the same decks)
+        if not set(c.color_identity).issubset(target_id):
+            continue
+
+        # 3. Efficiency: CMC within +/- 1
+        if abs(c.cost.cmc - target_cmc) > 1:
+            continue
+
+        # 4. Functional overlap: must share at least one action if target has any
+        shared_actions = c.actions & target_actions
+        if target_actions and not shared_actions:
+            continue
+
+        # Calculate a substitution score
+        # More shared actions is better
+        # Smaller CMC delta is better
+        # Same rarity is a small bonus for accessibility
+        score = len(shared_actions) * 10
+        score -= abs(c.cost.cmc - target_cmc) * 5
+        if c.rarity == target.rarity:
+            score += 2
+
+        candidates.append((score, c))
+
+    if not candidates:
+        return []
+
+    # Sort by score descending
+    candidates.sort(key=lambda x: x[0], reverse=True)
+
+    # Use Namediff for tie-breaking the top matches if we have many
+    top_pool = [c for score, c in candidates[:max(20, limit*2)]]
+    nd = namediff.Namediff(verbose=False, cards=top_pool)
+    sim_results = nd.nearest_card(target, n=len(top_pool))
+
+    # Map similarity ratios back to the cards
+    sim_map = {name.lower(): ratio for ratio, name in sim_results}
+
+    final_ranked = []
+    for score, c in candidates:
+        sim_bonus = sim_map.get(c.name.lower(), 0)
+        final_ranked.append((score + sim_bonus, c))
+
+    final_ranked.sort(key=lambda x: x[0], reverse=True)
+    return [c for score, c in final_ranked[:limit]]
+
+def handle_substitutes(args):
+    target_card, cards = _resolve_target_from_args(args)
+    if not target_card:
+        return
+
+    limit = getattr(args, 'limit', 10) or 10
+    subs = find_substitutes(target_card, cards, limit=limit)
+
+    if not subs:
+        if not args.quiet:
+            print(f"No suitable substitutes found for {target_card.display_name}.", file=sys.stderr)
+        return
+
+    # Use search display for results
+    _execute_search(subs, args)
+
 def handle_random(args):
     # Smart Positional Argument Handling
     if args.count and not str(args.count).isdigit() and os.path.exists(str(args.count)) and args.infile == '-':
@@ -1652,6 +1744,7 @@ def main():
     # If no subcommand is provided, we intelligently default to 'shell', 'oracle', or 'search'.
     valid_subcommands = ['search', 's', 'oracle', 'o', 'random', 'r', 'extract', 'e',
                          'sets', 'st', 'functional', 'f', 'reprints', 'rep',
+                         'substitutes', 'sub',
                          'compare', 'c', 'superior', 'sup', 'inferior', 'inf',
                          'shell', 'sh', 'interactive', 'repl']
 
@@ -1835,16 +1928,12 @@ Usage Examples:
                         help='Input MTGJSON file. Defaults to data/AllPrintings.json if available.')
     p_sets.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the set list.')
-    p_sets.add_argument('--grep', '--filter', action='append')
     p_sets.add_argument('--sort', choices=['code', 'name', 'type', 'date', 'count'], default='date')
     p_sets.add_argument('--reverse', action='store_true')
-    p_sets.add_argument('-n', '--limit', type=int, default=0)
-    p_sets.add_argument('--shuffle', action='store_true')
-    p_sets.add_argument('--sample', type=int, default=0)
-    p_sets.add_argument('--seed', type=int)
     p_sets.add_argument('--summarize', action='store_true')
     p_sets.add_argument('--view', action='store_true')
     cli_utils.add_standard_output_args(p_sets)
+    cli_utils.add_standard_filters(p_sets)
     p_sets.set_defaults(func=handle_sets)
 
     # Functional Subparser
@@ -2014,6 +2103,39 @@ Usage Examples:
     p_inferior.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     p_inferior.set_defaults(func=handle_inferior)
+
+    # Substitutes Subparser
+    p_substitutes = subparsers.add_parser(
+        'substitutes',
+        aliases=['sub'],
+        help='Find functional alternatives to a reference card.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Finds functional substitutes by identifying cards with shared types,
+compatible color identities (subset), similar mana costs (+/- 1),
+and overlapping functional actions (e.g., Removal, Card Advantage).
+
+Usage Examples:
+  # Find substitutes for Lightning Bolt
+  python3 scripts/mtg_query.py substitutes "Lightning Bolt"
+
+  # Find budget (common/uncommon) substitutes for a rare card
+  python3 scripts/mtg_query.py substitutes "Damnation" --rarity common --rarity uncommon
+
+  # Find substitutes within a specific set
+  python3 scripts/mtg_query.py substitutes "Counterspell" --set MOM
+"""
+    )
+    p_substitutes.add_argument('query', help='The card name to use as a reference for comparison.')
+    p_substitutes.add_argument('infile', nargs='?', default='-',
+                           help='Input card data file. Defaults to data/AllPrintings.json.')
+    cli_utils.add_standard_filters(p_substitutes)
+    cli_utils.add_standard_output_args(p_substitutes)
+    p_substitutes.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                           help='Fields to display in the output table.')
+    p_substitutes.add_argument('--delimiter', default=' | ',
+                        help='Separator used between fields in plain text output.')
+    p_substitutes.set_defaults(func=handle_substitutes)
 
     # Shell Subparser
     p_shell = subparsers.add_parser(
