@@ -65,6 +65,7 @@ FIELD_MAP = {
     'legendary': {'header': 'Legendary', 'align': 'l', 'aliases': []},
     'permanent': {'header': 'Permanent', 'align': 'l', 'aliases': []},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
+    'signature': {'header': 'Signature', 'align': 'l', 'aliases': ['unique', 'diff', 'diffs']},
 }
 
 _CANONICAL_MAP = {k: k for k in FIELD_MAP}
@@ -226,6 +227,8 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
     elif canon == 'encoded':
         return card.encode()
+    elif canon == 'signature':
+        return ""
     else:
         return ""
 
@@ -1525,25 +1528,33 @@ def handle_compare_cards(args):
         if not args.quiet:
             utils.print_header("CARD COMPARISON", use_color=use_color)
 
-        fields = [
-            ('Set', 'set'),
-            ('Cost', 'cost'),
-            ('CMC', 'cmc'),
-            ('Type', 'type'),
-            ('Stats', 'stats'),
-            ('Rarity', 'rarity'),
-            ('Identity', 'identity'),
-            ('Produced', 'produced'),
-            ('Tokens', 'tokens'),
-            ('Mechanics', 'mechanics'),
-            ('Actions', 'actions'),
-            ('Signature', 'signature'),
-            ('Fair MV', 'fair_cmc'),
-            ('Rating', 'rating'),
-            ('Complexity', 'complexity'),
-            ('Color Pie', 'color_pie'),
-            ('Text', 'text')
-        ]
+        if getattr(args, 'fields', None):
+            field_list = [f.strip() for f in args.fields.split(',')]
+            fields = []
+            for f in field_list:
+                canon = get_field_canonical_name(f)
+                header = FIELD_MAP.get(canon, {}).get('header', f)
+                fields.append((header, canon))
+        else:
+            fields = [
+                ('Set', 'set'),
+                ('Cost', 'cost'),
+                ('CMC', 'cmc'),
+                ('Type', 'type'),
+                ('Stats', 'stats'),
+                ('Rarity', 'rarity'),
+                ('Identity', 'identity'),
+                ('Produced', 'produced'),
+                ('Tokens', 'tokens'),
+                ('Mechanics', 'mechanics'),
+                ('Actions', 'actions'),
+                ('Signature', 'signature'),
+                ('Fair MV', 'fair_cmc'),
+                ('Rating', 'rating'),
+                ('Complexity', 'complexity'),
+                ('Color Pie', 'color_pie'),
+                ('Text', 'text')
+            ]
 
         def get_full_name(c):
             res = cardlib.titlecase(c.name.replace(utils.dash_marker, '-'))
@@ -1638,8 +1649,10 @@ def handle_compare_cards(args):
                 label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
 
             # Always show basic identifying rows; hide others only if all are empty
+            # If fields were explicitly requested, show all of them.
+            force_show = getattr(args, 'fields', None) is not None
             is_identifying = field in ['cost', 'cmc', 'type', 'rarity', 'text']
-            if is_identifying or any(v for v in raw_vals):
+            if force_show or is_identifying or any(v for v in raw_vals):
                 rows.append([label] + display_vals)
 
         datalib.add_separator_row(rows)
@@ -1911,6 +1924,8 @@ Usage Examples:
     p_compare.add_argument('names', nargs='*', help='Card names to compare. Supports comparing any number of cards. If one name is provided, it is compared against its closest mechanical match. If no names are provided, the filtered result pool is used.')
     p_compare.add_argument('infile', nargs='?', default='-',
                          help='Input card data. Defaults to data/AllPrintings.json if available.')
+    p_compare.add_argument('-f', '--fields',
+                        help='Comma-separated list of fields to display. Supports all standard fields plus "signature" (unique mechanical differences). If specified, all requested fields are shown even if empty.')
     cli_utils.add_standard_filters(p_compare)
     cli_utils.add_standard_output_args(p_compare)
     p_compare.set_defaults(func=handle_compare_cards)
