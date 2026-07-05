@@ -756,7 +756,7 @@ Usage Examples:
     io_group.add_argument('infile', nargs='?', default='-',
                         help='Input card data (MTGJSON or Scryfall JSON, JSONL, CSV, MSE, XML, ZIP, or MTG Decklist), an encoded file, or a directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .jsonl, .csv, .md, .sum, .summary, .deck, .dek, .mse-set).')
+                        help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .jsonl, .csv, .md, .mdt, .sum, .summary, .tbl, .table, .deck, .dek, .xml, .mse-set).')
 
     # Group: Output Format (Mutually Exclusive)
     # We use a mutually exclusive group to enforce one output format.
