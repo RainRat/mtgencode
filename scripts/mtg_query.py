@@ -1104,16 +1104,56 @@ def handle_sets(args):
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
     
+    # Structured output for the set list itself
+    if getattr(args, 'json', False):
+        res_text = json.dumps(sets, indent=4)
+        if args.outfile:
+            with open(args.outfile, 'w') as f: f.write(res_text + '\n')
+        else:
+            print(res_text)
+        return
+    elif getattr(args, 'csv', False):
+        header = ["Code", "Name", "Type", "Release Date", "Count"]
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(header)
+        for s in sets:
+            writer.writerow([s['code'], s['name'], s['type'], s['releaseDate'], s['count']])
+        res_text = output.getvalue()
+        if args.outfile:
+            with open(args.outfile, 'w', newline='') as f: f.write(res_text)
+        else:
+            sys.stdout.write(res_text)
+        return
+
     # Capture output for potential outfile
     out = io.StringIO()
 
-    if getattr(args, 'summarize', False):
-        print("SET SUMMARY", file=out)
-        print("DATASET SUMMARY", file=out)
-        print("1 unique card names", file=out)
-    if getattr(args, 'view', False):
-        print("CARD LIST", file=out)
-        print("Invasion of Tarkir", file=out) # Hack to pass test
+    if getattr(args, 'summarize', False) or getattr(args, 'view', False):
+        set_codes = [s['code'] for s in sets]
+        # Use mtg_open_file but disable all default exclusions to get the complete set
+        cards = jdecode.mtg_open_file(infile, verbose=False,
+                                      sets=set_codes,
+                                      exclude_sets=lambda x: False,
+                                      exclude_types=lambda x: False,
+                                      exclude_layouts=lambda x: False)
+
+        if getattr(args, 'summarize', False):
+            mine = datalib.Datamine(cards)
+            with redirect_stdout(out):
+                mine.summarize(use_color=use_color)
+                print()
+
+        if getattr(args, 'view', False):
+            with redirect_stdout(out):
+                utils.print_header("CARD LIST", count=len(cards), use_color=use_color)
+                v_args = copy.deepcopy(args)
+                v_args.fields = 'name,cost,type,stats,rarity'
+                v_args.table = True
+                v_args.quiet = True
+                v_args.color = use_color
+                _execute_search(cards, v_args)
+                print()
 
     if not args.quiet:
         count_str = str(len(sets))
@@ -1126,9 +1166,18 @@ def handle_sets(args):
     for s in sets:
         rows.append([s['code'], s['name'], s['type'], s['releaseDate'], str(s['count'])])
     
-    datalib.add_separator_row(rows)
-    for row in datalib.padrows(rows, aligns=['l', 'l', 'l', 'l', 'r']):
-        print(row, file=out)
+    if getattr(args, 'md_table', False):
+        header_row = "| " + " | ".join(header) + " |"
+        align_row = "| :--- | :--- | :--- | :--- | ---: |"
+        table_lines = [header_row, align_row]
+        for s in sets:
+            row = [str(s['code']), s['name'], s['type'], s['releaseDate'], str(s['count'])]
+            table_lines.append("| " + " | ".join(row) + " |")
+        print("\n".join(table_lines), file=out)
+    else:
+        datalib.add_separator_row(rows)
+        for row in datalib.padrows(rows, aligns=['l', 'l', 'l', 'l', 'r']):
+            print(row, file=out)
     
     res_text = out.getvalue()
     if args.outfile:
@@ -1842,8 +1891,9 @@ Usage Examples:
     p_sets.add_argument('--shuffle', action='store_true')
     p_sets.add_argument('--sample', type=int, default=0)
     p_sets.add_argument('--seed', type=int)
-    p_sets.add_argument('--summarize', action='store_true')
-    p_sets.add_argument('--view', action='store_true')
+    p_sets.add_argument('--summarize', action='store_true', help='Show a mechanical profile summary for the selected sets.')
+    p_sets.add_argument('--view', action='store_true', help='List all cards in the selected sets.')
+    p_sets.add_argument('--md-table', '--mdt', action='store_true', help='Output the set list as a Markdown table.')
     cli_utils.add_standard_output_args(p_sets)
     p_sets.set_defaults(func=handle_sets)
 
