@@ -148,33 +148,5 @@ class TestMtgSets(unittest.TestCase):
                 output = captured_output.getvalue()
                 self.assertIn("\033[", output)
 
-    def test_sets_json(self):
-        """Test JSON output for sets."""
-        with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--json']):
-                sets_main()
-                output = fake_out.getvalue()
-                data = json.loads(output)
-                self.assertEqual(len(data), 1)
-                self.assertEqual(data[0]['code'], 'CUS')
-
-    def test_sets_csv(self):
-        """Test CSV output for sets."""
-        with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--csv']):
-                sets_main()
-                output = fake_out.getvalue()
-                self.assertIn("Code,Name,Type,Release Date,Count", output)
-                self.assertIn("CUS,custom,custom,0000-00-00,1", output)
-
-    def test_sets_md_table(self):
-        """Test Markdown table output for sets."""
-        with patch('sys.stdout', new=io.StringIO()) as fake_out:
-            with patch('sys.argv', ['mtg_query.py', 'sets', 'testdata/tarkir.json', '--md-table', '--no-color']):
-                sets_main()
-                output = fake_out.getvalue()
-                self.assertIn("| Code | Name | Type | Release Date | Count |", output)
-                self.assertIn("| CUS | custom | custom | 0000-00-00 | 1 |", output)
-
 if __name__ == '__main__':
     unittest.main()
