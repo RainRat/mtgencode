@@ -64,6 +64,8 @@ FIELD_MAP = {
     'legalities': {'header': 'Legalities', 'align': 'l', 'aliases': ['formats', 'legal']},
     'legendary': {'header': 'Legendary', 'align': 'l', 'aliases': []},
     'permanent': {'header': 'Permanent', 'align': 'l', 'aliases': []},
+    'printings': {'header': 'Printings', 'align': 'l', 'aliases': ['history', 'sets_all']},
+    'all_sets': {'header': 'Sets', 'align': 'l', 'aliases': ['other_sets']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
 
@@ -196,6 +198,24 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         res = "Yes" if card.is_permanent else "No"
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.BOLD + (utils.Ansi.CYAN if card.is_permanent else utils.Ansi.WHITE))
+        return res
+    elif canon == 'all_sets':
+        sets = sorted([p['set_code'] for p in card.printings])
+        res = ", ".join(sets)
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.CYAN)
+        return res
+    elif canon == 'printings':
+        parts = []
+        for p in sorted(card.printings, key=lambda x: x['set_code']):
+            info = p['set_code']
+            if p['rarity']:
+                r_mark = cardlib.RARITY_MAP.get(p['rarity'].lower() if hasattr(p['rarity'], 'lower') else p['rarity'], p['rarity'][0].upper() if p['rarity'] else '?')
+                info += f" ({r_mark})"
+            parts.append(info)
+        res = ", ".join(parts)
+        if ansi_color:
+            res = utils.colorize(res, utils.Ansi.CYAN)
         return res
     elif canon == 'produced':
         produced = card.produced_colors
@@ -714,6 +734,22 @@ def _execute_oracle(cards, args):
                 analytics_parts.append(f"{fmt_label('COLOR PIE:')} {cp_val}")
 
             footer_lines.append(" \u2022 ".join(analytics_parts))
+
+            # Printings History
+            if c.printings and len(c.printings) > 1:
+                parts = []
+                for p in sorted(c.printings, key=lambda x: x['set_code']):
+                    info = p['set_code']
+                    if p['rarity']:
+                        r_mark = cardlib.RARITY_MAP.get(p['rarity'].lower() if hasattr(p['rarity'], 'lower') else p['rarity'], p['rarity'][0].upper() if p['rarity'] else '?')
+                        if use_color:
+                            r_color = utils.Ansi.get_rarity_color(p['rarity'])
+                            info += " (" + utils.colorize(r_mark, r_color) + ")"
+                        else:
+                            info += f" ({r_mark})"
+                    parts.append(info)
+                history_val = ", ".join(parts)
+                footer_lines.append(f"{fmt_label('PRINTINGS:')} {history_val}")
 
             # Legality
             if c.legalities:

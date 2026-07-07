@@ -730,6 +730,10 @@ def _process_json_srcs(json_srcs, bad_sets, verbose, linetrans,
                 continue
 
             if card.valid:
+                # Build printing history from all available versions
+                for jcard in jcards:
+                    card.add_printing(jcard.get('setCode'), jcard.get('rarity'), jcard.get('number'), jcard.get(utils.json_field_set_name))
+
                 # Handle multiplication from decklist
                 count = decklist_names[json_cardname] if decklist_names else 1
                 for _ in range(count):
@@ -1273,12 +1277,27 @@ def mtg_open_file(fname, verbose = False,
                 if card.search_loyalty(pattern):
                     return False
 
-            # Set filtering
+            # Set filtering: Check primary set and all printings
             if target_sets:
-                # If the card has no set code (like from an encoded text file),
-                # we don't filter it out by set.
-                if card.set_code and card.set_code.upper() not in target_sets:
-                    return False
+                matched_set = None
+                if card.set_code and card.set_code.upper() in target_sets:
+                    matched_set = card.set_code.upper()
+                else:
+                    # Check reprints
+                    for p in card.printings:
+                        if p['set_code'] in target_sets:
+                            matched_set = p['set_code']
+                            break
+
+                if matched_set:
+                    # Automatically activate the printing that matched the user's filter
+                    # This ensures correct display/simulation context.
+                    card.activate_printing(matched_set)
+                else:
+                    # If the card has no set code (like from an encoded text file),
+                    # we don't filter it out by set.
+                    if card.set_code:
+                        return False
 
             # Rarity filtering
             if target_rarities:

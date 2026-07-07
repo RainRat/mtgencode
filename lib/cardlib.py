@@ -677,6 +677,9 @@ class Card:
         # format-independent view of processed input
         self.fields = None # will be reset later
 
+        # printing history
+        self.printings = []
+
         # looks like a json object
         if isinstance(src, dict):
             self.json = src
@@ -684,6 +687,8 @@ class Card:
             self.number = src.get('number')
             self.rulings = src.get('rulings', [])
             self.legalities = src.get('legalities', {})
+            if self.set_code:
+                self.add_printing(self.set_code, src.get('rarity'), self.number, src.get(utils.json_field_set_name))
             if utils.json_field_bside in src:
                 self.bside = Card(src[utils.json_field_bside],
                                   fmt_ordered = fmt_ordered,
@@ -795,6 +800,43 @@ class Card:
     def is_permanent(self):
         """Returns True if the card is a permanent (Artifact, Creature, Enchantment, Land, Planeswalker, or Battle)."""
         return self.is_artifact or self.is_creature or self.is_enchantment or self.is_land or self.is_planeswalker or self.is_battle
+
+    def add_printing(self, set_code, rarity, number, set_name=None):
+        """Adds a printing to the card's history."""
+        if not set_code:
+            return
+
+        # Avoid duplicates
+        for p in self.printings:
+            if p['set_code'].upper() == set_code.upper():
+                return
+
+        self.printings.append({
+            'set_code': set_code.upper(),
+            'rarity': rarity,
+            'number': str(number) if number else None,
+            'set_name': set_name
+        })
+
+    def activate_printing(self, set_code):
+        """Updates the card's primary metadata to match a specific printing."""
+        if not set_code:
+            return False
+
+        target = set_code.upper()
+        for p in self.printings:
+            if p['set_code'] == target:
+                self.set_code = p['set_code']
+                # Try to map rarity back to marker if it's a name
+                r_val = p['rarity']
+                if r_val and hasattr(r_val, 'lower') and r_val.lower() in utils.json_rarity_map:
+                    self.rarity = utils.json_rarity_map[r_val.lower()]
+                else:
+                    self.rarity = r_val
+
+                self.number = p['number']
+                return True
+        return False
 
     @property
     def tokens(self):
@@ -1981,6 +2023,9 @@ class Card:
             d['box_id'] = self.box_id
         if hasattr(self, 'pack_id'):
             d['pack_id'] = self.pack_id
+
+        if self.printings:
+            d['printings'] = self.printings
 
         # B-Side (Recursive)
         if self.bside:
