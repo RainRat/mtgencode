@@ -64,6 +64,7 @@ FIELD_MAP = {
     'legalities': {'header': 'Legalities', 'align': 'l', 'aliases': ['formats', 'legal']},
     'legendary': {'header': 'Legendary', 'align': 'l', 'aliases': []},
     'permanent': {'header': 'Permanent', 'align': 'l', 'aliases': []},
+    'signature': {'header': 'Signature', 'align': 'l', 'aliases': ['unique', 'diff', 'diffs']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
 
@@ -224,6 +225,8 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ", ".join(res)
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
+    elif canon == 'signature':
+        return ""
     elif canon == 'encoded':
         return card.encode()
     else:
@@ -1574,24 +1577,32 @@ def handle_compare_cards(args):
         if not args.quiet:
             utils.print_header("CARD COMPARISON", use_color=use_color)
 
-        fields = [
-            ('Set', 'set'),
-            ('Cost', 'cost'),
-            ('CMC', 'cmc'),
-            ('Type', 'type'),
-            ('Stats', 'stats'),
-            ('Rarity', 'rarity'),
-            ('Identity', 'identity'),
-            ('Produced', 'produced'),
-            ('Tokens', 'tokens'),
-            ('Mechanics', 'mechanics'),
-            ('Actions', 'actions'),
-            ('Signature', 'signature'),
-            ('Fair MV', 'fair_cmc'),
-            ('Rating', 'rating'),
-            ('Complexity', 'complexity'),
-            ('Color Pie', 'color_pie'),
-            ('Text', 'text')
+        field_groups = [
+            ('BASIC', [
+                ('Set', 'set'),
+                ('Cost', 'cost'),
+                ('CMC', 'cmc'),
+                ('Type', 'type'),
+                ('Stats', 'stats'),
+                ('Rarity', 'rarity'),
+            ]),
+            ('MECHANICAL', [
+                ('Identity', 'identity'),
+                ('Produced', 'produced'),
+                ('Tokens', 'tokens'),
+                ('Mechanics', 'mechanics'),
+                ('Actions', 'actions'),
+                ('Signature', 'signature'),
+            ]),
+            ('DESIGN', [
+                ('Fair MV', 'fair_cmc'),
+                ('Rating', 'rating'),
+                ('Complexity', 'complexity'),
+                ('Color Pie', 'color_pie'),
+            ]),
+            ('RULES', [
+                ('Text', 'text'),
+            ]),
         ]
 
         def get_full_name(c):
@@ -1658,38 +1669,47 @@ def handle_compare_cards(args):
         num_cards = len(comparison_cards)
         wrap_width = max(25, (term_width - 20) // num_cards)
 
-        for label, field in fields:
-            display_vals = []
-            raw_vals = []
+        for group_name, group_fields in field_groups:
+            group_rows = []
+            for label, field in group_fields:
+                display_vals = []
+                raw_vals = []
 
-            if field == 'signature':
-                for i, sig_list in enumerate(signatures):
-                    v = ", ".join(sig_list)
-                    raw_vals.append(v)
-                    if use_color and v:
-                        v = utils.colorize(v, utils.Ansi.BOLD + utils.Ansi.GREEN)
-                    display_vals.append(wrap_ansi(v, wrap_width))
-            else:
-                for c in comparison_cards:
-                    v_raw = get_field_value(c, field, ansi_color=False)
-                    v_display = get_field_value(c, field, ansi_color=use_color)
-                    raw_vals.append(v_raw)
-                    if field in ['text', 'tokens', 'mechanics', 'actions']:
-                        v_display = wrap_ansi(v_display, wrap_width)
-                    display_vals.append(v_display)
+                if field == 'signature':
+                    for i, sig_list in enumerate(signatures):
+                        v = ", ".join(sig_list)
+                        raw_vals.append(v)
+                        if use_color and v:
+                            v = utils.colorize(v, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                        display_vals.append(wrap_ansi(v, wrap_width))
+                else:
+                    for c in comparison_cards:
+                        v_raw = get_field_value(c, field, ansi_color=False)
+                        v_display = get_field_value(c, field, ansi_color=use_color)
+                        raw_vals.append(v_raw)
+                        if field in ['text', 'tokens', 'mechanics', 'actions']:
+                            v_display = wrap_ansi(v_display, wrap_width)
+                        display_vals.append(v_display)
 
-            # Highlight differences or matches
-            is_all_same = all(v == raw_vals[0] for v in raw_vals)
-            if not is_all_same:
+                # Highlight differences or matches
+                is_all_same = all(v == raw_vals[0] for v in raw_vals)
+                if not is_all_same:
+                    if use_color:
+                        label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                elif use_color:
+                    label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+
+                # Always show basic identifying rows; hide others only if all are empty
+                is_identifying = field in ['cost', 'cmc', 'type', 'rarity', 'text']
+                if is_identifying or any(v for v in raw_vals):
+                    group_rows.append([label] + display_vals)
+
+            if group_rows:
+                header_label = f"--- {group_name} ---"
                 if use_color:
-                    label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
-            elif use_color:
-                label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
-
-            # Always show basic identifying rows; hide others only if all are empty
-            is_identifying = field in ['cost', 'cmc', 'type', 'rarity', 'text']
-            if is_identifying or any(v for v in raw_vals):
-                rows.append([label] + display_vals)
+                    header_label = utils.colorize(header_label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                rows.append([header_label] + [""] * num_cards)
+                rows.extend(group_rows)
 
         datalib.add_separator_row(rows)
         datalib.printrows(datalib.padrows(rows, aligns=['l'] * (num_cards + 1)), indent=2)
