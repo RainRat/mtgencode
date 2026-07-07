@@ -1888,6 +1888,7 @@ Usage Examples:
     p_sets.add_argument('--reverse', action='store_true')
     p_sets.add_argument('--summarize', action='store_true', help='Show a mechanical profile summary for the selected sets.')
     p_sets.add_argument('--view', action='store_true', help='List all cards in the selected sets.')
+    p_sets.add_argument('--md-table', '--mdt', action='store_true', help='Output the set list as a Markdown table.')
     cli_utils.add_standard_output_args(p_sets)
     cli_utils.add_standard_filters(p_sets)
     p_sets.set_defaults(func=handle_sets)
