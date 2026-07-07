@@ -106,7 +106,7 @@ Customization options for formatting data:
 *   `-e old`: Legacy encoding format.
 *   `-e norarity`: Standard format but without rarity labels.
 *   `-e vec`: Numerical format for mathematical models.
-*   `-e custom`: Use your own user-defined formatting rules (see `lib/cardlib.py`).
+*   `-e custom`: Use your own user-defined formatting rules (see placeholders in `encode.py` and `decode.py`).
 *   `--nolabel`: Removes field labels (e.g., `|cost|`, `|text|`) from the output.
 *   `--nolinetrans`: Disables the automatic reordering and normalization of card text lines.
 *   `-r`, `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
