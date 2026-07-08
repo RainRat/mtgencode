@@ -1849,7 +1849,13 @@ def main():
     if hasattr(args, 'infile') and args.infile == '-' and sys.stdin.isatty():
         df = 'data/AllPrintings.json'
         if os.path.exists(df): args.infile = df
-    if hasattr(args, 'sample') and args.sample > 0: args.shuffle = True; args.limit = args.sample
+    sample_val = 0
+    if hasattr(args, 'sample'):
+        try:
+            sample_val = int(args.sample)
+        except (ValueError, TypeError):
+            pass
+    if sample_val > 0: args.shuffle = True; args.limit = sample_val
     args.func(args)
 
 if __name__ == "__main__": main()

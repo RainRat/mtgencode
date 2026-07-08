@@ -1388,10 +1388,7 @@ class Card:
             return ''
 
         mtext = text_obj.text
-        if gatherer or mse:
-            cardname = titlecase(transforms.name_unpass_1_dashes(name_obj))
-        else:
-            cardname = titlecase(name_obj)
+        cardname = titlecase(transforms.name_unpass_1_dashes(name_obj))
 
         # 1. Choice unpass
         delimit_choice = not (gatherer or mse)
