@@ -53,6 +53,8 @@ FIELD_MAP = {
     'id_count': {'header': 'ID', 'align': 'r', 'aliases': ['identity_count']},
     'set': {'header': 'Set', 'align': 'l', 'aliases': ['code']},
     'number': {'header': 'Num', 'align': 'r', 'aliases': ['collector_number', 'num']},
+    'printings': {'header': 'Printings', 'align': 'l', 'aliases': ['history', 'sets_all']},
+    'all_sets': {'header': 'Sets', 'align': 'l', 'aliases': ['other_sets']},
     'pack': {'header': 'Pack', 'align': 'r', 'aliases': ['pack_id']},
     'box': {'header': 'Box', 'align': 'r', 'aliases': ['box_id']},
     'complexity': {'header': 'Complexity', 'align': 'r', 'aliases': ['score']},
@@ -225,6 +227,20 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ", ".join(res)
     elif canon == 'summary':
         return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
+    elif canon == 'printings' or canon == 'all_sets':
+        p_list = []
+        for p in card.printings:
+            code = p['set_code'].upper()
+            r = p['rarity']
+            # Try to get the one-letter shorthand for rarity
+            r_short = cardlib.RARITY_MAP.get(r.lower() if hasattr(r, 'lower') else r, r[0].upper() if r else '?')
+
+            p_str = f"{code} ({r_short})"
+            if ansi_color:
+                r_color = utils.Ansi.get_rarity_color(r)
+                p_str = f"{code} ({utils.colorize(r_short, r_color)})"
+            p_list.append(p_str)
+        return ", ".join(p_list)
     elif canon == 'signature':
         return ""
     elif canon == 'encoded':
@@ -233,7 +249,7 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ""
 
     if card.bside:
-        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary', 'tokens', 'actions']:
+        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary', 'tokens', 'actions', 'printings', 'all_sets']:
             return str(res)
         b_res = get_field_value(card.bside, field, ansi_color, multi_sep=multi_sep)
         if res and b_res:
@@ -625,6 +641,12 @@ def _execute_oracle(cards, args):
 
             if id_parts:
                 footer_lines.append(" \u2022 ".join(id_parts))
+
+            # PRINTINGS
+            if c.printings:
+                p_val = get_field_value(c, 'printings', ansi_color=use_color)
+                if p_val:
+                    footer_lines.append(f"{fmt_label('PRINTINGS:')} {p_val}")
 
             # 2. Mechanical Identity Block (Identity, Produced)
             mech_id_parts = []
