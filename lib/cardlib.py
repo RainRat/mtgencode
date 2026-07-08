@@ -2109,6 +2109,16 @@ class Card:
                 newtext2 = newtext2.replace('\n', '\n\t\t')
                 outstr += '\trule text 2:\n\t\t' + newtext2 + '\n'
 
+        # Apply specific formatting for battle cards.
+        elif self.is_battle:
+            outstr += '\tstylesheet: magic-m15-extra-improved\n'
+
+            if self.__dict__[field_loyalty]:
+                outstr += '\tdefense: ' + utils.from_unary(self.__dict__[field_loyalty]) + '\n'
+
+            newtext = newtext.replace('\n', '\n\t\t')
+            outstr += '\trule text:\n\t\t' + newtext + '\n'
+
         # Apply specific formatting for planeswalker cards.
         elif self.is_planeswalker:
             outstr += '\tstylesheet: m15-planeswalker\n'
