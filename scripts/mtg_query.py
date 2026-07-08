@@ -1674,33 +1674,41 @@ def handle_compare_cards(args):
         if not args.quiet:
             utils.print_header("CARD COMPARISON", use_color=use_color)
 
-        field_groups = [
-            ('BASIC', [
-                ('Set', 'set'),
-                ('Cost', 'cost'),
-                ('CMC', 'cmc'),
-                ('Type', 'type'),
-                ('Stats', 'stats'),
-                ('Rarity', 'rarity'),
-            ]),
-            ('MECHANICAL', [
-                ('Identity', 'identity'),
-                ('Produced', 'produced'),
-                ('Tokens', 'tokens'),
-                ('Mechanics', 'mechanics'),
-                ('Actions', 'actions'),
-                ('Signature', 'signature'),
-            ]),
-            ('DESIGN', [
-                ('Fair MV', 'fair_cmc'),
-                ('Rating', 'rating'),
-                ('Complexity', 'complexity'),
-                ('Color Pie', 'color_pie'),
-            ]),
-            ('RULES', [
-                ('Text', 'text'),
-            ]),
-        ]
+        if getattr(args, 'fields', None):
+            custom_fields = []
+            for f in args.fields.split(','):
+                canon = get_field_canonical_name(f)
+                header = FIELD_MAP.get(canon, {}).get('header', f.strip().title())
+                custom_fields.append((header, canon))
+            field_groups = [(None, custom_fields)]
+        else:
+            field_groups = [
+                ('BASIC', [
+                    ('Set', 'set'),
+                    ('Cost', 'cost'),
+                    ('CMC', 'cmc'),
+                    ('Type', 'type'),
+                    ('Stats', 'stats'),
+                    ('Rarity', 'rarity'),
+                ]),
+                ('MECHANICAL', [
+                    ('Identity', 'identity'),
+                    ('Produced', 'produced'),
+                    ('Tokens', 'tokens'),
+                    ('Mechanics', 'mechanics'),
+                    ('Actions', 'actions'),
+                    ('Signature', 'signature'),
+                ]),
+                ('DESIGN', [
+                    ('Fair MV', 'fair_cmc'),
+                    ('Rating', 'rating'),
+                    ('Complexity', 'complexity'),
+                    ('Color Pie', 'color_pie'),
+                ]),
+                ('RULES', [
+                    ('Text', 'text'),
+                ]),
+            ]
 
         def get_full_name(c):
             res = cardlib.titlecase(c.name.replace(utils.dash_marker, '-'))
@@ -2072,6 +2080,7 @@ Usage Examples:
     p_compare.add_argument('names', nargs='*', help='Card names to compare. Supports comparing any number of cards. If one name is provided, it is compared against its closest mechanical match. If no names are provided, the filtered result pool is used.')
     p_compare.add_argument('infile', nargs='?', default='-',
                          help='Input card data. Defaults to data/AllPrintings.json if available.')
+    p_compare.add_argument('-f', '--fields', help=FIELDS_HELP)
     cli_utils.add_standard_filters(p_compare)
     cli_utils.add_standard_output_args(p_compare)
     p_compare.set_defaults(func=handle_compare_cards)
