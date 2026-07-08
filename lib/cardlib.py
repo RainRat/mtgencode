@@ -1550,7 +1550,11 @@ class Card:
         """Returns True if the pattern matches the card's name."""
         if pattern.search(self.name):
             return True
+        # For multi-faced cards, also check the combined name
         if self.bside:
+            combined_name = f"{self.name} // {self.bside.name}"
+            if pattern.search(combined_name):
+                return True
             return self.bside.search_name(pattern)
         return False
 
