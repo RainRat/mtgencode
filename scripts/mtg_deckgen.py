@@ -21,10 +21,6 @@ def get_color_identity_set(card):
         return set()
     return set(card.color_identity.upper())
 
-def subset_identity(card_id, cmd_id):
-    # Returns True if card_id is a subset of cmd_id
-    return card_id.issubset(cmd_id)
-
 def pick_cards_with_curve(pool, target_count, curve=None):
     if not pool:
         return []
@@ -248,7 +244,7 @@ Usage Examples:
         valid_pool = []
         for c in pool:
             if c.display_name == commander_card.display_name: continue
-            if subset_identity(get_color_identity_set(c), cmd_id):
+            if get_color_identity_set(c).issubset(cmd_id):
                 valid_pool.append(c)
                 
         creatures_pool = [c for c in valid_pool if c.is_creature]
