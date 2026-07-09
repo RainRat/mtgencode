@@ -539,7 +539,9 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `functional`: Identify and group cards with the same mechanics but different names.
 *   `compare`: Compare two cards side-by-side by name to identify differences.
 *   `superior`: Find cards that are generally better than a reference card.
+*   `reprints`: Find cards with identical mechanics and mana cost as a reference card.
 *   `inferior`: Find cards that are generally worse than a reference card.
+*   `substitutes`: Find functional alternatives to a reference card.
 *   `extract`: Extract a single card object from a large JSON database.
 *   `shell`: Launch an interactive terminal for quick card lookups and searches.
 
@@ -661,6 +663,19 @@ python3 scripts/mtg_query.py superior "Grizzly Bears" --set MOM
 
 ---
 
+#### **Subcommand: `reprints`**
+Identifies functional reprints of a reference card. These are cards with identical mana costs, types, stats, and mechanical abilities, but different names.
+
+```bash
+# Find reprints of Grizzly Bears
+python3 scripts/mtg_query.py reprints "Grizzly Bears"
+
+# Find reprints of Lightning Bolt in a specific set
+python3 scripts/mtg_query.py reprints "Lightning Bolt" --set MOM
+```
+
+---
+
 #### **Subcommand: `inferior`**
 Identifies generally inferior cards by comparing mana cost, stats, and abilities. A card is inferior if the reference card has easier or identical mana cost, equal or better stats, and its abilities include all of the candidate card's mechanics and actions.
 
@@ -670,6 +685,22 @@ python3 scripts/mtg_query.py inferior "Black Vise"
 
 # Find worse cards in a specific set
 python3 scripts/mtg_query.py inferior "Lightning Bolt" --set MOM
+```
+
+---
+
+#### **Subcommand: `substitutes`**
+Finds functional alternatives to a reference card. It looks for cards with shared types, compatible color identities, similar mana costs (+/- 1), and overlapping functional actions (like Removal or Card Advantage).
+
+```bash
+# Find substitutes for Lightning Bolt
+python3 scripts/mtg_query.py substitutes "Lightning Bolt"
+
+# Find budget (common/uncommon) substitutes for a rare card
+python3 scripts/mtg_query.py substitutes "Damnation" --rarity common --rarity uncommon
+
+# Find substitutes within a specific set
+python3 scripts/mtg_query.py substitutes "Counterspell" --set MOM
 ```
 
 ---
