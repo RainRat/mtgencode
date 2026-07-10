@@ -1088,6 +1088,8 @@ def handle_asfan(args):
         datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','r','r']), indent=4)
     pt("Color Distribution:", a1['colors'], a2['colors'] if a2 else None, ks='WUBRGC')
     pt("Type Distribution:", a1['types'], a2['types'] if a2 else None)
+    pt("Mechanical Distribution:", a1['mechs'], a2['mechs'] if a2 else None)
+    print(f"\n  Multicolored As-Fan: {a1['multi']:.2f}" + (f" ({a2['multi']-a1['multi']:+.2f})" if a2 else ""))
 
 def handle_tokens(args):
     cards = cli_utils.load_and_filter_cards(args)
