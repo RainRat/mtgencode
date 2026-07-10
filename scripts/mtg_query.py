@@ -68,11 +68,12 @@ FIELD_MAP = {
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
 }
 
-FIELDS_HELP = """Comma-separated list of fields to extract. Available fields:
-  - Basic:    name, cost, cmc, type, stats, text, rarity
-  - Analysis: mechanics, actions, tokens, identity, produced, color_pie, signature
-  - Design:   complexity, rating, fair_mv
-  - Metadata: set, number, pack, box, legalities"""
+FIELDS_HELP = """Comma-separated list of fields to extract.
+Available fields:
+  [Basic]    name, cost, cmc, type, stats, text, rarity
+  [Analysis] mechanics, actions, tokens, identity, produced, color_pie, signature
+  [Design]   complexity, rating, fair_mv
+  [Metadata] set, number, pack, box, legalities"""
 
 _CANONICAL_MAP = {k: k for k in FIELD_MAP}
 for k, v in FIELD_MAP.items():
@@ -1848,7 +1849,7 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="Unified tool for searching card data, looking up rules text, and listing set contents.",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawTextHelpFormatter
     )
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
@@ -1857,7 +1858,7 @@ def main():
         'search',
         aliases=['s'],
         help='Search card data and extract specific fields.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # Search for a card by name
@@ -1900,7 +1901,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
         'oracle',
         aliases=['o'],
         help='Search for a card by name and display its full official rules text.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # Quick lookup (fuzzy matching supported)
@@ -1933,7 +1934,7 @@ Usage Examples:
         'random',
         aliases=['r'],
         help='Display one or more random cards matching the filters.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # See a random card
@@ -1971,7 +1972,7 @@ Usage Examples:
         'extract',
         aliases=['e'],
         help='Extract a single card object from a large JSON database.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # Extract a card object by name and set code
@@ -1990,7 +1991,7 @@ Usage Examples:
         'sets',
         aliases=['st'],
         help='List and filter card sets from a data file.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # List all sets in the default dataset
@@ -2021,7 +2022,7 @@ Usage Examples:
         'functional',
         aliases=['f'],
         help='Identify and group cards with the same mechanics but different names.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # List all cards with the same mechanics (but different names)
@@ -2058,7 +2059,7 @@ Usage Examples:
         'compare',
         aliases=['c'],
         help='Compare multiple cards side-by-side.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # Compare two cards by name
@@ -2090,7 +2091,7 @@ Usage Examples:
         'superior',
         aliases=['sup'],
         help='Find cards that are generally better than a reference card.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Finds generally better cards by comparing mana cost, stats, and abilities.
 A card is considered superior if it has easier or identical mana cost,
@@ -2126,7 +2127,7 @@ Usage Examples:
         'reprints',
         aliases=['rep'],
         help='Find functional reprints (identical mechanics) of a reference card.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Finds cards with identical mana cost, types, stats, and mechanics/text
 as the reference card, excluding the reference card itself.
@@ -2157,7 +2158,7 @@ Usage Examples:
         'inferior',
         aliases=['inf'],
         help='Find cards that are generally inferior to a reference card.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Finds generally inferior cards by comparing mana cost, stats, and abilities.
 A card is considered inferior if the reference card has easier or identical mana cost,
@@ -2190,7 +2191,7 @@ Usage Examples:
         'substitutes',
         aliases=['sub'],
         help='Find functional alternatives to a reference card.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Finds functional substitutes by identifying cards with shared types,
 compatible color identities (subset), similar mana costs (+/- 1),
@@ -2223,7 +2224,7 @@ Usage Examples:
         'shell',
         aliases=['sh', 'interactive', 'repl'],
         help='Launch an interactive shell for quick card lookups and searches.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # Start the interactive shell using the default dataset
