@@ -180,6 +180,23 @@ def get_cost_metrics(card):
 def get_numeric_stats(card):
     return utils.from_unary_single(card.pt_p), utils.from_unary_single(card.pt_t), utils.from_unary_single(card.loyalty)
 
+def _get_dataset_label(path, fallback=None):
+    """
+    Extracts a shortened, clean label from a dataset file path.
+    """
+    if not path or path == '-':
+        return fallback or "dataset"
+
+    bn = os.path.basename(path)
+    # Strip common extensions
+    for ext in ['.json', '.csv', '.txt', '.mse-set', '.xml', '.jsonl']:
+        if bn.lower().endswith(ext):
+            bn = bn[:-len(ext)]
+            break
+
+    # Truncate if too long
+    return bn[:15]
+
 def check_cards(cards, args):
     if not cards:
         if not getattr(args, 'quiet', False):
@@ -418,7 +435,9 @@ def handle_colorpie(args):
     elif args.csv:
         writer = csv.writer(sys.stdout)
         if m2:
-            writer.writerow(['Mechanic', 'Color', 'P1%', 'P2%', 'Delta'])
+            l1 = _get_dataset_label(args.infile, fallback="P1")
+            l2 = _get_dataset_label(args.compare, fallback="P2")
+            writer.writerow(['Mechanic', 'Color', f'{l1}%', f'{l2}%', 'Delta'])
             for m in ordered:
                 for g in COLOR_GROUPS:
                     p1, p2 = (m1[g][m]/t1[g]*100 if t1[g]>0 else 0), (m2[g][m]/t2[g]*100 if t2[g]>0 else 0)
@@ -622,7 +641,9 @@ def handle_mana(args):
     else:
         utils.print_header("MANA PRODUCTION ANALYSIS" + (" (COMPARISON)" if s2 else ""), count=s1['total'], use_color=use_color)
         print(f"  {datalib.color_line('General Metrics:', use_color)}")
-        h = ["Metric", "Primary"] + (["Comparison", "Delta"] if s2 else [])
+        l1 = _get_dataset_label(args.infile, fallback="Primary")
+        l2 = _get_dataset_label(args.compare, fallback="Comparison")
+        h = ["Metric", l1] + ([l2, "Delta"] if s2 else [])
         rows = [[utils.colorize(x, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else x for x in h]]
         ms = [("Total Producers", s1['producers'], s2['producers'] if s2 else None), ("Fixing Cards", s1['fixing'], s2['fixing'] if s2 else None), ("Fixing Density", f"{s1['fixing']/s1['total']*100:.1f}%", f"{s2['fixing']/s2['total']*100:.1f}%" if s2 else None)]
         for lbl, v1, v2 in ms:
@@ -637,7 +658,7 @@ def handle_mana(args):
             rows.append(row)
         datalib.printrows(datalib.padrows(rows), indent=4)
         print(f"\n  {datalib.color_line('Produced Colors:', use_color)}")
-        ch = ["Color", "Primary %"] + (["Comp %", "Delta"] if s2 else [])
+        ch = ["Color", f"{l1} %"] + ([f"{l2} %", "Delta"] if s2 else [])
         cr = [[utils.colorize(x, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else x for x in ch]]
         for c in list("WUBRGC") + ["Any"]:
             p1 = s1['cols'][c]/s1['total']*100
@@ -689,7 +710,7 @@ def handle_pips(args):
                 print("INCLUDES RULES TEXT", file=target)
             print("  MANA PIP DISTRIBUTION", file=target)
             print("  ===============================", file=target)
-            print("  Symbol  Count  Percent  Frequency", file=target)
+            print("  Symbol  Count  Percent  Distribution", file=target)
             print("  ------  -----  -------  ------------", file=target)
             for r in res:
                 print(f"  {r['sym']:<6}  {r['cnt']:>5}  {r['pct']:>6.1f}%  [██████████]", file=target)
@@ -697,7 +718,7 @@ def handle_pips(args):
             if args.include_text:
                 print("  INCLUDES RULES TEXT")
             utils.print_header("MANA PIP DISTRIBUTION", count=len(cards), use_color=use_color)
-            rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Symbol", "Count", "Percent", "Frequency"]]]
+            rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Symbol", "Count", "Percent", "Distribution"]]]
             for r in res:
                 es = utils.mana_symall_encode.get(r['sym'], r['sym'])
                 rows.append([utils.from_mana("{"+es+"}", ansi_color=use_color), datalib.color_count(r['cnt'], use_color), f"{r['pct']:5.1f}%", datalib.get_bar_chart(r['pct'], use_color, color=utils.Ansi.get_color_color(r['sym']))])
@@ -762,13 +783,15 @@ def handle_mechanics(args):
     utils.print_header("MECHANICAL COMPARISON" if c2 else "MECHANICAL FREQUENCY", count=len(cards1), use_color=use_color)
     print(f"  Total Cards: {len(cards1)}")
     if c2:
-        h = ["Mechanic", "% P1", "% P2", "Delta", "Ind"]
+        l1 = _get_dataset_label(args.infile, fallback="P1")
+        l2 = _get_dataset_label(args.compare, fallback="P2")
+        h = ["Mechanic", f"% {l1}", f"% {l2}", "Delta", "Ind"]
         rows = [[utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else x for x in h]]
         for r in res:
             d = r['delta']; ind = "▲" if d>0.1 else ("▼" if d<-0.1 else "•")
             rows.append([utils.colorize(r['name'], utils.Ansi.CYAN) if use_color else r['name'], f"{r['p1']:5.1f}%", f"{r['p2']:5.1f}%", utils.colorize(f"{d:+6.1f}%", utils.Ansi.GREEN if d>0.1 else utils.Ansi.RED) if use_color and abs(d)>0.1 else f"{d:+6.1f}%", utils.colorize(ind, utils.Ansi.GREEN if d>0.1 else utils.Ansi.RED) if use_color and abs(d)>0.1 else ind])
     else:
-        h = ["Mechanic", "Count", "Percent", "Frequency"]
+        h = ["Mechanic", "Count", "Percent", "Distribution"]
         rows = [[utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else x for x in h]]
         for r in res: rows.append([utils.colorize(r['name'], utils.Ansi.CYAN) if use_color else r['name'], str(r['c1']), f"{r['p1']:5.1f}%", datalib.get_bar_chart(r['p1'], use_color, color=utils.Ansi.CYAN)])
     datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','r','r','c'] if c2 else ['l','r','r','l']), indent=2)
@@ -818,7 +841,7 @@ def handle_actions(args):
     if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'summary': dict(act_c), 'color': {c: dict(v) for c, v in col_act.items()}}, indent=2))
     else:
         utils.print_header("CARD ACTION ANALYSIS", count=len(cards), use_color=use_color)
-        rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Action", "Count", "Percent", "Frequency"]]]
+        rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Action", "Count", "Percent", "Distribution"]]]
         for a, cnt in act_c.most_common():
             p = cnt/len(cards)*100
             rows.append([utils.colorize(a, utils.Ansi.CYAN) if use_color else a, datalib.color_count(cnt, use_color), f"{p:5.1f}%", datalib.get_bar_chart(p, use_color, color=utils.Ansi.BOLD+utils.Ansi.CYAN)])
@@ -1074,7 +1097,9 @@ def handle_asfan(args):
     utils.print_header("AS-FAN ANALYSIS" + (" (COMPARISON)" if a2 else ""), use_color=use_color)
     def pt(title, d1, d2, ks=None):
         print(f"  {datalib.color_line(title, use_color)}")
-        h = ["Metric", "P1"] + (["P2", "Delta"] if d2 else ["Freq"])
+        l1 = _get_dataset_label(args.infile, fallback="P1")
+        l2 = _get_dataset_label(getattr(args, 'compare', None), fallback="P2")
+        h = ["Metric", l1] + ([l2, "Delta"] if d2 else ["Distribution"])
         rows = [[utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else x for x in h]]
         ks = ks or sorted(d1.keys())
         for k in ks:
@@ -1412,14 +1437,8 @@ def handle_compare(args):
         mines.append(get_stats_for_file(f, args))
     if not mines: return
     base_mine = mines[0]; base_data = base_mine.to_dict()
-    def clean_fname(path):
-        bn = os.path.basename(path)
-        for ext in ['.json', '.csv', '.txt', '.mse-set', '.xml', '.jsonl']:
-            if bn.lower().endswith(ext):
-                bn = bn[:-len(ext)]
-                break
-        return bn[:15]
-    fnames = [clean_fname(f) for f in args.infiles]
+
+    fnames = [_get_dataset_label(f) for f in args.infiles]
     header = ["Metric", fnames[0]]
     for i in range(1, len(fnames)): header.extend([fnames[i], "Delta"])
     if use_color: header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]

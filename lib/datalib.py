@@ -359,7 +359,7 @@ def _print_lexical_analysis(word_counts, total_words, unique_words, ttr, avg_wor
         print(f"    {label}: {val}")
     print()
 
-    header = _colorize_header(['Word', 'Count', 'Percent', 'Frequency'], use_color)
+    header = _colorize_header(['Word', 'Count', 'Percent', 'Distribution'], use_color)
     rows = [header]
 
     top_words = word_counts.most_common(vsize)
