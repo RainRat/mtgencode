@@ -38,23 +38,23 @@ RECOGNIZED_MECHANICS = [
 ACTION_CATEGORIES = {
     'Removal': [
         r'\bdestroy\b', r'\bexile (target|each|all|any)\b', r'sacrifice (a|target|an)\b',
-        r'deals? [\d&^]+ damage to (target|each|any|any target) (creature|planeswalker|permanent|target|any)',
-        r'return (target|each) [^:]* to (its|their) owner\'s hand',
-        r'gets? \-&[\^]+/\-&[\^]+'
+        r'deals? [\d&^x]+ damage to (target|each|any|any target) (creature|planeswalker|permanent|target|any)',
+        r'return (target|each|all) [^:]* to (its|their) owner\'s hand',
+        r'gets? \-[\d&^x]+/\-[\d&^x]+'
     ],
     'Protection': [
         r'\bhexproof\b', r'\bindestructible\b', r'\bward\b', r'\bprotection from\b', r'\bshroud\b', r'\bregenerate\b'
     ],
     'Buffs': [
-        r'gets? \+&[\^]*/\+&[\^]*', r'put (a|&[\^]+) \+&[\^]*/\+&[\^]* counter',
+        r'gets? \+[\d&^x]*/\+[\d&^x]*', r'put (a|[\d&^x]+) \+[\d&^x]*/\+[\d&^x]* counter',
         r'target creature gets \+', r'creatures you control get \+'
     ],
     'Card Advantage': [
-        r'\bdraw(s|ing)? (a|&[\^]+) cards?\b', r'\bsearch your library\b', r'\breturn (target|a) card from your graveyard\b',
+        r'\bdraw(s|ing)? (a|[\d&^x]+) cards?\b', r'\bsearch your library\b', r'\breturn (target|a) card from your graveyard\b',
         r'\bexile .* you may (play|cast) .*\b'
     ],
     'Disruption': [
-        r'\bdiscard(s|ing)? (a|&[\^]+)?\b', r'\buncast target\b', r'\btap (target|all|each)\b',
+        r'\bdiscard(s|ing)? (a|[\d&^x]+)?\b', r'\buncast target\b', r'\btap (target|all|each)\b',
         r'can\'t (attack|block)', r'don\'t untap during (its|their) [^.]* untap step'
     ]
 }
