@@ -839,12 +839,12 @@ def handle_lexicon(args):
     cards1 = cli_utils.load_and_filter_cards(args)
     if not check_cards(cards1, args): return
     stats1 = analyze_lexicon(cards1, top=args.top, min_len=args.min_len)
-    if not stats1 or stats1['total'] == 0:
+    if not stats1 or stats1.get('total', 0) == 0:
         if not getattr(args, 'quiet', False):
             print("Insufficient card text.", file=sys.stderr)
         return
     stats2 = analyze_lexicon(cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare})), top=args.top, min_len=args.min_len) if getattr(args, 'compare', None) else None
-    if stats2 is not None and stats2['total'] == 0:
+    if stats2 is not None and stats2.get('total', 0) == 0:
         if not getattr(args, 'quiet', False):
             print(f"Insufficient card text in {args.compare} for comparison.", file=sys.stderr)
     use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
