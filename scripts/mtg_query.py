@@ -1772,7 +1772,9 @@ def handle_compare_cards(args):
         import shutil
         term_width = shutil.get_terminal_size().columns
         num_cards = len(comparison_cards)
-        wrap_width = max(25, (term_width - 20) // num_cards)
+        # Allocate width: total terminal width minus column headers/spacing, divided by cards
+        # We ensure a minimum of 30 characters for the data columns to keep them readable.
+        wrap_width = max(30, (term_width - 24) // num_cards)
 
         for group_name, group_fields in field_groups:
             group_rows = []
@@ -1848,7 +1850,7 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="Unified tool for searching card data, looking up rules text, and listing set contents.",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=argparse.RawTextHelpFormatter
     )
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
@@ -1857,7 +1859,7 @@ def main():
         'search',
         aliases=['s'],
         help='Search card data and extract specific fields.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # Search for a card by name
@@ -1885,10 +1887,6 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
                         help='Separator used between fields in plain text output.')
     cli_utils.add_standard_filters(p_search)
     cli_utils.add_standard_output_args(p_search)
-    p_search.add_argument('--text', action='store_true', help='Force plain text output.')
-    p_search.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
-    p_search.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format (one card per line).')
-    p_search.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
     p_search.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
                         help="Sort cards by a specific field. Use 'complexity' for design complexity score.")
     p_search.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
@@ -1900,7 +1898,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
         'oracle',
         aliases=['o'],
         help='Search for a card by name and display its full official rules text.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # Quick lookup (fuzzy matching supported)
@@ -1933,7 +1931,7 @@ Usage Examples:
         'random',
         aliases=['r'],
         help='Display one or more random cards matching the filters.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # See a random card
@@ -1952,10 +1950,6 @@ Usage Examples:
                          help='Input card data file. Defaults to the official dataset.')
     cli_utils.add_standard_filters(p_random)
     cli_utils.add_standard_output_args(p_random)
-    p_random.add_argument('--text', action='store_true', help='Force plain text output.')
-    p_random.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
-    p_random.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format.')
-    p_random.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
     p_random.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
                         help=FIELDS_HELP)
     p_random.add_argument('--delimiter', default=' | ',
@@ -1971,7 +1965,7 @@ Usage Examples:
         'extract',
         aliases=['e'],
         help='Extract a single card object from a large JSON database.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # Extract a card object by name and set code
@@ -1990,7 +1984,7 @@ Usage Examples:
         'sets',
         aliases=['st'],
         help='List and filter card sets from a data file.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # List all sets in the default dataset
@@ -2011,7 +2005,6 @@ Usage Examples:
     p_sets.add_argument('--reverse', action='store_true')
     p_sets.add_argument('--summarize', action='store_true', help='Show a mechanical profile summary for the selected sets.')
     p_sets.add_argument('--view', action='store_true', help='List all cards in the selected sets.')
-    p_sets.add_argument('--md-table', '--mdt', action='store_true', help='Output the set list as a Markdown table.')
     cli_utils.add_standard_output_args(p_sets)
     cli_utils.add_standard_filters(p_sets)
     p_sets.set_defaults(func=handle_sets)
@@ -2021,7 +2014,7 @@ Usage Examples:
         'functional',
         aliases=['f'],
         help='Identify and group cards with the same mechanics but different names.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # List all cards with the same mechanics (but different names)
@@ -2042,10 +2035,6 @@ Usage Examples:
                             help=FIELDS_HELP)
     p_functional.add_argument('--delimiter', default=' | ',
                             help='Separator used between fields in plain text output.')
-    p_functional.add_argument('--text', action='store_true', help='Force plain text output.')
-    p_functional.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
-    p_functional.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format.')
-    p_functional.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
     p_functional.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
                         help="Sort cards by a specific field.")
     p_functional.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
@@ -2058,7 +2047,7 @@ Usage Examples:
         'compare',
         aliases=['c'],
         help='Compare multiple cards side-by-side.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # Compare two cards by name
@@ -2090,7 +2079,7 @@ Usage Examples:
         'superior',
         aliases=['sup'],
         help='Find cards that are generally better than a reference card.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Finds generally better cards by comparing mana cost, stats, and abilities.
 A card is considered superior if it has easier or identical mana cost,
@@ -2126,7 +2115,7 @@ Usage Examples:
         'reprints',
         aliases=['rep'],
         help='Find functional reprints (identical mechanics) of a reference card.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Finds cards with identical mana cost, types, stats, and mechanics/text
 as the reference card, excluding the reference card itself.
@@ -2157,7 +2146,7 @@ Usage Examples:
         'inferior',
         aliases=['inf'],
         help='Find cards that are generally inferior to a reference card.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Finds generally inferior cards by comparing mana cost, stats, and abilities.
 A card is considered inferior if the reference card has easier or identical mana cost,
@@ -2190,7 +2179,7 @@ Usage Examples:
         'substitutes',
         aliases=['sub'],
         help='Find functional alternatives to a reference card.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Finds functional substitutes by identifying cards with shared types,
 compatible color identities (subset), similar mana costs (+/- 1),
@@ -2223,7 +2212,7 @@ Usage Examples:
         'shell',
         aliases=['sh', 'interactive', 'repl'],
         help='Launch an interactive shell for quick card lookups and searches.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
         epilog="""
 Usage Examples:
   # Start the interactive shell using the default dataset

@@ -110,9 +110,13 @@ def add_standard_output_args(parser):
 
     fmt_group = output_group.add_mutually_exclusive_group()
     fmt_group.add_argument('-j', '--json', action='store_true', help='Generate JSON output.')
+    fmt_group.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format (one card per line).')
     fmt_group.add_argument('--csv', action='store_true', help='Generate CSV output.')
     fmt_group.add_argument('-t', '--table', action='store_true', help='Generate a formatted table.')
-    
+    fmt_group.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
+    fmt_group.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
+    fmt_group.add_argument('--text', action='store_true', help='Force plain text output.')
+
     if isinstance(parser, argparse.ArgumentParser):
         debug_group = parser.add_argument_group('Logging & Debugging')
     else:
