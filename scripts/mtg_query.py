@@ -66,13 +66,14 @@ FIELD_MAP = {
     'permanent': {'header': 'Permanent', 'align': 'l', 'aliases': []},
     'signature': {'header': 'Signature', 'align': 'l', 'aliases': ['unique', 'diff', 'diffs']},
     'encoded': {'header': 'Encoded', 'align': 'l', 'aliases': []},
+    'index': {'header': '#', 'align': 'r', 'aliases': ['#', 'idx', 'num', 'row']},
 }
 
 FIELDS_HELP = """Comma-separated list of fields to extract. Available fields:
   - Basic:    name, cost, cmc, type, stats, text, rarity
   - Analysis: mechanics, actions, tokens, identity, produced, color_pie, signature
   - Design:   complexity, rating, fair_mv
-  - Metadata: set, number, pack, box, legalities"""
+  - Metadata: set, number, pack, box, legalities, index"""
 
 _CANONICAL_MAP = {k: k for k in FIELD_MAP}
 for k, v in FIELD_MAP.items():
@@ -235,11 +236,16 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         return ""
     elif canon == 'encoded':
         return card.encode()
+    elif canon == 'index':
+        res = str(getattr(card, '_index', ""))
+        if ansi_color and res:
+            res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.CYAN)
+        return res
     else:
         return ""
 
     if card.bside:
-        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary', 'tokens', 'actions']:
+        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary', 'tokens', 'actions', 'index']:
             return str(res)
         b_res = get_field_value(card.bside, field, ansi_color, multi_sep=multi_sep)
         if res and b_res:
@@ -250,7 +256,7 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
 
 def handle_search(args):
     cards = cli_utils.load_and_filter_cards(args)
-    _execute_search(cards, args)
+    return _execute_search(cards, args)
 
 def _build_search_map(cards):
     search_map = {}
@@ -281,9 +287,13 @@ def _build_search_map(cards):
             curr = curr.bside
     return search_map
 
-def _execute_search(cards, args):
+def _execute_search(cards, args, include_indices=False):
     total_matches = len(cards)
     
+    # Enable indexing if requested or in shell
+    if getattr(args, 'include_indices', False):
+        include_indices = True
+
     if not cards:
         if not args.quiet:
             print("No cards found matching the criteria.", file=sys.stderr)
@@ -304,7 +314,14 @@ def _execute_search(cards, args):
                         seen.add(orig)
         return
 
+    if include_indices:
+        for i, c in enumerate(cards):
+            c._index = i + 1
+
     field_list = [f.strip() for f in args.fields.split(',')]
+    if include_indices and 'index' not in [get_field_canonical_name(f) for f in field_list]:
+        field_list.insert(0, 'index')
+
     invalid_fields = [f for f in field_list if get_field_canonical_name(f) not in FIELD_MAP]
     if invalid_fields and not args.quiet:
         print(f"Warning: Unrecognized fields: {', '.join(invalid_fields)}", file=sys.stderr)
@@ -447,6 +464,8 @@ def _execute_search(cards, args):
                 line = args.delimiter.join([get_field_value(c, f, ansi_color=use_color) for f in field_list])
                 print(line)
 
+    return cards
+
 # --- Oracle Logic (from mtg_oracle.py) ---
 
 def handle_oracle(args):
@@ -457,9 +476,9 @@ def handle_oracle(args):
         args.infile = temp
 
     cards = cli_utils.load_and_filter_cards(args)
-    _execute_oracle(cards, args)
+    return _execute_oracle(cards, args)
 
-def _execute_oracle(cards, args):
+def _execute_oracle(cards, args, include_indices=False):
     if not cards:
         if not args.quiet:
             print("No cards found matching the criteria.", file=sys.stderr)
@@ -551,13 +570,20 @@ def _execute_oracle(cards, args):
     if not display_cards:
         return
 
+    # Enable indexing if requested or in shell
+    if getattr(args, 'include_indices', False):
+        include_indices = True
+
     # UI/UX Improvement: Support data output formats in oracle command
     search_formats = ['json', 'jsonl', 'csv', 'table', 'md_table', 'summary', 'text']
     if any(getattr(args, f, False) for f in search_formats) or getattr(args, 'outfile', None):
         if not hasattr(args, 'fields'):
             args.fields = 'name,cost,type,stats,rarity,text'
-        _execute_search(display_cards, args)
-        return
+        return _execute_search(display_cards, args, include_indices=include_indices)
+
+    if include_indices:
+        for i, c in enumerate(cards):
+            c._index = i + 1
 
     prelimit_count = len(display_cards)
     if args.limit > 0:
@@ -752,6 +778,8 @@ def _execute_oracle(cards, args):
                     print(f"  - {date}: {text}")
             print()
 
+    return display_cards
+
 # --- Shell Logic ---
 
 def handle_shell(args):
@@ -819,12 +847,25 @@ def handle_shell(args):
     if use_color:
         welcome = utils.colorize(welcome, utils.Ansi.BOLD + utils.Ansi.CYAN)
     print(welcome)
-    print("Type a card name for official rules text, or /search for bulk queries.")
+    print("Type a card name for rules text, a number to select from results, or /search for queries.")
     print("Type '/help' for commands, or 'exit' to leave.\n")
 
     prompt = "mtg> "
     if use_color:
         prompt = utils.colorize(prompt, utils.Ansi.BOLD + utils.Ansi.CYAN)
+
+    last_results = []
+
+    def resolve_indices(cmd_args):
+        resolved = []
+        for arg in cmd_args:
+            if arg.isdigit():
+                idx = int(arg)
+                if 1 <= idx <= len(last_results):
+                    resolved.append(last_results[idx - 1].name)
+                    continue
+            resolved.append(arg)
+        return resolved
 
     while True:
         try:
@@ -855,13 +896,18 @@ def handle_shell(args):
                     # Use same default fields as shell subcommand
                     s_args.fields = getattr(args, 'fields', 'name,cost,type,stats,rarity')
                     s_args.table = True
+                    s_args.include_indices = True
                     if not hasattr(s_args, 'limit'): s_args.limit = 0
-                    _execute_search(matched_cards, s_args)
+                    res = _execute_search(matched_cards, s_args)
+                    if res: last_results = res
                 elif cmd in ['/oracle', '/o']:
                     o_args = copy.copy(args)
-                    o_args.query = " ".join(cmd_args)
+                    resolved = resolve_indices(cmd_args)
+                    o_args.query = " ".join(resolved)
+                    o_args.include_indices = True
                     if not hasattr(o_args, 'limit'): o_args.limit = 0
-                    _execute_oracle(all_cards, o_args)
+                    res = _execute_oracle(all_cards, o_args)
+                    if res: last_results = res
                 elif cmd in ['/random', '/r']:
                     if not all_cards:
                         err_msg = "No cards loaded."
@@ -877,8 +923,10 @@ def handle_shell(args):
                     sampled = random.sample(all_cards, min(count, len(all_cards)))
                     r_args = copy.copy(args)
                     r_args.query = None
+                    r_args.include_indices = True
                     if not hasattr(r_args, 'limit'): r_args.limit = 0
-                    _execute_oracle(sampled, r_args)
+                    res = _execute_oracle(sampled, r_args)
+                    if res: last_results = res
                 elif cmd in ['/sets', '/st']:
                     st_args = copy.copy(args)
                     st_args.grep = cmd_args
@@ -897,7 +945,7 @@ def handle_shell(args):
                     handle_functional(f_args)
                 elif cmd in ['/compare', '/c']:
                     c_args = copy.copy(args)
-                    c_args.names = cmd_args
+                    c_args.names = resolve_indices(cmd_args)
                     handle_compare_cards(c_args)
                 elif cmd in ['/reprints', '/rep']:
                     if not cmd_args:
@@ -906,8 +954,11 @@ def handle_shell(args):
                         print(err_msg)
                         continue
                     rep_args = copy.copy(args)
-                    rep_args.query = " ".join(cmd_args)
-                    handle_reprints(rep_args)
+                    resolved = resolve_indices(cmd_args)
+                    rep_args.query = " ".join(resolved)
+                    rep_args.include_indices = True
+                    res = handle_reprints(rep_args)
+                    if res: last_results = res
                 elif cmd in ['/superior', '/sup']:
                     if not cmd_args:
                         err_msg = "Error: /superior requires a card name."
@@ -915,8 +966,11 @@ def handle_shell(args):
                         print(err_msg)
                         continue
                     sup_args = copy.copy(args)
-                    sup_args.query = " ".join(cmd_args)
-                    handle_superior(sup_args)
+                    resolved = resolve_indices(cmd_args)
+                    sup_args.query = " ".join(resolved)
+                    sup_args.include_indices = True
+                    res = handle_superior(sup_args)
+                    if res: last_results = res
                 elif cmd in ['/inferior', '/inf']:
                     if not cmd_args:
                         err_msg = "Error: /inferior requires a card name."
@@ -924,8 +978,11 @@ def handle_shell(args):
                         print(err_msg)
                         continue
                     inf_args = copy.copy(args)
-                    inf_args.query = " ".join(cmd_args)
-                    handle_inferior(inf_args)
+                    resolved = resolve_indices(cmd_args)
+                    inf_args.query = " ".join(resolved)
+                    inf_args.include_indices = True
+                    res = handle_inferior(inf_args)
+                    if res: last_results = res
                 elif cmd in ['/substitutes', '/sub']:
                     if not cmd_args:
                         err_msg = "Error: /substitutes requires a card name."
@@ -933,8 +990,11 @@ def handle_shell(args):
                         print(err_msg)
                         continue
                     sub_args = copy.copy(args)
-                    sub_args.query = " ".join(cmd_args)
-                    handle_substitutes(sub_args)
+                    resolved = resolve_indices(cmd_args)
+                    sub_args.query = " ".join(resolved)
+                    sub_args.include_indices = True
+                    res = handle_substitutes(sub_args)
+                    if res: last_results = res
                 elif cmd in ['/extract', '/e']:
                     if len(cmd_args) < 2:
                         err_msg = "Error: /extract requires <set_code> and <card_name>."
@@ -964,6 +1024,10 @@ def handle_shell(args):
                     name_pad = 24 - utils.visible_len(name_label)
                     print(f"{name_label}{' ' * max(0, name_pad)} - Show official rules text for a specific card.")
 
+                    name_label = "  <number>"
+                    name_pad = 24 - utils.visible_len(name_label)
+                    print(f"{name_label}{' ' * max(0, name_pad)} - Shortcut to view card from the last search results.")
+
                     fmt_cmd("/search <q>", "/s", "Search for cards matching <q> (displays a table).")
                     fmt_cmd("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching).")
                     fmt_cmd("/random [n]", "/r", "Show [n] random cards from the dataset.")
@@ -983,12 +1047,26 @@ def handle_shell(args):
                     err_msg = f"Unknown command: {cmd}. Type /help for assistance."
                     if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
                     print(err_msg)
+            elif line.isdigit():
+                # Shortcut to view card from last_results
+                idx = int(line)
+                if 1 <= idx <= len(last_results):
+                    o_args = copy.copy(args)
+                    o_args.query = last_results[idx - 1].name
+                    if not hasattr(o_args, 'limit'): o_args.limit = 0
+                    _execute_oracle(all_cards, o_args)
+                else:
+                    err_msg = f"Error: Index {idx} out of range (1-{len(last_results)})."
+                    if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                    print(err_msg)
             else:
                 # Oracle lookup
                 o_args = copy.copy(args)
                 o_args.query = line
+                o_args.include_indices = True
                 if not hasattr(o_args, 'limit'): o_args.limit = 0
-                _execute_oracle(all_cards, o_args)
+                res = _execute_oracle(all_cards, o_args)
+                if res: last_results = res
         except EOFError:
             print()
             break
@@ -1425,22 +1503,22 @@ def _resolve_target_from_args(args):
 def handle_superior(args):
     target_card, cards = _resolve_target_from_args(args)
     if not target_card:
-        return
+        return []
 
     superior_cards = [c for c in cards if is_superior(c, target_card)]
 
     if not superior_cards:
         if not args.quiet:
             print(f"No cards found that are superior to {target_card.display_name}.", file=sys.stderr)
-        return
+        return []
 
     # Use search display for results
-    _execute_search(superior_cards, args)
+    return _execute_search(superior_cards, args)
 
 def handle_inferior(args):
     target_card, cards = _resolve_target_from_args(args)
     if not target_card:
-        return
+        return []
 
     # A card is inferior if the target card is superior to it
     inferior_cards = [c for c in cards if is_superior(target_card, c)]
@@ -1448,15 +1526,15 @@ def handle_inferior(args):
     if not inferior_cards:
         if not args.quiet:
             print(f"No cards found that are inferior to {target_card.display_name}.", file=sys.stderr)
-        return
+        return []
 
     # Use search display for results
-    _execute_search(inferior_cards, args)
+    return _execute_search(inferior_cards, args)
 
 def handle_reprints(args):
     target_card, cards = _resolve_target_from_args(args)
     if not target_card:
-        return
+        return []
 
     target_key = get_functional_key(target_card)
     reprints = [c for c in cards if get_functional_key(c) == target_key and c.name.lower() != target_card.name.lower()]
@@ -1464,10 +1542,10 @@ def handle_reprints(args):
     if not reprints:
         if not args.quiet:
             print(f"No functional reprints found for {target_card.display_name}.", file=sys.stderr)
-        return
+        return []
 
     # Use search display for results
-    _execute_search(reprints, args)
+    return _execute_search(reprints, args)
 
 def find_substitutes(target, pool, limit=10):
     """Finds functional alternatives to a reference card."""
@@ -1537,7 +1615,7 @@ def find_substitutes(target, pool, limit=10):
 def handle_substitutes(args):
     target_card, cards = _resolve_target_from_args(args)
     if not target_card:
-        return
+        return []
 
     limit = getattr(args, 'limit', 10) or 10
     subs = find_substitutes(target_card, cards, limit=limit)
@@ -1545,10 +1623,10 @@ def handle_substitutes(args):
     if not subs:
         if not args.quiet:
             print(f"No suitable substitutes found for {target_card.display_name}.", file=sys.stderr)
-        return
+        return []
 
     # Use search display for results
-    _execute_search(subs, args)
+    return _execute_search(subs, args)
 
 def handle_random(args):
     # Smart Positional Argument Handling
@@ -1560,7 +1638,7 @@ def handle_random(args):
     if not cards:
         if not args.quiet:
             print("No cards found matching the criteria.", file=sys.stderr)
-        return
+        return []
 
     try:
         count = int(args.count)
@@ -1570,16 +1648,16 @@ def handle_random(args):
         count = len(cards)
 
     if count <= 0:
-        return
+        return []
 
     sampled = random.sample(cards, count)
 
     # If any search-specific output format is requested, use search display
     search_formats = ['json', 'jsonl', 'csv', 'table', 'md_table', 'summary', 'text']
     if any(getattr(args, f, False) for f in search_formats) or getattr(args, 'outfile', None):
-        _execute_search(sampled, args)
+        return _execute_search(sampled, args)
     else:
-        _execute_oracle(sampled, args)
+        return _execute_oracle(sampled, args)
 
 # --- Compare Logic ---
 
