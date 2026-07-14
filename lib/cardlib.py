@@ -885,7 +885,7 @@ class Card:
 
         color_map = {'white': 'W', 'blue': 'U', 'black': 'B', 'red': 'R', 'green': 'G', 'colorless': 'C'}
         for color_name, char in color_map.items():
-            if re.search(r'[Aa]dd\s+(?:one|two|three|[Xx])\s+' + color_name, text):
+            if re.search(r'[Aa]dd\s+(?:[Aa]n?|one|two|three|four|five|six|seven|eight|nine|ten|[Xx]|[\d]+)\s+' + color_name, text):
                 produced.add(char)
 
         if "treasure" in text or "gold token" in text:
