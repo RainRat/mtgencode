@@ -689,7 +689,7 @@ def handle_pips(args):
                 print("INCLUDES RULES TEXT", file=target)
             print("  MANA PIP DISTRIBUTION", file=target)
             print("  ===============================", file=target)
-            print("  Symbol  Count  Percent  Frequency", file=target)
+            print("  Symbol  Count  Percent  Distribution", file=target)
             print("  ------  -----  -------  ------------", file=target)
             for r in res:
                 print(f"  {r['sym']:<6}  {r['cnt']:>5}  {r['pct']:>6.1f}%  [██████████]", file=target)
@@ -697,7 +697,7 @@ def handle_pips(args):
             if args.include_text:
                 print("  INCLUDES RULES TEXT")
             utils.print_header("MANA PIP DISTRIBUTION", count=len(cards), use_color=use_color)
-            rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Symbol", "Count", "Percent", "Frequency"]]]
+            rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Symbol", "Count", "Percent", "Distribution"]]]
             for r in res:
                 es = utils.mana_symall_encode.get(r['sym'], r['sym'])
                 rows.append([utils.from_mana("{"+es+"}", ansi_color=use_color), datalib.color_count(r['cnt'], use_color), f"{r['pct']:5.1f}%", datalib.get_bar_chart(r['pct'], use_color, color=utils.Ansi.get_color_color(r['sym']))])
@@ -759,7 +759,7 @@ def handle_mechanics(args):
     res = [{'name': m, 'c1': c1[m], 'p1': c1[m]/t1*100, 'c2': c2[m] if c2 else 0, 'p2': c2[m]/t2*100 if t2>0 else 0, 'delta': (c2[m]/t2*100 if t2>0 else 0) - c1[m]/t1*100 if c2 else 0} for m in ordered]
     res.sort(key=lambda x: x['name'].lower() if args.sort=='name' else x['c1'], reverse=args.reverse if args.sort=='name' else not args.reverse)
     if args.top > 0: res = res[:args.top]
-    utils.print_header("MECHANICAL COMPARISON" if c2 else "MECHANICAL FREQUENCY", count=len(cards1), use_color=use_color)
+    utils.print_header("MECHANICAL COMPARISON" if c2 else "MECHANICAL DISTRIBUTION", count=len(cards1), use_color=use_color)
     print(f"  Total Cards: {len(cards1)}")
     if c2:
         h = ["Mechanic", "% P1", "% P2", "Delta", "Ind"]
@@ -768,7 +768,7 @@ def handle_mechanics(args):
             d = r['delta']; ind = "▲" if d>0.1 else ("▼" if d<-0.1 else "•")
             rows.append([utils.colorize(r['name'], utils.Ansi.CYAN) if use_color else r['name'], f"{r['p1']:5.1f}%", f"{r['p2']:5.1f}%", utils.colorize(f"{d:+6.1f}%", utils.Ansi.GREEN if d>0.1 else utils.Ansi.RED) if use_color and abs(d)>0.1 else f"{d:+6.1f}%", utils.colorize(ind, utils.Ansi.GREEN if d>0.1 else utils.Ansi.RED) if use_color and abs(d)>0.1 else ind])
     else:
-        h = ["Mechanic", "Count", "Percent", "Frequency"]
+        h = ["Mechanic", "Count", "Percent", "Distribution"]
         rows = [[utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else x for x in h]]
         for r in res: rows.append([utils.colorize(r['name'], utils.Ansi.CYAN) if use_color else r['name'], str(r['c1']), f"{r['p1']:5.1f}%", datalib.get_bar_chart(r['p1'], use_color, color=utils.Ansi.CYAN)])
     datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','r','r','c'] if c2 else ['l','r','r','l']), indent=2)
@@ -818,12 +818,12 @@ def handle_actions(args):
     if args.json: print(json.dumps({'total': len(cards), 'total_cards': len(cards), 'summary': dict(act_c), 'color': {c: dict(v) for c, v in col_act.items()}}, indent=2))
     else:
         utils.print_header("CARD ACTION ANALYSIS", count=len(cards), use_color=use_color)
-        rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Action", "Count", "Percent", "Frequency"]]]
+        rows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ["Action", "Count", "Percent", "Distribution"]]]
         for a, cnt in act_c.most_common():
             p = cnt/len(cards)*100
             rows.append([utils.colorize(a, utils.Ansi.CYAN) if use_color else a, datalib.color_count(cnt, use_color), f"{p:5.1f}%", datalib.get_bar_chart(p, use_color, color=utils.Ansi.BOLD+utils.Ansi.CYAN)])
         datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','r','l']), indent=4)
-        print(f"\n  {datalib.color_line('Actions by Color (Frequency %):', use_color)}")
+        print(f"\n  {datalib.color_line('Actions by Color (Distribution %):', use_color)}")
         ch = ["Action"] + list("WUBRGC")
         crows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in ch]]
         for a in sorted(ACTION_CATEGORIES.keys()):
@@ -1074,7 +1074,7 @@ def handle_asfan(args):
     utils.print_header("AS-FAN ANALYSIS" + (" (COMPARISON)" if a2 else ""), use_color=use_color)
     def pt(title, d1, d2, ks=None):
         print(f"  {datalib.color_line(title, use_color)}")
-        h = ["Metric", "P1"] + (["P2", "Delta"] if d2 else ["Freq"])
+        h = ["Metric", "P1"] + (["P2", "Delta"] if d2 else ["Dist"])
         rows = [[utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else x for x in h]]
         ks = ks or sorted(d1.keys())
         for k in ks:
@@ -1581,7 +1581,7 @@ def main():
     add_std(p_pi)
     p_pi.add_argument('outfile', nargs='?', default=None, help='Save pip distribution to a file.')
     p_pi.add_argument('--include-text', action='store_true', help='Include mana symbols found in rules text (e.g., activation costs).')
-    p_pi.add_argument('--sort', choices=['name','count'], default='count', help='Sort results by symbol name or frequency.')
+    p_pi.add_argument('--sort', choices=['name','count'], default='count', help='Sort results by symbol name or distribution.')
     p_pi.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
     p_pi.set_defaults(func=handle_pips)
 
@@ -1592,9 +1592,9 @@ def main():
     p_co.set_defaults(func=handle_costs)
 
     # mechanics
-    p_me = subparsers.add_parser('mechanics', help='List recognized mechanics and calculate their frequency.')
+    p_me = subparsers.add_parser('mechanics', help='List recognized mechanics and calculate their distribution.')
     add_std(p_me)
-    p_me.add_argument('--compare', '-c', help='Compare frequencies with a second dataset.')
+    p_me.add_argument('--compare', '-c', help='Compare distributions with a second dataset.')
     p_me.add_argument('--sort', choices=['name','count'], default='name', help='Sort mechanics by name or count.')
     p_me.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
     p_me.add_argument('--top', type=int, default=0, help='Limit the number of mechanics shown.')

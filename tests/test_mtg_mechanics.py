@@ -28,7 +28,7 @@ class TestMtgMechanics(unittest.TestCase):
             with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--no-color']):
                 mechanics_main()
                 output = fake_out.getvalue()
-                self.assertIn("MECHANICAL FREQUENCY", output)
+                self.assertIn("MECHANICAL DISTRIBUTION", output)
                 self.assertIn("Total Cards: 1", output)
                 # Uthros has Flying and Station
                 self.assertIn("Flying", output)
@@ -54,7 +54,7 @@ class TestMtgMechanics(unittest.TestCase):
             with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--sort', 'count', '--limit', '1', '--no-color']):
                 mechanics_main()
                 output = fake_out.getvalue()
-                self.assertIn("MECHANICAL FREQUENCY", output)
+                self.assertIn("MECHANICAL DISTRIBUTION", output)
                 # Header + separator + 1 row = 3 rows in data area usually,
                 # but let's just ensure it doesn't crash and contains at least one mechanic.
 
@@ -94,7 +94,7 @@ class TestMtgMechanics(unittest.TestCase):
             with patch('sys.argv', ['mtg_analyze.py', 'mechanics', 'testdata/uthros.json', '--quiet', '--no-color']):
                 mechanics_main()
                 output = fake_out.getvalue()
-                self.assertIn("MECHANICAL FREQUENCY", output)
+                self.assertIn("MECHANICAL DISTRIBUTION", output)
 
 if __name__ == '__main__':
     unittest.main()
