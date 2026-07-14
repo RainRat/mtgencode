@@ -676,6 +676,8 @@ class Ansi:
             return Ansi.BOLD + Ansi.RED
         if r_lower == 'special' or rarity == rarity_special_marker:
             return Ansi.BOLD + Ansi.MAGENTA
+        if r_lower == 'basic land' or rarity == rarity_basic_land_marker:
+            return Ansi.BOLD
         return Ansi.BOLD
 
     @staticmethod
@@ -684,18 +686,18 @@ class Ansi:
         if not color_sym:
             return Ansi.BOLD
         c = color_sym.upper()
-        if c == 'W':
+        if c in ['W', 'WHITE']:
             return Ansi.BOLD + Ansi.WHITE
-        if c == 'U':
+        if c in ['U', 'BLUE']:
             return Ansi.BOLD + Ansi.CYAN
-        if c == 'B':
+        if c in ['B', 'BLACK']:
             return Ansi.BOLD + Ansi.MAGENTA
-        if c == 'R':
+        if c in ['R', 'RED']:
             return Ansi.BOLD + Ansi.RED
-        if c == 'G':
+        if c in ['G', 'GREEN']:
             return Ansi.BOLD + Ansi.GREEN
-        if c == 'A' or 'COLORLESS' in c or 'LAND' in c:
-            return Ansi.BOLD + Ansi.CYAN # Standard for colorless/artifacts in this project
+        if c in ['A', 'C', 'S'] or 'COLORLESS' in c or 'LAND' in c or 'SNOW' in c:
+            return Ansi.BOLD + Ansi.CYAN # Standard for colorless/artifacts/snow in this project
         # Multicolored/Hybrid/Phyrexian: check for 'M' marker or mixed mana characters
         if c == 'M' or (len(c) > 1 and all(char in 'WUBRG2PSXCE/' for char in c) and any(char in 'WUBRG' for char in c)):
             return Ansi.BOLD + Ansi.YELLOW
