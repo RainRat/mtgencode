@@ -246,12 +246,12 @@ def _print_mechanical_profile(mechanical_stats, total, use_color, vsize=None):
     if not mechanical_stats:
         return
     print()
-    print('  ' + color_line('Mechanical Profile (Frequency & Budget):', use_color))
+    print('  ' + color_line('Mechanical Profile (Distribution & Budget):', use_color))
 
     header = _colorize_header(['Mechanic', 'Count', 'Percent', 'Distribution', 'CMC', 'P/T'], use_color)
 
     rows = [header]
-    # Sort by frequency
+    # Sort by distribution
     sorted_mechanics = sorted(mechanical_stats.keys(), key=lambda m: mechanical_stats[m]['count'], reverse=True)
     if vsize:
         sorted_mechanics = sorted_mechanics[:vsize]
@@ -293,12 +293,12 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
     if not all_mechanics:
         return
     print()
-    print('  ' + color_line('Mechanical Color Pie (Frequency %):', use_color))
+    print('  ' + color_line('Mechanical Color Pie (Distribution %):', use_color))
 
     header = _colorize_header(['Mechanic', 'W', 'U', 'B', 'R', 'G', 'A', 'M'], use_color)
 
     rows = [header]
-    # Sort mechanics by total frequency
+    # Sort mechanics by total distribution
     sorted_mechanics = sorted(all_mechanics.keys(), key=lambda m: len(all_mechanics[m]), reverse=True)
     if vsize:
         sorted_mechanics = sorted_mechanics[:vsize]
@@ -343,7 +343,7 @@ def _print_lexical_analysis(word_counts, total_words, unique_words, ttr, avg_wor
     if not word_counts:
         return
     print()
-    print('  ' + color_line('Vocabulary & Lexicon (Word Frequency):', use_color))
+    print('  ' + color_line('Vocabulary & Lexicon (Word Distribution):', use_color))
 
     metrics = [
         ('Total Words', str(total_words)),
@@ -359,7 +359,7 @@ def _print_lexical_analysis(word_counts, total_words, unique_words, ttr, avg_wor
         print(f"    {label}: {val}")
     print()
 
-    header = _colorize_header(['Word', 'Count', 'Percent', 'Frequency'], use_color)
+    header = _colorize_header(['Word', 'Count', 'Percent', 'Distribution'], use_color)
     rows = [header]
 
     top_words = word_counts.most_common(vsize)
@@ -686,7 +686,7 @@ class Datamine:
                    + str(max(self.by_textlen)) + ' characters in length', use_color))
             print('  ' + color_line('Card text ranges from ' + str(min(self.by_textlines)) + ' to '
                    + str(max(self.by_textlines)) + ' lines', use_color))
-        _print_breakdown('Line counts by frequency:', self.by_textlines, len(self.allcards), use_color,
+        _print_breakdown('Line counts by distribution:', self.by_textlines, len(self.allcards), use_color,
                          vsize=vsize, sort_key=lambda x: len(self.by_textlines[x]))
         print()
 
