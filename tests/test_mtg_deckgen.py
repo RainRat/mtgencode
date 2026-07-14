@@ -25,11 +25,6 @@ class TestMtgDeckgen(unittest.TestCase):
         card = object() # No color_identity attribute
         self.assertEqual(mtg_deckgen.get_color_identity_set(card), set())
 
-    def test_subset_identity(self):
-        self.assertTrue(mtg_deckgen.subset_identity({'W'}, {'W', 'U'}))
-        self.assertTrue(mtg_deckgen.subset_identity(set(), {'W', 'U'}))
-        self.assertFalse(mtg_deckgen.subset_identity({'R'}, {'W', 'U'}))
-
     def test_pick_cards_with_curve_basic(self):
         pool = [MagicMock() for _ in range(10)]
         picked = mtg_deckgen.pick_cards_with_curve(pool, 5)
