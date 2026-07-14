@@ -88,7 +88,8 @@ class TestMtgSubstitutes(unittest.TestCase):
 
             # Mocking _execute_search to capture results
             with patch('mtg_query._execute_search') as mock_exec:
-                args = patch('argparse.Namespace').start()
+                import argparse
+                args = argparse.Namespace()
                 args.query = 'Lightning Bolt'
                 args.infile = '-'
                 args.quiet = True
