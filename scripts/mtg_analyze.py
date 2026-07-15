@@ -418,7 +418,7 @@ def handle_colorpie(args):
     elif args.csv:
         writer = csv.writer(sys.stdout)
         if m2:
-            writer.writerow(['Mechanic', 'Color', 'P1%', 'P2%', 'Delta'])
+            writer.writerow(['Mechanic', 'Color', 'Primary%', 'Comp%', 'Diff'])
             for m in ordered:
                 for g in COLOR_GROUPS:
                     p1, p2 = (m1[g][m]/t1[g]*100 if t1[g]>0 else 0), (m2[g][m]/t2[g]*100 if t2[g]>0 else 0)
@@ -622,7 +622,7 @@ def handle_mana(args):
     else:
         utils.print_header("MANA PRODUCTION ANALYSIS" + (" (COMPARISON)" if s2 else ""), count=s1['total'], use_color=use_color)
         print(f"  {datalib.color_line('General Metrics:', use_color)}")
-        h = ["Metric", "Primary"] + (["Comparison", "Delta"] if s2 else [])
+        h = ["Metric", "Primary"] + (["Comparison", "Diff"] if s2 else [])
         rows = [[utils.colorize(x, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else x for x in h]]
         ms = [("Total Producers", s1['producers'], s2['producers'] if s2 else None), ("Fixing Cards", s1['fixing'], s2['fixing'] if s2 else None), ("Fixing Density", f"{s1['fixing']/s1['total']*100:.1f}%", f"{s2['fixing']/s2['total']*100:.1f}%" if s2 else None)]
         for lbl, v1, v2 in ms:
@@ -637,7 +637,7 @@ def handle_mana(args):
             rows.append(row)
         datalib.printrows(datalib.padrows(rows), indent=4)
         print(f"\n  {datalib.color_line('Produced Colors:', use_color)}")
-        ch = ["Color", "Primary %"] + (["Comp %", "Delta"] if s2 else [])
+        ch = ["Color", "Primary %"] + (["Comp %", "Diff"] if s2 else [])
         cr = [[utils.colorize(x, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else x for x in ch]]
         for c in list("WUBRGC") + ["Any"]:
             p1 = s1['cols'][c]/s1['total']*100
@@ -762,7 +762,7 @@ def handle_mechanics(args):
     utils.print_header("MECHANICAL COMPARISON" if c2 else "MECHANICAL DISTRIBUTION", count=len(cards1), use_color=use_color)
     print(f"  Total Cards: {len(cards1)}")
     if c2:
-        h = ["Mechanic", "% P1", "% P2", "Delta", "Ind"]
+        h = ["Mechanic", "% Primary", "% Comp", "Diff", "Ind"]
         rows = [[utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else x for x in h]]
         for r in res:
             d = r['delta']; ind = "▲" if d>0.1 else ("▼" if d<-0.1 else "•")
@@ -796,7 +796,7 @@ def handle_interaction(args):
             rows.append([str(i), str(cnt), f"{p:5.1f}%", datalib.get_bar_chart(p, use_color, color=utils.Ansi.CYAN)])
         datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['r','r','r','l']), indent=4)
         print(f"\n  {datalib.color_line('Top Interaction Pairs (by Lift):', use_color)}")
-        sh = ["Pair", "Count", "Lift", "Desc"]
+        sh = ["Pair", "Count", "Lift", "Description"]
         srows = [[utils.colorize(h, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else h for h in sh]]
         for r in syn[:args.top]:
             m1, m2 = r['pair']; lift = r['lift']
@@ -1033,7 +1033,7 @@ def handle_balance(args):
     use_color = args.color if args.color is not None else sys.stdout.isatty()
     base = datasets[0]
     h = ["Archetype", f"% {base['name']}"]
-    for i in range(1, len(datasets)): h.extend([f"% {datasets[i]['name']}", "Delta"])
+    for i in range(1, len(datasets)): h.extend([f"% {datasets[i]['name']}", "Diff"])
     if use_color: h = [utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) for x in h]
     rows = [h]
     for p in GUILD_PAIRS:
@@ -1074,7 +1074,7 @@ def handle_asfan(args):
     utils.print_header("AS-FAN ANALYSIS" + (" (COMPARISON)" if a2 else ""), use_color=use_color)
     def pt(title, d1, d2, ks=None):
         print(f"  {datalib.color_line(title, use_color)}")
-        h = ["Metric", "P1"] + (["P2", "Delta"] if d2 else ["Dist"])
+        h = ["Metric", "Primary"] + (["Comp", "Diff"] if d2 else ["Distribution"])
         rows = [[utils.colorize(x, utils.Ansi.BOLD+utils.Ansi.UNDERLINE) if use_color else x for x in h]]
         ks = ks or sorted(d1.keys())
         for k in ks:
@@ -1178,7 +1178,7 @@ def handle_profile(args):
     use_color = args.color if args.color is not None else sys.stdout.isatty()
     utils.print_header("UNIQUE FEATURES PROFILE", count=f"{t_metrics['cnt']} cards", use_color=use_color)
 
-    stats_rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Metric", "Subset", "Baseline", "Delta"]]]
+    stats_rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["Metric", "Subset", "Baseline", "Diff"]]]
     for label, key, reverse in [("Avg CMC", 'cmc', True), ("Avg Power", 'pow', False), ("Avg Toughness", 'tou', False), ("Avg Complexity", 'comp', True)]:
         v_t, v_b = t_metrics[key], b_metrics[key]
         stats_rows.append([label, f"{v_t:.2f}", f"{v_b:.2f}", format_delta(v_t, v_b, use_color=use_color, reverse_color=reverse)])
@@ -1423,7 +1423,7 @@ def handle_compare(args):
         return bn[:15]
     fnames = [clean_fname(f) for f in args.infiles]
     header = ["Metric", fnames[0]]
-    for i in range(1, len(fnames)): header.extend([fnames[i], "Delta"])
+    for i in range(1, len(fnames)): header.extend([fnames[i], "Diff"])
     if use_color: header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
     rows = [header]
 

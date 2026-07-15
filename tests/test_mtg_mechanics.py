@@ -40,7 +40,7 @@ class TestMtgMechanics(unittest.TestCase):
                 mechanics_main()
                 output = fake_out.getvalue()
                 self.assertIn("MECHANICAL COMPARISON", output)
-                self.assertIn("Delta", output)
+                self.assertIn("Diff", output)
 
     def test_mechanics_no_matches(self):
         with patch('sys.stderr', new=io.StringIO()) as fake_err:

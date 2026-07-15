@@ -99,7 +99,7 @@ class TestMtgAsfan(unittest.TestCase):
 
         output = mock_stdout.getvalue()
         self.assertIn("AS-FAN ANALYSIS (COMPARISON)", output)
-        self.assertIn("Delta", output)
+        self.assertIn("Diff", output)
 
     @patch('sys.stdin.isatty')
     @patch('os.path.exists')

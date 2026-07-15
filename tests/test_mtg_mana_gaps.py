@@ -97,7 +97,7 @@ class TestMtgManaGaps(unittest.TestCase):
 
         output = mock_stdout.getvalue()
         self.assertIn("MANA PRODUCTION ANALYSIS (COMPARISON)", output)
-        self.assertIn("Delta", output)
+        self.assertIn("Diff", output)
 
     @patch('mtg_analyze.jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)

@@ -107,7 +107,7 @@ class TestMtgBalance(unittest.TestCase):
                     self.assertIn("Baseline: base.json (1 cards)", output)
                     self.assertIn("% base.json", output)
                     self.assertIn("% target.json", output)
-                    self.assertIn("Delta", output)
+                    self.assertIn("Diff", output)
 
     def test_balance_main_filtering_args(self):
         # We just want to make sure these arguments are passed to mtg_open_file
@@ -141,12 +141,12 @@ class TestMtgBalance(unittest.TestCase):
                     output = captured_output.getvalue()
                     self.assertIn("\033[", output)
 
-    def test_balance_main_color_deltas(self):
-        # Test green and red deltas
+    def test_balance_main_color_diffs(self):
+        # Test green and red differences
         card_base = MagicMock()
         card_base.color_identity = "UW" # 100% UW
         card_target = MagicMock()
-        card_target.color_identity = "BU" # 100% BU, so UW delta is -100%
+        card_target.color_identity = "BU" # 100% BU, so UW diff is -100%
 
         def mock_open(filename, **kwargs):
             if filename == 'base.json':
