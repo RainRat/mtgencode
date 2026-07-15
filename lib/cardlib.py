@@ -192,7 +192,7 @@ def extract_tokens_from_text(text):
     text = text.replace('\n', ' ').strip()
     # 1. Regex for creature tokens with P/T and optional abilities
     # Supports both singular and multiple tokens (e.g., "Create two... and a...")
-    c_regex = r"(?:[Cc]reate[sd]?|and)\s+(?:[Aa]n?|two|three|four|five|six|seven|eight|nine|ten|X)\s+([0-9/X+&^]+)\s+([a-zA-Z\s,]+?)\s+token[s]?(?:\s+with\s+([^,.]+?))?(?=(?:\s*(?:and|[,.])|$))"
+    c_regex = r"(?:[Cc]reate[sd]?|and)\s+(?:[Aa]n?|two|three|four|five|six|seven|eight|nine|ten|X)\s+([0-9/X+&^]+)\s+([-a-zA-Z\s,]+?)\s+token[s]?(?:\s+with\s+([^,.]+?))?(?=(?:\s*(?:and|[,.])|$))"
     for m in re.finditer(c_regex, text, re.IGNORECASE):
         pt, ct, ab = m.group(1), m.group(2).strip(), m.group(3).strip() if m.group(3) else ""
         if ct.lower().endswith(' creature'): ct = ct[:-9]
@@ -203,11 +203,11 @@ def extract_tokens_from_text(text):
         found.append({'name': f"{pt} {', '.join(cols) if cols else 'Colorless'} {ty} Token", 'pt': pt, 'color': ", ".join(cols) if cols else "Colorless", 'type': f"{ty} Creature".strip(), 'abilities': ab})
 
     # 2. Regex for predefined tokens (Treasure, Food, etc.)
-    ntks = ['Treasure','Food','Clue','Blood','Map','Role','Incubator','Powerstone','Walker']
-    n_regex = r"(?:[Cc]reate[sd]?)\s+(?:[Aa]n?|two|three|four|five|X)\s+(" + "|".join(ntks) + r")\s+token[s]?"
+    ntks = ['Treasure','Food','Clue','Blood','Map','Role','Incubator','Powerstone','Walker','Gold']
+    n_regex = r"(?:[Cc]reate[sd]?)\s+(?:[Aa]n?|two|three|four|five|six|seven|eight|nine|ten|X)\s+(" + "|".join(ntks) + r")\s+token[s]?"
     for m in re.finditer(n_regex, text, re.IGNORECASE):
         n = m.group(1).capitalize(); t = {'name': f"{n} Token", 'pt': "", 'color': "Colorless", 'type': n, 'abilities': ""}
-        if n=='Treasure': t['type']='Artifact'; t['abilities']='Sacrifice this artifact: Add one mana of any color.'
+        if n in ['Treasure', 'Gold']: t['type']='Artifact'; t['abilities']='Sacrifice this artifact: Add one mana of any color.'
         elif n=='Food': t['type']='Artifact'; t['abilities']='{2}, {T}, Sacrifice this artifact: gain 3 life.'
         elif n=='Clue': t['type']='Artifact'; t['abilities']='{2}, Sac: Draw a card.'
         found.append(t)
