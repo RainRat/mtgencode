@@ -1537,7 +1537,7 @@ def main():
     p_sum.add_argument('-x', '--outliers', action='store_true', help='Show extra details and unusual cards (outliers).')
     p_sum.add_argument('-a', '--all', action='store_true', help='Show all information, including dumping invalid cards.')
     p_sum.add_argument('--top', type=int, default=10, help='Limit the number of entries in breakdown tables (Default: 10).')
-    p_sum.add_argument('--sort', choices=['name','color','identity','type','cmc','rarity','power','toughness','loyalty','set','pack','complexity','score'], help='Sort cards before summarizing.')
+    p_sum.add_argument('--sort', choices=['name','color','identity','type','cmc','rarity','power','toughness','loyalty','set','pack','box','complexity','score','rating','power_rating'], help='Sort cards before summarizing.')
     p_sum.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
     p_sum.set_defaults(func=handle_summary)
 
