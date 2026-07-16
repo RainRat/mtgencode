@@ -589,6 +589,8 @@ def _execute_oracle(cards, args, include_indices=False):
     force_full = getattr(args, 'full', False)
     show_summary = not force_full and len(display_cards) > 1 and not getattr(args, 'gatherer', False)
 
+    term_width = utils.get_terminal_width()
+
     if not args.quiet:
         if getattr(args, 'limit', 0) > 0 or getattr(args, 'sample', 0) > 0:
             count_str = f"Showing {len(display_cards)} of"
@@ -606,17 +608,18 @@ def _execute_oracle(cards, args, include_indices=False):
             idx_prefix = f"[{idx_val}] "
 
         if getattr(args, 'gatherer', False):
-            print("  " + idx_prefix + c.format(gatherer=True, ansi_color=use_color).replace('\n', '\n  '))
+            print(utils.wrap_ansi(idx_prefix + c.format(gatherer=True, ansi_color=use_color), term_width, indent=2))
         elif show_summary:
-            print("  " + idx_prefix + c.summary(ansi_color=use_color).replace('\u2014', '-'))
+            print(utils.wrap_ansi(idx_prefix + c.summary(ansi_color=use_color).replace('\u2014', '-'), term_width, indent=2))
         else:
             # Detailed View
-            print("  " + idx_prefix + c.header(ansi_color=use_color).replace('\u2014', '-'))
+            print(utils.wrap_ansi(idx_prefix + c.header(ansi_color=use_color).replace('\u2014', '-'), term_width, indent=2))
 
             def print_face(face, is_bside=False):
+                sep_width = min(40, term_width - 4)
                 if is_bside:
                     # Subtle divider for secondary faces
-                    print("  " + "." * 40)
+                    print("  " + "." * sep_width)
                     # For B-sides in detailed view, we show name, type, and stats
                     face_name = face.display_name
                     if use_color:
@@ -628,18 +631,20 @@ def _execute_oracle(cards, args, include_indices=False):
                         face_info += f" • {stats}"
                     if use_color:
                         face_info = utils.colorize(face_info, utils.Ansi.GREEN)
-                    print(f"  {face_name} \u2022 {face_info}")
+                    print(utils.wrap_ansi(f"{face_name} \u2022 {face_info}", term_width, indent=2))
                 else:
-                    print("  " + "-" * 40)
+                    print("  " + "-" * sep_width)
 
                 # Ensure internal markers are unpassed (e.g. % -> charge)
-                print("  " + face.get_text(ansi_color=use_color, force_unpass=True).replace('\u2014', '-').replace('\n', '\n  '))
+                face_text = face.get_text(ansi_color=use_color, force_unpass=True).replace('\u2014', '-')
+                print(utils.wrap_ansi(face_text, term_width, indent=2))
                 if face.bside:
                     print_face(face.bside, is_bside=True)
 
             print_face(c)
 
             # Metadata Footer
+            print("  " + "\u2022" * min(20, term_width - 4)) # Grouping separator
             footer_lines = []
 
             def fmt_label(label):
@@ -660,7 +665,7 @@ def _execute_oracle(cards, args, include_indices=False):
                 id_parts.append(f"{fmt_label('URL:')} {url}")
 
             if id_parts:
-                footer_lines.append(" \u2022 ".join(id_parts))
+                footer_lines.append(utils.wrap_ansi(" \u2022 ".join(id_parts), term_width, indent=2))
 
             # 2. Mechanical Identity Block (Identity, Produced)
             mech_id_parts = []
@@ -688,7 +693,7 @@ def _execute_oracle(cards, args, include_indices=False):
                 mech_id_parts.append(f"{fmt_label('PRODUCED:')} {p_str}")
 
             if mech_id_parts:
-                footer_lines.append(" \u2022 ".join(mech_id_parts))
+                footer_lines.append(utils.wrap_ansi(" \u2022 ".join(mech_id_parts), term_width, indent=2))
 
             # Mechanics, Actions, Tokens (separate lines for readability in detailed view if block is dense)
             all_mechanics = sorted(list(c.mechanics))
@@ -696,14 +701,14 @@ def _execute_oracle(cards, args, include_indices=False):
                 mech_val = ', '.join(all_mechanics)
                 if use_color:
                     mech_val = utils.colorize(mech_val, utils.Ansi.CYAN)
-                footer_lines.append(f"{fmt_label('MECHANICS:')} {mech_val}")
+                footer_lines.append(utils.wrap_ansi(f"{fmt_label('MECHANICS:')} {mech_val}", term_width, indent=2))
 
             all_actions = sorted(list(c.actions))
             if all_actions:
                 act_val = ', '.join(all_actions)
                 if use_color:
                     act_val = utils.colorize(act_val, utils.Ansi.CYAN)
-                footer_lines.append(f"{fmt_label('ACTIONS:')} {act_val}")
+                footer_lines.append(utils.wrap_ansi(f"{fmt_label('ACTIONS:')} {act_val}", term_width, indent=2))
 
             all_tokens = c.tokens
             if all_tokens:
@@ -711,7 +716,7 @@ def _execute_oracle(cards, args, include_indices=False):
                 tok_val = ', '.join(t_names)
                 if use_color:
                     tok_val = utils.colorize(tok_val, utils.Ansi.CYAN)
-                footer_lines.append(f"{fmt_label('TOKENS:')} {tok_val}")
+                footer_lines.append(utils.wrap_ansi(f"{fmt_label('TOKENS:')} {tok_val}", term_width, indent=2))
 
             # 3. Design Analytics Block (Complexity, Rating, Fair MV, Color Pie)
             analytics_parts = []
@@ -752,7 +757,7 @@ def _execute_oracle(cards, args, include_indices=False):
                     cp_val = utils.colorize(cp_val, utils.Ansi.GREEN)
                 analytics_parts.append(f"{fmt_label('COLOR PIE:')} {cp_val}")
 
-            footer_lines.append(" \u2022 ".join(analytics_parts))
+            footer_lines.append(utils.wrap_ansi(" \u2022 ".join(analytics_parts), term_width, indent=2))
 
             # Legality
             if c.legalities:
@@ -761,11 +766,11 @@ def _execute_oracle(cards, args, include_indices=False):
                     leg_val = ", ".join(legal_formats)
                     if use_color:
                         leg_val = utils.colorize(leg_val, utils.Ansi.CYAN)
-                    footer_lines.append(f"{fmt_label('LEGALITIES:')} {leg_val}")
+                    footer_lines.append(utils.wrap_ansi(f"{fmt_label('LEGALITIES:')} {leg_val}", term_width, indent=2))
 
             print() # Spacer before footer
             for line in footer_lines:
-                print("  " + line)
+                print(line)
 
             # Rulings
             if not getattr(args, 'no_rulings', False) and c.rulings:
@@ -1808,31 +1813,7 @@ def handle_compare_cards(args):
                 others_features |= card_features[j]
             signatures.append(sorted(list(card_features[i] - others_features)))
 
-        def wrap_ansi(text, width):
-            if not text: return ""
-            lines = []
-            for line in text.split('\n'):
-                if not line:
-                    lines.append("")
-                    continue
-                words = line.split(' ')
-                curr_line = []
-                curr_len = 0
-                for w in words:
-                    w_len = utils.visible_len(w)
-                    if curr_len + w_len + (1 if curr_line else 0) <= width:
-                        curr_line.append(w)
-                        curr_len += w_len + (1 if curr_line else 0)
-                    else:
-                        lines.append(" ".join(curr_line))
-                        curr_line = [w]
-                        curr_len = w_len
-                if curr_line:
-                    lines.append(" ".join(curr_line))
-            return "\n".join(lines)
-
-        import shutil
-        term_width = shutil.get_terminal_size().columns
+        term_width = utils.get_terminal_width(max_width=200) # Wider for comparison
         num_cards = len(comparison_cards)
         # Allocate width: total terminal width minus column headers/spacing, divided by cards
         # We ensure a minimum of 30 characters for the data columns to keep them readable.
@@ -1850,14 +1831,14 @@ def handle_compare_cards(args):
                         raw_vals.append(v)
                         if use_color and v:
                             v = utils.colorize(v, utils.Ansi.BOLD + utils.Ansi.GREEN)
-                        display_vals.append(wrap_ansi(v, wrap_width))
+                        display_vals.append(utils.wrap_ansi(v, wrap_width))
                 else:
                     for c in comparison_cards:
                         v_raw = get_field_value(c, field, ansi_color=False)
                         v_display = get_field_value(c, field, ansi_color=use_color)
                         raw_vals.append(v_raw)
                         if field in ['text', 'tokens', 'mechanics', 'actions']:
-                            v_display = wrap_ansi(v_display, wrap_width)
+                            v_display = utils.wrap_ansi(v_display, wrap_width)
                         display_vals.append(v_display)
 
                 # Highlight differences or matches
