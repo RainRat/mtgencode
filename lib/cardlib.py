@@ -204,7 +204,7 @@ def extract_tokens_from_text(text):
 
     # 2. Regex for predefined tokens (Treasure, Food, etc.)
     ntks = ['Treasure','Food','Clue','Blood','Map','Role','Incubator','Powerstone','Walker']
-    n_regex = r"(?:[Cc]reate[sd]?)\s+(?:[Aa]n?|two|three|four|five|X)\s+(" + "|".join(ntks) + r")\s+token[s]?"
+    n_regex = r"(?:[Cc]reate[sd]?)\s+(?:[Aa]n?|two|three|four|five|six|seven|eight|nine|ten|X)\s+(" + "|".join(ntks) + r")\s+token[s]?"
     for m in re.finditer(n_regex, text, re.IGNORECASE):
         n = m.group(1).capitalize(); t = {'name': f"{n} Token", 'pt': "", 'color': "Colorless", 'type': n, 'abilities': ""}
         if n=='Treasure': t['type']='Artifact'; t['abilities']='Sacrifice this artifact: Add one mana of any color.'
