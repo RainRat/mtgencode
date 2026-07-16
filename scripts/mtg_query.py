@@ -138,48 +138,46 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         if ansi_color and res:
             res = utils.colorize(res, utils.Ansi.get_rarity_color(res))
     elif canon == 'mechanics':
-        return ", ".join(sorted(list(card.mechanics)))
+        res = ", ".join(sorted(list(card.mechanics)))
     elif canon == 'actions':
-        return ", ".join(sorted(list(card.actions)))
+        res = ", ".join(sorted(list(card.actions)))
     elif canon == 'identity':
         res = card.color_identity
         if ansi_color and res:
             res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in res])
-        return res
     elif canon == 'id_count':
         res = len(card.color_identity)
         if ansi_color:
             res = utils.colorize(str(res), utils.Ansi.BOLD + utils.Ansi.YELLOW)
-        return str(res)
+        res = str(res)
     elif canon == 'set':
-        return card.set_code if card.set_code else ""
+        res = card.set_code if card.set_code else ""
     elif canon == 'number':
-        return card.number if card.number else ""
+        res = card.number if card.number else ""
     elif canon == 'pack':
-        return str(getattr(card, 'pack_id', ""))
+        res = str(getattr(card, 'pack_id', ""))
     elif canon == 'box':
-        return str(getattr(card, 'box_id', ""))
+        res = str(getattr(card, 'box_id', ""))
     elif canon == 'complexity':
         res = str(card.complexity_score)
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
-        return res
     elif canon == 'rating':
-        if not card.is_creature: return ""
-        res = f"{card.power_rating:.3f}"
-        if ansi_color:
-            color = ""
-            if card.power_rating > 1.2: color = utils.Ansi.BOLD + utils.Ansi.GREEN
-            elif card.power_rating < 0.8: color = utils.Ansi.BOLD + utils.Ansi.RED
-            if color: res = utils.colorize(res, color)
-        return res
+        if not card.is_creature:
+            res = ""
+        else:
+            res = f"{card.power_rating:.3f}"
+            if ansi_color:
+                color = ""
+                if card.power_rating > 1.2: color = utils.Ansi.BOLD + utils.Ansi.GREEN
+                elif card.power_rating < 0.8: color = utils.Ansi.BOLD + utils.Ansi.RED
+                if color: res = utils.colorize(res, color)
     elif canon == 'fair_cmc':
         val = card.recommended_cmc
         res = str(val) if val > 0 else ""
         if res and ansi_color:
             color = utils.Ansi.BOLD + (utils.Ansi.GREEN if card.cost.cmc >= val else utils.Ansi.RED)
             res = utils.colorize(res, color)
-        return res
     elif canon == 'color_pie':
         val = card.check_color_pie()
         if isinstance(val, str):
@@ -188,64 +186,64 @@ def get_field_value(card, field, ansi_color=False, multi_sep=" // "):
         else:
             res = "Valid"
             if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.GREEN)
-        return res
     elif canon == 'legalities':
         legal_formats = sorted([f.title() for f, l in card.legalities.items() if l == 'legal'])
-        if not legal_formats: return "None"
-        res = ", ".join(legal_formats)
-        if ansi_color: res = utils.colorize(res, utils.Ansi.CYAN)
-        return res
+        if not legal_formats:
+            res = "None"
+        else:
+            res = ", ".join(legal_formats)
+            if ansi_color: res = utils.colorize(res, utils.Ansi.CYAN)
     elif canon == 'legendary':
         res = "Yes" if card.is_legendary else "No"
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.BOLD + (utils.Ansi.YELLOW if card.is_legendary else utils.Ansi.WHITE))
-        return res
     elif canon == 'permanent':
         res = "Yes" if card.is_permanent else "No"
         if ansi_color:
             res = utils.colorize(res, utils.Ansi.BOLD + (utils.Ansi.CYAN if card.is_permanent else utils.Ansi.WHITE))
-        return res
     elif canon == 'produced':
         produced = card.produced_colors
-        if not produced: return ""
-        p_order = "WUBRGC"
-        p_list = sorted(list(produced), key=lambda x: p_order.find(x) if x in p_order else 99)
-        if "Any" in produced:
-            res = "Any"
-            if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.YELLOW)
-        elif ansi_color:
-            res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in p_list])
+        if produced:
+            p_order = "WUBRGC"
+            p_list = sorted(list(produced), key=lambda x: p_order.find(x) if x in p_order else 99)
+            if "Any" in produced:
+                res = "Any"
+                if ansi_color: res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+            elif ansi_color:
+                res = "".join([utils.colorize(c, utils.Ansi.get_color_color(c)) for c in p_list])
+            else:
+                res = "".join(p_list)
         else:
-            res = "".join(p_list)
-        return res
+            res = ""
     elif canon == 'tokens':
         tokens = card.tokens
-        if not tokens: return ""
-        t_names = [t['name'] for t in tokens]
-        # Deduplicate names while preserving order
-        seen = set()
-        res = []
-        for n in t_names:
-            if n not in seen:
-                res.append(n)
-                seen.add(n)
-        return ", ".join(res)
+        if tokens:
+            t_names = [t['name'] for t in tokens]
+            # Deduplicate names while preserving order
+            seen = set()
+            res_list = []
+            for n in t_names:
+                if n not in seen:
+                    res_list.append(n)
+                    seen.add(n)
+            res = ", ".join(res_list)
+        else:
+            res = ""
     elif canon == 'summary':
-        return card.summary(ansi_color=ansi_color).replace('\u2014', '-')
+        res = card.summary(ansi_color=ansi_color).replace('\u2014', '-')
     elif canon == 'signature':
-        return ""
+        res = ""
     elif canon == 'index':
         res = str(getattr(card, '_index', ''))
         if ansi_color and res:
             res = utils.colorize(res, utils.Ansi.BOLD + utils.Ansi.YELLOW)
-        return res
     elif canon == 'encoded':
-        return card.encode()
+        res = card.encode()
     else:
         return ""
 
     if card.bside:
-        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary', 'tokens', 'actions']:
+        if canon in ['rarity', 'set', 'pack', 'box', 'id_count', 'identity', 'mechanics', 'summary', 'tokens', 'actions', 'produced', 'color_pie', 'legalities']:
             return str(res)
         b_res = get_field_value(card.bside, field, ansi_color, multi_sep=multi_sep)
         if res and b_res:
