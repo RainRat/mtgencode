@@ -111,7 +111,7 @@ Customization options for formatting data:
 *   `--nolinetrans`: Disables the automatic reordering and normalization of card text lines.
 *   `-r`, `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
 *   `-s`, `--stable`: Preserve the original order of cards from the input (the tool shuffles cards by default).
-*   `--sort`: Sorts cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, or `box` before encoding. Automatically enables `--stable`.
+*   `--sort`: Sorts cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, `box`, `complexity`, `score`, `rating`, or `power_rating` before encoding. Automatically enables `--stable`.
 *   `--seed N`: Seed for the random number generator (Default: 1371367).
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Shorthand for `--limit N`. The tool shuffles cards by default unless you use `--stable`.
@@ -141,7 +141,7 @@ Options for formatting the output. While primarily used for AI output, this tool
 *   `-d`, `--dump`: Show detailed debug information for cards that were not processed correctly.
 *   `--color` / `--no-color`: Manually enable or disable ANSI color output in your terminal.
 *   `--shuffle`: Randomizes the order of cards (the tool does not shuffle cards by default for decoding).
-*   `--sort`: Sorts cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, or `box`.
+*   `--sort`: Sorts cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, `box`, `complexity`, `score`, `rating`, or `power_rating`.
 *   `--seed N`: Seed for the random number generator.
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
@@ -426,7 +426,7 @@ python3 scripts/mtg_analyze.py profile data/AllPrintings.json --set MOM
 # See the top 20 signature features for a decklist
 python3 scripts/mtg_analyze.py profile my_deck.txt --top 20
 ```
-*   **Metrics:** Calculates Avg CMC, Power, Toughness, and Complexity deltas.
+*   **Metrics:** Calculates Avg CMC, Power, Toughness, and Complexity differences.
 *   **Signature Features:** Identifies over-represented Mechanics, Actions, and Subtypes using a 'Lift' score (Relative Frequency vs. Baseline).
 *   **Options:** Supports all **Advanced Filtering** flags and the `--top N` argument.
 
@@ -449,7 +449,7 @@ python3 scripts/mtg_analyze.py summary encoded_output.txt summary.json
     *   `-x`, `--outliers`: Show extra details and unusual cards.
     *   `-a`, `--all`: Show all information, including dumping invalid cards.
     *   `--top N`: Limit the number of entries in breakdown tables (Default: 10).
-    *   `--sort CRITERIA`: Sort cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, `complexity`, or `score` before summarizing.
+    *   `--sort CRITERIA`: Sort cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, `box`, `complexity`, `score`, `rating`, or `power_rating` before summarizing.
     *   `--booster N`: Simulate opening N booster packs and summarize the contents.
     *   `--box N`: Simulate opening N booster boxes (36 packs each) and summarize the contents.
     *   `-j`, `--json`: Force JSON output.
