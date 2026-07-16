@@ -540,6 +540,7 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `compare`: Compare two cards side-by-side by name to identify differences.
 *   `reprints`: Find functional reprints (identical mechanics) of a reference card.
 *   `substitutes`: Find functional alternatives to a reference card.
+*   `counterparts`: Find mechanical clones in different colors (color shifts).
 *   `superior`: Find cards that are generally better than a reference card.
 *   `inferior`: Find cards that are generally worse than a reference card.
 *   `extract`: Extract a single card object from a large JSON database.
@@ -672,6 +673,19 @@ python3 scripts/mtg_query.py substitutes "Damnation" --rarity common --rarity un
 
 # Find substitutes within a specific set
 python3 scripts/mtg_query.py substitutes "Counterspell" --set MOM
+```
+
+---
+
+#### **Subcommand: `counterparts`**
+Finds cards with identical CMC, types, stats, and mechanics/text as the reference card, but with a different color identity. This is useful for identifying "color-shifted" versions of cards.
+
+```bash
+# Find color-shifted versions of Concentrate (e.g. Harmonize)
+python3 scripts/mtg_query.py counterparts "Concentrate"
+
+# Find color-shifted counterparts for Prodigal Sorcerer
+python3 scripts/mtg_query.py counterparts "Prodigal Sorcerer"
 ```
 
 ---

@@ -822,9 +822,12 @@ def handle_shell(args):
                     '/sets ', '/st ',
                     '/functional ', '/f ',
                     '/compare ', '/c ',
-                    '/reprints ', '/rep ',
                     '/superior ', '/sup ',
                     '/inferior ', '/inf ',
+                    '/reprints ', '/rep ',
+                    '/substitutes ', '/sub ',
+                    '/counterparts ', '/cp ',
+                    '/similar ',
                     '/extract ', '/e ',
                     '/help', '/h', '/?',
                     '/clear',
@@ -994,6 +997,22 @@ def handle_shell(args):
                     sub_args = copy.copy(args)
                     sub_args.query = " ".join(_resolve_args(cmd_args))
                     last_results = handle_substitutes(sub_args, include_indices=True)
+                elif cmd in ['/counterparts', '/cp']:
+                    if not cmd_args:
+                        err_msg = "Error: /counterparts requires a card name."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
+                        continue
+                    cp_args = copy.copy(args)
+                    cp_args.query = " ".join(_resolve_args(cmd_args))
+                    last_results = handle_counterparts(cp_args, include_indices=True)
+                elif cmd in ['/similar']:
+                    cmd_args = _resolve_args(cmd_args)
+                    o_args = copy.copy(args)
+                    o_args.query = " ".join(cmd_args)
+                    o_args.similar = True
+                    if not hasattr(o_args, 'limit'): o_args.limit = 0
+                    last_results = _execute_oracle(all_cards, o_args, include_indices=True)
                 elif cmd in ['/extract', '/e']:
                     if len(cmd_args) < 2:
                         err_msg = "Error: /extract requires <set_code> and <card_name>."
@@ -1031,8 +1050,10 @@ def handle_shell(args):
                     fmt_cmd("/compare <n>...", "/c", "Compare multiple cards side-by-side.")
                     fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
                     fmt_cmd("/substitutes <n>", "/sub", "Find functional alternatives to the named card.")
+                    fmt_cmd("/counterparts <n>", "/cp", "Find mechanical clones in different colors.")
                     fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
                     fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
+                    fmt_cmd("/similar <n>", "", "Find cards mechanically similar to the named card.")
                     fmt_cmd("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name.")
                     fmt_cmd("/clear", "/cls", "Clear the terminal screen.")
                     fmt_cmd("/help", "/h, /?", "Show this help message.")
@@ -1278,6 +1299,20 @@ def get_functional_key(card):
     key = (cost, types, stats, text)
     if card.bside:
         key = (key, get_functional_key(card.bside))
+    return key
+
+def get_counterpart_key(card):
+    """Generates a color-neutral mechanical signature for identifying counterparts."""
+    cmc = card.cost.cmc
+    # We exclude subtypes for counterparts to find functional shifts regardless of flavor
+    types = (tuple(sorted(card.supertypes)),
+             tuple(sorted(card.types)))
+    stats = (card.pt, card.loyalty)
+    # card.text.text contains neutralized mana markers (utils.reserved_mana_marker)
+    text = card.text.text
+    key = (cmc, types, stats, text)
+    if card.bside:
+        key = (key, get_counterpart_key(card.bside))
     return key
 
 def handle_functional(args, include_indices=False):
@@ -1530,6 +1565,27 @@ def handle_reprints(args, include_indices=False):
 
     # Use search display for results
     return _execute_search(reprints, args, include_indices=include_indices)
+
+def handle_counterparts(args, include_indices=False):
+    target_card, cards = _resolve_target_from_args(args)
+    if not target_card:
+        return []
+
+    target_key = get_counterpart_key(target_card)
+    target_id = target_card.color_identity
+
+    # Counterparts are mechanical clones in different colors
+    counterparts = [c for c in cards if get_counterpart_key(c) == target_key
+                    and c.name.lower() != target_card.name.lower()
+                    and c.color_identity != target_id]
+
+    if not counterparts:
+        if not args.quiet:
+            print(f"No color-shifted counterparts found for {target_card.display_name}.", file=sys.stderr)
+        return []
+
+    # Use search display for results
+    return _execute_search(counterparts, args, include_indices=include_indices)
 
 def find_substitutes(target, pool, limit=10):
     """Finds functional alternatives to a reference card."""
@@ -1890,7 +1946,7 @@ def main():
     # If no subcommand is provided, we intelligently default to 'shell', 'oracle', or 'search'.
     valid_subcommands = ['search', 's', 'oracle', 'o', 'random', 'r', 'extract', 'e',
                          'sets', 'st', 'functional', 'f', 'reprints', 'rep',
-                         'substitutes', 'sub',
+                         'substitutes', 'sub', 'counterparts', 'cp',
                          'compare', 'c', 'superior', 'sup', 'inferior', 'inf',
                          'shell', 'sh', 'interactive', 'repl']
 
@@ -2268,6 +2324,37 @@ Usage Examples:
     p_substitutes.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     p_substitutes.set_defaults(func=handle_substitutes)
+
+    # Counterparts Subparser
+    p_counterparts = subparsers.add_parser(
+        'counterparts',
+        aliases=['cp'],
+        help='Find mechanical clones in different colors (color shifts).',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+Finds cards with identical CMC, types, stats, and mechanics/text
+as the reference card, but with a different color identity.
+
+Usage Examples:
+  # Find color-shifted versions of Concentrate (e.g. Harmonize)
+  python3 scripts/mtg_query.py counterparts "Concentrate"
+
+  # Find color-shifted counterparts for Prodigal Sorcerer
+  python3 scripts/mtg_query.py counterparts "Prodigal Sorcerer"
+"""
+    )
+    p_counterparts.add_argument('query', help='The card name to use as a reference for comparison.')
+    p_counterparts.add_argument('infile', nargs='?', default='-',
+                           help='Input card data file. Defaults to data/AllPrintings.json.')
+    cli_utils.add_standard_filters(p_counterparts)
+    cli_utils.add_standard_output_args(p_counterparts)
+    p_counterparts.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                           help=FIELDS_HELP)
+    p_counterparts.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'rating'],
+                           help='Sort the resulting counterpart cards.')
+    p_counterparts.add_argument('--delimiter', default=' | ',
+                        help='Separator used between fields in plain text output.')
+    p_counterparts.set_defaults(func=handle_counterparts)
 
     # Shell Subparser
     p_shell = subparsers.add_parser(
