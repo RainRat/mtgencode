@@ -78,6 +78,176 @@ class TestMtgForge(unittest.TestCase):
         self.assertEqual(output['manaCost'], '{1}{G}')
         self.assertEqual(output['subtypes'], ['Bear'])
 
+    @patch('scripts.mtg_forge.jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_color_shift(self, mock_stdout, mock_open):
+        # Mock base card
+        mock_card = MagicMock()
+        mock_card.name = "Green Forest Bear"
+        mock_card.to_dict.side_effect = lambda: {
+            'name': 'Green Forest Bear',
+            'manaCost': '{1}{G}',
+            'type': 'Creature - Forest Bear',
+            'types': ['Creature'],
+            'subtypes': ['Bear'],
+            'text': 'Forestwalk (unblockable if defending controls a Forest).',
+            'power': '2',
+            'toughness': '2',
+            'rarity': 'common'
+        }
+        mock_open.return_value = [mock_card]
+
+        # Shift to White (W)
+        test_args = [
+            'mtg_forge.py',
+            '--base', 'Green Forest Bear',
+            '--color-shift', 'W'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['name'], 'White Plains Bear')
+        self.assertEqual(output['manaCost'], '{1}{W}')
+        self.assertIn('Plains', output['subtypes'])
+        self.assertIn('Plains', output['text'])
+
+    @patch('scripts.mtg_forge.jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_color_shift_multicolor(self, mock_stdout, mock_open):
+        # Mock base card
+        mock_card = MagicMock()
+        mock_card.name = "Green Bear"
+        mock_card.to_dict.side_effect = lambda: {
+            'name': 'Green Bear',
+            'manaCost': '{1}{G}',
+            'type': 'Creature - Bear',
+            'types': ['Creature'],
+            'subtypes': ['Bear'],
+            'text': 'Add {G}.',
+            'power': '2',
+            'toughness': '2',
+            'rarity': 'common'
+        }
+        mock_open.return_value = [mock_card]
+
+        # Shift to White-Blue (WU)
+        test_args = [
+            'mtg_forge.py',
+            '--base', 'Green Bear',
+            '--color-shift', 'WU'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['manaCost'], '{1}{W}{U}')
+        self.assertEqual(output['name'], 'White and Blue Bear')
+        self.assertIn('{W}{U}', output['text'])
+
+    @patch('scripts.mtg_forge.jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_buff_nerf(self, mock_stdout, mock_open):
+        # Mock base card
+        mock_card = MagicMock()
+        mock_card.name = "Grizzly Bears"
+        mock_card.to_dict.side_effect = lambda: {
+            'name': 'Grizzly Bears',
+            'manaCost': '{1}{G}',
+            'type': 'Creature - Bear',
+            'types': ['Creature'],
+            'subtypes': ['Bear'],
+            'power': '2',
+            'toughness': '2',
+            'loyalty': '3',
+            'rarity': 'common'
+        }
+        mock_open.return_value = [mock_card]
+
+        # Test Buff
+        test_args = [
+            'mtg_forge.py',
+            '--base', 'Grizzly Bears',
+            '--buff'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['power'], '3')
+        self.assertEqual(output['toughness'], '3')
+        self.assertEqual(output['loyalty'], '4')
+
+        # Test Nerf
+        mock_stdout.seek(0)
+        mock_stdout.truncate(0)
+        test_args = [
+            'mtg_forge.py',
+            '--base', 'Grizzly Bears',
+            '--nerf'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['power'], '1')
+        self.assertEqual(output['toughness'], '1')
+        self.assertEqual(output['loyalty'], '2')
+
+    @patch('scripts.mtg_forge.jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_scale(self, mock_stdout, mock_open):
+        # Mock base card
+        mock_card = MagicMock()
+        mock_card.name = "Grizzly Bears"
+        mock_card.to_dict.side_effect = lambda: {
+            'name': 'Grizzly Bears',
+            'manaCost': '{1}{G}',
+            'type': 'Creature - Bear',
+            'types': ['Creature'],
+            'subtypes': ['Bear'],
+            'power': '2',
+            'toughness': '2',
+            'rarity': 'common'
+        }
+        mock_open.return_value = [mock_card]
+
+        # Test Scale Up
+        test_args = [
+            'mtg_forge.py',
+            '--base', 'Grizzly Bears',
+            '--scale-up'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['power'], '3')
+        self.assertEqual(output['toughness'], '3')
+        self.assertEqual(output['manaCost'], '{2}{G}')
+
+        # Test Scale Down
+        mock_stdout.seek(0)
+        mock_stdout.truncate(0)
+        test_args = [
+            'mtg_forge.py',
+            '--base', 'Grizzly Bears',
+            '--scale-down'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['power'], '1')
+        self.assertEqual(output['toughness'], '1')
+        self.assertEqual(output['manaCost'], '{G}')
+
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_forge_encoded(self, mock_stdout):
         test_args = [
