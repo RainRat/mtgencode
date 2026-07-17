@@ -825,7 +825,9 @@ def handle_shell(args):
                     '/reprints ', '/rep ',
                     '/superior ', '/sup ',
                     '/inferior ', '/inf ',
+                    '/substitutes ', '/sub ',
                     '/extract ', '/e ',
+                    '/list', '/l', '/results',
                     '/help', '/h', '/?',
                     '/clear',
                     '/exit', '/quit', '/q'
@@ -1005,6 +1007,17 @@ def handle_shell(args):
                     e_args.card_name = " ".join(cmd_args[1:])
                     e_args.outfile = '-'
                     handle_extract(e_args)
+                elif cmd in ['/list', '/l', '/results']:
+                    if not last_results:
+                        err_msg = "No previous results to display."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
+                        continue
+                    s_args = copy.copy(args)
+                    s_args.fields = getattr(args, 'fields', 'name,cost,type,stats,rarity')
+                    s_args.table = True
+                    if not hasattr(s_args, 'limit'): s_args.limit = 0
+                    _execute_search(last_results, s_args, include_indices=True)
                 elif cmd in ['/help', '/h', '/?']:
                     utils.print_header("SHELL COMMANDS", use_color=use_color)
 
@@ -1034,6 +1047,7 @@ def handle_shell(args):
                     fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
                     fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
                     fmt_cmd("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name.")
+                    fmt_cmd("/list", "/l, /results", "Re-display the results of the last search or query.")
                     fmt_cmd("/clear", "/cls", "Clear the terminal screen.")
                     fmt_cmd("/help", "/h, /?", "Show this help message.")
                     fmt_cmd("/exit", "/quit, /q", "Exit the interactive shell.")

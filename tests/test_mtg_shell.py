@@ -137,6 +137,22 @@ class TestMtgShell(unittest.TestCase):
                 handle_shell(self.args)
                 self.assertIn("Error: No closing quotation", fake_out.getvalue())
 
+    def test_shell_list_empty(self):
+        """Test the /list command when no previous search results exist."""
+        with patch('builtins.input', side_effect=['/list', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                self.assertIn("No previous results to display.", fake_out.getvalue())
+
+    def test_shell_list_with_results(self):
+        """Test the /list, /l, and /results commands after a search."""
+        with patch('builtins.input', side_effect=['/search tarkir', '/list', '/l', '/results', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                # Verify search output is printed multiple times (from search, list, l, results)
+                self.assertEqual(output.count("Invasion of Tarkir"), 4)
+
     def test_shell_tab_completion(self):
         """Test the tab completion logic."""
         with patch('readline.set_completer') as mock_set_completer:
@@ -149,6 +165,14 @@ class TestMtgShell(unittest.TestCase):
                 self.assertEqual(completer('/', 0), '/search ')
                 self.assertEqual(completer('/s', 0), '/search ')
                 self.assertEqual(completer('/s', 1), '/s ')
+
+                # Test new list and substitutes command completion
+                self.assertEqual(completer('/li', 0), '/list')
+                self.assertEqual(completer('/l', 0), '/list')
+                self.assertEqual(completer('/l', 1), '/l')
+                self.assertEqual(completer('/res', 0), '/results')
+                self.assertEqual(completer('/sub', 0), '/substitutes ')
+                self.assertEqual(completer('/sub', 1), '/sub ')
 
                 # Test card name completion
                 self.assertEqual(completer('inv', 0), 'Invasion of Tarkir')
