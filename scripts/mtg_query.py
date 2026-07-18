@@ -826,6 +826,7 @@ def handle_shell(args):
                     '/superior ', '/sup ',
                     '/inferior ', '/inf ',
                     '/extract ', '/e ',
+                    '/list', '/l', '/results',
                     '/help', '/h', '/?',
                     '/clear',
                     '/exit', '/quit', '/q'
@@ -914,6 +915,17 @@ def handle_shell(args):
                     s_args.table = True
                     if not hasattr(s_args, 'limit'): s_args.limit = 0
                     last_results = _execute_search(matched_cards, s_args, include_indices=True)
+                elif cmd in ['/list', '/l', '/results']:
+                    if not last_results:
+                        err_msg = "No previous search results to display."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
+                        continue
+                    s_args = copy.copy(args)
+                    s_args.fields = getattr(args, 'fields', 'name,cost,type,stats,rarity')
+                    s_args.table = True
+                    if not hasattr(s_args, 'limit'): s_args.limit = 0
+                    last_results = _execute_search(last_results, s_args, include_indices=True)
                 elif cmd in ['/oracle', '/o']:
                     cmd_args = _resolve_args(cmd_args)
                     o_args = copy.copy(args)
@@ -1024,6 +1036,7 @@ def handle_shell(args):
                     print(f"{name_label}{' ' * max(0, name_pad)} - Show official rules text for a specific card.")
 
                     fmt_cmd("/search <q>", "/s", "Search for cards matching <q> (displays a table).")
+                    fmt_cmd("/list", "/l, /results", "Re-display the results of the last search or query in tabular format.")
                     fmt_cmd("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching).")
                     fmt_cmd("/random [n]", "/r", "Show [n] random cards from the dataset.")
                     fmt_cmd("/sets [q]", "/st", "List and filter card sets.")
