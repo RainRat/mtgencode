@@ -153,5 +153,50 @@ class TestMtgShell(unittest.TestCase):
                 # Test card name completion
                 self.assertEqual(completer('inv', 0), 'Invasion of Tarkir')
 
+    def test_shell_list_empty(self):
+        """Test executing /list with an empty search history."""
+        with patch('builtins.input', side_effect=['/list', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                self.assertIn("No previous search results to display.", fake_out.getvalue())
+
+    def test_shell_list_populated(self):
+        """Test executing /list (and /l and /results) after a search has been executed."""
+        # 1. Test /list
+        with patch('builtins.input', side_effect=['/search tarkir', '/list', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                # Ensure the search table displayed once for search and once for list
+                self.assertEqual(output.count("Invasion of Tarkir"), 2)
+
+        # 2. Test /l
+        with patch('builtins.input', side_effect=['/search tarkir', '/l', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertEqual(output.count("Invasion of Tarkir"), 2)
+
+        # 3. Test /results
+        with patch('builtins.input', side_effect=['/search tarkir', '/results', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertEqual(output.count("Invasion of Tarkir"), 2)
+
+    def test_shell_list_tab_completion(self):
+        """Test the tab completion logic for /list, /l, and /results."""
+        with patch('readline.set_completer') as mock_set_completer:
+            with patch('builtins.input', side_effect=['exit']):
+                handle_shell(self.args)
+                self.assertTrue(mock_set_completer.called)
+                completer = mock_set_completer.call_args[0][0]
+
+                # Test command completion for /list, /l, /results
+                self.assertEqual(completer('/li', 0), '/list')
+                self.assertEqual(completer('/results', 0), '/results')
+                self.assertEqual(completer('/l', 0), '/list')
+                self.assertEqual(completer('/l', 1), '/l')
+
 if __name__ == '__main__':
     unittest.main()
