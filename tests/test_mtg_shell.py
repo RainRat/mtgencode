@@ -50,6 +50,22 @@ class TestMtgShell(unittest.TestCase):
                 handle_shell(self.args)
                 output = fake_out.getvalue()
                 self.assertIn("Invasion of Tarkir", output)
+
+    def test_shell_compare_range(self):
+        """Test the /compare command with index ranges and comma separation."""
+        with patch('builtins.input', side_effect=['/search tarkir', '/compare 1-1, 1', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("Invasion of Tarkir", output)
+
+    def test_shell_compare_comma_fallback(self):
+        """Test fallback and trailing commas in /compare command."""
+        with patch('builtins.input', side_effect=['/search tarkir', '/compare 1,', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("Invasion of Tarkir", output)
                 self.assertIn("Battle", output)
 
     def test_shell_search(self):
