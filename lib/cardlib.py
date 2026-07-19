@@ -133,7 +133,8 @@ def cap(s):
         return s
 
     chars = list(s)
-    # 1. Capitalize the first letter overall
+    # Pass 1: Capitalize the very first English letter in standard sentences
+    # (e.g., "draw a card"). This handles standard text starting directly with words.
     for i, char in enumerate(chars):
         if char.isalpha():
             chars[i] = char.upper()
@@ -141,7 +142,9 @@ def cap(s):
         if char in [utils.this_marker, utils.reserved_marker]:
             break
 
-    # 2. Find the first letter outside of delimiters {} and []
+    # Pass 2: Capitalize the first English letter located outside of brackets.
+    # This handles sentences that start with delimited mana costs or choices
+    # (e.g., "{2U}, remove...", "[Choose one —] draw...").
     i = 0
     while i < len(s):
         if s[i] == utils.mana_open_delimiter:
