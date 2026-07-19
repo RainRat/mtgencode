@@ -13,6 +13,249 @@ import utils
 import jdecode
 import cardlib
 
+COLOR_NAME_MAP = {
+    'W': 'White',
+    'U': 'Blue',
+    'B': 'Black',
+    'R': 'Red',
+    'G': 'Green'
+}
+LAND_NAME_MAP = {
+    'W': 'Plains',
+    'U': 'Island',
+    'B': 'Swamp',
+    'R': 'Mountain',
+    'G': 'Forest'
+}
+COLOR_NAME_TO_SYM = {
+    'WHITE': 'W', 'PLAINS': 'W',
+    'BLUE': 'U', 'ISLAND': 'U',
+    'BLACK': 'B', 'SWAMP': 'B',
+    'RED': 'R', 'MOUNTAIN': 'R',
+    'GREEN': 'G', 'FOREST': 'G'
+}
+
+def adjust_stat(val, amount):
+    if val is None:
+        return None
+    try:
+        def repl(match):
+            num = int(match.group(0))
+            return str(max(0, num + amount))
+        return re.sub(r'\d+', repl, str(val))
+    except Exception:
+        return val
+
+def scale_stat(val, factor, multiply=True):
+    if val is None:
+        return None
+    try:
+        def repl(match):
+            num = int(match.group(0))
+            if multiply:
+                new_num = int(round(num * factor))
+            else:
+                new_num = int(round(num / factor))
+            return str(max(1 if not multiply else 0, new_num))
+        return re.sub(r'\d+', repl, str(val))
+    except Exception:
+        return val
+
+def scale_mana_cost(mana_cost, factor, multiply=True):
+    if not mana_cost:
+        return mana_cost
+    def repl(match):
+        num = int(match.group(1))
+        if multiply:
+            new_num = int(round(num * factor))
+        else:
+            new_num = int(round(num / factor))
+        return f"{{{new_num}}}"
+    return re.sub(r'\{(\d+)\}', repl, mana_cost)
+
+def apply_color_shift(card_dict, target_colors_str):
+    WUBRG = 'WUBRG'
+
+    # 1. Determine original colors
+    orig_colors = []
+    mana_cost = card_dict.get('manaCost', '')
+    if mana_cost:
+        for c in 'WUBRG':
+            if c in mana_cost.upper():
+                orig_colors.append(c)
+    # Fallback to colors list
+    if not orig_colors and 'colors' in card_dict:
+        orig_colors = [c for c in 'WUBRG' if c in [x.upper() for x in card_dict['colors']]]
+    # Fallback to color identity list
+    if not orig_colors and 'colorIdentity' in card_dict:
+        orig_colors = [c for c in 'WUBRG' if c in [x.upper() for x in card_dict['colorIdentity']]]
+
+    orig_colors = sorted(list(set(orig_colors)), key=lambda x: WUBRG.index(x))
+
+    if not orig_colors:
+        return card_dict
+
+    # 2. Parse target colors robustly
+    target_colors = []
+    tokens = re.split(r'[^A-Za-z0-9]', target_colors_str)
+    for token in tokens:
+        token_upper = token.upper().strip()
+        if not token_upper:
+            continue
+        if token_upper in COLOR_NAME_TO_SYM:
+            target_colors.append(COLOR_NAME_TO_SYM[token_upper])
+        else:
+            for char in token_upper:
+                if char in 'WUBRG':
+                    target_colors.append(char)
+
+    target_colors = sorted(list(set(target_colors)), key=lambda x: WUBRG.index(x))
+
+    if not target_colors:
+        return card_dict
+
+    # 3. Create mapping orig_color -> list of target_colors
+    mapping = {}
+    if len(orig_colors) >= len(target_colors):
+        for i, oc in enumerate(orig_colors):
+            mapping[oc] = [target_colors[i % len(target_colors)]]
+    else:
+        for oc in orig_colors:
+            mapping[oc] = []
+        for i, tc in enumerate(target_colors):
+            oc = orig_colors[i % len(orig_colors)]
+            mapping[oc].append(tc)
+
+    # 4. Define simultaneous replacement maps for strings
+    word_map = {}
+    for oc in orig_colors:
+        targets = mapping[oc]
+        if not targets:
+            continue
+        oc_color = COLOR_NAME_MAP[oc]
+        tc_colors = [COLOR_NAME_MAP[tc] for tc in targets]
+        oc_land = LAND_NAME_MAP[oc]
+        tc_lands = [LAND_NAME_MAP[tc] for tc in targets]
+
+        # Color names
+        word_map[oc_color] = " and ".join(tc_colors)
+        word_map[oc_color.lower()] = " and ".join(c.lower() for c in tc_colors)
+        word_map[oc_color.upper()] = " and ".join(c.upper() for c in tc_colors)
+
+        # Land names
+        word_map[oc_land] = " and ".join(tc_lands)
+        word_map[oc_land.lower()] = " and ".join(l.lower() for l in tc_lands)
+        word_map[oc_land.upper()] = " and ".join(l.upper() for l in tc_lands)
+
+    # Helper to replace words
+    def replace_words(s):
+        if not s or not isinstance(s, str):
+            return s
+        if not word_map:
+            return s
+        keys_sorted = sorted(word_map.keys(), key=len, reverse=True)
+        pattern = re.compile("|".join(re.escape(k) for k in keys_sorted))
+        return pattern.sub(lambda m: word_map[m.group(0)], s)
+
+    # Helper to replace mana symbols
+    def replace_mana_symbols(s):
+        if not s or not isinstance(s, str):
+            return s
+        def repl(match):
+            interior = match.group(1)
+            if interior.upper() in 'WUBRG':
+                target_list = mapping.get(interior.upper(), [])
+                if not target_list:
+                    return match.group(0)
+                return "".join(f"{{{tc}}}" for tc in target_list)
+            new_interior = []
+            for char in interior:
+                if char.upper() in 'WUBRG':
+                    target_list = mapping.get(char.upper(), [])
+                    if target_list:
+                        new_char = target_list[0]
+                        new_interior.append(new_char if char.isupper() else new_char.lower())
+                    else:
+                        new_interior.append(char)
+                else:
+                    new_interior.append(char)
+            return "{" + "".join(new_interior) + "}"
+        return re.sub(r'\{([^}]+)\}', repl, s)
+
+    # Apply mapping to fields
+    if 'name' in card_dict:
+        card_dict['name'] = replace_words(card_dict['name'])
+    if 'type' in card_dict:
+        card_dict['type'] = replace_words(card_dict['type'])
+    for field in ['supertypes', 'types', 'subtypes']:
+        if field in card_dict and isinstance(card_dict[field], list):
+            card_dict[field] = [replace_words(item) for item in card_dict[field]]
+    if 'text' in card_dict:
+        text = replace_words(card_dict['text'])
+        text = replace_mana_symbols(text)
+        card_dict['text'] = text
+    if 'manaCost' in card_dict:
+        card_dict['manaCost'] = replace_mana_symbols(card_dict['manaCost'])
+    for field in ['colors', 'colorIdentity']:
+        if field in card_dict and isinstance(card_dict[field], list):
+            new_list = []
+            for item in card_dict[field]:
+                if item.upper() in mapping:
+                    new_list.extend(mapping[item.upper()])
+                else:
+                    new_list.append(item)
+            card_dict[field] = sorted(list(set(new_list)), key=lambda x: WUBRG.index(x) if x in WUBRG else 99)
+
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_color_shift(card_dict['bside'], target_colors_str)
+
+    return card_dict
+
+def apply_buff_nerf(card_dict, amount):
+    if 'power' in card_dict:
+        card_dict['power'] = adjust_stat(card_dict['power'], amount)
+    if 'toughness' in card_dict:
+        card_dict['toughness'] = adjust_stat(card_dict['toughness'], amount)
+    if 'pt' in card_dict:
+        pt_val = card_dict['pt']
+        if '/' in pt_val:
+            p, t = pt_val.split('/', 1)
+            card_dict['pt'] = f"{adjust_stat(p.strip(), amount)}/{adjust_stat(t.strip(), amount)}"
+        else:
+            card_dict['pt'] = adjust_stat(pt_val, amount)
+    if 'loyalty' in card_dict:
+        card_dict['loyalty'] = adjust_stat(card_dict['loyalty'], amount)
+    if 'defense' in card_dict:
+        card_dict['defense'] = adjust_stat(card_dict['defense'], amount)
+
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_buff_nerf(card_dict['bside'], amount)
+    return card_dict
+
+def apply_scale(card_dict, factor, multiply=True):
+    if 'power' in card_dict:
+        card_dict['power'] = scale_stat(card_dict['power'], factor, multiply)
+    if 'toughness' in card_dict:
+        card_dict['toughness'] = scale_stat(card_dict['toughness'], factor, multiply)
+    if 'pt' in card_dict:
+        pt_val = card_dict['pt']
+        if '/' in pt_val:
+            p, t = pt_val.split('/', 1)
+            card_dict['pt'] = f"{scale_stat(p.strip(), factor, multiply)}/{scale_stat(t.strip(), factor, multiply)}"
+        else:
+            card_dict['pt'] = scale_stat(pt_val, factor, multiply)
+    if 'loyalty' in card_dict:
+        card_dict['loyalty'] = scale_stat(card_dict['loyalty'], factor, multiply)
+    if 'defense' in card_dict:
+        card_dict['defense'] = scale_stat(card_dict['defense'], factor, multiply)
+
+    if 'manaCost' in card_dict:
+        card_dict['manaCost'] = scale_mana_cost(card_dict['manaCost'], factor, multiply)
+
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_scale(card_dict['bside'], factor, multiply)
+    return card_dict
+
 def main():
     parser = argparse.ArgumentParser(
         description="Forge a new Magic card or reforge an existing one from the command line.",
@@ -46,6 +289,14 @@ Usage Examples:
     field_group.add_argument('--loy', '--loyalty', dest='loy', help='Loyalty or Defense value.')
     field_group.add_argument('-r', '--rarity', help='Rarity (common, uncommon, rare, mythic).')
     field_group.add_argument('--set', help='Set code (e.g. "MOM").')
+
+    # Group: Transformational Modifiers
+    trans_group = parser.add_argument_group('Transformational Modifiers')
+    trans_group.add_argument('--color-shift', help='Shift card colors to target color or colors (e.g. "U,B" or "blue").')
+    trans_group.add_argument('--buff', type=int, nargs='?', const=1, help='Increment power, toughness, loyalty, or defense by an amount.')
+    trans_group.add_argument('--nerf', type=int, nargs='?', const=1, help='Decrement power, toughness, loyalty, or defense by an amount.')
+    trans_group.add_argument('--scale-up', type=float, nargs='?', const=2.0, help='Scale up stats and generic mana costs proportionally by a factor.')
+    trans_group.add_argument('--scale-down', type=float, nargs='?', const=2.0, help='Scale down stats and generic mana costs proportionally by a factor.')
 
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
@@ -124,11 +375,21 @@ Usage Examples:
     if args.rarity: card_dict['rarity'] = args.rarity
     if args.set: card_dict['setCode'] = args.set
 
+    # Apply Transformational Modifiers
+    if args.color_shift:
+        card_dict = apply_color_shift(card_dict, args.color_shift)
+    if args.buff:
+        card_dict = apply_buff_nerf(card_dict, args.buff)
+    if args.nerf:
+        card_dict = apply_buff_nerf(card_dict, -args.nerf)
+    if args.scale_up:
+        card_dict = apply_scale(card_dict, args.scale_up, multiply=True)
+    if args.scale_down:
+        card_dict = apply_scale(card_dict, args.scale_down, multiply=False)
+
     # Create a Card object to ensure all internal properties are populated
-    # and to support all proyect output formats.
+    # and to support all project output formats.
     try:
-        # jdecode._normalize_scryfall_card is useful but we built MTGJSON-style
-        # Card(card_dict) works best.
         final_card = cardlib.Card(card_dict)
     except Exception as e:
         print(f"Error validating forged card: {e}", file=sys.stderr)
@@ -141,7 +402,6 @@ Usage Examples:
         if args.encoded:
             output_f.write(final_card.encode() + '\n')
         elif args.summary:
-            # Enable color if output is a TTY
             use_color = sys.stdout.isatty() if not args.outfile else False
             output_f.write(final_card.summary(ansi_color=use_color) + '\n')
         else:
