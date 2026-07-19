@@ -80,20 +80,32 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
     *   **Copy the binary:**
         Move the `word2vec` file into your `mtgencode` root folder so the scripts can find it.
 
-2.  **Generate Vectors:**
-    You must generate a binary model (`cbow.bin`) derived from the specific encoding format you are using.
+2.  **Generate Reference Data and Vectors:**
+    The creativity analyzer compares your custom cards against a reference dataset of real cards. This requires two files in your `data/` folder:
+    *   `data/output.txt`: The reference card dataset in standard-encoded text format.
+    *   `data/cbow.bin`: The compiled Word2Vec binary model.
 
-    ```bash
-    # 1. Create vector-compatible text from your source data
-    python3 encode.py -v data/AllPrintings.json data/cbow.txt -s -e vec
+    **Important:** The cards in both files must be in the exact same order. Always use the stable ordering flag (`-s`) when generating them.
 
-    # 2. Compile cbow.bin using word2vec
-    # (Example command; adjust flags as needed for your word2vec version)
-    ./word2vec -train data/cbow.txt -output data/cbow.bin -cbow 1 -size 200 -window 8 -negative 25 -hs 0 -sample 1e-4 -threads 20 -binary 1 -iter 15
-    ```
+    Follow these steps to generate both files:
+
+    *   **Step A: Create the reference dataset (`data/output.txt`)**
+        ```bash
+        python3 encode.py data/AllPrintings.json data/output.txt -s
+        ```
+
+    *   **Step B: Create the vector training text (`data/cbow.txt`)**
+        ```bash
+        python3 encode.py data/AllPrintings.json data/cbow.txt -s -e vec
+        ```
+
+    *   **Step C: Compile `cbow.bin` using the `word2vec` tool**
+        ```bash
+        ./word2vec -train data/cbow.txt -output data/cbow.bin -cbow 1 -size 200 -window 8 -negative 25 -hs 0 -sample 1e-4 -threads 20 -binary 1 -iter 15
+        ```
 
 3.  **Run with Creativity:**
-    Once `data/cbow.bin` exists, you can run decoding with creativity analysis:
+    Once both `data/cbow.bin` and `data/output.txt` exist in your `data/` folder, you can run decoding with creativity analysis:
     ```bash
     python3 decode.py encoded_output.txt decoded.txt --creativity
     ```
