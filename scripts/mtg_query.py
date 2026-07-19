@@ -798,10 +798,39 @@ def handle_shell(args):
     last_results = []
 
     def _resolve_args(cmd_args):
+        arg_str = " ".join(cmd_args)
+        if re.match(r'^[0-9,\-\s]+$', arg_str):
+            parts = [p.strip() for p in re.split(r',', arg_str) if p.strip()]
+            resolved = []
+            valid_parse = True
+            for p in parts:
+                range_match = re.match(r'^(\d+)-(\d+)$', p)
+                if range_match:
+                    start, end = int(range_match.group(1)), int(range_match.group(2))
+                    step = 1 if start <= end else -1
+                    indices = list(range(start, end + step, step))
+                    for idx in indices:
+                        if 1 <= idx <= len(last_results):
+                            resolved.append(last_results[idx-1].name)
+                        else:
+                            resolved.append(str(idx))
+                elif re.match(r'^\d+$', p):
+                    idx = int(p)
+                    if 1 <= idx <= len(last_results):
+                        resolved.append(last_results[idx-1].name)
+                    else:
+                        resolved.append(str(idx))
+                else:
+                    valid_parse = False
+                    break
+            if valid_parse and resolved:
+                return resolved
+
         resolved = []
         for arg in cmd_args:
-            if arg.isdigit():
-                idx = int(arg)
+            clean_arg = arg.strip(', ')
+            if clean_arg.isdigit():
+                idx = int(clean_arg)
                 if 1 <= idx <= len(last_results):
                     resolved.append(last_results[idx-1].name)
                 else:
@@ -1075,6 +1104,8 @@ def handle_shell(args):
                     fmt_cmd("/exit", "/quit, /q", "Exit the interactive shell.")
                     print("  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
                     print("        for any command, referring to the results of the last search.")
+                    print("        The compare command (/c) also supports ranges and comma-separated")
+                    print("        indices (e.g., '/compare 1-3, 5').")
                     print()
                 else:
                     err_msg = f"Unknown command: {cmd}. Type /help for assistance."
