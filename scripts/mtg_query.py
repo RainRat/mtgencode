@@ -289,7 +289,6 @@ def _build_search_map(cards):
 
 def _execute_search(cards, args, include_indices=False):
     total_matches = len(cards)
-    use_color = args.color if args.color is not None else sys.stdout.isatty()
 
     for i, c in enumerate(cards):
         c._index = i + 1
