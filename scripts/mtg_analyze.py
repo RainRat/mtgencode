@@ -1257,6 +1257,142 @@ def handle_subtypes(args):
             crows.append([utils.colorize(clbls[g], utils.Ansi.get_color_color(g)) if use_color else clbls[g], ", ".join(d['top']), f"{max(d['scores'].values()) if d['scores'] else 0:.1f}x", str(d['cnt'])])
         datalib.add_separator_row(crows); datalib.printrows(datalib.padrows(crows, aligns=['l','l','r','r']), indent=4)
 
+def handle_complexity(args):
+    cards1 = cli_utils.load_and_filter_cards(args)
+    if not check_cards(cards1, args): return
+
+    def get_stats(cards):
+        if not cards: return None
+        total = len(cards)
+        scores = [c.complexity_score for c in cards]
+        avg = sum(scores) / total
+
+        # By Rarity
+        r_stats = defaultdict(list)
+        for c in cards: r_stats[c.rarity_name.title()].append(c.complexity_score)
+        r_avg = {r: sum(s)/len(s) for r, s in r_stats.items()}
+
+        # By Color Identity
+        c_stats = defaultdict(list)
+        for c in cards:
+            ci = c.color_identity if c.color_identity else 'A'
+            c_stats[ci].append(c.complexity_score)
+        c_avg = {ci: sum(s)/len(s) for ci, s in c_stats.items()}
+
+        # By CMC (Curve)
+        cmc_stats = defaultdict(list)
+        cmc_counts = Counter()
+        for c in cards:
+            cmc = min(max(0, int(c.cost.cmc)), 7)
+            cmc_stats[cmc].append(c.complexity_score)
+            cmc_counts[cmc] += 1
+        cmc_avg = {cmc: sum(s)/len(s) for cmc, s in cmc_stats.items()}
+
+        # Distribution (Histogram)
+        dist = Counter()
+        for s in scores:
+            bucket = (s // 10) * 10
+            dist[bucket] += 1
+
+        return {
+            'total': total, 'avg': avg, 'rarity_avg': r_avg, 'color_avg': c_avg,
+            'cmc_avg': cmc_avg, 'dist': dist, 'scores': scores,
+            'r_stats': r_stats, 'c_stats': c_stats, 'cmc_counts': cmc_counts
+        }
+
+    s1 = get_stats(cards1)
+    s2 = None
+    if getattr(args, 'compare', None):
+        cards2 = cli_utils.load_and_filter_cards(argparse.Namespace(**{**vars(args), 'infile': args.compare}))
+        if cards2:
+            s2 = get_stats(cards2)
+
+    use_color = args.color if args.color is not None else (not (args.json or args.csv) and sys.stdout.isatty())
+
+    if args.json:
+        print(json.dumps({'primary': s1, 'comparison': s2}, indent=2, default=lambda x: dict(x) if isinstance(x, Counter) else x))
+        return
+    elif args.csv:
+        writer = csv.writer(sys.stdout)
+        writer.writerow(['Metric', 'Category', 'Primary Avg', 'Comp Avg' if s2 else 'Count'])
+        writer.writerow(['Global', 'All', f"{s1['avg']:.2f}", f"{s2['avg']:.2f}" if s2 else s1['total']])
+        for r in sorted(s1['rarity_avg'].keys()):
+            writer.writerow(['Rarity', r, f"{s1['rarity_avg'][r]:.2f}", f"{s2['rarity_avg'].get(r, 0):.2f}" if s2 else len(s1['r_stats'][r])])
+        return
+
+    utils.print_header("COMPLEXITY ANALYSIS" + (" (COMPARISON)" if s2 else ""), count=s1['total'], use_color=use_color)
+    avg1 = s1['avg']
+    avg_msg = "Global Average Complexity: {:.2f}".format(avg1)
+    if use_color:
+        avg_msg = utils.colorize(avg_msg, utils.Ansi.BOLD + utils.Ansi.GREEN)
+    print("  {}".format(avg_msg))
+    if s2:
+        avg2 = s2['avg']
+        delta_msg = format_delta(avg1, avg2, reverse_color=True)
+        print("  Comparison Average: {:.2f} ({})".format(avg2, delta_msg))
+    print()
+
+    # 1. Complexity Curve (by CMC)
+    print(f"  {datalib.color_line('Complexity Curve (Avg Complexity per CMC):', use_color)}")
+    h = ["CMC", "Primary"] + (["Comp", "Delta"] if s2 else ["Count", "Distribution"])
+    rows = [[utils.colorize(x, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else x for x in h]]
+
+    max_val = max([v for v in s1['cmc_avg'].values()] + ([v for v in s2['cmc_avg'].values()] if s2 else [])) if s1['cmc_avg'] else 1
+
+    for cmc in range(8):
+        lbl = str(cmc) if cmc < 7 else "7+"
+        v1 = s1['cmc_avg'].get(cmc, 0)
+        row = [lbl, f"{v1:5.1f}"]
+        if s2:
+            v2 = s2['cmc_avg'].get(cmc, 0)
+            row.extend([f"{v2:5.1f}", format_delta(v1, v2, use_color=use_color, reverse_color=True)])
+        else:
+            cnt = s1['cmc_counts'].get(cmc, 0)
+            row.extend([str(cnt), datalib.get_bar_chart(v1/max_val*100 if max_val>0 else 0, use_color, color=utils.Ansi.CYAN)])
+        rows.append(row)
+    datalib.add_separator_row(rows)
+    datalib.printrows(datalib.padrows(rows, aligns=['r', 'r', 'r', 'r'] if s2 else ['r', 'r', 'r', 'l']), indent=4)
+    print()
+
+    # 2. Complexity Distribution
+    print(f"  {datalib.color_line('Complexity Distribution (Histogram):', use_color)}")
+    dist_h = ["Score", "Primary %"] + (["Comp %", "Delta"] if s2 else ["Count", "Chart"])
+    d_rows = [[utils.colorize(x, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else x for x in dist_h]]
+
+    all_buckets = sorted(set(list(s1['dist'].keys()) + (list(s2['dist'].keys()) if s2 else [])))
+    for b in all_buckets:
+        lbl = f"{b}-{b+9}"
+        p1 = s1['dist'][b] / s1['total'] * 100
+        row = [lbl, f"{p1:5.1f}%"]
+        if s2:
+            p2 = s2['dist'][b] / s2['total'] * 100
+            row.extend([f"{p2:5.1f}%", format_delta(p1, p2, is_percent=True, use_color=use_color)])
+        else:
+            row.extend([str(s1['dist'][b]), datalib.get_bar_chart(p1, use_color)])
+        d_rows.append(row)
+    datalib.add_separator_row(d_rows)
+    datalib.printrows(datalib.padrows(d_rows, aligns=['r', 'r', 'r', 'l']), indent=4)
+    print()
+
+    # 3. By Rarity
+    print(f"  {datalib.color_line('Average Complexity by Rarity:', use_color)}")
+    r_h = ["Rarity", "Primary"] + (["Comp", "Delta"] if s2 else ["Count"])
+    r_rows = [[utils.colorize(x, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else x for x in r_h]]
+    rarity_order = {'Mythic': 0, 'Rare': 1, 'Uncommon': 2, 'Common': 3, 'Basic Land': 4, 'Special': 5}
+    all_r = sorted(set(list(s1['rarity_avg'].keys()) + (list(s2['rarity_avg'].keys()) if s2 else [])), key=lambda x: rarity_order.get(x, 6))
+
+    for r in all_r:
+        v1 = s1['rarity_avg'].get(r, 0)
+        row = [utils.colorize(r, utils.Ansi.get_rarity_color(r)) if use_color else r, f"{v1:5.1f}"]
+        if s2:
+            v2 = s2['rarity_avg'].get(r, 0)
+            row.extend([f"{v2:5.1f}", format_delta(v1, v2, use_color=use_color, reverse_color=True)])
+        else:
+            row.append(str(len(s1['r_stats'].get(r, []))))
+        r_rows.append(row)
+    datalib.add_separator_row(r_rows)
+    datalib.printrows(datalib.padrows(r_rows, aligns=['l', 'r', 'r', 'r']), indent=4)
+
 def handle_audit(args):
     cards = cli_utils.load_and_filter_cards(args)
     if not check_cards(cards, args): return
@@ -1765,6 +1901,29 @@ def main():
     add_std(p_prof)
     p_prof.add_argument('--top', type=int, default=10, help='Number of signature features to show per category (Default: 10).')
     p_prof.set_defaults(func=handle_profile)
+
+    # complexity
+    p_com = subparsers.add_parser(
+        'complexity',
+        help='Analyze how complex cards are in a dataset.',
+        description=textwrap.dedent("""
+            Analyzes how complex cards are. It calculates a 'Complexity Score'
+            based on word count, line count, mechanical density, and color
+            identity, helping designers identify "wordy" or overly complex cards.
+        """),
+        epilog=textwrap.dedent("""
+            Usage Examples:
+              # Find the complexity profile for a specific set
+              python3 scripts/mtg_analyze.py complexity data/AllPrintings.json --set MOM
+
+              # Compare complexity between official data and AI output
+              python3 scripts/mtg_analyze.py complexity data/AllPrintings.json --compare generated.txt
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    add_std(p_com)
+    p_com.add_argument('--compare', '-c', help='Side-by-side comparison with a second dataset.')
+    p_com.set_defaults(func=handle_complexity)
 
     # audit
     p_audit = subparsers.add_parser(
