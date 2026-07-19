@@ -633,7 +633,7 @@ def handle_mana(args):
                     f1, f2 = float(str(v1).replace('%','')), float(str(v2).replace('%',''))
                     d = f2 - f1; ds = f"{d:+.1f}" + ("%" if "%" in str(v1) else "")
                     row.append(utils.colorize(ds, utils.Ansi.GREEN if d>0.5 else utils.Ansi.RED) if use_color else ds)
-                except: row.append("-")
+                except (ValueError, TypeError): row.append("-")
             rows.append(row)
         datalib.printrows(datalib.padrows(rows), indent=4)
         print(f"\n  {datalib.color_line('Produced Colors:', use_color)}")
@@ -1569,7 +1569,7 @@ def handle_compare(args):
             val = base_data
             for k in key_path: val = val[k]
             base_val = float(val)
-        except: base_val = 0.0
+        except (KeyError, ValueError, TypeError): base_val = 0.0
         row.append(f"{base_val:.1f}{'%' if is_percent else ''}")
         for i in range(1, len(mines)):
             data = mines[i].to_dict()
@@ -1577,7 +1577,7 @@ def handle_compare(args):
                 val = data
                 for k in key_path: val = val[k]
                 current_val = float(val)
-            except: current_val = 0.0
+            except (KeyError, ValueError, TypeError): current_val = 0.0
             row.append(f"{current_val:.1f}{'%' if is_percent else ''}")
             row.append(format_delta(current_val, base_val, is_percent, use_color, reverse_color))
         rows.append(row)
