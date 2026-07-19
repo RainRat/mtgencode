@@ -713,7 +713,69 @@ _ansi_escape_re = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
 def visible_len(s):
     """Returns the length of a string without ANSI escape sequences."""
+    if not isinstance(s, str):
+        s = str(s)
     return len(_ansi_escape_re.sub('', s))
+
+
+def wrap_ansi(text, width, indent=0):
+    """
+    Wraps text to a specified width while ignoring ANSI escape codes for length
+    calculations. Preserves existing newlines and supports indentation.
+    """
+    if not text:
+        return ""
+
+    prefix = " " * indent
+    effective_width = max(1, width - indent)
+    lines = []
+
+    for line in str(text).split('\n'):
+        if not line:
+            lines.append("")
+            continue
+
+        words = line.split(' ')
+        curr_line = []
+        curr_len = 0
+
+        for w in words:
+            w_len = visible_len(w)
+            # +1 for the space if not the first word
+            added_len = w_len + (1 if curr_line else 0)
+
+            if curr_len + added_len <= effective_width:
+                curr_line.append(w)
+                curr_len += added_len
+            else:
+                if curr_line:
+                    lines.append(prefix + " ".join(curr_line))
+
+                # If a single word is longer than the width, we still put it on its own line
+                if w_len > effective_width and not curr_line:
+                    lines.append(prefix + w)
+                    curr_line = []
+                    curr_len = 0
+                else:
+                    curr_line = [w]
+                    curr_len = w_len
+
+        if curr_line:
+            lines.append(prefix + " ".join(curr_line))
+
+    return "\n".join(lines)
+
+
+def get_terminal_width(default=80, max_width=120):
+    """Returns the current terminal width, capped for readability."""
+    try:
+        import shutil
+        width = shutil.get_terminal_size().columns
+        if width <= 0:
+            return default
+        return min(width, max_width)
+    except (ImportError, AttributeError):
+        return default
 
 
 def print_header(text, count=None, file=None, use_color=None):
