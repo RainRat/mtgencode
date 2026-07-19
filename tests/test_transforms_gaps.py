@@ -105,3 +105,12 @@ def test_separate_lines_other_dash():
     text = f"Something.{utils.newline}Other{utils.dash_marker}stuff."
     pre, key, main, cost, post = transforms.separate_lines(text)
     assert any("Other" in l for l in main)
+
+def test_unpass_choice_with_missing_unary_count_template_defaults():
+    line_with_or_more = f"{utils.choice_open_delimiter}choose or more {utils.bullet_marker} opt1 {utils.bullet_marker} opt2{utils.choice_close_delimiter}"
+    result_or_more = transforms.text_unpass_1_choice(line_with_or_more)
+    assert "choose one or more" in result_or_more
+
+    line_with_default = f"{utils.choice_open_delimiter}choose or both {utils.bullet_marker} opt1 {utils.bullet_marker} opt2{utils.choice_close_delimiter}"
+    result_default = transforms.text_unpass_1_choice(line_with_default)
+    assert "choose one or both" in result_default
