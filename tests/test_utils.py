@@ -324,8 +324,9 @@ def test_numeric_filter_parsing():
     nf = utils.NumericFilter("2-4")
     assert nf.mode == 'range' and nf.val == 2.0 and nf.val2 == 4.0
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as exc_info:
         utils.NumericFilter("abc")
+    assert "Expected an exact value" in str(exc_info.value)
 
 def test_numeric_filter_evaluation():
     nf = utils.NumericFilter("5")

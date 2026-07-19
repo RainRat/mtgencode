@@ -887,7 +887,10 @@ class NumericFilter:
             self.val = float(exact_match.group(1))
             return
 
-        raise ValueError(f"Invalid numerical filter: {s}")
+        raise ValueError(
+            f"Invalid numerical filter: '{s}'. Expected an exact value (e.g., '5'), "
+            "an inequality (e.g., '>=3'), or a range (e.g., '2-4')."
+        )
 
     def evaluate(self, value):
         """
