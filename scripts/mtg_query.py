@@ -1103,13 +1103,14 @@ def handle_extract(args):
             return
 
         sets_to_search = []
-        if target_set_code.upper() in ['ANY', 'ALL', '*']:
+        target_set_code_upper = target_set_code.upper()
+        if target_set_code_upper in ['ANY', 'ALL', '*']:
             sets_to_search = content['data'].keys()
-        elif target_set_code not in content['data']:
+        elif target_set_code_upper not in content['data']:
             print(f"Error: Set code '{target_set_code}' not found.", file=sys.stderr)
             return
         else:
-            sets_to_search = [target_set_code]
+            sets_to_search = [target_set_code_upper]
 
         found_card = None
         for code in sets_to_search:

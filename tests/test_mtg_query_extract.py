@@ -59,6 +59,14 @@ class TestMtgQueryExtract(unittest.TestCase):
         output = json.loads(mock_stdout.getvalue())
         self.assertEqual(output['name'], 'Grizzly Bears')
 
+    @patch('builtins.open', new_callable=mock_open, read_data='{"data": {"TEST": {"cards": [{"name": "Grizzly Bears"}]}}}')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_handle_extract_lowercase_set_code(self, mock_stdout, mock_file):
+        self.args.set_code = 'test'
+        handle_extract(self.args)
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['name'], 'Grizzly Bears')
+
     @patch('builtins.open', side_effect=Exception("File not found"))
     @patch('sys.stderr', new_callable=io.StringIO)
     def test_handle_extract_exception(self, mock_stderr, mock_file):
