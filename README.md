@@ -539,12 +539,10 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `functional`: Identify and group cards with the same mechanics but different names.
 *   `reprints`: Find functional reprints (identical mechanics) of a reference card.
 *   `compare`: Compare two cards side-by-side by name to identify differences.
-*   `reprints`: Find functional reprints (identical mechanics) of a reference card.
 *   `substitutes`: Find functional alternatives to a reference card.
 *   `counterparts`: Find mechanical clones in different colors (color shifts).
 *   `superior`: Find cards that are generally better than a reference card.
 *   `inferior`: Find cards that are generally worse than a reference card.
-*   `substitutes`: Find functional alternatives to a reference card.
 *   `extract`: Extract a single card object from a large JSON database.
 *   `shell`: Launch an interactive terminal for quick card lookups and searches.
 
@@ -663,19 +661,6 @@ python3 scripts/mtg_query.py compare "Uthros" "Invasion" testdata/ --color
 
 ---
 
-#### **Subcommand: `reprints`**
-Finds cards with identical mana cost, types, stats, and mechanics/text as the reference card, excluding the reference card itself.
-
-```bash
-# Find reprints of Grizzly Bears
-python3 scripts/mtg_query.py reprints "Grizzly Bears"
-
-# Find reprints of Lightning Bolt in a specific set
-python3 scripts/mtg_query.py reprints "Lightning Bolt" --set MOM
-```
-
----
-
 #### **Subcommand: `substitutes`**
 Finds functional substitutes by identifying cards with shared types, compatible color identities (subset), similar mana costs (+/- 1), and overlapping functional actions (e.g., Removal, Card Advantage).
 
@@ -730,22 +715,6 @@ python3 scripts/mtg_query.py inferior "Black Vise"
 
 # Find worse cards in a specific set
 python3 scripts/mtg_query.py inferior "Lightning Bolt" --set MOM
-```
-
----
-
-#### **Subcommand: `substitutes`**
-Finds functional alternatives to a reference card. It identifies cards with shared types, compatible color identities (subset), similar mana costs (+/- 1), and overlapping functional actions (e.g., Removal, Card Advantage).
-
-```bash
-# Find substitutes for Lightning Bolt
-python3 scripts/mtg_query.py substitutes "Lightning Bolt"
-
-# Find budget (common/uncommon) substitutes for a rare card
-python3 scripts/mtg_query.py substitutes "Damnation" --rarity common --rarity uncommon
-
-# Find substitutes within a specific set
-python3 scripts/mtg_query.py substitutes "Counterspell" --set MOM
 ```
 
 ---
