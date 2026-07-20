@@ -232,6 +232,7 @@ def test_visible_len():
     assert utils.visible_len("hello") == 5
     assert utils.visible_len(utils.colorize("hello", utils.Ansi.RED)) == 5
     assert utils.visible_len("") == 0
+    assert utils.visible_len(123) == 3
 
 def test_get_rarity_color():
     assert utils.Ansi.get_rarity_color('uncommon') == utils.Ansi.BOLD + utils.Ansi.CYAN
@@ -240,6 +241,9 @@ def test_get_rarity_color():
     assert utils.Ansi.get_rarity_color('special') == utils.Ansi.BOLD + utils.Ansi.MAGENTA
     assert utils.Ansi.get_rarity_color(utils.rarity_mythic_marker) == utils.Ansi.BOLD + utils.Ansi.RED
     assert utils.Ansi.get_rarity_color(None) == utils.Ansi.BOLD
+    assert utils.Ansi.get_rarity_color('basic land') == utils.Ansi.BOLD
+    assert utils.Ansi.get_rarity_color(utils.rarity_basic_land_marker) == utils.Ansi.BOLD
+    assert utils.Ansi.get_rarity_color('common') == utils.Ansi.BOLD
 
 def test_get_color_color():
     Ansi = utils.Ansi
@@ -385,3 +389,41 @@ def test_scryfall_urls():
     assert utils.get_scryfall_image_url('LEA', '1') == 'https://api.scryfall.com/cards/lea/1?format=image&version=normal'
     assert utils.get_scryfall_url(None, '1') is None
     assert utils.get_scryfall_image_url(None, '1') is None
+
+# --- 9. Text Wrapping and Terminal Width Utilities ---
+
+def test_wrap_ansi():
+    assert utils.wrap_ansi("", 10) == ""
+    assert utils.wrap_ansi(None, 10) == ""
+
+    text = "hello world\n\nthis is a test of the wrapping function"
+    expected = "hello\nworld\n\nthis is a\ntest of\nthe\nwrapping\nfunction"
+    assert utils.wrap_ansi(text, 10) == expected
+
+    text = "one two three four"
+    expected = "  one\n  two\n  three\n  four"
+    assert utils.wrap_ansi(text, 7, indent=2) == expected
+
+    assert utils.wrap_ansi("LongWordHere", 5) == "LongWordHere"
+
+    text = "short\nVeryLongWordIndeed\nshort2"
+    expected = "short\nVeryLongWordIndeed\nshort2"
+    assert utils.wrap_ansi(text, 5) == expected
+
+def test_get_terminal_width():
+    import shutil
+    from collections import namedtuple
+
+    Size = namedtuple('Size', ['columns', 'lines'])
+
+    with patch('shutil.get_terminal_size', return_value=Size(100, 24)):
+        assert utils.get_terminal_width() == 100
+
+    with patch('shutil.get_terminal_size', return_value=Size(200, 24)):
+        assert utils.get_terminal_width(max_width=120) == 120
+
+    with patch('shutil.get_terminal_size', return_value=Size(0, 24)):
+        assert utils.get_terminal_width(default=80) == 80
+
+    with patch('shutil.get_terminal_size', side_effect=AttributeError):
+        assert utils.get_terminal_width(default=85) == 85
