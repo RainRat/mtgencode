@@ -12,6 +12,7 @@ sys.path.append(libdir)
 import utils
 import jdecode
 import cardlib
+import sortlib
 
 COLOR_NAME_MAP = {
     'W': 'White',
@@ -256,89 +257,7 @@ def apply_scale(card_dict, factor, multiply=True):
         card_dict['bside'] = apply_scale(card_dict['bside'], factor, multiply)
     return card_dict
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Forge a new Magic card or reforge an existing one from the command line.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Usage Examples:
-  # Create a card from scratch and view it
-  python3 scripts/mtg_forge.py --name "Jules" --cost "{U}{R}" --type "Legendary Creature" --pt "2/2" --text "T: Draw a card." | python3 decode.py
-
-  # Reforge an existing card (requires data/AllPrintings.json)
-  python3 scripts/mtg_forge.py --base "Grizzly Bears" --pt "3/3" --name "Super Bears"
-
-  # Create a card and save it to a JSON file
-  python3 scripts/mtg_forge.py --name "Test" --type "Instant" --cost "{U}" --text "Counter target spell." --outfile card.json
-"""
-    )
-
-    # Group: Input / Base
-    base_group = parser.add_argument_group('Base Card')
-    base_group.add_argument('--base', help='Name of an existing card to use as a template.')
-    base_group.add_argument('--infile', default='-',
-                            help='Input dataset to search for the base card. Defaults to stdin/AllPrintings.json.')
-
-    # Group: Card Fields
-    field_group = parser.add_argument_group('Card Fields')
-    field_group.add_argument('-n', '--name', help='Card name.')
-    field_group.add_argument('-c', '--cost', help='Mana cost (e.g. "{1}{W}{B}").')
-    field_group.add_argument('-t', '--type', help='Full type line (e.g. "Legendary Creature - Human").')
-    field_group.add_argument('-x', '--text', help='Rules text (use \\n for newlines).')
-    field_group.add_argument('--pt', help='Power/Toughness (e.g. "2/2").')
-    field_group.add_argument('--loy', '--loyalty', dest='loy', help='Loyalty or Defense value.')
-    field_group.add_argument('-r', '--rarity', help='Rarity (common, uncommon, rare, mythic).')
-    field_group.add_argument('--set', help='Set code (e.g. "MOM").')
-
-    # Group: Transformational Modifiers
-    trans_group = parser.add_argument_group('Transformational Modifiers')
-    trans_group.add_argument('--color-shift', help='Shift card colors to target color or colors (e.g. "U,B" or "blue").')
-    trans_group.add_argument('--buff', type=int, nargs='?', const=1, help='Increment power, toughness, loyalty, or defense by an amount.')
-    trans_group.add_argument('--nerf', type=int, nargs='?', const=1, help='Decrement power, toughness, loyalty, or defense by an amount.')
-    trans_group.add_argument('--scale-up', type=float, nargs='?', const=2.0, help='Scale up stats and generic mana costs proportionally by a factor.')
-    trans_group.add_argument('--scale-down', type=float, nargs='?', const=2.0, help='Scale down stats and generic mana costs proportionally by a factor.')
-
-    # Group: Output Options
-    out_group = parser.add_argument_group('Output Options')
-    out_group.add_argument('-o', '--outfile', help='Save output to a file instead of printing.')
-    out_group.add_argument('--json', action='store_true', help='Output in JSON format (Default).')
-    out_group.add_argument('--encoded', action='store_true', help='Output in encoded text format.')
-    out_group.add_argument('-S', '--summary', action='store_true', help='Output a one-line summary.')
-
-    # Group: Logging
-    parser.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
-
-    args = parser.parse_args()
-
-    # Determine input for base card
-    infile = args.infile
-    if infile == '-' and sys.stdin.isatty():
-        default_data = 'data/AllPrintings.json'
-        if os.path.exists(default_data):
-            infile = default_data
-
-    card_dict = {}
-
-    if args.base:
-        if args.verbose:
-            print(f"Searching for base card: {args.base} in {infile}...", file=sys.stderr)
-
-        # Load the base card
-        cards = jdecode.mtg_open_file(infile, verbose=args.verbose, grep_name=[f"^{re.escape(args.base)}$"])
-        if not cards:
-            # Try fuzzy match if exact fails
-            cards = jdecode.mtg_open_file(infile, verbose=False, grep_name=[re.escape(args.base)])
-
-        if not cards:
-            print(f"Error: Base card '{args.base}' not found.", file=sys.stderr)
-            sys.exit(1)
-
-        # Use the first match
-        base_card = cards[0]
-        card_dict = base_card.to_dict()
-        if args.verbose:
-            print(f"Using '{base_card.name}' as template.", file=sys.stderr)
-
+def apply_modifiers(card_dict, args):
     # Apply Overrides
     if args.name: card_dict['name'] = args.name
     if args.cost: card_dict['manaCost'] = args.cost
@@ -387,29 +306,203 @@ Usage Examples:
     if args.scale_down:
         card_dict = apply_scale(card_dict, args.scale_down, multiply=False)
 
-    # Create a Card object to ensure all internal properties are populated
-    # and to support all project output formats.
-    try:
-        final_card = cardlib.Card(card_dict)
-    except Exception as e:
-        print(f"Error validating forged card: {e}", file=sys.stderr)
-        sys.exit(1)
+    return card_dict
 
-    # Output
-    output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
+def main():
+    parser = argparse.ArgumentParser(
+        description="Forge a new Magic card or reforge existing ones in batch from the command line.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Create a card from scratch and view it
+  python3 scripts/mtg_forge.py --name "Jules" --cost "{U}{R}" --type "Legendary Creature" --pt "2/2" --text "T: Draw a card." | python3 decode.py
 
-    try:
-        if args.encoded:
-            output_f.write(final_card.encode() + '\n')
-        elif args.summary:
-            use_color = sys.stdout.isatty() if not args.outfile else False
-            output_f.write(final_card.summary(ansi_color=use_color) + '\n')
-        else:
-            # Default: JSON
-            print(json.dumps(final_card.to_dict(), indent=2), file=output_f)
-    finally:
-        if args.outfile:
-            output_f.close()
+  # Reforge an existing card (requires data/AllPrintings.json)
+  python3 scripts/mtg_forge.py --base "Grizzly Bears" --pt "3/3" --name "Super Bears"
+
+  # Create a card and save it to a JSON file
+  python3 scripts/mtg_forge.py --name "Test" --type "Instant" --cost "{U}" --text "Counter target spell." --outfile card.json
+
+  # Batch reforge all Bears to be Green 3/3s
+  python3 scripts/mtg_forge.py --infile data/AllPrintings.json --grep "Bear" --pt "3/3" --batch
+"""
+    )
+
+    # Group: Input / Base
+    base_group = parser.add_argument_group('Base Card / Batch Input')
+    base_group.add_argument('--base', help='Name of an existing card to use as a template (single card mode).')
+    base_group.add_argument('--infile', default='-',
+                            help='Input dataset to search for the base card or run batch modifications on. Defaults to stdin/AllPrintings.json.')
+    base_group.add_argument('--batch', action='store_true',
+                            help='Enable batch processing mode. Auto-detected if both --base and --name are omitted.')
+
+    # Group: Card Fields
+    field_group = parser.add_argument_group('Card Fields')
+    field_group.add_argument('-n', '--name', help='Card name.')
+    field_group.add_argument('-c', '--cost', help='Mana cost (e.g. "{1}{W}{B}").')
+    field_group.add_argument('-t', '--type', help='Full type line (e.g. "Legendary Creature - Human").')
+    field_group.add_argument('-x', '--text', help='Rules text (use \\n for newlines).')
+    field_group.add_argument('--pt', help='Power/Toughness (e.g. "2/2").')
+    field_group.add_argument('--loy', '--loyalty', dest='loy', help='Loyalty or Defense value.')
+    field_group.add_argument('-r', '--rarity', help='Rarity (common, uncommon, rare, mythic).')
+    field_group.add_argument('--set', help='Set code (e.g. "MOM").')
+
+    # Group: Filtering Options (for batch mode)
+    filter_group = parser.add_argument_group('Filtering Options (Batch Mode Only)')
+    filter_group.add_argument('--grep', action='append',
+                        help='Only include cards matching a search pattern (checks name, typeline, text, cost, and stats). Use multiple times for AND logic.')
+    filter_group.add_argument('--vgrep', '--exclude', action='append', dest='vgrep',
+                        help='Skip cards matching a search pattern. Use multiple times for OR logic.')
+    filter_group.add_argument('--set-filter', '--set-code', action='append', dest='set_filter',
+                        help='Only include cards from specific sets.')
+    filter_group.add_argument('--rarity-filter', action='append', dest='rarity_filter',
+                        help="Only include cards of specific rarities (e.g. common, rare, mythic, O, N, A, Y).")
+    filter_group.add_argument('--colors', action='append',
+                        help="Only include cards of specific colors (W, U, B, R, G, C, A).")
+    filter_group.add_argument('--cmc', action='append',
+                        help='Only include cards with specific CMC (Converted Mana Cost) values (e.g., ">3", "1-4").')
+    filter_group.add_argument('--pow', '--power', action='append', dest='pow',
+                        help='Only include cards with specific Power values.')
+    filter_group.add_argument('--tou', '--toughness', action='append', dest='tou',
+                        help='Only include cards with specific Toughness values.')
+    filter_group.add_argument('--mechanic', action='append',
+                        help='Only include cards with specific mechanics (e.g., Flying, Trample).')
+    filter_group.add_argument('-l', '--limit', type=int, default=0,
+                        help='Only process the first N cards (useful for batch mode).')
+    filter_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
+                        help='Sort cards by a specific criterion.')
+    filter_group.add_argument('--reverse', action='store_true',
+                        help='Reverse the sort order.')
+
+    # Group: Transformational Modifiers
+    trans_group = parser.add_argument_group('Transformational Modifiers')
+    trans_group.add_argument('--color-shift', help='Shift card colors to target color or colors (e.g. "U,B" or "blue").')
+    trans_group.add_argument('--buff', type=int, nargs='?', const=1, help='Increment power, toughness, loyalty, or defense by an amount.')
+    trans_group.add_argument('--nerf', type=int, nargs='?', const=1, help='Decrement power, toughness, loyalty, or defense by an amount.')
+    trans_group.add_argument('--scale-up', type=float, nargs='?', const=2.0, help='Scale up stats and generic mana costs proportionally by a factor.')
+    trans_group.add_argument('--scale-down', type=float, nargs='?', const=2.0, help='Scale down stats and generic mana costs proportionally by a factor.')
+
+    # Group: Output Options
+    out_group = parser.add_argument_group('Output Options')
+    out_group.add_argument('-o', '--outfile', help='Save output to a file instead of printing.')
+    out_group.add_argument('--json', action='store_true', help='Output in JSON format (Default).')
+    out_group.add_argument('--encoded', action='store_true', help='Output in encoded text format.')
+    out_group.add_argument('-S', '--summary', action='store_true', help='Output a one-line summary.')
+
+    # Group: Logging
+    parser.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
+
+    args = parser.parse_args()
+
+    # Determine input dataset file
+    infile = args.infile
+    if infile == '-' and sys.stdin.isatty():
+        default_data = 'data/AllPrintings.json'
+        if os.path.exists(default_data):
+            infile = default_data
+
+    # Determine if we are in batch mode
+    is_batch = args.batch
+    if not is_batch and not args.base and not args.name:
+        is_batch = True
+
+    if is_batch:
+        if args.verbose:
+            print(f"Batch mode enabled. Loading cards from {infile}...", file=sys.stderr)
+
+        # Load matching cards
+        cards = jdecode.mtg_open_file(
+            infile, verbose=args.verbose,
+            grep=args.grep, vgrep=args.vgrep,
+            sets=args.set_filter, rarities=args.rarity_filter,
+            colors=args.colors, cmcs=args.cmc,
+            pows=args.pow, tous=args.tou,
+            mechanics=args.mechanic
+        )
+
+        if args.sort:
+            cards = sortlib.sort_cards(cards, args.sort, reverse=args.reverse, quiet=not args.verbose)
+
+        if args.limit > 0:
+            cards = cards[:args.limit]
+
+        final_cards = []
+        for card in cards:
+            card_dict = card.to_dict()
+            card_dict = apply_modifiers(card_dict, args)
+            try:
+                final_cards.append(cardlib.Card(card_dict))
+            except Exception as e:
+                if args.verbose:
+                    print(f"Warning: Failed to validate modified card '{card.name}': {e}", file=sys.stderr)
+
+        # Output results
+        output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
+        try:
+            if args.encoded:
+                for fc in final_cards:
+                    output_f.write(fc.encode() + utils.cardsep)
+            elif args.summary:
+                use_color = sys.stdout.isatty() if not args.outfile else False
+                for fc in final_cards:
+                    output_f.write(fc.summary(ansi_color=use_color) + '\n')
+            else:
+                # Default: JSON List
+                json_list = [fc.to_dict() for fc in final_cards]
+                print(json.dumps(json_list, indent=2), file=output_f)
+        finally:
+            if args.outfile:
+                output_f.close()
+
+    else:
+        # Single Card Mode
+        card_dict = {}
+
+        if args.base:
+            if args.verbose:
+                print(f"Searching for base card: {args.base} in {infile}...", file=sys.stderr)
+
+            # Load the base card
+            cards = jdecode.mtg_open_file(infile, verbose=args.verbose, grep_name=[f"^{re.escape(args.base)}$"])
+            if not cards:
+                # Try fuzzy match if exact fails
+                cards = jdecode.mtg_open_file(infile, verbose=False, grep_name=[re.escape(args.base)])
+
+            if not cards:
+                print(f"Error: Base card '{args.base}' not found.", file=sys.stderr)
+                sys.exit(1)
+
+            # Use the first match
+            base_card = cards[0]
+            card_dict = base_card.to_dict()
+            if args.verbose:
+                print(f"Using '{base_card.name}' as template.", file=sys.stderr)
+
+        # Apply modifications/overrides/modifiers
+        card_dict = apply_modifiers(card_dict, args)
+
+        # Create a Card object to ensure all internal properties are populated
+        try:
+            final_card = cardlib.Card(card_dict)
+        except Exception as e:
+            print(f"Error validating forged card: {e}", file=sys.stderr)
+            sys.exit(1)
+
+        # Output
+        output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
+
+        try:
+            if args.encoded:
+                output_f.write(final_card.encode() + '\n')
+            elif args.summary:
+                use_color = sys.stdout.isatty() if not args.outfile else False
+                output_f.write(final_card.summary(ansi_color=use_color) + '\n')
+            else:
+                # Default: JSON
+                print(json.dumps(final_card.to_dict(), indent=2), file=output_f)
+        finally:
+            if args.outfile:
+                output_f.close()
 
 if __name__ == "__main__":
     main()
