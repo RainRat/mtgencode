@@ -385,3 +385,38 @@ def test_scryfall_urls():
     assert utils.get_scryfall_image_url('LEA', '1') == 'https://api.scryfall.com/cards/lea/1?format=image&version=normal'
     assert utils.get_scryfall_url(None, '1') is None
     assert utils.get_scryfall_image_url(None, '1') is None
+
+
+def test_visible_len_non_string():
+    assert utils.visible_len(123) == 3
+    assert utils.visible_len(None) == 4
+
+
+def test_wrap_ansi_comprehensive():
+    assert utils.wrap_ansi("", 10) == ""
+    assert utils.wrap_ansi("hello world", 10) == "hello\nworld"
+    assert utils.wrap_ansi("hello world", 20) == "hello world"
+    assert utils.wrap_ansi("hello world", 10, indent=2) == "  hello\n  world"
+    assert utils.wrap_ansi("supercalifragilistic", 10) == "supercalifragilistic"
+    assert utils.wrap_ansi("supercalifragilistic expialidocious", 10) == "supercalifragilistic\nexpialidocious"
+    assert utils.wrap_ansi("hello\n\nworld", 10) == "hello\n\nworld"
+    assert utils.wrap_ansi(None, 10) == ""
+
+
+def test_get_terminal_width_fallback_behaviors():
+    with patch("shutil.get_terminal_size") as mock_size:
+        mock_size.return_value = MagicMock(columns=100)
+        assert utils.get_terminal_width() == 100
+
+        mock_size.return_value = MagicMock(columns=0)
+        assert utils.get_terminal_width(default=50) == 50
+
+        mock_size.side_effect = AttributeError
+        assert utils.get_terminal_width(default=40) == 40
+
+
+def test_get_rarity_color_basic_and_fallback():
+    assert utils.Ansi.get_rarity_color("basic land") == utils.Ansi.BOLD
+    assert utils.Ansi.get_rarity_color(utils.rarity_basic_land_marker) == utils.Ansi.BOLD
+    assert utils.Ansi.get_rarity_color("unknown_rarity") == utils.Ansi.BOLD
+    assert utils.Ansi.get_rarity_color(123) == utils.Ansi.BOLD
