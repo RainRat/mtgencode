@@ -214,5 +214,29 @@ class TestMtgShell(unittest.TestCase):
                 self.assertEqual(completer('/l', 0), '/list')
                 self.assertEqual(completer('/l', 1), '/l')
 
+    def test_shell_unknown_command_suggestions(self):
+        """Test suggestions for misspelled or unknown slash commands."""
+        # 1. Close match '/searc' -> Suggests '/search'
+        with patch('builtins.input', side_effect=['/searc', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("Unknown command: /searc. Did you mean /search? Type /help for assistance.", output)
+
+        # 2. Close match '/orcl' -> Suggests '/oracle'
+        with patch('builtins.input', side_effect=['/orcl', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("Unknown command: /orcl. Did you mean /oracle? Type /help for assistance.", output)
+
+        # 3. No close match '/xyz' -> No suggestion
+        with patch('builtins.input', side_effect=['/xyz', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("Unknown command: /xyz. Type /help for assistance.", output)
+                self.assertNotIn("Did you mean", output)
+
 if __name__ == '__main__':
     unittest.main()

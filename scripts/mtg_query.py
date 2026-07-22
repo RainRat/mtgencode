@@ -1108,8 +1108,19 @@ def handle_shell(args):
                     print("        indices (e.g., '/compare 1-3, 5').")
                     print()
                 else:
-                    err_msg = f"Unknown command: {cmd}. Type /help for assistance."
-                    if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                    all_slash_cmds = [
+                        '/search', '/oracle', '/random', '/sets', '/functional',
+                        '/compare', '/reprints', '/substitutes', '/counterparts',
+                        '/superior', '/inferior', '/similar', '/extract', '/list',
+                        '/results', '/help', '/clear', '/exit', '/quit'
+                    ]
+                    closest = difflib.get_close_matches(cmd, all_slash_cmds, n=1, cutoff=0.5)
+                    if closest:
+                        err_msg = f"Unknown command: {cmd}. Did you mean {closest[0]}? Type /help for assistance."
+                    else:
+                        err_msg = f"Unknown command: {cmd}. Type /help for assistance."
+                    if use_color:
+                        err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
                     print(err_msg)
             else:
                 # Oracle lookup
