@@ -214,5 +214,31 @@ class TestMtgShell(unittest.TestCase):
                 self.assertEqual(completer('/l', 0), '/list')
                 self.assertEqual(completer('/l', 1), '/l')
 
+    def test_shell_unknown_command_suggestion(self):
+        """Test that unknown commands suggest the closest valid command."""
+        # Test command with a close match (e.g., /serch -> /search)
+        with patch('builtins.input', side_effect=['/serch', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("Unknown command: /serch.", output)
+                self.assertIn("Did you mean /search?", output)
+
+        # Test command with another close match (e.g., /comp -> /compare)
+        with patch('builtins.input', side_effect=['/comp', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("Unknown command: /comp.", output)
+                self.assertIn("Did you mean /compare?", output)
+
+        # Test completely unrecognized command (no suggestions)
+        with patch('builtins.input', side_effect=['/xyzabc123', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("Unknown command: /xyzabc123.", output)
+                self.assertNotIn("Did you mean", output)
+
 if __name__ == '__main__':
     unittest.main()

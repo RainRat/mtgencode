@@ -1108,7 +1108,30 @@ def handle_shell(args):
                     print("        indices (e.g., '/compare 1-3, 5').")
                     print()
                 else:
-                    err_msg = f"Unknown command: {cmd}. Type /help for assistance."
+                    valid_commands = [
+                        '/search', '/s',
+                        '/oracle', '/o',
+                        '/random', '/r',
+                        '/sets', '/st',
+                        '/functional', '/f',
+                        '/compare', '/c',
+                        '/superior', '/sup',
+                        '/inferior', '/inf',
+                        '/reprints', '/rep',
+                        '/substitutes', '/sub',
+                        '/counterparts', '/cp',
+                        '/similar',
+                        '/extract', '/e',
+                        '/list', '/l', '/results',
+                        '/help', '/h', '/?',
+                        '/clear', '/cls',
+                        '/exit', '/quit', '/q'
+                    ]
+                    close_cmds = difflib.get_close_matches(cmd, valid_commands, n=1, cutoff=0.5)
+                    err_msg = f"Unknown command: {cmd}."
+                    if close_cmds:
+                        err_msg += f" Did you mean {close_cmds[0]}?"
+                    err_msg += " Type /help for assistance."
                     if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
                     print(err_msg)
             else:
