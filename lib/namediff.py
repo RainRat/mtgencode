@@ -27,7 +27,7 @@ def list_split(l, n):
     split_size = len(l) // n
     if len(l) % n > 0:
         split_size += 1
-    return [l[i:i+split_size] for i in range(0, len(l), int(split_size))]
+    return [l[i:i+split_size] for i in range(0, len(l), split_size)]
 
 # flatten a list of lists into a single list of all their contents, in order
 def list_flatten(l):
