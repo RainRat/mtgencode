@@ -7,13 +7,23 @@ This guide covers external data and tools that extend the functionality of `mtge
 To encode card data, you need the JSON corpus from [MTGJSON](https://mtgjson.com).
 
 1.  Go to [MTGJSON Downloads](https://mtgjson.com/downloads/all-files/).
-2.  Download the **AllPrintings.json** file.
-3.  Place it in the `data/` directory of this repository (create the directory if it doesn't exist):
-    ```bash
-    mkdir -p data
-    # Move your downloaded file here
-    mv ~/Downloads/AllPrintings.json data/
-    ```
+2.  Download the **AllPrintings.json.zip** file (or the raw **AllPrintings.json** if available).
+3.  Place it in the `data/` directory of this repository (create the directory if it doesn't exist).
+
+You have two options for setting up this file:
+*   **Option A: Unzip the file (Recommended)**
+    Unzip the file to extract `AllPrintings.json`, and place it in the `data/` folder. This allows the tools' automatic default dataset detection to find it without any extra options.
+*   **Option B: Keep the ZIP file**
+    Keep the file as `AllPrintings.json.zip` inside `data/`. The tools in this project can read directly from ZIP files when you specify the file path.
+
+Example commands to create the folder and move the file:
+```bash
+mkdir -p data
+# Move the file from your downloads folder
+mv ~/Downloads/AllPrintings.json data/
+# Or if you downloaded the ZIP file:
+mv ~/Downloads/AllPrintings.json.zip data/
+```
 
 ## 2. Magic Set Editor (Optional)
 
