@@ -256,6 +256,185 @@ def apply_scale(card_dict, factor, multiply=True):
         card_dict['bside'] = apply_scale(card_dict['bside'], factor, multiply)
     return card_dict
 
+def print_detailed_card(c, use_color=False, output_f=sys.stdout):
+    term_width = utils.get_terminal_width()
+
+    # Detailed View Header
+    header_text = c.header(ansi_color=use_color).replace('\u2014', '-')
+    print(utils.wrap_ansi(header_text, term_width, indent=2), file=output_f)
+
+    def print_face(face, is_bside=False):
+        sep_width = min(40, term_width - 4)
+        if is_bside:
+            # Subtle divider for secondary faces
+            print("  " + "." * sep_width, file=output_f)
+            # For B-sides in detailed view, we show name, type, and stats
+            face_name = face.display_name
+            if use_color:
+                face_name = utils.colorize(face_name, face._get_ansi_color())
+
+            face_info = face.get_type_line(separator='-')
+            stats = face.get_pt_display(ansi_color=use_color) or face.get_loyalty_display(ansi_color=use_color)
+            if stats:
+                face_info += f" • {stats}"
+            if use_color:
+                face_info = utils.colorize(face_info, utils.Ansi.GREEN)
+            print(utils.wrap_ansi(f"{face_name} \u2022 {face_info}", term_width, indent=2), file=output_f)
+        else:
+            print("  " + "-" * sep_width, file=output_f)
+
+        # Ensure internal markers are unpassed (e.g. % -> charge)
+        face_text = face.get_text(ansi_color=use_color, force_unpass=True).replace('\u2014', '-')
+        print(utils.wrap_ansi(face_text, term_width, indent=2), file=output_f)
+        if face.bside:
+            print_face(face.bside, is_bside=True)
+
+    print_face(c)
+
+    # Metadata Footer
+    print("  " + "\u2022" * min(20, term_width - 4), file=output_f) # Grouping separator
+    footer_lines = []
+
+    def fmt_label(label):
+        if use_color:
+            return utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+        return label
+
+    # 1. Identification Block (Set, URL)
+    id_parts = []
+    if c.set_code:
+        set_info = f"{fmt_label('SET:')} {c.set_code.upper()}"
+        if c.number:
+            set_info += f" #{c.number}"
+        id_parts.append(set_info)
+
+    url = utils.get_scryfall_url(c.set_code, c.number)
+    if url:
+        id_parts.append(f"{fmt_label('URL:')} {url}")
+
+    if id_parts:
+        footer_lines.append(utils.wrap_ansi(" \u2022 ".join(id_parts), term_width, indent=2))
+
+    # 2. Mechanical Identity Block (Identity, Produced)
+    mech_id_parts = []
+    identity = c.color_identity
+    if not identity: identity = "C"
+    if use_color:
+        colored_id = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in identity])
+        mech_id_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
+    else:
+        mech_id_parts.append(f"IDENTITY: {identity}")
+
+    produced = c.produced_colors
+    if produced:
+        # Sort in WUBRGC order
+        p_order = "WUBRGC"
+        p_list = sorted(list(produced), key=lambda x: p_order.find(x) if x in p_order else 99)
+        if "Any" in produced:
+            p_str = "Any"
+            if use_color:
+                p_str = utils.colorize(p_str, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+        elif use_color:
+            p_str = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in p_list])
+        else:
+            p_str = "".join(p_list)
+        mech_id_parts.append(f"{fmt_label('PRODUCED:')} {p_str}")
+
+    if mech_id_parts:
+        footer_lines.append(utils.wrap_ansi(" \u2022 ".join(mech_id_parts), term_width, indent=2))
+
+    # Mechanics, Actions, Tokens (separate lines for readability in detailed view if block is dense)
+    all_mechanics = sorted(list(c.mechanics))
+    if all_mechanics:
+        mech_val = ', '.join(all_mechanics)
+        if use_color:
+            mech_val = utils.colorize(mech_val, utils.Ansi.CYAN)
+        footer_lines.append(utils.wrap_ansi(f"{fmt_label('MECHANICS:')} {mech_val}", term_width, indent=2))
+
+    all_actions = sorted(list(c.actions))
+    if all_actions:
+        act_val = ', '.join(all_actions)
+        if use_color:
+            act_val = utils.colorize(act_val, utils.Ansi.CYAN)
+        footer_lines.append(utils.wrap_ansi(f"{fmt_label('ACTIONS:')} {act_val}", term_width, indent=2))
+
+    all_tokens = c.tokens
+    if all_tokens:
+        t_names = sorted(list(set(t['name'] for t in all_tokens)))
+        tok_val = ', '.join(t_names)
+        if use_color:
+            tok_val = utils.colorize(tok_val, utils.Ansi.CYAN)
+        footer_lines.append(utils.wrap_ansi(f"{fmt_label('TOKENS:')} {tok_val}", term_width, indent=2))
+
+    # 3. Design Analytics Block (Complexity, Rating, Fair MV, Color Pie)
+    analytics_parts = []
+    comp_val = str(c.complexity_score)
+    if use_color:
+        comp_val = utils.colorize(comp_val, utils.Ansi.BOLD + utils.Ansi.MAGENTA)
+    analytics_parts.append(f"{fmt_label('COMPLEXITY:')} {comp_val}")
+
+    if c.is_creature:
+        rate_val = f"{c.power_rating:.3f}"
+        if use_color:
+            r_color = ""
+            if c.power_rating > 1.2: r_color = utils.Ansi.BOLD + utils.Ansi.GREEN
+            elif c.power_rating < 0.8: r_color = utils.Ansi.BOLD + utils.Ansi.RED
+            if r_color: rate_val = utils.colorize(rate_val, r_color)
+        analytics_parts.append(f"{fmt_label('RATING:')} {rate_val}")
+
+        fair_val = str(c.recommended_cmc)
+        if use_color:
+            f_color = utils.Ansi.BOLD + (utils.Ansi.GREEN if c.cost.cmc >= c.recommended_cmc else utils.Ansi.RED)
+            fair_val = utils.colorize(fair_val, f_color)
+        analytics_parts.append(f"{fmt_label('FAIR MV:')} {fair_val}")
+
+    # Color Pie Check
+    cp_res = c.check_color_pie()
+    if isinstance(cp_res, str):
+        # Violation: Make the label RED to stand out
+        cp_label = "COLOR PIE:"
+        cp_val = cp_res.replace("Color Pie Break: ", "")
+        if use_color:
+            cp_label = utils.colorize(cp_label, utils.Ansi.BOLD + utils.Ansi.RED)
+            cp_val = utils.colorize(cp_val, utils.Ansi.BOLD + utils.Ansi.RED)
+        analytics_parts.append(f"{cp_label} {cp_val}")
+    elif cp_res is True:
+        # Valid
+        cp_val = "Valid"
+        if use_color:
+            cp_val = utils.colorize(cp_val, utils.Ansi.GREEN)
+        analytics_parts.append(f"{fmt_label('COLOR PIE:')} {cp_val}")
+
+    footer_lines.append(utils.wrap_ansi(" \u2022 ".join(analytics_parts), term_width, indent=2))
+
+    # Legality
+    if c.legalities:
+        legal_formats = sorted([f.upper() for f, l in c.legalities.items() if l == 'legal'])
+        if legal_formats:
+            leg_val = ", ".join(legal_formats)
+            if use_color:
+                leg_val = utils.colorize(leg_val, utils.Ansi.CYAN)
+            footer_lines.append(utils.wrap_ansi(f"{fmt_label('LEGALITIES:')} {leg_val}", term_width, indent=2))
+
+    print(file=output_f) # Spacer before footer
+    for line in footer_lines:
+        print(line, file=output_f)
+
+    # Rulings
+    if c.rulings:
+        print(file=output_f)
+        rulings_header = "RULINGS"
+        if use_color:
+            rulings_header = utils.colorize(rulings_header, utils.Ansi.BOLD + utils.Ansi.CYAN)
+        print(f"  {rulings_header}:", file=output_f)
+        for ruling in c.rulings:
+            date = ruling.get('date', 'Unknown Date')
+            text = ruling.get('text', '')
+            if use_color:
+                date = utils.colorize(date, utils.Ansi.BOLD)
+            print(f"  - {date}: {text}", file=output_f)
+    print(file=output_f)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Forge a new Magic card or reforge an existing one from the command line.",
@@ -304,6 +483,13 @@ Usage Examples:
     out_group.add_argument('--json', action='store_true', help='Output in JSON format (Default).')
     out_group.add_argument('--encoded', action='store_true', help='Output in encoded text format.')
     out_group.add_argument('-S', '--summary', action='store_true', help='Output a one-line summary.')
+    out_group.add_argument('-V', '--view', action='store_true', help='Output a human-readable detailed card view.')
+    out_group.add_argument('-G', '--gatherer', action='store_true', help='Output in official card database (Gatherer) format.')
+
+    # Color options
+    color_group = parser.add_mutually_exclusive_group()
+    color_group.add_argument('--color', action='store_true', default=None, help='Force enable ANSI color output.')
+    color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     # Group: Logging
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
@@ -395,6 +581,12 @@ Usage Examples:
         print(f"Error validating forged card: {e}", file=sys.stderr)
         sys.exit(1)
 
+    # Determine color usage
+    if args.color is not None:
+        use_color = args.color
+    else:
+        use_color = sys.stdout.isatty() if not args.outfile else False
+
     # Output
     output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
 
@@ -402,8 +594,15 @@ Usage Examples:
         if args.encoded:
             output_f.write(final_card.encode() + '\n')
         elif args.summary:
-            use_color = sys.stdout.isatty() if not args.outfile else False
             output_f.write(final_card.summary(ansi_color=use_color) + '\n')
+        elif args.gatherer:
+            output_f.write(final_card.format(gatherer=True, ansi_color=use_color) + '\n')
+        elif args.view:
+            print_detailed_card(final_card, use_color=use_color, output_f=output_f)
+        elif not args.json and not args.outfile and sys.stdout.isatty():
+            # If stdout is a TTY and no explicit JSON/encoded/summary format or outfile was requested:
+            # Default to human-readable detailed view for an exceptional interactive CLI experience!
+            print_detailed_card(final_card, use_color=use_color, output_f=output_f)
         else:
             # Default: JSON
             print(json.dumps(final_card.to_dict(), indent=2), file=output_f)

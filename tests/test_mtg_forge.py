@@ -114,5 +114,45 @@ class TestMtgForge(unittest.TestCase):
         self.assertIn('Creature', output)
         self.assertIn('(1/1)', output)
 
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_view(self, mock_stdout):
+        test_args = [
+            'mtg_forge.py',
+            '--name', 'Jules',
+            '--cost', '{U}{R}',
+            '--type', 'Legendary Creature',
+            '--pt', '2/2',
+            '--text', 'T: Draw a card.',
+            '--view'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn('Jules', output)
+        self.assertIn('Legendary Creature', output)
+        self.assertIn('COMPLEXITY', output)
+        self.assertIn('RATING', output)
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_gatherer(self, mock_stdout):
+        test_args = [
+            'mtg_forge.py',
+            '--name', 'Jules',
+            '--cost', '{U}{R}',
+            '--type', 'Legendary Creature',
+            '--pt', '2/2',
+            '--text', 'T: Draw a card.',
+            '--gatherer'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn('Jules {U}{R}', output)
+        self.assertIn('Legendary Creature (2/2)', output)
+
 if __name__ == '__main__':
     unittest.main()
