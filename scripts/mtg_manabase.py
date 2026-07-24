@@ -138,6 +138,7 @@ Usage Examples:
     fmt_group.add_argument('--table', action='store_true', help='Generate a formatted table (Default).')
     fmt_group.add_argument('-j', '--json', action='store_true', help='Generate a structured JSON file.')
     fmt_group.add_argument('--csv', action='store_true', help='Generate a CSV file.')
+    fmt_group.add_argument('--deck', '--decklist', action='store_true', dest='deck_out', help='Generate a standard MTG decklist combining input cards and recommended lands.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
@@ -180,10 +181,11 @@ Usage Examples:
                 print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
 
     # Auto-detect format from extension
-    if not (args.json or args.csv or args.table):
+    if not (args.json or args.csv or args.table or getattr(args, 'deck_out', False)):
         if args.outfile:
             if args.outfile.endswith('.json'): args.json = True
             elif args.outfile.endswith('.csv'): args.csv = True
+            elif args.outfile.endswith('.deck') or args.outfile.endswith('.dek'): args.deck_out = True
             else: args.table = True
         else:
             args.table = True
@@ -192,7 +194,7 @@ Usage Examples:
     use_color = False
     if args.color is True:
         use_color = True
-    elif args.color is None and not (args.json or args.csv) and sys.stdout.isatty():
+    elif args.color is None and not (args.json or args.csv or getattr(args, 'deck_out', False)) and sys.stdout.isatty():
         use_color = True
 
     # Load and filter cards
@@ -227,6 +229,28 @@ Usage Examples:
                 'recommendation': recommendation
             }
             output_f.write(json.dumps(result, indent=2) + '\n')
+        elif getattr(args, 'deck_out', False):
+            basic_land_names = {'Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'}
+            counts = {}
+            for card in cards:
+                if card.display_name in basic_land_names:
+                    continue
+                key = (card.display_name, card.set_code, card.number)
+                counts[key] = counts.get(key, 0) + 1
+
+            for (name, set_code, number), count in counts.items():
+                line = f"{count} {name}"
+                if set_code:
+                    line += f" ({set_code.upper()})"
+                    if number:
+                        line += f" {number}"
+                output_f.write(line + '\n')
+
+            land_order = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']
+            for land in land_order:
+                count = recommendation.get(land, 0)
+                if count > 0:
+                    output_f.write(f"{count} {land}\n")
         elif args.csv:
             writer = csv.writer(output_f)
             writer.writerow(['Category', 'Item', 'Value', 'Percent'])

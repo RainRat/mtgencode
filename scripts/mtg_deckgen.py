@@ -8,12 +8,14 @@ from collections import defaultdict, Counter
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 import utils
 import jdecode
 import cardlib
 import datalib
 import cli_utils
+import mtg_manabase
 
 def get_color_identity_set(card):
     # Returns a set of characters like {'W', 'U'}
@@ -253,19 +255,13 @@ Usage Examples:
         deck_creatures = pick_cards_with_curve(creatures_pool, creatures_target, curve=curve)
         deck_spells = pick_cards_with_curve(spells_pool, spells_target)
         
-        deck_lands = []
-        basics_to_add = []
-        if 'W' in cmd_id: basics_to_add.append('Plains')
-        if 'U' in cmd_id: basics_to_add.append('Island')
-        if 'B' in cmd_id: basics_to_add.append('Swamp')
-        if 'R' in cmd_id: basics_to_add.append('Mountain')
-        if 'G' in cmd_id: basics_to_add.append('Forest')
+        deck_cards_for_mana = [commander_card] + deck_creatures + deck_spells
+        recommendation, _, _ = mtg_manabase.calculate_manabase(deck_cards_for_mana, lands_target)
         
-        if not basics_to_add:
-            basics_to_add.append('Wastes')
-            
-        for i in range(lands_target):
-            deck_lands.append(random.choice(basics_to_add))
+        deck_lands = []
+        for land, count in recommendation.items():
+            for _ in range(count):
+                deck_lands.append(land)
             
         decklist.append(f"1 {commander_card.display_name} *CMDR*")
         actual_composition['Commander'] = 1
@@ -301,6 +297,8 @@ Usage Examples:
             spells_target = 0
 
         raw_decklist = []
+        c_sample = []
+        s_sample = []
         
         if creatures_target > 0:
             # In standard, we allow multiple copies, so we sample a smaller unique pool and then repeat
@@ -318,13 +316,17 @@ Usage Examples:
             
         grouped = Counter(raw_decklist)
 
+        # Map name -> Card object to calculate mana base
+        card_obj_map = {c.display_name: c for c in (c_sample + s_sample)}
+        deck_cards_for_mana = [card_obj_map[name] for name in raw_decklist if name in card_obj_map]
+
+        recommendation, _, _ = mtg_manabase.calculate_manabase(deck_cards_for_mana, lands_target)
+
         # Basic land distribution
-        basics_to_add = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest']
-        # Pick 2 colors at random for standard deck unless filtered
-        land_choices = random.sample(basics_to_add, 2)
-        for i in range(lands_target):
-            l = random.choice(land_choices)
-            grouped[l] += 1
+        basics_to_add = {'Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'}
+        for land, count in recommendation.items():
+            if count > 0:
+                grouped[land] += count
             
         for name, count in sorted(grouped.items()):
             decklist.append(f"{count} {name}")
