@@ -154,5 +154,47 @@ class TestMtgForge(unittest.TestCase):
         self.assertIn('Jules {U}{R}', output)
         self.assertIn('Legendary Creature (2/2)', output)
 
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_no_args_interactive_help(self, mock_stdout, mock_isatty):
+        test_args = ['mtg_forge.py']
+
+        with patch('sys.argv', test_args):
+            with self.assertRaises(SystemExit) as cm:
+                main()
+
+        self.assertEqual(cm.exception.code, 0)
+        output = mock_stdout.getvalue()
+        self.assertIn('usage:', output.lower())
+        self.assertIn('--base', output)
+        self.assertIn('--infile', output)
+
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_forge_missing_dataset_interactive_error(self, mock_stderr, mock_isatty):
+        # Test 1: Batch mode (default) in TTY with missing dataset
+        test_args = ['mtg_forge.py', '--batch']
+
+        with patch('sys.argv', test_args):
+            with self.assertRaises(SystemExit) as cm:
+                main()
+
+        self.assertEqual(cm.exception.code, 1)
+        err_output = mock_stderr.getvalue()
+        self.assertIn('error: batch processing requires an input dataset', err_output.lower())
+
+        # Reset stdout/stderr mock and test 2: Single-card template mode with missing dataset
+        mock_stderr.truncate(0)
+        mock_stderr.seek(0)
+        test_args = ['mtg_forge.py', '--base', 'Grizzly Bears']
+
+        with patch('sys.argv', test_args):
+            with self.assertRaises(SystemExit) as cm:
+                main()
+
+        self.assertEqual(cm.exception.code, 1)
+        err_output = mock_stderr.getvalue()
+        self.assertIn("error: base card template lookup for 'grizzly bears' requires a dataset", err_output.lower())
+
 if __name__ == '__main__':
     unittest.main()
