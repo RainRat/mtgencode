@@ -466,6 +466,220 @@ def mtg_open_mse(fname, verbose = False):
 
     return mtg_open_mse_content(content, verbose=verbose)
 
+HEADER_MAP = {
+    'name': 'name',
+    'cost': 'mana_cost',
+    'mana cost': 'mana_cost',
+    'manacost': 'mana_cost',
+    'mana_cost': 'mana_cost',
+    'text': 'text',
+    'rules text': 'text',
+    'rules_text': 'text',
+    'oracle text': 'text',
+    'oracle_text': 'text',
+    'rarity': 'rarity',
+    'set': 'set',
+    'setcode': 'set',
+    'set_code': 'set',
+    'number': 'number',
+    'collector number': 'number',
+    'collector_number': 'number',
+    'num': 'number',
+    'type': 'type',
+    'typeline': 'type',
+    'type line': 'type',
+    'type_line': 'type',
+    'subtypes': 'subtypes',
+    'pt': 'pt',
+    'p/t': 'pt',
+    'stats': 'pt',
+    'power': 'power',
+    'toughness': 'toughness',
+    'loyalty': 'loyalty',
+    'defense': 'defense'
+}
+
+def parse_markdown_card_block(block):
+    """
+    Parses a single card block from Markdown document format.
+    """
+    lines = [line.strip() for line in block.splitlines() if line.strip()]
+    if not lines:
+        return None
+
+    card_dict = {
+        'name': '',
+        'manaCost': '',
+        'text': '',
+        'rarity': '',
+        'type': '',
+    }
+
+    # 1. Parse Name, Cost, Rarity from first line
+    first_line = lines[0]
+    # Strip markdown link syntax: [text](url) -> text
+    clean_first = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', first_line)
+
+    name_match = re.search(r'\*\*([^*]+)\*\*', clean_first)
+    if name_match:
+        card_dict['name'] = name_match.group(1).strip()
+    else:
+        name_clean = re.sub(r'\{[^}]+\}|\([^)]+\)', '', clean_first).strip()
+        card_dict['name'] = name_clean
+
+    mana_match = re.search(r'(?:\{[^}]+\}(?:\s*//\s*)?)+', clean_first)
+    if mana_match:
+        card_dict['manaCost'] = mana_match.group(0).strip()
+
+    rarity_match = re.search(r'\(([^)]+)\)', clean_first)
+    if rarity_match:
+        card_dict['rarity'] = rarity_match.group(1).strip()
+
+    if len(lines) < 2:
+        return _split_markdown_block_dict(card_dict)
+
+    # 2. Parse Type and Stats/Loyalty from second line
+    second_line = lines[1]
+    rar_match_2 = re.search(r'\(([^)]+)\)', second_line)
+    if rar_match_2 and not card_dict['rarity']:
+        card_dict['rarity'] = rar_match_2.group(1).strip()
+        second_line = re.sub(r'\([^)]+\)', '', second_line).strip()
+
+    stats_match = re.search(r'\(?\d+/\d+\)?|\[\d+\]', second_line)
+    if stats_match:
+        pt_val = stats_match.group(0).strip('()[] ')
+        if '/' in pt_val:
+            p, t = pt_val.split('/', 1)
+            card_dict['power'] = p.strip()
+            card_dict['toughness'] = t.strip()
+        else:
+            card_dict['loyalty'] = pt_val
+        second_line = second_line.replace(stats_match.group(0), '').strip(' \u2014-')
+
+    card_dict['type'] = second_line.strip(' \u2014-')
+
+    # 3. Parse stats from third line if not found in second line
+    text_start_idx = 2
+    if len(lines) > 2 and not card_dict.get('power') and not card_dict.get('loyalty'):
+        third_line = lines[2]
+        pt_match_3 = re.match(r'^(\d+/\d+|\d+|\[\d+\])$', third_line)
+        if pt_match_3:
+            pt_val = pt_match_3.group(1).strip('[]')
+            if '/' in pt_val:
+                p, t = pt_val.split('/', 1)
+                card_dict['power'] = p.strip()
+                card_dict['toughness'] = t.strip()
+            else:
+                card_dict['loyalty'] = pt_val
+            text_start_idx = 3
+
+    # 4. Rules text
+    if len(lines) > text_start_idx:
+        card_dict['text'] = "\n".join(lines[text_start_idx:])
+
+    return _split_markdown_block_dict(card_dict)
+
+def _split_markdown_block_dict(card_dict):
+    is_multi = any(' // ' in str(card_dict.get(f, '')) for f in ['name', 'manaCost', 'type'])
+    if not is_multi:
+        return card_dict
+
+    front_dict = {}
+    bside_dict = {}
+
+    for field, val in card_dict.items():
+        val_str = str(val) if val is not None else ""
+        if ' // ' in val_str:
+            parts = val_str.split(' // ', 1)
+            front_dict[field] = parts[0].strip()
+            bside_dict[field] = parts[1].strip()
+        else:
+            front_dict[field] = val
+            bside_dict[field] = val
+
+    front_dict[utils.json_field_bside] = bside_dict
+    return front_dict
+
+def mtg_open_markdown_content(text, verbose = False):
+    """
+    Processes Markdown content.
+    """
+    lines = text.splitlines()
+    tables = []
+    current_table = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('|') and stripped.endswith('|'):
+            current_table.append(stripped)
+        else:
+            if current_table:
+                tables.append(current_table)
+                current_table = []
+    if current_table:
+        tables.append(current_table)
+
+    all_rows = []
+    for table in tables:
+        if len(table) < 2:
+            continue
+
+        header_raw = table[0]
+        header_cells = [c.strip() for c in re.split(r'(?<!\\)\|', header_raw)[1:-1]]
+
+        header_map_indices = {}
+        for idx, cell in enumerate(header_cells):
+            cell_clean = cell.lower().strip()
+            if cell_clean in HEADER_MAP:
+                header_map_indices[idx] = HEADER_MAP[cell_clean]
+
+        for row_raw in table[1:]:
+            clean_row = row_raw.replace('|', '').strip()
+            if re.match(r'^[\s:|,-]+$', clean_row) or not clean_row:
+                continue
+
+            cells = [c.strip() for c in re.split(r'(?<!\\)\|', row_raw)[1:-1]]
+
+            row_dict = {}
+            for idx, key in header_map_indices.items():
+                if idx < len(cells):
+                    val = cells[idx].replace(r'\|', '|').replace('\\|', '|')
+                    row_dict[key] = val
+
+            if row_dict and row_dict.get('name'):
+                all_rows.append(row_dict)
+
+    if all_rows:
+        if verbose:
+            print(f"Parsed {len(all_rows)} rows from Markdown table(s).", file=sys.stderr)
+        return mtg_open_csv_reader(all_rows, verbose)
+
+    # Fallback: Parse as a list of Markdown formatted cards
+    allcards = {}
+    blocks = text.split(utils.cardsep)
+    for block in blocks:
+        if not block.strip():
+            continue
+        card_dict = parse_markdown_card_block(block)
+        if card_dict and card_dict.get('name'):
+            cardname = card_dict['name'].lower()
+            if cardname in allcards:
+                allcards[cardname].append(card_dict)
+            else:
+                allcards[cardname] = [card_dict]
+
+    if verbose:
+        print('Opened ' + str(len(allcards)) + ' uniquely named cards from Markdown blocks.', file=sys.stderr)
+
+    return allcards, set()
+
+def mtg_open_markdown(fname, verbose = False):
+    """
+    Reads a Markdown file containing card data.
+    """
+    with open(fname, 'r', encoding='utf8') as f:
+        text = f.read()
+    return mtg_open_markdown_content(text, verbose)
+
 def parse_decklist(fpath):
     """
     Parses a standard MTG decklist file.
@@ -909,7 +1123,7 @@ def mtg_open_file(fname, verbose = False,
             t_cards = []
             f_lc = f.lower()
 
-            if f_lc.endswith('.json') or f_lc.endswith('.csv') or f_lc.endswith('.jsonl') or f_lc.endswith('.mse-set') or f_lc.endswith('.xml'):
+            if f_lc.endswith('.json') or f_lc.endswith('.csv') or f_lc.endswith('.jsonl') or f_lc.endswith('.mse-set') or f_lc.endswith('.xml') or f_lc.endswith('.md') or f_lc.endswith('.mdt'):
                 if f_lc.endswith('.mse-set'):
                     # Nested ZIP handling
                     with zipfile.ZipFile(io.BytesIO(content if is_zip else open(f, 'rb').read()), 'r') as nested_zf:
@@ -930,6 +1144,8 @@ def mtg_open_file(fname, verbose = False,
                     srcs, bad = mtg_open_jsonl_content(content if is_zip else open(f, 'r', encoding='utf8').read(), verbose=False)
                 elif f_lc.endswith('.xml'):
                     srcs, bad = mtg_open_xml_content(content if is_zip else open(f, 'r', encoding='utf8').read(), verbose=False)
+                elif f_lc.endswith('.md') or f_lc.endswith('.mdt'):
+                    srcs, bad = mtg_open_markdown_content(content if is_zip else open(f, 'r', encoding='utf8').read(), verbose=False)
                 else: # .csv
                     reader = csv.DictReader(io.StringIO(content if is_zip else open(f, 'r', encoding='utf8').read()))
                     srcs, bad = mtg_open_csv_reader(reader, verbose=False)
@@ -951,7 +1167,7 @@ def mtg_open_file(fname, verbose = False,
 
         if is_zip:
             with zipfile.ZipFile(fname, 'r') as zf:
-                files = sorted([f for f in zf.namelist() if not f.endswith('/') and (f.lower().endswith('.json') or f.lower().endswith('.csv') or f.lower().endswith('.jsonl') or f.lower().endswith('.mse-set') or f.lower().endswith('.txt') or f.lower().endswith('.xml'))])
+                files = sorted([f for f in zf.namelist() if not f.endswith('/') and (f.lower().endswith('.json') or f.lower().endswith('.csv') or f.lower().endswith('.jsonl') or f.lower().endswith('.mse-set') or f.lower().endswith('.txt') or f.lower().endswith('.xml') or f.lower().endswith('.md') or f.lower().endswith('.mdt'))])
                 for f in files:
                     if verbose:
                         print(f"  Loading {f} from ZIP...", file=sys.stderr)
@@ -968,7 +1184,7 @@ def mtg_open_file(fname, verbose = False,
         else:
             for root, dirs, filenames in os.walk(fname):
                 for f in sorted(filenames):
-                    if f.lower().endswith('.json') or f.lower().endswith('.csv') or f.lower().endswith('.jsonl') or f.lower().endswith('.mse-set') or f.lower().endswith('.txt') or f.lower().endswith('.xml'):
+                    if f.lower().endswith('.json') or f.lower().endswith('.csv') or f.lower().endswith('.jsonl') or f.lower().endswith('.mse-set') or f.lower().endswith('.txt') or f.lower().endswith('.xml') or f.lower().endswith('.md') or f.lower().endswith('.mdt'):
                         full_path = os.path.join(root, f)
                         if verbose:
                             print(f"Loading {full_path}...", file=sys.stderr)
@@ -1000,6 +1216,16 @@ def mtg_open_file(fname, verbose = False,
         # Combine with cards from encoded text files
         processed_txt, _, _, _ = _process_text_cards(txt_cards, decklist_names, verbose, report_fobj=report_fobj)
         cards.extend(processed_txt)
+
+    # Single Markdown File Handling
+    elif fname_lc.endswith('.md') or fname_lc.endswith('.mdt'):
+        if verbose:
+            print('This looks like a markdown file: ' + fname, file=sys.stderr)
+        md_srcs, bad_sets = mtg_open_markdown(fname, verbose)
+
+        cards = _process_json_srcs(md_srcs, bad_sets, verbose, linetrans,
+                                   exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                   decklist_names=decklist_names)
 
     # Single JSON File Handling
     elif fname_lc.endswith('.json'):
@@ -1116,6 +1342,18 @@ def mtg_open_file(fname, verbose = False,
                                                exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                                decklist_names=decklist_names)
                 except (csv.Error, ValueError, TypeError):
+                    pass
+
+            # 4. Markdown Detection
+            if not cards and (stripped.startswith('|') or '| name |' in stripped.lower() or '| name' in stripped.lower() or '\n**' in stripped or stripped.startswith('**')):
+                try:
+                    if verbose:
+                        print('Detected Markdown input from stdin.', file=sys.stderr)
+                    md_srcs, bad_sets = mtg_open_markdown_content(text, verbose)
+                    cards = _process_json_srcs(md_srcs, bad_sets, verbose, linetrans,
+                                               exclude_sets, exclude_types, exclude_layouts, report_fobj,
+                                               decklist_names=decklist_names)
+                except Exception:
                     pass
         else:
             # Check if it's a decklist file based on extension or content
