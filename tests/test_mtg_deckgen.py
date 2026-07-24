@@ -135,5 +135,40 @@ class TestMtgDeckgen(unittest.TestCase):
             mtg_deckgen.main()
         self.assertIn("Warning: No non-creature spells found", mock_stderr.getvalue())
 
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_land_proportional_to_pips(self, mock_stderr, mock_stdout, mock_open):
+        # Pool with only Green spells
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+
+        card1 = cardlib.Card({
+            'name': 'Green Creature',
+            'types': ['Creature'],
+            'manaCost': '{1}{G}',
+            'rarity': 'common',
+            'text': ''
+        })
+
+        mock_open.return_value = [commander, card1]
+
+        # Test commander format - should recommend only Forest and no other basic lands
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Forest", output)
+        self.assertNotIn("Plains", output)
+        self.assertNotIn("Island", output)
+        self.assertNotIn("Swamp", output)
+        self.assertNotIn("Mountain", output)
+
 if __name__ == '__main__':
     unittest.main()
