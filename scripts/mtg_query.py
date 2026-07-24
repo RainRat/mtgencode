@@ -1875,14 +1875,12 @@ def handle_compare_cards(args):
                 ]),
             ]
 
-        def get_full_name(c):
-            res = cardlib.titlecase(c.name.replace(utils.dash_marker, '-'))
-            if c.bside:
-                res += " // " + get_full_name(c.bside)
-            return res
+        def get_header_name(c):
+            # For clean columns and high density in comparisons, we only show the primary face's name
+            return cardlib.titlecase(c.name.replace(utils.dash_marker, '-'))
 
         rows = []
-        header = ["Field"] + [get_full_name(c) for c in comparison_cards]
+        header = ["Field"] + [get_header_name(c) for c in comparison_cards]
         if use_color:
             header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
         rows.append(header)
