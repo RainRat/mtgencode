@@ -579,6 +579,16 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    # Check for no-arguments in interactive terminal to reduce friction and print help
+    if len(sys.argv) == 1 and sys.stdin.isatty():
+        parser.print_help()
+        sys.exit(0)
+
+    # Determine if we are in batch mode
+    is_batch = args.batch
+    if not is_batch and not args.base and not args.name:
+        is_batch = True
+
     # Determine input dataset file
     infile = args.infile
     if infile == '-' and sys.stdin.isatty():
@@ -586,10 +596,18 @@ Usage Examples:
         if os.path.exists(default_data):
             infile = default_data
 
-    # Determine if we are in batch mode
-    is_batch = args.batch
-    if not is_batch and not args.base and not args.name:
-        is_batch = True
+    # Graceful check for dataset requirements in interactive terminal (prevent hangs)
+    if infile == '-' and sys.stdin.isatty():
+        if is_batch:
+            print("Error: Batch processing requires an input dataset. "
+                  "Please specify a file with --infile or make data/AllPrintings.json available.",
+                  file=sys.stderr)
+            sys.exit(1)
+        elif args.base:
+            print(f"Error: Base card template lookup for '{args.base}' requires a dataset. "
+                  "Please specify a file with --infile or make data/AllPrintings.json available.",
+                  file=sys.stderr)
+            sys.exit(1)
 
     # Determine color usage
     if args.color is not None:
