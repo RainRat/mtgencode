@@ -132,10 +132,11 @@ class TestJDecodeCoverageFinal(unittest.TestCase):
 
     def test_mtg_open_file_csv_stdin_exception(self):
         # Line 1086-1087: CSV detection failure
+        import csv
         csv_content = "name,rarity\nTest,C"
         # We need to trigger an exception in CSV processing after it starts with 'name,'
         with patch('sys.stdin', io.StringIO(csv_content)):
-            with patch('lib.jdecode.mtg_open_csv_reader', side_effect=Exception("Test Exception")):
+            with patch('lib.jdecode.mtg_open_csv_reader', side_effect=csv.Error("Test Exception")):
                 # Should catch exception and pass
                 jdecode.mtg_open_file('-', verbose=True)
 
