@@ -47,6 +47,7 @@ class TestMtgForgeBatch(unittest.TestCase):
 
         test_args = [
             'mtg_forge.py',
+            '--infile', 'dummy.json',
             '--batch',
             '--pt', '3/3'
         ]
@@ -83,6 +84,7 @@ class TestMtgForgeBatch(unittest.TestCase):
         # Since neither --base nor --name are provided, it should auto-detect batch mode
         test_args = [
             'mtg_forge.py',
+            '--infile', 'dummy.json',
             '--buff', '1'
         ]
 
@@ -121,6 +123,7 @@ class TestMtgForgeBatch(unittest.TestCase):
 
             test_args = [
                 'mtg_forge.py',
+                '--infile', 'dummy.json',
                 '--batch',
                 '--encoded'
             ]
@@ -157,6 +160,7 @@ class TestMtgForgeBatch(unittest.TestCase):
 
             test_args = [
                 'mtg_forge.py',
+                '--infile', 'dummy.json',
                 '--batch',
                 '--summary'
             ]

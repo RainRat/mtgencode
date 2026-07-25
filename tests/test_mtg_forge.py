@@ -63,6 +63,7 @@ class TestMtgForge(unittest.TestCase):
 
         test_args = [
             'mtg_forge.py',
+            '--infile', 'dummy.json',
             '--base', 'Grizzly Bears',
             '--pt', '3/3',
             '--name', 'Super Bears'
