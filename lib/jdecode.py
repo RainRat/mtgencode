@@ -1353,7 +1353,7 @@ def mtg_open_file(fname, verbose = False,
                     cards = _process_json_srcs(md_srcs, bad_sets, verbose, linetrans,
                                                exclude_sets, exclude_types, exclude_layouts, report_fobj,
                                                decklist_names=decklist_names)
-                except Exception:
+                except (ValueError, TypeError):
                     pass
         else:
             # Check if it's a decklist file based on extension or content
