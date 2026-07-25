@@ -15,6 +15,11 @@ import cardlib
 import datalib
 import cli_utils
 
+# Add scripts directory to path to allow importing from mtg_manabase
+scripts_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(scripts_dir)
+from mtg_manabase import calculate_manabase
+
 def get_color_identity_set(card):
     # Returns a set of characters like {'W', 'U'}
     if not hasattr(card, 'color_identity') or not card.color_identity:
@@ -254,18 +259,11 @@ Usage Examples:
         deck_spells = pick_cards_with_curve(spells_pool, spells_target)
         
         deck_lands = []
-        basics_to_add = []
-        if 'W' in cmd_id: basics_to_add.append('Plains')
-        if 'U' in cmd_id: basics_to_add.append('Island')
-        if 'B' in cmd_id: basics_to_add.append('Swamp')
-        if 'R' in cmd_id: basics_to_add.append('Mountain')
-        if 'G' in cmd_id: basics_to_add.append('Forest')
-        
-        if not basics_to_add:
-            basics_to_add.append('Wastes')
-            
-        for i in range(lands_target):
-            deck_lands.append(random.choice(basics_to_add))
+        spells_for_manabase = [commander_card] + deck_creatures + deck_spells
+        recommendation, _, _ = calculate_manabase(spells_for_manabase, lands_target)
+        for land, count in recommendation.items():
+            if count > 0:
+                deck_lands.extend([land] * count)
             
         decklist.append(f"1 {commander_card.display_name} *CMDR*")
         actual_composition['Commander'] = 1
@@ -300,32 +298,31 @@ Usage Examples:
                 print("Warning: No non-creature spells found in pool for standard deck.", file=sys.stderr)
             spells_target = 0
 
-        raw_decklist = []
+        chosen_cards = []
         
         if creatures_target > 0:
             # In standard, we allow multiple copies, so we sample a smaller unique pool and then repeat
             # Heuristic: about 4-of each unique card
             c_sample = pick_cards_with_curve(creatures_pool, max(1, creatures_target // 4))
             if c_sample:
-                for i in range(creatures_target):
-                    raw_decklist.append(random.choice(c_sample).display_name)
+                for _ in range(creatures_target):
+                    chosen_cards.append(random.choice(c_sample))
             
         if spells_target > 0:
             s_sample = pick_cards_with_curve(spells_pool, max(1, spells_target // 4))
             if s_sample:
-                for i in range(spells_target):
-                    raw_decklist.append(random.choice(s_sample).display_name)
+                for _ in range(spells_target):
+                    chosen_cards.append(random.choice(s_sample))
             
-        grouped = Counter(raw_decklist)
+        grouped = Counter([c.display_name for c in chosen_cards])
 
-        # Basic land distribution
-        basics_to_add = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest']
-        # Pick 2 colors at random for standard deck unless filtered
-        land_choices = random.sample(basics_to_add, 2)
-        for i in range(lands_target):
-            l = random.choice(land_choices)
-            grouped[l] += 1
+        # Basic land distribution using calculate_manabase
+        recommendation, _, _ = calculate_manabase(chosen_cards, lands_target)
+        for land, count in recommendation.items():
+            if count > 0:
+                grouped[land] += count
             
+        basics_to_add = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']
         for name, count in sorted(grouped.items()):
             decklist.append(f"{count} {name}")
             if name in basics_to_add:
