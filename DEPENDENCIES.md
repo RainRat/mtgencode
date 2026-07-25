@@ -6,14 +6,36 @@ This guide covers external data and tools that extend the functionality of `mtge
 
 To encode card data, you need the JSON corpus from [MTGJSON](https://mtgjson.com).
 
-1.  Go to [MTGJSON Downloads](https://mtgjson.com/downloads/all-files/).
-2.  Download the **AllPrintings.json** file.
-3.  Place it in the `data/` directory of this repository (create the directory if it doesn't exist):
-    ```bash
-    mkdir -p data
-    # Move your downloaded file here
-    mv ~/Downloads/AllPrintings.json data/
-    ```
+When you download files from MTGJSON, they often download as `.zip` compressed archives. You have two options to integrate this data into `mtgencode`:
+
+### Option A: Extract the ZIP (Recommended)
+Extract the downloaded file (such as `AllPrintings.json.zip`) to get the raw `.json` file inside.
+1. Create a folder named `data` in this project if it does not exist yet:
+   ```bash
+   mkdir -p data
+   ```
+2. Move and extract your JSON file into that folder:
+   ```bash
+   mv ~/Downloads/AllPrintings.json data/
+   ```
+   If you extract the raw `AllPrintings.json` file into the `data/` folder, our scripts will automatically detect and load it. You do not need to specify the filename when running commands.
+
+### Option B: Keep the ZIP intact
+You do not have to extract the file. Our tools natively support reading directly from `.zip` files.
+1. Create a folder named `data` in this project if it does not exist yet:
+   ```bash
+   mkdir -p data
+   ```
+2. Move the `.zip` file into that folder:
+   ```bash
+   mv ~/Downloads/AllPrintings.json.zip data/
+   ```
+3. Run your commands by passing the path of the `.zip` file directly:
+   ```bash
+   python3 encode.py data/AllPrintings.json.zip encoded_output.txt --verbose
+   ```
+
+---
 
 ## 2. Magic Set Editor (Optional)
 
@@ -52,6 +74,8 @@ To generate an MSE set file:
 python3 decode.py encoded_output.txt my_set --mse
 ```
 This creates a file named `my_set.mse-set`. Double-click it (or open it via Wine) to view your cards.
+
+---
 
 ## 3. Creativity Analysis (Advanced)
 
@@ -109,6 +133,8 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
     ```bash
     python3 decode.py encoded_output.txt decoded.txt --creativity
     ```
+
+---
 
 ## 4. Training (Optional)
 The `train.py` script requires [PyTorch](https://pytorch.org/) and [tqdm](https://github.com/tqdm/tqdm) for its character-level RNN implementation. These are included in the standard `requirements.txt`.
