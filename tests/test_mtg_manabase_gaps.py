@@ -184,5 +184,25 @@ class TestMtgManabaseGaps(unittest.TestCase):
             self.assertGreaterEqual(val, 0, f"Value for {val} is negative")
         self.assertEqual(sum(recommendation.values()), 3)
 
+    def test_main_interactive_no_args(self):
+        with patch('sys.stdin.isatty', return_value=True):
+            with patch('sys.argv', ['mtg_manabase.py']):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                        with self.assertRaises(SystemExit) as cm:
+                            main()
+                        self.assertEqual(cm.exception.code, 1)
+                        self.assertIn("Recommend a basic land distribution", fake_out.getvalue())
+                        self.assertIn("Error: Mana base calculation requires an input dataset", fake_err.getvalue())
+
+    def test_main_interactive_missing_dataset_error(self):
+        with patch('sys.stdin.isatty', return_value=True):
+            with patch('sys.argv', ['mtg_manabase.py', '-']):
+                with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                    with self.assertRaises(SystemExit) as cm:
+                        main()
+                    self.assertEqual(cm.exception.code, 1)
+                    self.assertIn("Error: Mana base calculation requires an input dataset", fake_err.getvalue())
+
 if __name__ == '__main__':
     unittest.main()

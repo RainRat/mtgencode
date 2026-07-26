@@ -179,6 +179,14 @@ Usage Examples:
             if not args.quiet:
                 print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
 
+    # Graceful check for dataset requirements in interactive terminal (prevent hangs)
+    if args.infile == '-' and sys.stdin.isatty():
+        parser.print_help()
+        print("\nError: Mana base calculation requires an input dataset or decklist. "
+              "Please specify a file or pipe input, or make data/AllPrintings.json available.",
+              file=sys.stderr)
+        sys.exit(1)
+
     # Auto-detect format from extension
     if not (args.json or args.csv or args.table):
         if args.outfile:
