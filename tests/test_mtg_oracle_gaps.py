@@ -73,7 +73,7 @@ class TestMtgOracleGaps(unittest.TestCase):
 
         with patch('os.path.exists', side_effect=mocked_exists):
             with patch('scripts.mtg_query.jdecode.mtg_open_file', return_value=[]) as mock_open:
-                code, out, err = self.run_main(['-'], stdin_isatty=True)
+                code, out, err = self.run_main(['-', '--rarity', 'rare'], stdin_isatty=True)
                 self.assertIn("Using default dataset", err)
                 self.assertTrue(any('AllPrintings.json' in str(call) for call in mock_open.call_args_list))
 

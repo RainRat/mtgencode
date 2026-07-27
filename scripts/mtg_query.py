@@ -467,12 +467,42 @@ def _execute_search(cards, args, include_indices=False):
 
 # --- Oracle Logic (from mtg_oracle.py) ---
 
+def has_active_filters(args):
+    filter_keys = [
+        'grep', 'grep_name', 'grep_type', 'grep_text', 'grep_cost', 'grep_pt', 'grep_loyalty',
+        'vgrep', 'exclude_name', 'exclude_type', 'exclude_text', 'exclude_cost', 'exclude_pt', 'exclude_loyalty',
+        'set', 'rarity', 'colors', 'identity', 'produces', 'id_count', 'cmc', 'pow', 'tou', 'loy',
+        'complexity', 'rating', 'fair_mv', 'mechanic', 'action', 'legal', 'color_pie_break', 'deck',
+        'booster', 'box', 'limit', 'sample'
+    ]
+    for key in filter_keys:
+        val = getattr(args, key, None)
+        if val:
+            if isinstance(val, int) and val == 0:
+                continue
+            return True
+    return False
+
 def handle_oracle(args):
     # Smart positional argument handling
     if args.query and os.path.exists(args.query) and (args.infile == '-' or not os.path.exists(args.infile)):
         temp = args.query
         args.query = args.infile if args.infile != '-' else None
         args.infile = temp
+
+    # If in an interactive TTY, and no query is supplied, and no filters are active, prompt the user for input
+    if sys.stdin.isatty() and not getattr(args, 'query', None) and not has_active_filters(args):
+        try:
+            user_input = input("Enter card name to look up: ").strip()
+            if user_input:
+                args.query = user_input
+            else:
+                if not getattr(args, 'quiet', False):
+                    print("Lookup cancelled. Please specify a card name (e.g., 'python3 scripts/mtg_query.py oracle \"Giant Growth\"').", file=sys.stderr)
+                return []
+        except (KeyboardInterrupt, EOFError):
+            print()
+            return []
 
     cards = cli_utils.load_and_filter_cards(args)
     return _execute_oracle(cards, args)
