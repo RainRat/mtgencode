@@ -164,7 +164,7 @@ Usage Examples:
 
     # UX Improvement: Smart positional argument handling
     if args.infile and args.infile != '-' and not os.path.exists(args.infile):
-        if not args.grep:
+        if not args.grep and not (args.infile.endswith('.txt') or args.infile.endswith('.deck') or args.infile.endswith('.json') or args.infile.endswith('.csv')):
             args.grep = [args.infile]
             args.infile = '-'
 
