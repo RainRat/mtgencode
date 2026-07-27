@@ -14,11 +14,19 @@ Extract the downloaded file (such as `AllPrintings.json.zip`) to get the raw `.j
    ```bash
    mkdir -p data
    ```
-2. Move and extract your JSON file into that folder:
+2. Move the downloaded ZIP file into that folder:
    ```bash
-   mv ~/Downloads/AllPrintings.json data/
+   mv ~/Downloads/AllPrintings.json.zip data/
    ```
-   If you extract the raw `AllPrintings.json` file into the `data/` folder, our scripts will automatically detect and load it. You do not need to specify the filename when running commands.
+3. Extract the ZIP file inside the `data` folder:
+   ```bash
+   unzip data/AllPrintings.json.zip -d data/
+   ```
+   If you prefer using a graphical file manager:
+   - Double-click the downloaded ZIP file to open it.
+   - Drag and drop `AllPrintings.json` into the `data` folder of this project.
+
+If you extract the raw `AllPrintings.json` file into the `data/` folder, our scripts will automatically detect and load it. You do not need to specify the filename when running commands.
 
 ### Option B: Keep the ZIP intact
 You do not have to extract the file. Our tools natively support reading directly from `.zip` files.
