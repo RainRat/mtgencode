@@ -181,8 +181,8 @@ Usage Examples:
             if not args.quiet:
                 print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
 
-    # Graceful check for dataset requirements in interactive terminal (prevent hangs)
-    if args.infile == '-' and sys.stdin.isatty():
+    # Graceful check for dataset requirements in interactive terminal (prevent hangs when default dataset is missing)
+    if args.infile == '-' and sys.stdin.isatty() and not (os.path.exists('data/AllPrintings.json') or os.path.exists(os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data/AllPrintings.json'))):
         parser.print_help()
         print("\nError: Mana base calculation requires an input dataset or decklist. "
               "Please specify a file or pipe input, or make data/AllPrintings.json available.",
