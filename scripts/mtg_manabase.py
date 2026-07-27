@@ -5,7 +5,7 @@ import argparse
 import math
 import json
 import csv
-from collections import Counter
+from collections import Counter, OrderedDict
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -138,6 +138,8 @@ Usage Examples:
     fmt_group.add_argument('--table', action='store_true', help='Generate a formatted table (Default).')
     fmt_group.add_argument('-j', '--json', action='store_true', help='Generate a structured JSON file.')
     fmt_group.add_argument('--csv', action='store_true', help='Generate a CSV file.')
+    fmt_group.add_argument('--deck', '--decklist', dest='deck_out', action='store_true',
+                           help='Generate a complete MTG decklist containing original spells and recommended basic lands.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
@@ -188,10 +190,11 @@ Usage Examples:
         sys.exit(1)
 
     # Auto-detect format from extension
-    if not (args.json or args.csv or args.table):
+    if not (args.json or args.csv or args.table or args.deck_out):
         if args.outfile:
             if args.outfile.endswith('.json'): args.json = True
             elif args.outfile.endswith('.csv'): args.csv = True
+            elif args.outfile.endswith('.deck') or args.outfile.endswith('.dek'): args.deck_out = True
             else: args.table = True
         else:
             args.table = True
@@ -200,7 +203,7 @@ Usage Examples:
     use_color = False
     if args.color is True:
         use_color = True
-    elif args.color is None and not (args.json or args.csv) and sys.stdout.isatty():
+    elif args.color is None and not (args.json or args.csv or args.deck_out) and sys.stdout.isatty():
         use_color = True
 
     # Load and filter cards
@@ -235,6 +238,33 @@ Usage Examples:
                 'recommendation': recommendation
             }
             output_f.write(json.dumps(result, indent=2) + '\n')
+        elif args.deck_out:
+            try:
+                from titlecase import titlecase
+            except ImportError:
+                def titlecase(text):
+                    return text.title()
+
+            counts = OrderedDict()
+            for card in cards:
+                if card.name.lower() in ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes']:
+                    continue
+                key = (card.name, card.set_code, card.number)
+                counts[key] = counts.get(key, 0) + 1
+
+            for (name, set_code, number), count in counts.items():
+                line = f"{count} {titlecase(name)}"
+                if set_code:
+                    line += f" ({set_code.upper()})"
+                    if number:
+                        line += f" {number}"
+                output_f.write(line + '\n')
+
+            land_order = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']
+            for land in land_order:
+                count = recommendation.get(land, 0)
+                if count > 0:
+                    output_f.write(f"{count} {land}\n")
         elif args.csv:
             writer = csv.writer(output_f)
             writer.writerow(['Category', 'Item', 'Value', 'Percent'])
