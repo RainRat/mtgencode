@@ -454,14 +454,15 @@ def _execute_search(cards, args, include_indices=False):
                 print(idx_prefix + get_field_value(c, 'summary', ansi_color=use_color))
         return cards
     else:
+        delimiter = getattr(args, 'delimiter', ' | ')
         if getattr(args, 'outfile', None):
             with open(args.outfile, 'w') as f:
                 for c in cards:
-                    line = args.delimiter.join([get_field_value(c, f, ansi_color=False) for f in field_list])
+                    line = delimiter.join([get_field_value(c, f, ansi_color=False) for f in field_list])
                     f.write(line + '\n')
         else:
             for c in cards:
-                line = args.delimiter.join([get_field_value(c, f, ansi_color=use_color) for f in field_list])
+                line = delimiter.join([get_field_value(c, f, ansi_color=use_color) for f in field_list])
                 print(line)
         return cards
 
@@ -858,6 +859,7 @@ def handle_shell(args):
                     '/reprints ', '/rep ',
                     '/substitutes ', '/sub ',
                     '/counterparts ', '/cp ',
+                    '/tribal ', '/tr ',
                     '/similar ',
                     '/extract ', '/e ',
                     '/list', '/l', '/results',
@@ -1049,6 +1051,15 @@ def handle_shell(args):
                     cp_args = copy.copy(args)
                     cp_args.query = " ".join(_resolve_args(cmd_args))
                     last_results = handle_counterparts(cp_args, include_indices=True)
+                elif cmd in ['/tribal', '/tr']:
+                    if not cmd_args:
+                        err_msg = "Error: /tribal requires a card name."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
+                        continue
+                    tr_args = copy.copy(args)
+                    tr_args.query = " ".join(_resolve_args(cmd_args))
+                    last_results = handle_tribal(tr_args, include_indices=True)
                 elif cmd in ['/similar']:
                     cmd_args = _resolve_args(cmd_args)
                     o_args = copy.copy(args)
@@ -1095,6 +1106,7 @@ def handle_shell(args):
                     fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
                     fmt_cmd("/substitutes <n>", "/sub", "Find functional alternatives to the named card.")
                     fmt_cmd("/counterparts <n>", "/cp", "Find mechanical clones in different colors.")
+                    fmt_cmd("/tribal <n>", "/tr", "Find cards related to the named card's subtypes.")
                     fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
                     fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
                     fmt_cmd("/similar <n>", "", "Find cards mechanically similar to the named card.")
@@ -1120,6 +1132,7 @@ def handle_shell(args):
                         '/reprints', '/rep',
                         '/substitutes', '/sub',
                         '/counterparts', '/cp',
+                        '/tribal', '/tr',
                         '/similar',
                         '/extract', '/e',
                         '/list', '/l', '/results',
@@ -1657,6 +1670,81 @@ def handle_counterparts(args, include_indices=False):
     # Use search display for results
     return _execute_search(counterparts, args, include_indices=include_indices)
 
+def get_subtype_forms(subtype):
+    sub = subtype.lower()
+    forms = {sub}
+    # Irregular plural forms
+    irregulars = {
+        'elf': 'elves',
+        'wolf': 'wolves',
+        'merfolk': 'merfolk',
+        'fungus': 'fungi',
+        'octopus': 'octopuses',
+        'dwarf': 'dwarves',
+    }
+    # reverse lookup or mapping
+    for sing, plur in irregulars.items():
+        if sub == sing:
+            forms.add(plur)
+        elif sub == plur:
+            forms.add(sing)
+
+    # Generic rules
+    if sub.endswith('y') and sub[-2:] not in ['ay', 'ey', 'oy', 'uy']:
+        forms.add(sub[:-1] + 'ies')
+    elif sub.endswith('sh') or sub.endswith('ch') or sub.endswith('s') or sub.endswith('x') or sub.endswith('z'):
+        forms.add(sub + 'es')
+    else:
+        if sub not in irregulars and sub not in irregulars.values():
+            forms.add(sub + 's')
+
+    return forms
+
+def handle_tribal(args, include_indices=False):
+    target_card, cards = _resolve_target_from_args(args)
+    if not target_card:
+        return []
+
+    target_subtypes = [sub.lower() for sub in target_card.subtypes]
+    if not target_subtypes:
+        if not args.quiet:
+            print(f"Card {target_card.display_name} has no subtypes to query.", file=sys.stderr)
+        return []
+
+    tribal_cards = []
+    for c in cards:
+        if c.name.lower() == target_card.name.lower():
+            continue
+
+        candidate_subtypes = [sub.lower() for sub in c.subtypes]
+        is_related = False
+
+        # 1. Shares at least one subtype
+        if any(sub in candidate_subtypes for sub in target_subtypes):
+            is_related = True
+        else:
+            # 2. Mentions any of those subtypes (or their plural/irregular forms) in its rules text
+            candidate_text = c.get_text(force_unpass=True).lower()
+            for sub in target_subtypes:
+                forms = get_subtype_forms(sub)
+                for form in forms:
+                    pattern = r'\b' + re.escape(form) + r'\b'
+                    if re.search(pattern, candidate_text):
+                        is_related = True
+                        break
+                if is_related:
+                    break
+
+        if is_related:
+            tribal_cards.append(c)
+
+    if not tribal_cards:
+        if not args.quiet:
+            print(f"No tribal-related cards found for {target_card.display_name}.", file=sys.stderr)
+        return []
+
+    return _execute_search(tribal_cards, args, include_indices=include_indices)
+
 def find_substitutes(target, pool, limit=10):
     """Finds functional alternatives to a reference card."""
     if not target or not pool:
@@ -1992,6 +2080,7 @@ def main():
                          'sets', 'st', 'functional', 'f', 'reprints', 'rep',
                          'substitutes', 'sub', 'counterparts', 'cp',
                          'compare', 'c', 'superior', 'sup', 'inferior', 'inf',
+                         'tribal', 'tr',
                          'shell', 'sh', 'interactive', 'repl']
 
     has_subcommand = any(arg in valid_subcommands for arg in sys.argv[1:])
@@ -2399,6 +2488,38 @@ Usage Examples:
     p_counterparts.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     p_counterparts.set_defaults(func=handle_counterparts)
+
+    # Tribal Subparser
+    p_tribal = subparsers.add_parser(
+        'tribal',
+        aliases=['tr'],
+        help="Find other cards related to a reference card's subtypes.",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+Finds other cards related to a reference card's subtypes.
+It identifies cards that share at least one subtype or mention any
+of those subtypes in their rules text.
+
+Usage Examples:
+  # Find cards related to Goblins
+  python3 scripts/mtg_query.py tribal "Goblin Piker"
+
+  # Find cards related to Elves in a specific set
+  python3 scripts/mtg_query.py tribal "Llanowar Elves" --set MOM
+"""
+    )
+    p_tribal.add_argument('query', help='The card name to use as a reference for comparison.')
+    p_tribal.add_argument('infile', nargs='?', default='-',
+                           help='Input card data file. Defaults to data/AllPrintings.json.')
+    cli_utils.add_standard_filters(p_tribal)
+    cli_utils.add_standard_output_args(p_tribal)
+    p_tribal.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                           help=FIELDS_HELP)
+    p_tribal.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'rating'],
+                           help='Sort the resulting tribal cards.')
+    p_tribal.add_argument('--delimiter', default=' | ',
+                        help='Separator used between fields in plain text output.')
+    p_tribal.set_defaults(func=handle_tribal)
 
     # Shell Subparser
     p_shell = subparsers.add_parser(
