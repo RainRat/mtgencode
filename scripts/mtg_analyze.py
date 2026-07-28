@@ -1018,6 +1018,7 @@ def handle_archetypes(args):
     datalib.add_separator_row(rows); datalib.printrows(datalib.padrows(rows, aligns=['l','r','l','l','r','r']), indent=2)
 
 def handle_balance(args):
+    _resolve_compare_inputs(args)
     datasets = []
     for f in args.infiles:
         cards = jdecode.mtg_open_file(f, verbose=args.verbose, sets=args.set, rarities=args.rarity)
@@ -1499,8 +1500,19 @@ def handle_audit(args):
 
     print()
 
-def handle_compare(args):
-    # Smart Baseline Detection: if only one file is provided, try to find a standard baseline
+def _resolve_compare_inputs(args):
+    """
+    Resolves infiles comparison arguments to apply smart defaults:
+    - If empty and stdin is a TTY, exit with a helpful error to prevent terminal hang.
+    - If empty and stdin is not a TTY (piped/redirected), default to standard input ('-').
+    - If exactly one input is provided, attempt smart baseline detection.
+    """
+    if not getattr(args, 'infiles', None):
+        if sys.stdin.isatty():
+            print("Error: Please specify at least one file to compare, or pipe card data into standard input.", file=sys.stderr)
+            sys.exit(1)
+        args.infiles = ['-']
+
     if len(args.infiles) == 1:
         script_dir = os.path.dirname(os.path.realpath(__file__))
         options = [
@@ -1512,9 +1524,12 @@ def handle_compare(args):
         for opt in options:
             if os.path.exists(opt) and os.path.abspath(opt) != os.path.abspath(args.infiles[0]):
                 args.infiles.insert(0, opt)
-                if not args.quiet:
+                if not getattr(args, 'quiet', False):
                     print(f"Notice: Comparing against baseline: {opt}", file=sys.stderr)
                 break
+
+def handle_compare(args):
+    _resolve_compare_inputs(args)
 
     def get_stats_for_file(path, args):
         ss = {}
@@ -1965,7 +1980,7 @@ def main():
 
     # compare
     p_comp = subparsers.add_parser('compare', help='Provide a side-by-side statistical comparison of two or more datasets.')
-    p_comp.add_argument('infiles', nargs='+', help='Two or more card data files to compare.')
+    p_comp.add_argument('infiles', nargs='*', help='Card data files to compare. Defaults to AllPrintings.json and stdin if empty.')
     add_std(p_comp)
     p_comp.set_defaults(func=handle_compare)
 
