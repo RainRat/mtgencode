@@ -858,6 +858,7 @@ def handle_shell(args):
                     '/reprints ', '/rep ',
                     '/substitutes ', '/sub ',
                     '/counterparts ', '/cp ',
+                    '/tribal ', '/tr ',
                     '/similar ',
                     '/extract ', '/e ',
                     '/list', '/l', '/results',
@@ -1049,6 +1050,15 @@ def handle_shell(args):
                     cp_args = copy.copy(args)
                     cp_args.query = " ".join(_resolve_args(cmd_args))
                     last_results = handle_counterparts(cp_args, include_indices=True)
+                elif cmd in ['/tribal', '/tr']:
+                    if not cmd_args:
+                        err_msg = "Error: /tribal requires a card name."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
+                        continue
+                    tr_args = copy.copy(args)
+                    tr_args.query = " ".join(_resolve_args(cmd_args))
+                    last_results = handle_tribal(tr_args, include_indices=True)
                 elif cmd in ['/similar']:
                     cmd_args = _resolve_args(cmd_args)
                     o_args = copy.copy(args)
@@ -1095,6 +1105,7 @@ def handle_shell(args):
                     fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
                     fmt_cmd("/substitutes <n>", "/sub", "Find functional alternatives to the named card.")
                     fmt_cmd("/counterparts <n>", "/cp", "Find mechanical clones in different colors.")
+                    fmt_cmd("/tribal <n>", "/tr", "Find cards related to the named card's subtypes.")
                     fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
                     fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
                     fmt_cmd("/similar <n>", "", "Find cards mechanically similar to the named card.")
@@ -1120,6 +1131,7 @@ def handle_shell(args):
                         '/reprints', '/rep',
                         '/substitutes', '/sub',
                         '/counterparts', '/cp',
+                        '/tribal', '/tr',
                         '/similar',
                         '/extract', '/e',
                         '/list', '/l', '/results',
@@ -1657,6 +1669,126 @@ def handle_counterparts(args, include_indices=False):
     # Use search display for results
     return _execute_search(counterparts, args, include_indices=include_indices)
 
+def get_subtype_forms(subtype):
+    """
+    Returns a set of common singular and plural word forms for a given subtype
+    to help search rules text accurately.
+    """
+    sub = subtype.lower()
+    forms = {sub}
+
+    # Common irregular plural/singular mapping for MTG subtypes
+    irregulars = {
+        'elf': 'elves',
+        'elves': 'elf',
+        'dwarf': 'dwarves',
+        'dwarves': 'dwarf',
+        'wolf': 'wolves',
+        'wolves': 'wolf',
+        'fungus': 'fungi',
+        'fungi': 'fungus',
+        'mouse': 'mice',
+        'mice': 'mouse',
+        'octopus': 'octopuses',
+        'octopuses': 'octopus',
+    }
+
+    if sub in irregulars:
+        forms.add(irregulars[sub])
+        return forms
+
+    # Standard pluralization rules
+    if sub.endswith('y'):
+        # e.g., faerie -> faeries, ally -> allies
+        forms.add(sub[:-1] + 'ies')
+    elif sub.endswith('f'):
+        # e.g., thief -> thieves
+        forms.add(sub[:-1] + 'ves')
+    elif sub.endswith('fe'):
+        # e.g., knife -> knives
+        forms.add(sub[:-2] + 'ves')
+    elif sub.endswith('s') or sub.endswith('sh') or sub.endswith('ch') or sub.endswith('x') or sub.endswith('z'):
+        forms.add(sub + 'es')
+    else:
+        forms.add(sub + 's')
+
+    # Also support singularization if the input is already plural
+    if sub.endswith('ies'):
+        forms.add(sub[:-3] + 'y')
+        forms.add(sub[:-3] + 'ie')
+    elif sub.endswith('ves'):
+        forms.add(sub[:-3] + 'f')
+        forms.add(sub[:-3] + 'fe')
+    elif sub.endswith('es') and (sub[:-2].endswith('s') or sub[:-2].endswith('sh') or sub[:-2].endswith('ch') or sub[:-2].endswith('x') or sub[:-2].endswith('z')):
+        forms.add(sub[:-2])
+    elif sub.endswith('s') and not sub.endswith('ss'):
+        forms.add(sub[:-1])
+
+    return forms
+
+def handle_tribal(args, include_indices=False):
+    target_card, cards = _resolve_target_from_args(args)
+    if not target_card:
+        return []
+
+    # Get target subtypes (from both front/back faces if applicable)
+    target_subtypes = set()
+    if target_card.subtypes:
+        for s in target_card.subtypes:
+            target_subtypes.add(s.lower())
+    if target_card.bside and target_card.bside.subtypes:
+        for s in target_card.bside.subtypes:
+            target_subtypes.add(s.lower())
+
+    if not target_subtypes:
+        if not args.quiet:
+            print(f"Error: Card '{target_card.display_name}' has no subtypes to search with.", file=sys.stderr)
+        return []
+
+    # Generate regular expressions for subtype forms matching rules text
+    subtype_regexes = []
+    for sub in target_subtypes:
+        forms = get_subtype_forms(sub)
+        pattern_str = r'\b(' + '|'.join(re.escape(form) for form in sorted(forms)) + r')\b'
+        subtype_regexes.append(re.compile(pattern_str, re.IGNORECASE))
+
+    # Match cards: same subtype OR rules text mentions any subtype form
+    tribal_matches = []
+    for c in cards:
+        if c.name.lower() == target_card.name.lower():
+            continue
+
+        # Check if the card itself or its bside shares any subtype with target
+        card_subtypes = set()
+        if c.subtypes:
+            for s in c.subtypes:
+                card_subtypes.add(s.lower())
+        if c.bside and c.bside.subtypes:
+            for s in c.bside.subtypes:
+                card_subtypes.add(s.lower())
+
+        shares_subtype = bool(target_subtypes & card_subtypes)
+
+        # Check if rules text or bside rules text mentions any form of the subtypes
+        mentions_subtype = False
+        for regex in subtype_regexes:
+            if c.text.text and regex.search(c.text.text):
+                mentions_subtype = True
+                break
+            if c.bside and c.bside.text.text and regex.search(c.bside.text.text):
+                mentions_subtype = True
+                break
+
+        if shares_subtype or mentions_subtype:
+            tribal_matches.append(c)
+
+    if not tribal_matches:
+        if not args.quiet:
+            print(f"No tribal matches found for {target_card.display_name}.", file=sys.stderr)
+        return []
+
+    return _execute_search(tribal_matches, args, include_indices=include_indices)
+
 def find_substitutes(target, pool, limit=10):
     """Finds functional alternatives to a reference card."""
     if not target or not pool:
@@ -1992,6 +2124,7 @@ def main():
                          'sets', 'st', 'functional', 'f', 'reprints', 'rep',
                          'substitutes', 'sub', 'counterparts', 'cp',
                          'compare', 'c', 'superior', 'sup', 'inferior', 'inf',
+                         'tribal', 'tr',
                          'shell', 'sh', 'interactive', 'repl']
 
     has_subcommand = any(arg in valid_subcommands for arg in sys.argv[1:])
@@ -2399,6 +2532,38 @@ Usage Examples:
     p_counterparts.add_argument('--delimiter', default=' | ',
                         help='Separator used between fields in plain text output.')
     p_counterparts.set_defaults(func=handle_counterparts)
+
+    # Tribal Subparser
+    p_tribal = subparsers.add_parser(
+        'tribal',
+        aliases=['tr'],
+        help="Find cards related to a reference card's subtypes.",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+Finds other cards related to a reference card's subtypes. It identifies
+cards that share at least one subtype or mention any of those subtypes
+in their rules text (using singular or plural forms).
+
+Usage Examples:
+  # Find Goblin-related cards using Goblin King as a reference
+  python3 scripts/mtg_query.py tribal "Goblin King"
+
+  # Find Elf-related cards in Standard standard.json
+  python3 scripts/mtg_query.py tribal "Elvish Archdruid" standard.json
+"""
+    )
+    p_tribal.add_argument('query', help='The card name to use as a reference for comparison.')
+    p_tribal.add_argument('infile', nargs='?', default='-',
+                           help='Input card data file. Defaults to data/AllPrintings.json.')
+    cli_utils.add_standard_filters(p_tribal)
+    cli_utils.add_standard_output_args(p_tribal)
+    p_tribal.add_argument('-f', '--fields', default='name,cost,cmc,type,stats,rarity,mechanics',
+                           help=FIELDS_HELP)
+    p_tribal.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'complexity', 'rating'],
+                           help='Sort the resulting counterpart cards.')
+    p_tribal.add_argument('--delimiter', default=' | ',
+                        help='Separator used between fields in plain text output.')
+    p_tribal.set_defaults(func=handle_tribal)
 
     # Shell Subparser
     p_shell = subparsers.add_parser(
