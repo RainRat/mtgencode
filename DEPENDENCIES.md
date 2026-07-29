@@ -10,14 +10,22 @@ When you download files from MTGJSON, they often download as `.zip` compressed a
 
 ### Option A: Extract the ZIP (Recommended)
 Extract the downloaded file (such as `AllPrintings.json.zip`) to get the raw `.json` file inside.
+
 1. Create a folder named `data` in this project if it does not exist yet:
    ```bash
    mkdir -p data
    ```
-2. Move and extract your JSON file into that folder:
+2. Move the downloaded ZIP archive into that folder:
    ```bash
-   mv ~/Downloads/AllPrintings.json data/
+   mv ~/Downloads/AllPrintings.json.zip data/
    ```
+3. Extract the ZIP file inside the `data` folder:
+   * **In the terminal:** Run the `unzip` command:
+     ```bash
+     unzip data/AllPrintings.json.zip -d data/
+     ```
+   * **Using your file manager:** Double-click `AllPrintings.json.zip` in your file manager and extract the contents to the `data` folder.
+
    If you extract the raw `AllPrintings.json` file into the `data/` folder, our scripts will automatically detect and load it. You do not need to specify the filename when running commands.
 
 ### Option B: Keep the ZIP intact
