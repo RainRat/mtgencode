@@ -240,5 +240,30 @@ class TestMtgShell(unittest.TestCase):
                 self.assertIn("Unknown command: /xyzabc123.", output)
                 self.assertNotIn("Did you mean", output)
 
+    def test_shell_bare_prompt_range(self):
+        """Test typing index list or range at bare prompt."""
+        with patch('builtins.input', side_effect=['/search tarkir', '1-1', '1, 1', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                # Should have printed detailed oracle of Invasion of Tarkir (since 1 resolves to it)
+                self.assertIn("Invasion of Tarkir", output)
+
+    def test_shell_oracle_range(self):
+        """Test /oracle with index range."""
+        with patch('builtins.input', side_effect=['/search tarkir', '/oracle 1-1', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("Invasion of Tarkir", output)
+
+    def test_shell_reprints_range(self):
+        """Test /reprints with index range."""
+        with patch('builtins.input', side_effect=['/search tarkir', '/reprints 1-1', 'exit']):
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                handle_shell(self.args)
+                err = fake_err.getvalue()
+                self.assertIn("No functional reprints found for Invasion of Tarkir.", err)
+
 if __name__ == '__main__':
     unittest.main()
