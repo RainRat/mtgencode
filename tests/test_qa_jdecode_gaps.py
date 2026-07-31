@@ -3,6 +3,7 @@ import sys
 import os
 import io
 import json
+import tempfile
 from unittest.mock import patch
 
 # Ensure lib is in path
@@ -229,6 +230,140 @@ class TestJDecodeGapsQA(unittest.TestCase):
         with patch('sys.stderr', new=io.StringIO()) as fake_err:
             jdecode._simulate_boxes([card], 1, verbose=True)
             self.assertIn("Simulated 1 booster boxes", fake_err.getvalue())
+
+    def test_parse_markdown_card_block_empty_lines(self):
+        # Covers line 508: lines is empty
+        res = jdecode.parse_markdown_card_block("\n \n")
+        self.assertIsNone(res)
+
+    def test_parse_markdown_card_block_rarity_in_second_line_only(self):
+        # Covers line 545-546: rarity is in second line, not first
+        block = """**Lightning Bolt** {R}
+Instant (common)
+Lightning Bolt deals 3 damage."""
+        res = jdecode.parse_markdown_card_block(block)
+        self.assertEqual(res['rarity'], "common")
+        self.assertEqual(res['type'], "Instant")
+
+    def test_parse_markdown_card_block_loyalty_third_line(self):
+        # Covers line 573: loyalty is on third line
+        block = """**Jace** {1}{U}{U} (rare)
+Planeswalker — Jace
+[3]
++1: Draw."""
+        res = jdecode.parse_markdown_card_block(block)
+        self.assertEqual(res['loyalty'], "3")
+        self.assertEqual(res['type'], "Planeswalker — Jace")
+
+    def test_mtg_open_markdown_content_table_followed_by_text(self):
+        # Covers line 616-617: table followed by text (non-pipe line)
+        md_text = """| Name | Cost | Type | Stats | Rarity | Rules Text |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Grizzly Bears | {1}{G} | Creature — Bear | 2/2 | Common | Grizzly bears. |
+
+This is trailing text.
+"""
+        srcs, _ = jdecode.mtg_open_markdown_content(md_text)
+        self.assertIn("grizzly bears", srcs)
+
+    def test_mtg_open_markdown_content_block_with_empty_strings(self):
+        # Covers line 661: block is empty/only whitespace
+        md_text = """**Card A** {G} (common)
+Creature
+1/1
+
+---
+
+
+
+---
+
+**Card B** {W} (common)
+Creature
+1/1"""
+        srcs, _ = jdecode.mtg_open_markdown_content(md_text)
+        self.assertIn("card a", srcs)
+        self.assertIn("card b", srcs)
+
+    def test_mtg_open_markdown_content_duplicate_names(self):
+        # Covers line 666: duplicate card name in blocks
+        md_text = """**Bears** {1}{G} (common)
+Creature
+2/2
+
+---
+
+**Bears** {1}{G} (common)
+Creature
+2/2"""
+        srcs, _ = jdecode.mtg_open_markdown_content(md_text)
+        self.assertIn("bears", srcs)
+        self.assertEqual(len(srcs["bears"]), 2)
+
+    def test_mtg_open_markdown_content_verbose_logging(self):
+        # Covers lines 653 and 671: verbose logging
+        md_text_table = """| Name | Cost | Type | Stats | Rarity | Rules Text |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Grizzly Bears | {1}{G} | Creature — Bear | 2/2 | Common | Grizzly bears. |"""
+        with patch('sys.stderr', new=io.StringIO()) as fake_err:
+            jdecode.mtg_open_markdown_content(md_text_table, verbose=True)
+            self.assertIn("Parsed 1 rows from Markdown table(s).", fake_err.getvalue())
+
+        md_text_list = """**Bears** {1}{G} (common)
+Creature
+2/2"""
+        with patch('sys.stderr', new=io.StringIO()) as fake_err:
+            jdecode.mtg_open_markdown_content(md_text_list, verbose=True)
+            self.assertIn("Opened 1 uniquely named cards from Markdown blocks.", fake_err.getvalue())
+
+    def test_mtg_open_file_markdown_verbose(self):
+        # Covers line 1223: mtg_open_file with single .md file and verbose=True
+        fd, temp_path = tempfile.mkstemp(suffix=".md")
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write("""**Bears** {1}{G} (common)
+Creature
+2/2""")
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                jdecode.mtg_open_file(temp_path, verbose=True)
+                self.assertIn("This looks like a markdown file:", fake_err.getvalue())
+        finally:
+            os.remove(temp_path)
+
+    def test_mtg_open_file_stdin_markdown_verbose_and_error(self):
+        # Covers line 1351: Detected Markdown input from stdin verbose
+        # Covers lines 1356-1357: except (ValueError, TypeError) in Markdown Detection
+        md_text = """**Bears** {1}{G} (common)
+Creature
+2/2"""
+        with patch('sys.stdin', io.StringIO(md_text)), \
+             patch('sys.stderr', new=io.StringIO()) as fake_err:
+            jdecode.mtg_open_file('-', verbose=True)
+            self.assertIn("Detected Markdown input from stdin.", fake_err.getvalue())
+
+        # Trigger lines 1356-1357 by raising ValueError inside mtg_open_markdown_content
+        with patch('sys.stdin', io.StringIO(md_text)), \
+             patch('sys.stderr', new=io.StringIO()), \
+             patch('lib.jdecode.mtg_open_markdown_content', side_effect=ValueError("Test")):
+            # Should not raise exception
+            res = jdecode.mtg_open_file('-', verbose=True)
+            self.assertEqual(len(res), 1)
+            self.assertFalse(res[0].valid)
+
+    def test_mtg_open_file_set_filtering_no_set_code(self):
+        # Covers line 1533: card with NO set_code is not filtered out
+        fd, temp_path = tempfile.mkstemp(suffix=".txt")
+        try:
+            with os.fdopen(fd, 'w') as tmp:
+                tmp.write("|NoSet|1T|") # Name is T, Type is Land
+
+            # Filter by sets=["TEST"]
+            cards = jdecode.mtg_open_file(temp_path, sets=["TEST"])
+            self.assertEqual(len(cards), 1)
+            self.assertEqual(cards[0].name, "T")
+            self.assertIsNone(cards[0].set_code)
+        finally:
+            os.remove(temp_path)
 
 if __name__ == '__main__':
     unittest.main()
