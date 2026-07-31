@@ -256,6 +256,57 @@ def apply_scale(card_dict, factor, multiply=True):
         card_dict['bside'] = apply_scale(card_dict['bside'], factor, multiply)
     return card_dict
 
+def parse_replace_arg(arg):
+    if not arg:
+        return None, None
+    if len(arg) >= 3:
+        first = arg[0]
+        if first.lower() == 's' and len(arg) >= 4 and arg[1] in ['/', '|', '~', ':', '#']:
+            first = arg[1]
+            arg = arg[1:]
+
+        if first in ['/', '|', '~', ':', '#']:
+            parts = arg.split(first)
+            if len(parts) >= 3:
+                if parts[0] == '':
+                    return parts[1], parts[2]
+                else:
+                    return parts[0], parts[1]
+    if '/' in arg:
+        p1, p2 = arg.split('/', 1)
+        return p1, p2
+    return None, None
+
+def run_replace(text_str, arg):
+    if not text_str or not isinstance(text_str, str):
+        return text_str
+    pattern, replacement = parse_replace_arg(arg)
+    if pattern is None or replacement is None:
+        return text_str
+    try:
+        return re.sub(pattern, replacement, text_str)
+    except re.error:
+        return text_str.replace(pattern, replacement)
+
+def adjust_generic_mana(mana_cost, amount):
+    if not mana_cost:
+        if amount > 0:
+            return f"{{{amount}}}"
+        return mana_cost
+
+    match = re.search(r'\{(\d+)\}', mana_cost)
+    if match:
+        generic = int(match.group(1))
+        new_generic = max(0, generic + amount)
+        if new_generic > 0:
+            return mana_cost.replace(match.group(0), f"{{{new_generic}}}")
+        else:
+            return mana_cost.replace(match.group(0), "")
+    else:
+        if amount > 0:
+            return f"{{{amount}}}" + mana_cost
+        return mana_cost
+
 def print_detailed_card(c, use_color=False, output_f=sys.stdout):
     term_width = utils.get_terminal_width()
 
@@ -484,6 +535,30 @@ def apply_modifiers(card_dict, args):
     if args.scale_down:
         card_dict = apply_scale(card_dict, args.scale_down, multiply=False)
 
+    # Apply Replacements
+    if getattr(args, 'replace', None):
+        if 'text' in card_dict:
+            card_dict['text'] = run_replace(card_dict['text'], args.replace)
+    if getattr(args, 'replace_name', None):
+        if 'name' in card_dict:
+            card_dict['name'] = run_replace(card_dict['name'], args.replace_name)
+    if getattr(args, 'replace_type', None):
+        if 'type' in card_dict:
+            card_dict['type'] = run_replace(card_dict['type'], args.replace_type)
+            # Re-evaluate types/subtypes if type changes
+            card_dict.pop('supertypes', None)
+            card_dict.pop('types', None)
+            card_dict.pop('subtypes', None)
+            supertypes, types, subtypes = utils.parse_type_line(card_dict['type'])
+            if supertypes: card_dict['supertypes'] = supertypes
+            if types: card_dict['types'] = types
+            if subtypes: card_dict['subtypes'] = subtypes
+
+    # Apply Mana Cost Adjustment
+    if getattr(args, 'mana_adjust', None) is not None:
+        if 'manaCost' in card_dict:
+            card_dict['manaCost'] = adjust_generic_mana(card_dict['manaCost'], args.mana_adjust)
+
     return card_dict
 
 def main():
@@ -503,6 +578,12 @@ Usage Examples:
 
   # Batch reforge all Bears to be Green 3/3s
   python3 scripts/mtg_forge.py --infile data/AllPrintings.json --grep "Bear" --pt "3/3" --batch
+
+  # Replace substring in the name and rules text of Grizzly Bears
+  python3 scripts/mtg_forge.py --base "Grizzly Bears" --replace-name "Bears/Pandas" --replace "Bear/Panda"
+
+  # Reduce the generic mana cost of Grizzly Bears by 1
+  python3 scripts/mtg_forge.py --base "Grizzly Bears" --mana-adjust -1
 """
     )
 
@@ -559,6 +640,10 @@ Usage Examples:
     trans_group.add_argument('--nerf', type=int, nargs='?', const=1, help='Decrement power, toughness, loyalty, or defense by an amount.')
     trans_group.add_argument('--scale-up', type=float, nargs='?', const=2.0, help='Scale up stats and generic mana costs proportionally by a factor.')
     trans_group.add_argument('--scale-down', type=float, nargs='?', const=2.0, help='Scale down stats and generic mana costs proportionally by a factor.')
+    trans_group.add_argument('--replace', help='Search and replace in rules text (e.g., "Bear/Beast" or "/Bear/Beast/"). Supports regular expressions.')
+    trans_group.add_argument('--replace-name', help='Search and replace in card name (e.g., "Grizzly/Fuzzy"). Supports regular expressions.')
+    trans_group.add_argument('--replace-type', help='Search and replace in card type line (e.g., "Bear/Beast"). Supports regular expressions.')
+    trans_group.add_argument('--mana-adjust', type=int, help='Adjust generic mana cost of the card by a constant integer amount.')
 
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
