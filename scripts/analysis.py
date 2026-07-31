@@ -133,7 +133,7 @@ def get_statistics(fname, lm = None, sep = False, verbose=False):
                 perp = lm.perplexity(vtext)
                 perp_per = perp / float(len(vtext))
                 perp_max = perp
-                perp_per_max = perps_per
+                perp_per_max = perp_per
 
             ngram['perp'] += [perp]
             ngram['perp_per'] += [perp_per]
