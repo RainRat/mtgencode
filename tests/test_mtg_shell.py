@@ -240,5 +240,29 @@ class TestMtgShell(unittest.TestCase):
                 self.assertIn("Unknown command: /xyzabc123.", output)
                 self.assertNotIn("Did you mean", output)
 
+    def test_shell_advanced_tab_completion(self):
+        """Test advanced slash command argument, set code, and extract completion logic."""
+        with patch('readline.set_completer') as mock_set_completer:
+            with patch('builtins.input', side_effect=['exit']):
+                handle_shell(self.args)
+                self.assertTrue(mock_set_completer.called)
+                completer = mock_set_completer.call_args[0][0]
+
+                # Test card name completion under a slash command (e.g. /oracle)
+                self.assertEqual(completer('/oracle inv', 0), '/oracle Invasion of Tarkir')
+                self.assertEqual(completer('/o inv', 0), '/o Invasion of Tarkir')
+
+                # Test set code completion under /sets or /st
+                self.assertEqual(completer('/sets cu', 0), '/sets CUS')
+                self.assertEqual(completer('/st cu', 0), '/st CUS')
+
+                # Test extract set code completion (first arg)
+                self.assertEqual(completer('/extract cu', 0), '/extract CUS ')
+                self.assertEqual(completer('/e cu', 0), '/e CUS ')
+
+                # Test extract card name completion (second arg)
+                self.assertEqual(completer('/extract CUS inv', 0), '/extract CUS Invasion of Tarkir')
+                self.assertEqual(completer('/e CUS inv', 0), '/e CUS Invasion of Tarkir')
+
 if __name__ == '__main__':
     unittest.main()

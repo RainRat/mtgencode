@@ -845,36 +845,85 @@ def handle_shell(args):
         card_names = sorted(list(set(cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) for c in all_cards)))
 
         def completer(text, state):
-            if text.startswith('/'):
-                commands = [
-                    '/search ', '/s ',
-                    '/oracle ', '/o ',
-                    '/random ', '/r ',
-                    '/sets ', '/st ',
-                    '/functional ', '/f ',
-                    '/compare ', '/c ',
-                    '/superior ', '/sup ',
-                    '/inferior ', '/inf ',
-                    '/reprints ', '/rep ',
-                    '/substitutes ', '/sub ',
-                    '/counterparts ', '/cp ',
-                    '/similar ',
-                    '/extract ', '/e ',
-                    '/list', '/l', '/results',
-                    '/help', '/h', '/?',
-                    '/clear',
-                    '/exit', '/quit', '/q'
-                ]
-                options = [c for c in commands if c.startswith(text.lower())]
-            else:
-                options = [n for n in card_names if n.lower().startswith(text.lower())]
+            if state == 0:
+                completer.options = []
+                if not text:
+                    return None
 
-            if state < len(options):
-                return options[state]
+                if text.startswith('/'):
+                    # Command name completion (if there's no space in text)
+                    if ' ' not in text:
+                        commands = [
+                            '/search ', '/s ',
+                            '/oracle ', '/o ',
+                            '/random ', '/r ',
+                            '/sets ', '/st ',
+                            '/functional ', '/f ',
+                            '/compare ', '/c ',
+                            '/superior ', '/sup ',
+                            '/inferior ', '/inf ',
+                            '/reprints ', '/rep ',
+                            '/substitutes ', '/sub ',
+                            '/counterparts ', '/cp ',
+                            '/similar ',
+                            '/extract ', '/e ',
+                            '/list', '/l', '/results',
+                            '/help', '/h', '/?',
+                            '/clear', '/cls',
+                            '/exit', '/quit', '/q'
+                        ]
+                        completer.options = [c for c in commands if c.lower().startswith(text.lower())]
+                    else:
+                        parts = text.split(' ', 1)
+                        cmd = parts[0].lower()
+                        rest = parts[1] if len(parts) > 1 else ""
+
+                        card_cmds = [
+                            '/oracle', '/o', '/reprints', '/rep', '/substitutes', '/sub',
+                            '/counterparts', '/cp', '/superior', '/sup', '/inferior', '/inf',
+                            '/similar', '/compare', '/c', '/search', '/s', '/functional', '/f'
+                        ]
+
+                        if cmd in card_cmds:
+                            # Completing card names
+                            matches = [n for n in card_names if n.lower().startswith(rest.lower())]
+                            completer.options = [f"{parts[0]} {m}" for m in matches]
+
+                        elif cmd in ['/sets', '/st']:
+                            # Completing set codes
+                            set_codes = sorted(list(set(c.set_code.upper() for c in all_cards if c.set_code)))
+                            matches = [code for code in set_codes if code.lower().startswith(rest.lower())]
+                            completer.options = [f"{parts[0]} {m}" for m in matches]
+
+                        elif cmd in ['/extract', '/e']:
+                            # Completing /extract <set> <name>
+                            set_codes = sorted(list(set(c.set_code.upper() for c in all_cards if c.set_code)))
+                            rest_parts = rest.split(' ', 1)
+                            if len(rest_parts) == 1:
+                                # Completing the set code
+                                set_query = rest_parts[0]
+                                matches = [code for code in set_codes if code.lower().startswith(set_query.lower())]
+                                completer.options = [f"{parts[0]} {m} " for m in matches]
+                            else:
+                                # Completing the card name in that set
+                                set_code = rest_parts[0].upper()
+                                card_query = rest_parts[1]
+                                set_cards = [c for c in all_cards if c.set_code and c.set_code.upper() == set_code]
+                                set_card_names = sorted(list(set(cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) for c in set_cards)))
+                                matches = [n for n in set_card_names if n.lower().startswith(card_query.lower())]
+                                completer.options = [f"{parts[0]} {rest_parts[0]} {m}" for m in matches]
+                else:
+                    # No slash command: completing card names
+                    matches = [n for n in card_names if n.lower().startswith(text.lower())]
+                    completer.options = matches
+
+            if state < len(completer.options):
+                return completer.options[state]
             return None
 
+        completer.options = []
         readline.set_completer(completer)
-        readline.set_completer_delims(' \t\n`@=#|\\')
+        readline.set_completer_delims('\t\n`@=#|\\')
         if 'libedit' in readline.__doc__: # macOS fix
             readline.parse_and_bind("bind ^I rl_complete")
         else:
