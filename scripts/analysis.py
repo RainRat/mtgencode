@@ -21,6 +21,8 @@ def gmean_nonzero(l):
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
+scriptsdir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(scriptsdir)
 datadir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data')
 import jdecode
 
@@ -133,7 +135,7 @@ def get_statistics(fname, lm = None, sep = False, verbose=False):
                 perp = lm.perplexity(vtext)
                 perp_per = perp / float(len(vtext))
                 perp_max = perp
-                perp_per_max = perps_per
+                perp_per_max = perp_per
 
             ngram['perp'] += [perp]
             ngram['perp_per'] += [perp_per]
