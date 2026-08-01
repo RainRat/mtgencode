@@ -230,5 +230,33 @@ class TestJDecodeGapsQA(unittest.TestCase):
             jdecode._simulate_boxes([card], 1, verbose=True)
             self.assertIn("Simulated 1 booster boxes", fake_err.getvalue())
 
+    def test_reprint_set_filtering_and_activation(self):
+        cards_json = {
+            "data": {
+                "ORI": {
+                    "code": "ORI", "name": "Original Set", "type": "expansion",
+                    "cards": [
+                        {"name": "Shock", "manaCost": "{R}", "text": "Shock deals 2 damage.", "types": ["Instant"], "rarity": "Common", "number": "1", "setCode": "ORI"}
+                    ]
+                },
+                "REP": {
+                    "code": "REP", "name": "Reprint Set", "type": "expansion",
+                    "cards": [
+                        {"name": "Shock", "manaCost": "{R}", "text": "Shock deals 2 damage.", "types": ["Instant"], "rarity": "Uncommon", "number": "42", "setCode": "REP"}
+                    ]
+                }
+            }
+        }
+        json_str = json.dumps(cards_json)
+        with patch('sys.stdin', io.StringIO(json_str)):
+            res = jdecode.mtg_open_file('-', sets=["REP"])
+
+        self.assertEqual(len(res), 1)
+        card = res[0]
+        self.assertEqual(card.name, "shock")
+        self.assertEqual(card.set_code, "REP")
+        self.assertEqual(card.rarity, "N")
+        self.assertEqual(card.number, "42")
+
 if __name__ == '__main__':
     unittest.main()
