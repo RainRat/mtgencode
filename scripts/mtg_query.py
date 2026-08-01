@@ -961,6 +961,11 @@ def handle_shell(args):
                     if not hasattr(s_args, 'limit'): s_args.limit = 0
                     last_results = _execute_search(last_results, s_args, include_indices=True)
                 elif cmd in ['/oracle', '/o']:
+                    if not cmd_args and last_results:
+                        cmd_args = [last_results[0].name]
+                        notice = f"Notice: No card specified. Defaulting to first search result: {last_results[0].display_name}"
+                        if use_color: notice = utils.colorize(notice, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                        print(notice)
                     cmd_args = _resolve_args(cmd_args)
                     o_args = copy.copy(args)
                     o_args.query = " ".join(cmd_args)
@@ -1001,55 +1006,102 @@ def handle_shell(args):
                     f_args.grep = _resolve_args(cmd_args)
                     last_results = handle_functional(f_args, include_indices=True)
                 elif cmd in ['/compare', '/c']:
+                    if not cmd_args and last_results:
+                        cmd_args = [c.name for c in last_results[:5]]
+                        names_str = ", ".join(c.display_name for c in last_results[:5])
+                        notice = f"Notice: No cards specified. Comparing first {len(cmd_args)} search results: {names_str}"
+                        if use_color: notice = utils.colorize(notice, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                        print(notice)
                     c_args = copy.copy(args)
                     c_args.names = _resolve_args(cmd_args)
                     handle_compare_cards(c_args)
                 elif cmd in ['/reprints', '/rep']:
                     if not cmd_args:
-                        err_msg = "Error: /reprints requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
+                        if last_results:
+                            cmd_args = [last_results[0].name]
+                            notice = f"Notice: No card specified. Defaulting to first search result: {last_results[0].display_name}"
+                            if use_color: notice = utils.colorize(notice, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                            print(notice)
+                        else:
+                            err_msg = "Error: /reprints requires a card name."
+                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                            print(err_msg)
+                            continue
                     rep_args = copy.copy(args)
                     rep_args.query = " ".join(_resolve_args(cmd_args))
                     last_results = handle_reprints(rep_args, include_indices=True)
                 elif cmd in ['/superior', '/sup']:
                     if not cmd_args:
-                        err_msg = "Error: /superior requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
+                        if last_results:
+                            cmd_args = [last_results[0].name]
+                            notice = f"Notice: No card specified. Defaulting to first search result: {last_results[0].display_name}"
+                            if use_color: notice = utils.colorize(notice, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                            print(notice)
+                        else:
+                            err_msg = "Error: /superior requires a card name."
+                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                            print(err_msg)
+                            continue
                     sup_args = copy.copy(args)
                     sup_args.query = " ".join(_resolve_args(cmd_args))
                     last_results = handle_superior(sup_args, include_indices=True)
                 elif cmd in ['/inferior', '/inf']:
                     if not cmd_args:
-                        err_msg = "Error: /inferior requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
+                        if last_results:
+                            cmd_args = [last_results[0].name]
+                            notice = f"Notice: No card specified. Defaulting to first search result: {last_results[0].display_name}"
+                            if use_color: notice = utils.colorize(notice, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                            print(notice)
+                        else:
+                            err_msg = "Error: /inferior requires a card name."
+                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                            print(err_msg)
+                            continue
                     inf_args = copy.copy(args)
                     inf_args.query = " ".join(_resolve_args(cmd_args))
                     last_results = handle_inferior(inf_args, include_indices=True)
                 elif cmd in ['/substitutes', '/sub']:
                     if not cmd_args:
-                        err_msg = "Error: /substitutes requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
+                        if last_results:
+                            cmd_args = [last_results[0].name]
+                            notice = f"Notice: No card specified. Defaulting to first search result: {last_results[0].display_name}"
+                            if use_color: notice = utils.colorize(notice, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                            print(notice)
+                        else:
+                            err_msg = "Error: /substitutes requires a card name."
+                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                            print(err_msg)
+                            continue
                     sub_args = copy.copy(args)
                     sub_args.query = " ".join(_resolve_args(cmd_args))
                     last_results = handle_substitutes(sub_args, include_indices=True)
                 elif cmd in ['/counterparts', '/cp']:
                     if not cmd_args:
-                        err_msg = "Error: /counterparts requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
+                        if last_results:
+                            cmd_args = [last_results[0].name]
+                            notice = f"Notice: No card specified. Defaulting to first search result: {last_results[0].display_name}"
+                            if use_color: notice = utils.colorize(notice, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                            print(notice)
+                        else:
+                            err_msg = "Error: /counterparts requires a card name."
+                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                            print(err_msg)
+                            continue
                     cp_args = copy.copy(args)
                     cp_args.query = " ".join(_resolve_args(cmd_args))
                     last_results = handle_counterparts(cp_args, include_indices=True)
                 elif cmd in ['/similar']:
+                    if not cmd_args:
+                        if last_results:
+                            cmd_args = [last_results[0].name]
+                            notice = f"Notice: No card specified. Defaulting to first search result: {last_results[0].display_name}"
+                            if use_color: notice = utils.colorize(notice, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                            print(notice)
+                        else:
+                            err_msg = "Error: /similar requires a card name."
+                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                            print(err_msg)
+                            continue
                     cmd_args = _resolve_args(cmd_args)
                     o_args = copy.copy(args)
                     o_args.query = " ".join(cmd_args)
@@ -1070,38 +1122,48 @@ def handle_shell(args):
                 elif cmd in ['/help', '/h', '/?']:
                     utils.print_header("SHELL COMMANDS", use_color=use_color)
 
-                    def fmt_cmd(name, alias, desc):
+                    # Command items structure
+                    help_items = [
+                        ("<card name>", "", "Show official rules text for a specific card."),
+                        ("/search <q>", "/s", "Search for cards matching <q> (displays a table)."),
+                        ("/list", "/l, /results", "Re-display the results of the last search or query in tabular format."),
+                        ("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching)."),
+                        ("/random [n]", "/r", "Show [n] random cards from the dataset."),
+                        ("/sets [q]", "/st", "List and filter card sets."),
+                        ("/functional [q]", "/f", "Identify groups of cards with the same mechanics."),
+                        ("/compare <n>...", "/c", "Compare multiple cards side-by-side."),
+                        ("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card."),
+                        ("/substitutes <n>", "/sub", "Find functional alternatives to the named card."),
+                        ("/counterparts <n>", "/cp", "Find mechanical clones in different colors."),
+                        ("/superior <n>", "/sup", "Find cards generally better than the named card."),
+                        ("/inferior <n>", "/inf", "Find cards generally worse than the named card."),
+                        ("/similar <n>", "", "Find cards mechanically similar to the named card."),
+                        ("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name."),
+                        ("/clear", "/cls", "Clear the terminal screen."),
+                        ("/help", "/h, /?", "Show this help message."),
+                        ("/exit", "/quit, /q", "Exit the interactive shell.")
+                    ]
+
+                    # Helper to format and pad commands dynamically
+                    cmd_parts = []
+                    for name, alias, desc in help_items:
                         c_part = f"  {name}"
                         if alias:
                             c_part += f" ({alias})"
+                        cmd_parts.append((c_part, desc))
 
-                        pad_len = 24 - utils.visible_len(c_part)
+                    max_len = max(utils.visible_len(c) for c, _ in cmd_parts)
+                    # Add small padding buffer for clean layout
+                    target_width = max(24, max_len + 2)
+
+                    for c_part, desc in cmd_parts:
+                        pad_len = target_width - utils.visible_len(c_part)
                         if use_color:
-                            c_part = utils.colorize(c_part, utils.Ansi.BOLD + utils.Ansi.CYAN)
-
-                        print(f"{c_part}{' ' * max(0, pad_len)} - {desc}")
-
-                    name_label = "  <card name>"
-                    name_pad = 24 - utils.visible_len(name_label)
-                    print(f"{name_label}{' ' * max(0, name_pad)} - Show official rules text for a specific card.")
-
-                    fmt_cmd("/search <q>", "/s", "Search for cards matching <q> (displays a table).")
-                    fmt_cmd("/list", "/l, /results", "Re-display the results of the last search or query in tabular format.")
-                    fmt_cmd("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching).")
-                    fmt_cmd("/random [n]", "/r", "Show [n] random cards from the dataset.")
-                    fmt_cmd("/sets [q]", "/st", "List and filter card sets.")
-                    fmt_cmd("/functional [q]", "/f", "Identify groups of cards with the same mechanics.")
-                    fmt_cmd("/compare <n>...", "/c", "Compare multiple cards side-by-side.")
-                    fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
-                    fmt_cmd("/substitutes <n>", "/sub", "Find functional alternatives to the named card.")
-                    fmt_cmd("/counterparts <n>", "/cp", "Find mechanical clones in different colors.")
-                    fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
-                    fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
-                    fmt_cmd("/similar <n>", "", "Find cards mechanically similar to the named card.")
-                    fmt_cmd("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name.")
-                    fmt_cmd("/clear", "/cls", "Clear the terminal screen.")
-                    fmt_cmd("/help", "/h, /?", "Show this help message.")
-                    fmt_cmd("/exit", "/quit, /q", "Exit the interactive shell.")
+                            # Highlight command prefix (excluding the leading spaces)
+                            colored_c_part = "  " + utils.colorize(c_part[2:], utils.Ansi.BOLD + utils.Ansi.CYAN)
+                        else:
+                            colored_c_part = c_part
+                        print(f"{colored_c_part}{' ' * max(0, pad_len)} - {desc}")
                     print("  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
                     print("        for any command, referring to the results of the last search.")
                     print("        The compare command (/c) also supports ranges and comma-separated")
