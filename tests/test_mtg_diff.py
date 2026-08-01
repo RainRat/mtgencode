@@ -181,3 +181,93 @@ def test_diff_progress_bar_threshold():
     data2 = data1
     stdout, stderr = run_diff([], data1, data2)
     assert "Unchanged" in stdout
+
+def test_diff_json_output():
+    import json
+    data1 = [{"name": "A", "types": ["Land"]}]
+    data2 = [{"name": "B", "types": ["Land"]}]
+    stdout, stderr = run_diff(["--json"], data1, data2)
+    res = json.loads(stdout)
+    assert "summary" in res
+    assert res["summary"]["added"] == 1
+    assert res["summary"]["removed"] == 1
+    assert len(res["added"]) == 1
+    assert len(res["removed"]) == 1
+    assert res["added"][0]["name"] == "B"
+    assert res["removed"][0]["name"] == "A"
+
+def test_diff_csv_output():
+    data1 = [{"name": "A", "types": ["Land"]}]
+    data2 = [{"name": "B", "types": ["Land"]}]
+    stdout, stderr = run_diff(["--csv"], data1, data2)
+    lines = [line.strip() for line in stdout.splitlines() if line.strip()]
+    assert len(lines) == 3
+    assert lines[0] == "Status,Card,Field,Old,New"
+    assert "Added,B" in stdout
+    assert "Removed,A" in stdout
+
+def test_diff_json_outfile_detection():
+    import tempfile
+    import os
+    import json
+    data1 = [{"name": "A", "types": ["Land"]}]
+    data2 = [{"name": "B", "types": ["Land"]}]
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tf:
+        temp_path = tf.name
+    try:
+        stdout, stderr = run_diff(["-o", temp_path], data1, data2)
+        assert os.path.exists(temp_path)
+        with open(temp_path, 'r', encoding='utf-8') as f:
+            content = json.load(f)
+        assert "summary" in content
+        assert content["summary"]["added"] == 1
+        assert content["summary"]["removed"] == 1
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+def test_diff_csv_outfile_detection():
+    import tempfile
+    import os
+    data1 = [{"name": "A", "types": ["Land"]}]
+    data2 = [{"name": "B", "types": ["Land"]}]
+    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tf:
+        temp_path = tf.name
+    try:
+        stdout, stderr = run_diff(["-o", temp_path], data1, data2)
+        assert os.path.exists(temp_path)
+        with open(temp_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        assert "Status,Card,Field,Old,New" in content
+        assert "Added,B" in content
+        assert "Removed,A" in content
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+def test_diff_text_outfile():
+    import tempfile
+    import os
+    data1 = [{"name": "A", "types": ["Land"]}]
+    data2 = [{"name": "B", "types": ["Land"]}]
+    with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tf:
+        temp_path = tf.name
+    try:
+        stdout, stderr = run_diff(["-o", temp_path], data1, data2)
+        assert os.path.exists(temp_path)
+        with open(temp_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        assert "SUMMARY" in content
+        assert "Added" in content
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+def test_diff_color_bypass():
+    data1 = [{"name": "A", "types": ["Land"]}]
+    data2 = [{"name": "B", "types": ["Land"]}]
+    stdout_json, _ = run_diff(["--json"], data1, data2, isatty=True)
+    assert "\033[" not in stdout_json
+
+    stdout_csv, _ = run_diff(["--csv"], data1, data2, isatty=True)
+    assert "\033[" not in stdout_csv

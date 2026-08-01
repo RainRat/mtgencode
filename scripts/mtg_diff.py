@@ -2,6 +2,7 @@
 import sys
 import os
 import argparse
+import json
 from collections import OrderedDict
 
 # Add lib directory to path
@@ -99,6 +100,9 @@ Usage Examples:
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('file1', help='Base card dataset (JSON, CSV, XML, or encoded text) to compare from.')
     io_group.add_argument('file2', help='Target card dataset to compare against the base.')
+    io_group.add_argument('-o', '--outfile', help='Path to save the diff results. If not provided, results print to the console.')
+    io_group.add_argument('-j', '--json', action='store_true', help='Output in JSON format.')
+    io_group.add_argument('--csv', action='store_true', help='Output in CSV format.')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
@@ -167,12 +171,20 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    # Auto-detect format based on outfile extension
+    if getattr(args, 'outfile', None):
+        if args.outfile.endswith('.json'):
+            args.json = True
+        elif args.outfile.endswith('.csv'):
+            args.csv = True
+
     # Determine if we should use color
     use_color = False
     if args.color is True:
         use_color = True
-    elif args.color is None and sys.stdout.isatty():
-        use_color = True
+    elif args.color is None:
+        if not getattr(args, 'json', False) and not getattr(args, 'csv', False) and not getattr(args, 'outfile', None) and sys.stdout.isatty():
+            use_color = True
 
     # Load datasets
     if args.verbose:
@@ -228,14 +240,75 @@ Usage Examples:
         if name not in map1:
             added.append(c2)
 
+    total_distinct = len(map1.keys() | map2.keys())
+    unchanged_count = len(map1.keys() & map2.keys()) - len(modified)
+
+    if getattr(args, 'json', False):
+        res_dict = {
+            "summary": {
+                "added": len(added),
+                "removed": len(removed),
+                "modified": len(modified),
+                "unchanged": unchanged_count
+            },
+            "added": [c.to_dict() for c in added],
+            "removed": [c.to_dict() for c in removed],
+            "modified": [
+                {
+                    "name": c.name,
+                    "differences": [
+                        {"field": field, "old": old, "new": new}
+                        for field, old, new in diffs
+                    ]
+                }
+                for c, diffs in modified
+            ]
+        }
+        res_text = json.dumps(res_dict, indent=2)
+        if args.outfile:
+            with open(args.outfile, 'w', encoding='utf-8') as f:
+                f.write(res_text + '\n')
+        else:
+            print(res_text)
+        return
+
+    elif getattr(args, 'csv', False):
+        import io
+        import csv
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["Status", "Card", "Field", "Old", "New"])
+        for c in added:
+            writer.writerow(["Added", c.display_name, "", "", ""])
+        for c in removed:
+            writer.writerow(["Removed", c.display_name, "", "", ""])
+        for c, diffs in modified:
+            for field, old, new in diffs:
+                writer.writerow(["Modified", c.display_name, field, old, new])
+        res_text = output.getvalue()
+        if args.outfile:
+            with open(args.outfile, 'w', encoding='utf-8', newline='') as f:
+                f.write(res_text)
+        else:
+            sys.stdout.write(res_text)
+        return
+
+    # If args.outfile is set and we're not outputting JSON or CSV, we capture the stdout
+    import io
+    from contextlib import redirect_stdout
+    if args.outfile:
+        stdout_capture = io.StringIO()
+        redirect_context = redirect_stdout(stdout_capture)
+        redirect_context.__enter__()
+    else:
+        redirect_context = None
+
     # Output report
     added_color = utils.Ansi.BOLD + utils.Ansi.GREEN
     removed_color = utils.Ansi.BOLD + utils.Ansi.RED
     mod_color = utils.Ansi.BOLD + utils.Ansi.YELLOW
 
     utils.print_header("SUMMARY", use_color=use_color)
-    total_distinct = len(map1.keys() | map2.keys())
-    unchanged_count = len(map1.keys() & map2.keys()) - len(modified)
 
     rows = [[
         utils.colorize("Category", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Category",
@@ -314,6 +387,12 @@ Usage Examples:
 
     # Provide clear feedback on operation completion
     utils.print_operation_summary("Comparison", len(map2), 0, quiet=args.quiet)
+
+    if redirect_context:
+        redirect_context.__exit__(None, None, None)
+        res_text = stdout_capture.getvalue()
+        with open(args.outfile, 'w', encoding='utf-8') as f:
+            f.write(res_text)
 
 if __name__ == "__main__":
     main()
