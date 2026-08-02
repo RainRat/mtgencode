@@ -256,6 +256,112 @@ def apply_scale(card_dict, factor, multiply=True):
         card_dict['bside'] = apply_scale(card_dict['bside'], factor, multiply)
     return card_dict
 
+def parse_sed_replace(replace_str):
+    """
+    Parses a sed-like replacement string of the form s/pattern/replacement/flags
+    """
+    if len(replace_str) < 4 or not replace_str.startswith('s'):
+        return None
+    delim = replace_str[1]
+    if delim.isalnum():
+        return None
+    parts = replace_str.split(delim)
+    if len(parts) < 3:
+        return None
+    pattern = parts[1]
+    replacement = parts[2]
+    flags = parts[3] if len(parts) > 3 else ""
+    return pattern, replacement, flags
+
+def apply_replacement(val, replace_arg):
+    if val is None or not isinstance(val, str):
+        return val
+    sed_parts = parse_sed_replace(replace_arg)
+    if sed_parts:
+        pattern, replacement, flags = sed_parts
+        re_flags = 0
+        if 'i' in flags:
+            re_flags |= re.IGNORECASE
+        count = 0 if 'g' in flags else 1
+        try:
+            return re.sub(pattern, replacement, val, count=count, flags=re_flags)
+        except Exception:
+            return val
+    else:
+        # Standard substring replacement
+        if '->' in replace_arg:
+            parts = replace_arg.split('->', 1)
+            old, new = parts[0], parts[1]
+            return val.replace(old, new)
+        return val
+
+def adjust_mana_cost(mana_cost, amount):
+    if not mana_cost:
+        # If there is no mana cost, and amount > 0, create generic mana cost
+        if amount > 0:
+            return f"{{{amount}}}"
+        return mana_cost
+
+    # Check for existing generic mana in braces, e.g. {2} or {X}
+    generic_match = re.search(r'\{(\d+)\}', mana_cost)
+    if generic_match:
+        current_generic = int(generic_match.group(1))
+        new_generic = max(0, current_generic + amount)
+        if new_generic == 0:
+            # Remove generic mana cost brace
+            new_cost = re.sub(r'\{\d+\}', '', mana_cost)
+        else:
+            new_cost = re.sub(r'\{\d+\}', f"{{{new_generic}}}", mana_cost)
+        return new_cost
+    else:
+        # If no generic mana cost but we want to add some
+        if amount > 0:
+            # Prepend generic mana
+            return f"{{{amount}}}" + mana_cost
+        return mana_cost
+
+def apply_text_replacements(card_dict, args):
+    if args.replace_name:
+        if 'name' in card_dict:
+            card_dict['name'] = apply_replacement(card_dict['name'], args.replace_name)
+    if args.replace_type:
+        current_type = card_dict.get('type')
+        if not current_type:
+            sups = card_dict.get('supertypes', [])
+            typs = card_dict.get('types', [])
+            subs = card_dict.get('subtypes', [])
+            full_parts = []
+            if sups or typs:
+                full_parts.append(" ".join(sups + typs))
+            if subs:
+                full_parts.append(" ".join(subs))
+            current_type = " - ".join(full_parts)
+        if current_type:
+            new_type = apply_replacement(current_type, args.replace_type)
+            card_dict['type'] = new_type
+            # Re-evaluate types
+            card_dict.pop('supertypes', None)
+            card_dict.pop('types', None)
+            card_dict.pop('subtypes', None)
+            supertypes, types, subtypes = utils.parse_type_line(new_type)
+            if supertypes: card_dict['supertypes'] = supertypes
+            if types: card_dict['types'] = types
+            if subtypes: card_dict['subtypes'] = subtypes
+    if args.replace:
+        if 'text' in card_dict:
+            card_dict['text'] = apply_replacement(card_dict['text'], args.replace)
+
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_text_replacements(card_dict['bside'], args)
+    return card_dict
+
+def apply_mana_adjust(card_dict, amount):
+    if 'manaCost' in card_dict:
+        card_dict['manaCost'] = adjust_mana_cost(card_dict['manaCost'], amount)
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_mana_adjust(card_dict['bside'], amount)
+    return card_dict
+
 def print_detailed_card(c, use_color=False, output_f=sys.stdout):
     term_width = utils.get_terminal_width()
 
@@ -484,6 +590,11 @@ def apply_modifiers(card_dict, args):
     if args.scale_down:
         card_dict = apply_scale(card_dict, args.scale_down, multiply=False)
 
+    card_dict = apply_text_replacements(card_dict, args)
+
+    if args.mana_adjust is not None:
+        card_dict = apply_mana_adjust(card_dict, args.mana_adjust)
+
     return card_dict
 
 def main():
@@ -559,6 +670,10 @@ Usage Examples:
     trans_group.add_argument('--nerf', type=int, nargs='?', const=1, help='Decrement power, toughness, loyalty, or defense by an amount.')
     trans_group.add_argument('--scale-up', type=float, nargs='?', const=2.0, help='Scale up stats and generic mana costs proportionally by a factor.')
     trans_group.add_argument('--scale-down', type=float, nargs='?', const=2.0, help='Scale down stats and generic mana costs proportionally by a factor.')
+    trans_group.add_argument('--replace', help='Search and replace in rules text. Supports substring (old->new) or sed-like regex (s/pattern/replacement/flags).')
+    trans_group.add_argument('--replace-name', help='Search and replace in card name. Supports substring (old->new) or sed-like regex (s/pattern/replacement/flags).')
+    trans_group.add_argument('--replace-type', help='Search and replace in type line. Supports substring (old->new) or sed-like regex (s/pattern/replacement/flags).')
+    trans_group.add_argument('--mana-adjust', type=int, help='Increase or decrease generic mana costs by an integer value.')
 
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
