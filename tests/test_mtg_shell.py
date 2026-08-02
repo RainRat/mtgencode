@@ -240,5 +240,59 @@ class TestMtgShell(unittest.TestCase):
                 self.assertIn("Unknown command: /xyzabc123.", output)
                 self.assertNotIn("Did you mean", output)
 
+    def test_shell_similar_alias(self):
+        """Test the /sim alias works the same as /similar."""
+        with patch('builtins.input', side_effect=['/sim "invasion of tarkir"', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("No similar cards found.", output)
+
+    def test_shell_context_aware_tab_completion(self):
+        """Test the context-aware tab completion logic."""
+        with patch('readline.set_completer') as mock_set_completer:
+            with patch('builtins.input', side_effect=['exit']):
+                handle_shell(self.args)
+                self.assertTrue(mock_set_completer.called)
+                completer = mock_set_completer.call_args[0][0]
+
+                # 1. Complete set codes under /sets or /st
+                with patch('readline.get_line_buffer', return_value='/sets C'):
+                    with patch('readline.get_begidx', return_value=6):
+                        self.assertEqual(completer('C', 0), 'CUS')
+
+                with patch('readline.get_line_buffer', return_value='/st C'):
+                    with patch('readline.get_begidx', return_value=4):
+                        self.assertEqual(completer('C', 0), 'CUS')
+
+                # 2. Complete set codes in the first argument of /extract or /e
+                with patch('readline.get_line_buffer', return_value='/extract C'):
+                    with patch('readline.get_begidx', return_value=9):
+                        self.assertEqual(completer('C', 0), 'CUS')
+
+                with patch('readline.get_line_buffer', return_value='/e C'):
+                    with patch('readline.get_begidx', return_value=3):
+                        self.assertEqual(completer('C', 0), 'CUS')
+
+                # 3. Complete card names specifically from that set for the second argument of /extract or /e
+                with patch('readline.get_line_buffer', return_value='/extract CUS inv'):
+                    with patch('readline.get_begidx', return_value=13):
+                        self.assertEqual(completer('inv', 0), 'Invasion of Tarkir')
+
+                with patch('readline.get_line_buffer', return_value='/e CUS inv'):
+                    with patch('readline.get_begidx', return_value=7):
+                        self.assertEqual(completer('inv', 0), 'Invasion of Tarkir')
+
+                # 4. Fallback to general card names when set code does not match any card
+                with patch('readline.get_line_buffer', return_value='/e XYZ inv'):
+                    with patch('readline.get_begidx', return_value=7):
+                        self.assertEqual(completer('inv', 0), 'Invasion of Tarkir')
+
+                # 5. Check completion of /sim in commands
+                with patch('readline.get_line_buffer', return_value='/si'):
+                    with patch('readline.get_begidx', return_value=0):
+                        self.assertIn('/similar ', [completer('/si', i) for i in range(5)])
+                        self.assertIn('/sim ', [completer('/si', i) for i in range(5)])
+
 if __name__ == '__main__':
     unittest.main()

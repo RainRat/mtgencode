@@ -844,30 +844,89 @@ def handle_shell(args):
         import readline
         card_names = sorted(list(set(cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) for c in all_cards)))
 
+        # Extract unique set codes from printings or set_code
+        set_codes = set()
+        for c in all_cards:
+            if c.set_code:
+                set_codes.add(c.set_code.upper())
+            for p in getattr(c, 'printings', []):
+                if isinstance(p, dict) and p.get('set'):
+                    set_codes.add(p['set'].upper())
+                elif isinstance(p, str):
+                    set_codes.add(p.upper())
+        set_codes = sorted(list(set_codes))
+
         def completer(text, state):
-            if text.startswith('/'):
-                commands = [
-                    '/search ', '/s ',
-                    '/oracle ', '/o ',
-                    '/random ', '/r ',
-                    '/sets ', '/st ',
-                    '/functional ', '/f ',
-                    '/compare ', '/c ',
-                    '/superior ', '/sup ',
-                    '/inferior ', '/inf ',
-                    '/reprints ', '/rep ',
-                    '/substitutes ', '/sub ',
-                    '/counterparts ', '/cp ',
-                    '/similar ',
-                    '/extract ', '/e ',
-                    '/list', '/l', '/results',
-                    '/help', '/h', '/?',
-                    '/clear',
-                    '/exit', '/quit', '/q'
-                ]
-                options = [c for c in commands if c.startswith(text.lower())]
+            line_buffer = readline.get_line_buffer()
+            begidx = readline.get_begidx()
+            prefix = line_buffer[:begidx]
+
+            # Safe split of prefix
+            try:
+                parts = shlex.split(prefix)
+            except ValueError:
+                parts = prefix.split()
+
+            options = []
+            if not parts:
+                if text.startswith('/'):
+                    commands = [
+                        '/search ', '/s ',
+                        '/oracle ', '/o ',
+                        '/random ', '/r ',
+                        '/sets ', '/st ',
+                        '/functional ', '/f ',
+                        '/compare ', '/c ',
+                        '/superior ', '/sup ',
+                        '/inferior ', '/inf ',
+                        '/reprints ', '/rep ',
+                        '/substitutes ', '/sub ',
+                        '/counterparts ', '/cp ',
+                        '/similar ', '/sim ',
+                        '/extract ', '/e ',
+                        '/list', '/l', '/results',
+                        '/help', '/h', '/?',
+                        '/clear',
+                        '/exit', '/quit', '/q'
+                    ]
+                    options = [c for c in commands if c.startswith(text.lower())]
+                else:
+                    options = [n for n in card_names if n.lower().startswith(text.lower())]
             else:
-                options = [n for n in card_names if n.lower().startswith(text.lower())]
+                cmd = parts[0].lower()
+                if cmd in ['/sets', '/st']:
+                    options = [c for c in set_codes if c.lower().startswith(text.lower())]
+                elif cmd in ['/extract', '/e']:
+                    if len(parts) == 1:
+                        # Autocomplete set code
+                        options = [c for c in set_codes if c.lower().startswith(text.lower())]
+                    else:
+                        # Autocomplete card names within the specified set
+                        target_set = parts[1].upper()
+                        set_card_names = []
+                        for c in all_cards:
+                            is_in_set = False
+                            if c.set_code and c.set_code.upper() == target_set:
+                                is_in_set = True
+                            else:
+                                for p in getattr(c, 'printings', []):
+                                    if isinstance(p, dict) and p.get('set') and p['set'].upper() == target_set:
+                                        is_in_set = True
+                                        break
+                                    elif isinstance(p, str) and p.upper() == target_set:
+                                        is_in_set = True
+                                        break
+                            if is_in_set:
+                                set_card_names.append(cardlib.titlecase(c.name.replace(utils.dash_marker, '-')))
+                        set_card_names = sorted(list(set(set_card_names)))
+                        if set_card_names:
+                            options = [n for n in set_card_names if n.lower().startswith(text.lower())]
+                        else:
+                            options = [n for n in card_names if n.lower().startswith(text.lower())]
+                elif cmd in ['/help', '/h', '/?', '/clear', '/cls', '/exit', '/quit', '/q', '/list', '/l', '/results']:
+                    options = []
+                else:
+                    options = [n for n in card_names if n.lower().startswith(text.lower())]
 
             if state < len(options):
                 return options[state]
@@ -1049,7 +1108,7 @@ def handle_shell(args):
                     cp_args = copy.copy(args)
                     cp_args.query = " ".join(_resolve_args(cmd_args))
                     last_results = handle_counterparts(cp_args, include_indices=True)
-                elif cmd in ['/similar']:
+                elif cmd in ['/similar', '/sim']:
                     cmd_args = _resolve_args(cmd_args)
                     o_args = copy.copy(args)
                     o_args.query = " ".join(cmd_args)
@@ -1081,27 +1140,39 @@ def handle_shell(args):
 
                         print(f"{c_part}{' ' * max(0, pad_len)} - {desc}")
 
+                    def print_section(title):
+                        if use_color:
+                            print(utils.colorize(f"\n  {title}", utils.Ansi.BOLD + utils.Ansi.YELLOW))
+                        else:
+                            print(f"\n  {title}")
+
+                    print_section("CARD LOOKUP & SEARCH")
                     name_label = "  <card name>"
                     name_pad = 24 - utils.visible_len(name_label)
                     print(f"{name_label}{' ' * max(0, name_pad)} - Show official rules text for a specific card.")
-
+                    fmt_cmd("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching).")
                     fmt_cmd("/search <q>", "/s", "Search for cards matching <q> (displays a table).")
                     fmt_cmd("/list", "/l, /results", "Re-display the results of the last search or query in tabular format.")
-                    fmt_cmd("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching).")
                     fmt_cmd("/random [n]", "/r", "Show [n] random cards from the dataset.")
-                    fmt_cmd("/sets [q]", "/st", "List and filter card sets.")
-                    fmt_cmd("/functional [q]", "/f", "Identify groups of cards with the same mechanics.")
+                    fmt_cmd("/similar <n>", "/sim", "Find cards mechanically similar to the named card.")
+
+                    print_section("MECHANICAL & RELATIONSHIP QUERIES")
                     fmt_cmd("/compare <n>...", "/c", "Compare multiple cards side-by-side.")
                     fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
                     fmt_cmd("/substitutes <n>", "/sub", "Find functional alternatives to the named card.")
                     fmt_cmd("/counterparts <n>", "/cp", "Find mechanical clones in different colors.")
                     fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
                     fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
-                    fmt_cmd("/similar <n>", "", "Find cards mechanically similar to the named card.")
+                    fmt_cmd("/functional [q]", "/f", "Identify groups of cards with the same mechanics.")
+
+                    print_section("UTILITIES & SYSTEM")
+                    fmt_cmd("/sets [q]", "/st", "List and filter card sets.")
                     fmt_cmd("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name.")
                     fmt_cmd("/clear", "/cls", "Clear the terminal screen.")
                     fmt_cmd("/help", "/h, /?", "Show this help message.")
                     fmt_cmd("/exit", "/quit, /q", "Exit the interactive shell.")
+
+                    print()
                     print("  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
                     print("        for any command, referring to the results of the last search.")
                     print("        The compare command (/c) also supports ranges and comma-separated")
@@ -1120,7 +1191,7 @@ def handle_shell(args):
                         '/reprints', '/rep',
                         '/substitutes', '/sub',
                         '/counterparts', '/cp',
-                        '/similar',
+                        '/similar', '/sim',
                         '/extract', '/e',
                         '/list', '/l', '/results',
                         '/help', '/h', '/?',
