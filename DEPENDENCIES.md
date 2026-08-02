@@ -9,16 +9,26 @@ To encode card data, you need the JSON corpus from [MTGJSON](https://mtgjson.com
 When you download files from MTGJSON, they often download as `.zip` compressed archives. You have two options to integrate this data into `mtgencode`:
 
 ### Option A: Extract the ZIP (Recommended)
-Extract the downloaded file (such as `AllPrintings.json.zip`) to get the raw `.json` file inside.
-1. Create a folder named `data` in this project if it does not exist yet:
+If you extract the raw `AllPrintings.json` file into the `data` folder, our tools will automatically find and load it. You do not need to type the filename when you run commands.
+
+Follow these steps to extract your file:
+
+#### Using the command line
+1. Create a folder named `data` in this project if it does not exist:
    ```bash
    mkdir -p data
    ```
-2. Move and extract your JSON file into that folder:
+2. Extract the downloaded ZIP file directly into the `data` folder:
    ```bash
-   mv ~/Downloads/AllPrintings.json data/
+   unzip ~/Downloads/AllPrintings.json.zip -d data/
    ```
-   If you extract the raw `AllPrintings.json` file into the `data/` folder, our scripts will automatically detect and load it. You do not need to specify the filename when running commands.
+
+#### Using your computer's file manager
+1. Open your file manager (like File Explorer on Windows or Finder on macOS).
+2. Create a new folder named `data` inside this project's folder.
+3. Find your downloaded ZIP file (usually in your `Downloads` folder).
+4. Double-click the ZIP file to open or extract it.
+5. Copy the extracted `AllPrintings.json` file and paste it into your new `data` folder.
 
 ### Option B: Keep the ZIP intact
 You do not have to extract the file. Our tools natively support reading directly from `.zip` files.
