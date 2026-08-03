@@ -240,5 +240,75 @@ class TestMtgShell(unittest.TestCase):
                 self.assertIn("Unknown command: /xyzabc123.", output)
                 self.assertNotIn("Did you mean", output)
 
+    def test_shell_smart_defaults_empty(self):
+        """Test that REPL commands gracefully report error when called without arguments and last_results is empty."""
+        commands = ['/oracle', '/compare', '/reprints', '/superior', '/inferior', '/substitutes', '/counterparts', '/similar']
+        for cmd in commands:
+            with patch('builtins.input', side_effect=[cmd, 'exit']):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    handle_shell(self.args)
+                    self.assertIn(f"Error: {cmd} requires", fake_out.getvalue())
+
+    def test_shell_smart_defaults_with_results(self):
+        """Test that REPL commands fall back to using previous results when called without arguments."""
+        # 1. /oracle
+        with patch('builtins.input', side_effect=['/search tarkir', '/oracle', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                # Check that detailed oracle block for "Invasion of Tarkir" is printed
+                self.assertIn("Invasion of Tarkir", output)
+                self.assertIn("SET: CUS", output)
+
+        # 2. /compare
+        with patch('builtins.input', side_effect=['/search tarkir', '/compare', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("CARD COMPARISON", output)
+                self.assertIn("Invasion of Tarkir", output)
+
+        # 3. /reprints
+        with patch('builtins.input', side_effect=['/search tarkir', '/reprints', 'exit']):
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                handle_shell(self.args)
+                err = fake_err.getvalue()
+                self.assertIn("No functional reprints found for Invasion of Tarkir.", err)
+
+        # 4. /similar
+        with patch('builtins.input', side_effect=['/search tarkir', '/similar', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("No similar cards found.", output)
+
+        # 5. /superior
+        with patch('builtins.input', side_effect=['/search tarkir', '/superior', 'exit']):
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                handle_shell(self.args)
+                err = fake_err.getvalue()
+                self.assertIn("No cards found that are superior to Invasion of Tarkir.", err)
+
+        # 6. /inferior
+        with patch('builtins.input', side_effect=['/search tarkir', '/inferior', 'exit']):
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                handle_shell(self.args)
+                err = fake_err.getvalue()
+                self.assertIn("No cards found that are inferior to Invasion of Tarkir.", err)
+
+        # 7. /substitutes
+        with patch('builtins.input', side_effect=['/search tarkir', '/substitutes', 'exit']):
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                handle_shell(self.args)
+                err = fake_err.getvalue()
+                self.assertIn("No suitable substitutes found for Invasion of Tarkir.", err)
+
+        # 8. /counterparts
+        with patch('builtins.input', side_effect=['/search tarkir', '/counterparts', 'exit']):
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                handle_shell(self.args)
+                err = fake_err.getvalue()
+                self.assertIn("No color-shifted counterparts found for Invasion of Tarkir.", err)
+
 if __name__ == '__main__':
     unittest.main()
