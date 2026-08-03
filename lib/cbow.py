@@ -116,9 +116,6 @@ def cosine_similarity(v1,v2):
 
     return cosine[0][1]
 
-def cosine_similarity_name(cardvec, v, name):
-    return (cosine_similarity(cardvec, v), name)
-
 # we need to put the logic in a regular function (as opposed to a method of an object)
 # so that we can pass the function to multiprocessing
 def f_nearest(card, vocab, vecs, cardvecs, n):
@@ -133,7 +130,7 @@ def f_nearest(card, vocab, vecs, cardvecs, n):
 
     cardvec = makevector(vocab, vecs, words)
 
-    comparisons = [cosine_similarity_name(cardvec, v, name) for (name, v) in cardvecs]
+    comparisons = [(cosine_similarity(cardvec, v), name) for (name, v) in cardvecs]
 
     comparisons.sort(reverse = True)
     comp_n = comparisons[:n]
