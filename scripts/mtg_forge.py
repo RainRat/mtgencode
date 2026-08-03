@@ -256,6 +256,83 @@ def apply_scale(card_dict, factor, multiply=True):
         card_dict['bside'] = apply_scale(card_dict['bside'], factor, multiply)
     return card_dict
 
+def parse_sed_replace(replace_str):
+    if len(replace_str) > 3 and replace_str[0] == 's':
+        delim = replace_str[1]
+        if not delim.isalnum():
+            parts = replace_str.split(delim)
+            if len(parts) >= 3:
+                pattern = parts[1]
+                replacement = parts[2]
+                flags_str = parts[3] if len(parts) > 3 else ""
+                flags = 0
+                if 'i' in flags_str.lower():
+                    flags |= re.IGNORECASE
+                return pattern, replacement, flags, True
+    return None, None, None, False
+
+def apply_text_replacement(text, replacement_arg):
+    if not text or not replacement_arg:
+        return text
+    pattern, replacement, flags, is_regex = parse_sed_replace(replacement_arg)
+    if is_regex:
+        try:
+            replacement_clean = replacement.replace('\\n', '\n')
+            return re.sub(pattern, replacement_clean, text, flags=flags)
+        except Exception as e:
+            sys.stderr.write(f"Warning: regex replacement failed: {e}\n")
+            return text
+    elif '->' in replacement_arg:
+        old, new = replacement_arg.split('->', 1)
+        return text.replace(old, new)
+    else:
+        return text.replace(replacement_arg, '')
+
+def apply_forge_replacements(card_dict, args):
+    if args.replace:
+        card_dict['text'] = apply_text_replacement(card_dict.get('text', ''), args.replace)
+    if args.replace_name:
+        card_dict['name'] = apply_text_replacement(card_dict.get('name', ''), args.replace_name)
+    if args.replace_type:
+        card_dict['type'] = apply_text_replacement(card_dict.get('type', ''), args.replace_type)
+        if 'supertypes' in card_dict or 'types' in card_dict or 'subtypes' in card_dict:
+            card_dict.pop('supertypes', None)
+            card_dict.pop('types', None)
+            card_dict.pop('subtypes', None)
+            supertypes, types, subtypes = utils.parse_type_line(card_dict['type'])
+            if supertypes: card_dict['supertypes'] = supertypes
+            if types: card_dict['types'] = types
+            if subtypes: card_dict['subtypes'] = subtypes
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_forge_replacements(card_dict['bside'], args)
+    return card_dict
+
+def adjust_mana_cost(mana_cost, amount):
+    if not mana_cost:
+        if amount > 0:
+            return f"{{{amount}}}"
+        return mana_cost
+
+    match = re.search(r'\{(\d+)\}', mana_cost)
+    if match:
+        current_val = int(match.group(1))
+        new_val = max(0, current_val + amount)
+        if new_val > 0:
+            return re.sub(r'\{(\d+)\}', f"{{{new_val}}}", mana_cost, count=1)
+        else:
+            return re.sub(r'\{(\d+)\}', "", mana_cost, count=1)
+    else:
+        if amount > 0:
+            return f"{{{amount}}}" + mana_cost
+    return mana_cost
+
+def apply_mana_adjust(card_dict, amount):
+    if 'manaCost' in card_dict:
+        card_dict['manaCost'] = adjust_mana_cost(card_dict['manaCost'], amount)
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_mana_adjust(card_dict['bside'], amount)
+    return card_dict
+
 def print_detailed_card(c, use_color=False, output_f=sys.stdout):
     term_width = utils.get_terminal_width()
 
@@ -483,6 +560,10 @@ def apply_modifiers(card_dict, args):
         card_dict = apply_scale(card_dict, args.scale_up, multiply=True)
     if args.scale_down:
         card_dict = apply_scale(card_dict, args.scale_down, multiply=False)
+    if args.replace or args.replace_name or args.replace_type:
+        card_dict = apply_forge_replacements(card_dict, args)
+    if args.mana_adjust:
+        card_dict = apply_mana_adjust(card_dict, args.mana_adjust)
 
     return card_dict
 
@@ -559,6 +640,10 @@ Usage Examples:
     trans_group.add_argument('--nerf', type=int, nargs='?', const=1, help='Decrement power, toughness, loyalty, or defense by an amount.')
     trans_group.add_argument('--scale-up', type=float, nargs='?', const=2.0, help='Scale up stats and generic mana costs proportionally by a factor.')
     trans_group.add_argument('--scale-down', type=float, nargs='?', const=2.0, help='Scale down stats and generic mana costs proportionally by a factor.')
+    trans_group.add_argument('--replace', help='Search and replace in rules text, supporting standard strings, regular expressions, or sed-like delimiters.')
+    trans_group.add_argument('--replace-name', help='Search and replace in card name, supporting standard strings, regular expressions, or sed-like delimiters.')
+    trans_group.add_argument('--replace-type', help='Search and replace in card type, supporting standard strings, regular expressions, or sed-like delimiters.')
+    trans_group.add_argument('--mana-adjust', type=int, help='Increase or decrease generic mana costs by an integer value.')
 
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
