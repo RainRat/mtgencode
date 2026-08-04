@@ -1,4 +1,7 @@
 import io
+import json
+import csv
+import os
 from unittest.mock import patch, MagicMock
 from scripts import mtg_diff
 
@@ -181,3 +184,88 @@ def test_diff_progress_bar_threshold():
     data2 = data1
     stdout, stderr = run_diff([], data1, data2)
     assert "Unchanged" in stdout
+
+def test_diff_json_format():
+    data1 = [{"name": "Old Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
+    data2 = [{"name": "New Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
+    stdout, stderr = run_diff(["--json"], data1, data2)
+    # Verify it is valid JSON
+    parsed = json.loads(stdout)
+    assert parsed["summary"]["added"] == 1
+    assert parsed["summary"]["removed"] == 1
+    assert parsed["summary"]["modified"] == 0
+    assert parsed["added"][0]["name"] == "New Card"
+    assert parsed["removed"][0]["name"] == "Old Card"
+
+def test_diff_csv_format():
+    data1 = [{"name": "Old Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
+    data2 = [
+        {"name": "Old Card", "types": ["Creature"], "pt": "2/2", "rarity": "common"},
+        {"name": "New Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}
+    ]
+    stdout, stderr = run_diff(["--csv"], data1, data2)
+    # Verify it is CSV
+    lines = list(csv.reader(io.StringIO(stdout)))
+    assert lines[0] == ["Status", "Name", "Field", "Old Value", "New Value"]
+    # Check rows
+    added_rows = [r for r in lines if r[0] == "Added"]
+    mod_rows = [r for r in lines if r[0] == "Modified"]
+    assert len(added_rows) == 1
+    assert added_rows[0][1] == "New Card"
+    assert len(mod_rows) == 1
+    assert mod_rows[0][1] == "Old Card"
+    assert mod_rows[0][2] == "P/T"
+    assert mod_rows[0][3] == "1/1"
+    assert mod_rows[0][4] == "2/2"
+
+def test_diff_outfile_auto_detection_json():
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as tf:
+        temp_path = tf.name
+    try:
+        data1 = []
+        data2 = [{"name": "New Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
+        stdout, stderr = run_diff(["--outfile", temp_path], data1, data2)
+        # Should be written to file
+        with open(temp_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        parsed = json.loads(content)
+        assert parsed["summary"]["added"] == 1
+    finally:
+        os.remove(temp_path)
+
+def test_diff_outfile_auto_detection_csv():
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix='.csv', delete=False) as tf:
+        temp_path = tf.name
+    try:
+        data1 = []
+        data2 = [{"name": "New Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
+        stdout, stderr = run_diff(["-o", temp_path], data1, data2)
+        # Should be written to file
+        with open(temp_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        lines = list(csv.reader(io.StringIO(content)))
+        assert lines[0] == ["Status", "Name", "Field", "Old Value", "New Value"]
+        assert lines[1][0] == "Added"
+        assert lines[1][1] == "New Card"
+    finally:
+        os.remove(temp_path)
+
+def test_diff_outfile_text_redirect():
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as tf:
+        temp_path = tf.name
+    try:
+        data1 = [{"name": "Old Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
+        data2 = []
+        stdout, stderr = run_diff(["--outfile", temp_path], data1, data2)
+        # Verify stdout is empty and content written to file
+        assert stdout == ""
+        with open(temp_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        assert "REMOVED CARDS" in content
+        # Bypasses colorization when output to file by default
+        assert "\033[" not in content
+    finally:
+        os.remove(temp_path)
