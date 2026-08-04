@@ -1070,6 +1070,12 @@ def handle_shell(args):
                 elif cmd in ['/help', '/h', '/?']:
                     utils.print_header("SHELL COMMANDS", use_color=use_color)
 
+                    def print_section(title):
+                        if use_color:
+                            print(utils.colorize(f"\n--- {title} ---", utils.Ansi.BOLD + utils.Ansi.YELLOW))
+                        else:
+                            print(f"\n--- {title} ---")
+
                     def fmt_cmd(name, alias, desc):
                         c_part = f"  {name}"
                         if alias:
@@ -1081,27 +1087,41 @@ def handle_shell(args):
 
                         print(f"{c_part}{' ' * max(0, pad_len)} - {desc}")
 
+                    print_section("CARD LOOKUP & SEARCH")
                     name_label = "  <card name>"
                     name_pad = 24 - utils.visible_len(name_label)
-                    print(f"{name_label}{' ' * max(0, name_pad)} - Show official rules text for a specific card.")
+                    if use_color:
+                        name_label_colored = utils.colorize(name_label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                        print(f"{name_label_colored}{' ' * max(0, name_pad)} - Show official rules text for a specific card.")
+                    else:
+                        print(f"{name_label}{' ' * max(0, name_pad)} - Show official rules text for a specific card.")
 
+                    fmt_cmd("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching).")
                     fmt_cmd("/search <q>", "/s", "Search for cards matching <q> (displays a table).")
                     fmt_cmd("/list", "/l, /results", "Re-display the results of the last search or query in tabular format.")
-                    fmt_cmd("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching).")
                     fmt_cmd("/random [n]", "/r", "Show [n] random cards from the dataset.")
                     fmt_cmd("/sets [q]", "/st", "List and filter card sets.")
-                    fmt_cmd("/functional [q]", "/f", "Identify groups of cards with the same mechanics.")
+                    fmt_cmd("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name.")
+
+                    print_section("MECHANICAL & RELATIONSHIP QUERIES")
                     fmt_cmd("/compare <n>...", "/c", "Compare multiple cards side-by-side.")
+                    fmt_cmd("/functional [q]", "/f", "Identify groups of cards with the same mechanics.")
                     fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
                     fmt_cmd("/substitutes <n>", "/sub", "Find functional alternatives to the named card.")
                     fmt_cmd("/counterparts <n>", "/cp", "Find mechanical clones in different colors.")
                     fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
                     fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
                     fmt_cmd("/similar <n>", "", "Find cards mechanically similar to the named card.")
-                    fmt_cmd("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name.")
+
+                    print_section("UTILITIES & SYSTEM")
                     fmt_cmd("/clear", "/cls", "Clear the terminal screen.")
                     fmt_cmd("/help", "/h, /?", "Show this help message.")
                     fmt_cmd("/exit", "/quit, /q", "Exit the interactive shell.")
+
+                    if use_color:
+                        print(utils.colorize("\n--- USAGE TIPS ---", utils.Ansi.BOLD + utils.Ansi.YELLOW))
+                    else:
+                        print("\n--- USAGE TIPS ---")
                     print("  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
                     print("        for any command, referring to the results of the last search.")
                     print("        The compare command (/c) also supports ranges and comma-separated")
