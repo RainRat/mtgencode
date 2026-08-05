@@ -73,6 +73,122 @@ def scale_mana_cost(mana_cost, factor, multiply=True):
         return f"{{{new_num}}}"
     return re.sub(r'\{(\d+)\}', repl, mana_cost)
 
+def parse_sed_replace(replace_str):
+    """
+    Parses a replacement string.
+    Supports sed-like regex: s/pattern/replacement/flags (where delimiter can be non-alphanumeric).
+    Supports standard substring replacement: pattern->replacement.
+    Returns: (is_regex, pattern, replacement, flags)
+    """
+    if replace_str.startswith('s') and len(replace_str) > 2:
+        delimiter = replace_str[1]
+        if not delimiter.isalnum() and delimiter not in ('\\', ' '):
+            # Parse sed-like regex replacement, supporting escaping of delimiter
+            # We want to find delimiters not preceded by a backslash
+            pattern_parts = []
+            current = []
+            escaped = False
+            for char in replace_str[2:]:
+                if escaped:
+                    current.append(char)
+                    escaped = False
+                elif char == '\\':
+                    escaped = True
+                    current.append(char)
+                elif char == delimiter:
+                    pattern_parts.append("".join(current))
+                    current = []
+                else:
+                    current.append(char)
+            if current:
+                pattern_parts.append("".join(current))
+
+            # pattern_parts should contain at least: pattern, replacement, and optional flags
+            if len(pattern_parts) >= 2:
+                pattern = pattern_parts[0]
+                replacement = pattern_parts[1]
+                flags_str = pattern_parts[2] if len(pattern_parts) > 2 else ""
+
+                # Unescape delimiters in pattern and replacement
+                pattern = pattern.replace('\\' + delimiter, delimiter)
+                replacement = replacement.replace('\\' + delimiter, delimiter)
+
+                # Parse regex flags
+                flags = 0
+                if 'i' in flags_str.lower():
+                    flags |= re.IGNORECASE
+                if 'm' in flags_str.lower():
+                    flags |= re.MULTILINE
+                if 's' in flags_str.lower():
+                    flags |= re.DOTALL
+
+                return True, pattern, replacement, flags
+
+    # Standard literal replacement
+    if '->' in replace_str:
+        pattern, replacement = replace_str.split('->', 1)
+        return False, pattern, replacement, 0
+
+    raise ValueError(f"Invalid replacement format: '{replace_str}'. Use 's/pattern/replacement/flags' or 'pattern->replacement'.")
+
+def apply_replacement_to_string(s, is_regex, pattern, replacement, flags):
+    if not s or not isinstance(s, str):
+        return s
+    if is_regex:
+        try:
+            return re.sub(pattern, replacement, s, flags=flags)
+        except Exception as e:
+            raise ValueError(f"Regex substitution failed for pattern '{pattern}': {e}")
+    else:
+        return s.replace(pattern, replacement)
+
+def apply_single_replacement(card_dict, is_regex, pattern, replacement, flags):
+    # Apply to name
+    if 'name' in card_dict:
+        card_dict['name'] = apply_replacement_to_string(card_dict['name'], is_regex, pattern, replacement, flags)
+
+    # Apply to type
+    if 'type' not in card_dict:
+        # Reconstruct type line from supertypes, types, subtypes if they exist
+        front_parts = []
+        if card_dict.get('supertypes'):
+            front_parts.extend(card_dict['supertypes'])
+        if card_dict.get('types'):
+            front_parts.extend(card_dict['types'])
+        typeline = " ".join(front_parts)
+        if card_dict.get('subtypes'):
+            typeline += " \u2014 " + " ".join(card_dict['subtypes'])
+        card_dict['type'] = typeline
+
+    type_changed = False
+    if 'type' in card_dict:
+        old_type = card_dict['type']
+        new_type = apply_replacement_to_string(old_type, is_regex, pattern, replacement, flags)
+        if new_type != old_type:
+            card_dict['type'] = new_type
+            type_changed = True
+
+    if type_changed:
+        # Clear existing split types to allow parse_type_line to re-evaluate
+        card_dict.pop('supertypes', None)
+        card_dict.pop('types', None)
+        card_dict.pop('subtypes', None)
+
+        supertypes, types, subtypes = utils.parse_type_line(card_dict['type'])
+        if supertypes: card_dict['supertypes'] = supertypes
+        if types: card_dict['types'] = types
+        if subtypes: card_dict['subtypes'] = subtypes
+
+    # Apply to text
+    if 'text' in card_dict:
+        card_dict['text'] = apply_replacement_to_string(card_dict['text'], is_regex, pattern, replacement, flags)
+
+    # Apply to B-side recursively
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_single_replacement(card_dict['bside'], is_regex, pattern, replacement, flags)
+
+    return card_dict
+
 def apply_color_shift(card_dict, target_colors_str):
     WUBRG = 'WUBRG'
 
@@ -483,6 +599,10 @@ def apply_modifiers(card_dict, args):
         card_dict = apply_scale(card_dict, args.scale_up, multiply=True)
     if args.scale_down:
         card_dict = apply_scale(card_dict, args.scale_down, multiply=False)
+    if getattr(args, 'replace', None):
+        for r_str in args.replace:
+            is_regex, pattern, replacement, flags = parse_sed_replace(r_str)
+            card_dict = apply_single_replacement(card_dict, is_regex, pattern, replacement, flags)
 
     return card_dict
 
@@ -559,6 +679,9 @@ Usage Examples:
     trans_group.add_argument('--nerf', type=int, nargs='?', const=1, help='Decrement power, toughness, loyalty, or defense by an amount.')
     trans_group.add_argument('--scale-up', type=float, nargs='?', const=2.0, help='Scale up stats and generic mana costs proportionally by a factor.')
     trans_group.add_argument('--scale-down', type=float, nargs='?', const=2.0, help='Scale down stats and generic mana costs proportionally by a factor.')
+    trans_group.add_argument('--replace', action='append',
+                        help='Perform a text or regex replacement on the card name, type, and rules text. '
+                             'Supports sed-like regex s/pattern/replacement/flags or literal pattern->replacement.')
 
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
