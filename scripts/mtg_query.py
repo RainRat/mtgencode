@@ -1068,41 +1068,65 @@ def handle_shell(args):
                     e_args.outfile = '-'
                     handle_extract(e_args)
                 elif cmd in ['/help', '/h', '/?']:
+                    # Grouped commands for better readability and structure
+                    help_groups = [
+                        ("CARD LOOKUP & SEARCH", [
+                            ("<card name>", "", "Show official rules text for a specific card."),
+                            ("/search <q>", "/s", "Search for cards matching <q> (displays a table)."),
+                            ("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching)."),
+                            ("/random [n]", "/r", "Show [n] random cards from the dataset."),
+                            ("/sets [q]", "/st", "List and filter card sets."),
+                            ("/compare <n>...", "/c", "Compare multiple cards side-by-side."),
+                            ("/list", "/l, /results", "Re-display the results of the last search or query in tabular format."),
+                        ]),
+                        ("MECHANICAL & RELATIONSHIP QUERIES", [
+                            ("/functional [q]", "/f", "Identify groups of cards with the same mechanics."),
+                            ("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card."),
+                            ("/substitutes <n>", "/sub", "Find functional alternatives to the named card."),
+                            ("/counterparts <n>", "/cp", "Find mechanical clones in different colors."),
+                            ("/superior <n>", "/sup", "Find cards generally better than the named card."),
+                            ("/inferior <n>", "/inf", "Find cards generally worse than the named card."),
+                            ("/similar <n>", "", "Find cards mechanically similar to the named card."),
+                        ]),
+                        ("UTILITIES & SYSTEM", [
+                            ("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name."),
+                            ("/clear", "/cls", "Clear the terminal screen."),
+                            ("/help", "/h, /?", "Show this help message."),
+                            ("/exit", "/quit, /q", "Exit the interactive shell."),
+                        ])
+                    ]
+
+                    # Dynamically calculate the maximum width of the left column
+                    max_width = 0
+                    for group_name, cmds in help_groups:
+                        for name, alias, desc in cmds:
+                            left_text = f"  {name}"
+                            if alias:
+                                left_text += f" ({alias})"
+                            max_width = max(max_width, utils.visible_len(left_text))
+                    col_width = max_width + 2
+
                     utils.print_header("SHELL COMMANDS", use_color=use_color)
 
-                    def fmt_cmd(name, alias, desc):
-                        c_part = f"  {name}"
-                        if alias:
-                            c_part += f" ({alias})"
-
-                        pad_len = 24 - utils.visible_len(c_part)
+                    for group_name, cmds in help_groups:
+                        g_header = group_name
                         if use_color:
-                            c_part = utils.colorize(c_part, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                            g_header = utils.colorize(g_header, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                        print(f"\n{g_header}:")
 
-                        print(f"{c_part}{' ' * max(0, pad_len)} - {desc}")
+                        for name, alias, desc in cmds:
+                            left_part = f"  {name}"
+                            if alias:
+                                left_part += f" ({alias})"
 
-                    name_label = "  <card name>"
-                    name_pad = 24 - utils.visible_len(name_label)
-                    print(f"{name_label}{' ' * max(0, name_pad)} - Show official rules text for a specific card.")
+                            pad_len = col_width - utils.visible_len(left_part)
 
-                    fmt_cmd("/search <q>", "/s", "Search for cards matching <q> (displays a table).")
-                    fmt_cmd("/list", "/l, /results", "Re-display the results of the last search or query in tabular format.")
-                    fmt_cmd("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching).")
-                    fmt_cmd("/random [n]", "/r", "Show [n] random cards from the dataset.")
-                    fmt_cmd("/sets [q]", "/st", "List and filter card sets.")
-                    fmt_cmd("/functional [q]", "/f", "Identify groups of cards with the same mechanics.")
-                    fmt_cmd("/compare <n>...", "/c", "Compare multiple cards side-by-side.")
-                    fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
-                    fmt_cmd("/substitutes <n>", "/sub", "Find functional alternatives to the named card.")
-                    fmt_cmd("/counterparts <n>", "/cp", "Find mechanical clones in different colors.")
-                    fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
-                    fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
-                    fmt_cmd("/similar <n>", "", "Find cards mechanically similar to the named card.")
-                    fmt_cmd("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name.")
-                    fmt_cmd("/clear", "/cls", "Clear the terminal screen.")
-                    fmt_cmd("/help", "/h, /?", "Show this help message.")
-                    fmt_cmd("/exit", "/quit, /q", "Exit the interactive shell.")
-                    print("  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
+                            if use_color:
+                                left_part = "  " + utils.colorize(left_part[2:], utils.Ansi.BOLD + utils.Ansi.CYAN)
+
+                            print(f"{left_part}{' ' * max(0, pad_len)} - {desc}")
+
+                    print("\n  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
                     print("        for any command, referring to the results of the last search.")
                     print("        The compare command (/c) also supports ranges and comma-separated")
                     print("        indices (e.g., '/compare 1-3, 5').")
