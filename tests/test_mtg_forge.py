@@ -197,5 +197,149 @@ class TestMtgForge(unittest.TestCase):
         err_output = mock_stderr.getvalue()
         self.assertIn("error: base card template lookup for 'grizzly bears' requires a dataset", err_output.lower())
 
+    @patch('scripts.mtg_forge.jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_replace_literal(self, mock_stdout, mock_open):
+        # Mock base card
+        mock_card = MagicMock()
+        mock_card.name = "Grizzly Bears"
+        mock_card.to_dict.return_value = {
+            'name': 'Grizzly Bears',
+            'manaCost': '{1}{G}',
+            'type': 'Creature - Bear',
+            'types': ['Creature'],
+            'subtypes': ['Bear'],
+            'power': '2',
+            'toughness': '2',
+            'text': 'When Grizzly Bears enters the battlefield, gain 2 life.',
+            'rarity': 'common'
+        }
+        mock_open.return_value = [mock_card]
+
+        test_args = [
+            'mtg_forge.py',
+            '--infile', 'dummy.json',
+            '--base', 'Grizzly Bears',
+            '--replace', 'Bears->Wolves',
+            '--replace', '2 life->3 life'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['name'], 'Grizzly Wolves')
+        self.assertEqual(output['text'], 'When Grizzly Wolves enters the battlefield, gain 3 life.')
+
+    @patch('scripts.mtg_forge.jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_replace_regex(self, mock_stdout, mock_open):
+        # Mock base card
+        mock_card = MagicMock()
+        mock_card.name = "Grizzly Bears"
+        mock_card.to_dict.return_value = {
+            'name': 'Grizzly Bears',
+            'manaCost': '{1}{G}',
+            'type': 'Creature - Bear',
+            'types': ['Creature'],
+            'subtypes': ['Bear'],
+            'power': '2',
+            'toughness': '2',
+            'text': 'When Grizzly Bears enters the battlefield, gain 2 life.',
+            'rarity': 'common'
+        }
+        mock_open.return_value = [mock_card]
+
+        test_args = [
+            'mtg_forge.py',
+            '--infile', 'dummy.json',
+            '--base', 'Grizzly Bears',
+            '--replace', 's/grizzly (bears)/Polar \\1/i',
+            '--replace', 's/\\d+/5/'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['name'], 'Polar Bears')
+        self.assertEqual(output['text'], 'When Polar Bears enters the battlefield, gain 5 life.')
+
+    @patch('scripts.mtg_forge.jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_replace_escaped_delimiter(self, mock_stdout, mock_open):
+        mock_card = MagicMock()
+        mock_card.name = "Grizzly Bears"
+        mock_card.to_dict.return_value = {
+            'name': 'Grizzly Bears',
+            'type': 'Creature - Bear',
+            'text': 'Gain a/b/c.'
+        }
+        mock_open.return_value = [mock_card]
+
+        test_args = [
+            'mtg_forge.py',
+            '--infile', 'dummy.json',
+            '--base', 'Grizzly Bears',
+            '--replace', 's/a\\/b\\/c/x\\/y\\/z/'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['text'], 'Gain x/y/z.')
+
+    @patch('scripts.mtg_forge.jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_replace_type_change_reparse(self, mock_stdout, mock_open):
+        mock_card = MagicMock()
+        mock_card.name = "Grizzly Bears"
+        mock_card.to_dict.return_value = {
+            'name': 'Grizzly Bears',
+            'type': 'Creature - Bear',
+            'types': ['Creature'],
+            'subtypes': ['Bear'],
+            'text': 'Vanilla Bear.'
+        }
+        mock_open.return_value = [mock_card]
+
+        test_args = [
+            'mtg_forge.py',
+            '--infile', 'dummy.json',
+            '--base', 'Grizzly Bears',
+            '--replace', 's/Creature - Bear/Artifact Creature - Golem/'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = json.loads(mock_stdout.getvalue())
+        self.assertEqual(output['types'], ['Artifact', 'Creature'])
+        self.assertEqual(output['subtypes'], ['Golem'])
+
+    @patch('scripts.mtg_forge.jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_replace_error_handling(self, mock_stdout, mock_open):
+        mock_card = MagicMock()
+        mock_card.name = "Grizzly Bears"
+        mock_card.to_dict.return_value = {
+            'name': 'Grizzly Bears',
+            'type': 'Creature - Bear'
+        }
+        mock_open.return_value = [mock_card]
+
+        test_args = [
+            'mtg_forge.py',
+            '--infile', 'dummy.json',
+            '--base', 'Grizzly Bears',
+            '--replace', 'invalid_format'
+        ]
+
+        with patch('sys.argv', test_args):
+            with self.assertRaises(ValueError) as cm:
+                main()
+        self.assertIn("Invalid replacement format", str(cm.exception))
+
 if __name__ == '__main__':
     unittest.main()
