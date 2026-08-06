@@ -74,7 +74,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         # However, argparse logic below ensures text defaults to True only if others are False.
         # But if someone calls main() directly with multiple True, we should respect that or fail.
         # The original code errored on >1 format.
-        print('ERROR - decode.py - incompatible output formats (choose one of --html, --mse, --json, --text, --table)', file=sys.stderr)
+        print('ERROR - decode.py: Incompatible output formats selected. Please specify at most one of the following output format flags:\n'
+              '  --text, --table (-t), --html (-H), --json (-j), --jsonl, --csv, --md (-M), --md-table, --summary (-S), --deck, --xml, --mse', file=sys.stderr)
         sys.exit(1)
 
     if for_mse:
@@ -650,7 +651,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 mse_oname += '.mse-set'
 
             if os.path.isfile('set'):
-                print('ERROR: tried to overwrite existing file "set" - aborting.', file=sys.stderr)
+                print('ERROR: A file named "set" already exists in the current directory.\n'
+                      'This script uses a temporary "set" file to build the Magic Set Editor package.\n'
+                      'Please delete or rename the existing "set" file and try again.', file=sys.stderr)
                 return
 
             if verbose:
