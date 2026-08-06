@@ -147,7 +147,7 @@ Usage Examples:
     args = parser.parse_args()
 
     # UX Improvement: Smart positional argument handling
-    if args.infile and args.infile != '-' and not os.path.exists(args.infile):
+    if args.infile and args.infile != '-' and not os.path.exists(args.infile) and not args.infile.endswith(('.json', '.csv', '.xml', '.dec', '.txt')):
         # Treat as commander query
         if not args.commander:
             args.commander = args.infile

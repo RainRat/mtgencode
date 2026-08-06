@@ -982,7 +982,6 @@ def handle_shell(args):
                     if not hasattr(s_args, 'limit'): s_args.limit = 0
                     last_results = _execute_search(last_results, s_args, include_indices=True)
                 elif cmd in ['/oracle', '/o']:
-                elif cmd in ['/oracle', '/o']:
                     resolved_names = _resolve_args(cmd_args)
                     if not resolved_names:
                         if last_results:
@@ -1013,9 +1012,9 @@ def handle_shell(args):
                     for name in resolved_names:
                         c_args = copy.copy(args)
                         c_args.query = name
-                        m = handle_compare(c_args, include_indices=True)
+                        handle_compare_cards(c_args)
                         if m: comp_results.extend(m)
-                    if comp_results: last_results = comp_results
+                    
                 elif cmd in ['/reprints', '/rep']:
                     resolved_names = _resolve_args(cmd_args)
                     if not resolved_names:
@@ -1388,6 +1387,7 @@ def handle_shell(args):
                             ("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card."),
                             ("/substitutes <n>", "/sub", "Find functional alternatives to the named card."),
                             ("/counterparts <n>", "/cp", "Find mechanical clones in different colors."),
+                            ("/tribal <n>", "/tr", "Find cards related to the named card's subtypes."),
                             ("/superior <n>", "/sup", "Find cards generally better than the named card."),
                             ("/inferior <n>", "/inf", "Find cards generally worse than the named card."),
                             ("/similar <n>", "", "Find cards mechanically similar to the named card."),
@@ -1416,7 +1416,8 @@ def handle_shell(args):
                         g_header = group_name
                         if use_color:
                             g_header = utils.colorize(g_header, utils.Ansi.BOLD + utils.Ansi.YELLOW)
-                        print(f"\n{g_header}:")
+                        print(f"
+{g_header}:")
 
                         for name, alias, desc in cmds:
                             left_part = f"  {name}"
@@ -1425,34 +1426,21 @@ def handle_shell(args):
 
                             pad_len = col_width - utils.visible_len(left_part)
 
-                    fmt_cmd("/search <q>", "/s", "Search for cards matching <q> (displays a table).")
-                    fmt_cmd("/list", "/l, /results", "Re-display the results of the last search or query in tabular format.")
-                    fmt_cmd("/oracle <q>", "/o", "Look up full rules text for <q> (supports fuzzy matching).")
-                    fmt_cmd("/random [n]", "/r", "Show [n] random cards from the dataset.")
-                    fmt_cmd("/sets [q]", "/st", "List and filter card sets.")
-                    fmt_cmd("/functional [q]", "/f", "Identify groups of cards with the same mechanics.")
-                    fmt_cmd("/compare <n>...", "/c", "Compare multiple cards side-by-side.")
-                    fmt_cmd("/reprints <n>", "/rep", "Find cards with identical mechanics/cost to the named card.")
-                    fmt_cmd("/substitutes <n>", "/sub", "Find functional alternatives to the named card.")
-                    fmt_cmd("/counterparts <n>", "/cp", "Find mechanical clones in different colors.")
-                    fmt_cmd("/tribal <n>", "/tr", "Find cards related to the named card's subtypes.")
-                    fmt_cmd("/superior <n>", "/sup", "Find cards generally better than the named card.")
-                    fmt_cmd("/inferior <n>", "/inf", "Find cards generally worse than the named card.")
-                    fmt_cmd("/similar <n>", "", "Find cards mechanically similar to the named card.")
-                    fmt_cmd("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name.")
-                    fmt_cmd("/clear", "/cls", "Clear the terminal screen.")
-                    fmt_cmd("/help", "/h, /?", "Show this help message.")
-                    fmt_cmd("/exit", "/quit, /q", "Exit the interactive shell.")
-                    print("  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
                             if use_color:
-                                left_part = "  " + utils.colorize(left_part[2:], utils.Ansi.BOLD + utils.Ansi.CYAN)
+                                print(f"  {utils.colorize(name, utils.Ansi.BOLD + utils.Ansi.CYAN)}", end="")
+                                if alias:
+                                    print(f" ({alias})", end="")
+                                align_pad = col_width - utils.visible_len(left_part)
+                                print(" " * align_pad + f"- {desc}")
+                            else:
+                                print(f"{padded_left if 'padded_left' in locals() else left_part + (' ' * max(0, pad_len))}- {desc}")
 
-                            print(f"{left_part}{' ' * max(0, pad_len)} - {desc}")
-
-                    print("\n  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
+                    print("
+  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
                     print("        for any command, referring to the results of the last search.")
                     print("        The compare command (/c) also supports ranges and comma-separated")
                     print("        indices (e.g., '/compare 1-3, 5').")
+                    print()dices (e.g., '/compare 1-3, 5').")
                     print()
                 else:
                     valid_commands = [

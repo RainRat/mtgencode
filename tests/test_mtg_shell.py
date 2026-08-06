@@ -373,7 +373,6 @@ class TestMtgShell(unittest.TestCase):
                 err = fake_err.getvalue()
                 self.assertIn("No color-shifted counterparts found for Invasion of Tarkir.", err)
 
-=======
     def test_shell_help_ux_improvement(self):
         """Test the UX improvement in the help command output (logical groupings and alignment)."""
         # Test with color disabled
