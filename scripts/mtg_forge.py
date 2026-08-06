@@ -606,6 +606,33 @@ def apply_modifiers(card_dict, args):
 
     return card_dict
 
+def validate_forged_card(card, use_color=False):
+    """
+    Validates a forged card using standard validation checks from mtg_validate.
+    Prints warning messages to stderr for any failed checks.
+    """
+    import mtg_validate
+
+    failed_checks = []
+    for prop_name, check_fn in mtg_validate.props.items():
+        res = check_fn(card)
+        if res is False:
+            failed_checks.append(prop_name)
+
+    if failed_checks:
+        label = "WARNING"
+        if use_color:
+            label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.RED)
+
+        print(f"[{label}] Card '{card.display_name}' failed design validation: {', '.join(failed_checks)}", file=sys.stderr)
+
+        if "color_pie" in failed_checks:
+            cp_res = card.check_color_pie()
+            if isinstance(cp_res, str):
+                if use_color:
+                    cp_res = utils.colorize(cp_res, utils.Ansi.RED)
+                print(f"  - {cp_res}", file=sys.stderr)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Forge a new Magic card or reforge existing ones in batch from the command line.",
@@ -691,6 +718,7 @@ Usage Examples:
     out_group.add_argument('-S', '--summary', action='store_true', help='Output a one-line summary.')
     out_group.add_argument('-V', '--view', action='store_true', help='Output a human-readable detailed card view.')
     out_group.add_argument('-G', '--gatherer', action='store_true', help='Output in official card database (Gatherer) format.')
+    out_group.add_argument('--validate', action='store_true', help='Validate the forged card(s) against design rules and color pie, printing warnings to stderr.')
 
     # Color options
     color_group = parser.add_mutually_exclusive_group()
@@ -763,7 +791,10 @@ Usage Examples:
             card_dict = card.to_dict()
             card_dict = apply_modifiers(card_dict, args)
             try:
-                final_cards.append(cardlib.Card(card_dict))
+                fc = cardlib.Card(card_dict)
+                final_cards.append(fc)
+                if args.validate:
+                    validate_forged_card(fc, use_color=use_color)
             except Exception as e:
                 if args.verbose:
                     print(f"Warning: Failed to validate modified card '{card.name}': {e}", file=sys.stderr)
@@ -824,6 +855,8 @@ Usage Examples:
         # Create a Card object to ensure all internal properties are populated
         try:
             final_card = cardlib.Card(card_dict)
+            if args.validate:
+                validate_forged_card(final_card, use_color=use_color)
         except Exception as e:
             print(f"Error validating forged card: {e}", file=sys.stderr)
             sys.exit(1)
