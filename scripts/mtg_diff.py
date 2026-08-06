@@ -2,7 +2,11 @@
 import sys
 import os
 import argparse
+import json
+import csv
+import io
 from collections import OrderedDict
+from contextlib import redirect_stdout
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -99,6 +103,12 @@ Usage Examples:
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('file1', help='Base card dataset (JSON, CSV, XML, or encoded text) to compare from.')
     io_group.add_argument('file2', help='Target card dataset to compare against the base.')
+    io_group.add_argument('-o', '--outfile', help='Save output to a file instead of printing.')
+
+    # Group: Output Format
+    fmt_group = parser.add_mutually_exclusive_group()
+    fmt_group.add_argument('-j', '--json', action='store_true', help='Output in JSON format.')
+    fmt_group.add_argument('--csv', action='store_true', help='Output in CSV format.')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
@@ -167,12 +177,21 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    # Automatic format detection based on outfile extension
+    if args.outfile:
+        if args.outfile.endswith('.json') and not args.csv:
+            args.json = True
+        elif args.outfile.endswith('.csv') and not args.json:
+            args.csv = True
+
     # Determine if we should use color
     use_color = False
     if args.color is True:
         use_color = True
-    elif args.color is None and sys.stdout.isatty():
-        use_color = True
+    elif args.color is None:
+        # Avoid colors in JSON/CSV, or if redirecting/writing to a file
+        if not (args.json or args.csv or args.outfile) and sys.stdout.isatty():
+            use_color = True
 
     # Load datasets
     if args.verbose:
@@ -228,92 +247,154 @@ Usage Examples:
         if name not in map1:
             added.append(c2)
 
-    # Output report
-    added_color = utils.Ansi.BOLD + utils.Ansi.GREEN
-    removed_color = utils.Ansi.BOLD + utils.Ansi.RED
-    mod_color = utils.Ansi.BOLD + utils.Ansi.YELLOW
-
-    utils.print_header("SUMMARY", use_color=use_color)
     total_distinct = len(map1.keys() | map2.keys())
     unchanged_count = len(map1.keys() & map2.keys()) - len(modified)
 
-    rows = [[
-        utils.colorize("Category", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Category",
-        utils.colorize("Count", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Count",
-        utils.colorize("Percent", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Percent",
-        utils.colorize("Progress", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Progress"
-    ]]
-
-    summary_data = [
-        ('Added', len(added), utils.Ansi.BOLD + utils.Ansi.GREEN),
-        ('Removed', len(removed), utils.Ansi.BOLD + utils.Ansi.RED),
-        ('Modified', len(modified), utils.Ansi.BOLD + utils.Ansi.YELLOW),
-        ('Unchanged', unchanged_count, utils.Ansi.BOLD)
-    ]
-
-    for label, count, color in summary_data:
-        percent = (count / total_distinct * 100) if total_distinct > 0 else 0
-        bar = datalib.get_bar_chart(percent, use_color, color=color)
-
-        if use_color:
-            label_str = utils.colorize(label, color)
-            count_str = datalib.color_count(count, use_color, color)
+    # 1. JSON Structured Output
+    if args.json:
+        json_report = {
+            "summary": {
+                "added": len(added),
+                "removed": len(removed),
+                "modified": len(modified),
+                "unchanged": unchanged_count,
+                "total": total_distinct
+            },
+            "added": [c.to_dict() for c in added],
+            "removed": [c.to_dict() for c in removed],
+            "modified": [
+                {
+                    "name": c.display_name,
+                    "card": c.to_dict(),
+                    "diffs": [{"field": field, "old": old, "new": new} for field, old, new in diffs]
+                }
+                for c, diffs in modified
+            ]
+        }
+        res_text = json.dumps(json_report, indent=2)
+        if args.outfile:
+            with open(args.outfile, 'w', encoding='utf-8') as f:
+                f.write(res_text + '\n')
         else:
-            label_str = label
-            count_str = str(count)
-
-        rows.append([label_str, count_str, f"{percent:5.1f}%", bar])
-
-    datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
-    print()
-
-    if args.summary_only:
+            print(res_text)
         return
 
-    if removed:
-        utils.print_header("REMOVED CARDS", count=len(removed), use_color=use_color)
-        for c in removed:
-            name = c.name
-            if use_color:
-                name = utils.colorize(name, removed_color)
-            print(f"  - {name}")
-        print()
-
-    if added:
-        utils.print_header("ADDED CARDS", count=len(added), use_color=use_color)
+    # 2. CSV Structured Output
+    if args.csv:
+        output_buffer = io.StringIO()
+        writer = csv.writer(output_buffer)
+        writer.writerow(['Status', 'Name', 'Field', 'Old Value', 'New Value'])
         for c in added:
-            name = c.name
-            if use_color:
-                name = utils.colorize(name, added_color)
-            print(f"  - {name}")
-        print()
-
-    if modified:
-        utils.print_header("MODIFIED CARDS", count=len(modified), use_color=use_color)
+            writer.writerow(['Added', c.display_name, '', '', ''])
+        for c in removed:
+            writer.writerow(['Removed', c.display_name, '', '', ''])
         for c, diffs in modified:
-            name = c.name
-            if use_color:
-                name = utils.colorize(name, mod_color)
-            print(f"  * {name}")
-
-            diff_rows = []
             for field, old, new in diffs:
-                field_str = f"{field}:"
+                writer.writerow(['Modified', c.display_name, field, str(old), str(new)])
+
+        res_text = output_buffer.getvalue()
+        if args.outfile:
+            with open(args.outfile, 'w', encoding='utf-8', newline='') as f:
+                f.write(res_text)
+        else:
+            sys.stdout.write(res_text)
+        return
+
+    # 3. Plain Text Report Output (redirectable)
+    if args.outfile:
+        out_ctx = open(args.outfile, 'w', encoding='utf-8')
+    else:
+        class DummyContext:
+            def __enter__(self): return sys.stdout
+            def __exit__(self, exc_type, exc_val, exc_tb): pass
+        out_ctx = DummyContext()
+
+    with out_ctx as out_f:
+        with redirect_stdout(out_f):
+            # Output report
+            added_color = utils.Ansi.BOLD + utils.Ansi.GREEN
+            removed_color = utils.Ansi.BOLD + utils.Ansi.RED
+            mod_color = utils.Ansi.BOLD + utils.Ansi.YELLOW
+
+            utils.print_header("SUMMARY", use_color=use_color)
+
+            rows = [[
+                utils.colorize("Category", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Category",
+                utils.colorize("Count", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Count",
+                utils.colorize("Percent", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Percent",
+                utils.colorize("Progress", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Progress"
+            ]]
+
+            summary_data = [
+                ('Added', len(added), utils.Ansi.BOLD + utils.Ansi.GREEN),
+                ('Removed', len(removed), utils.Ansi.BOLD + utils.Ansi.RED),
+                ('Modified', len(modified), utils.Ansi.BOLD + utils.Ansi.YELLOW),
+                ('Unchanged', unchanged_count, utils.Ansi.BOLD)
+            ]
+
+            for label, count, color in summary_data:
+                percent = (count / total_distinct * 100) if total_distinct > 0 else 0
+                bar = datalib.get_bar_chart(percent, use_color, color=color)
+
                 if use_color:
-                    field_str = utils.colorize(field_str, utils.Ansi.CYAN)
-                    old_str = utils.colorize(str(old), utils.Ansi.RED)
-                    new_str = utils.colorize(str(new), utils.Ansi.GREEN)
+                    label_str = utils.colorize(label, color)
+                    count_str = datalib.color_count(count, use_color, color)
                 else:
-                    old_str = str(old)
-                    new_str = str(new)
-                diff_rows.append([f"    {field_str}", old_str, "->", new_str])
+                    label_str = label
+                    count_str = str(count)
 
-            for row in datalib.padrows(diff_rows, aligns=['l', 'r', 'c', 'l']):
-                print(row)
-        print()
+                rows.append([label_str, count_str, f"{percent:5.1f}%", bar])
 
-    # Provide clear feedback on operation completion
-    utils.print_operation_summary("Comparison", len(map2), 0, quiet=args.quiet)
+            datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
+            print()
+
+            if args.summary_only:
+                return
+
+            if removed:
+                utils.print_header("REMOVED CARDS", count=len(removed), use_color=use_color)
+                for c in removed:
+                    name = c.name
+                    if use_color:
+                        name = utils.colorize(name, removed_color)
+                    print(f"  - {name}")
+                print()
+
+            if added:
+                utils.print_header("ADDED CARDS", count=len(added), use_color=use_color)
+                for c in added:
+                    name = c.name
+                    if use_color:
+                        name = utils.colorize(name, added_color)
+                    print(f"  - {name}")
+                print()
+
+            if modified:
+                utils.print_header("MODIFIED CARDS", count=len(modified), use_color=use_color)
+                for c, diffs in modified:
+                    name = c.name
+                    if use_color:
+                        name = utils.colorize(name, mod_color)
+                    print(f"  * {name}")
+
+                    diff_rows = []
+                    for field, old, new in diffs:
+                        field_str = f"{field}:"
+                        if use_color:
+                            field_str = utils.colorize(field_str, utils.Ansi.CYAN)
+                            old_str = utils.colorize(str(old), utils.Ansi.RED)
+                            new_str = utils.colorize(str(new), utils.Ansi.GREEN)
+                        else:
+                            old_str = str(old)
+                            new_str = str(new)
+                        diff_rows.append([f"    {field_str}", old_str, "->", new_str])
+
+                    for row in datalib.padrows(diff_rows, aligns=['l', 'r', 'c', 'l']):
+                        print(row)
+                print()
+
+            # Provide clear feedback on operation completion
+            utils.print_operation_summary("Comparison", len(map2), 0, quiet=args.quiet)
 
 if __name__ == "__main__":
     main()
