@@ -338,8 +338,6 @@ class TestMtgShell(unittest.TestCase):
                 err = fake_err.getvalue()
                 self.assertIn("No functional reprints found for Invasion of Tarkir.", err)
 
-<<<<<<< HEAD
-=======
         # 4. /similar
         with patch('builtins.input', side_effect=['/search tarkir', '/similar', 'exit']):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
@@ -375,6 +373,37 @@ class TestMtgShell(unittest.TestCase):
                 err = fake_err.getvalue()
                 self.assertIn("No color-shifted counterparts found for Invasion of Tarkir.", err)
 
->>>>>>> pr-927
+=======
+    def test_shell_help_ux_improvement(self):
+        """Test the UX improvement in the help command output (logical groupings and alignment)."""
+        # Test with color disabled
+        with patch('builtins.input', side_effect=['/help', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                # Verify headers are printed
+                self.assertIn("CARD LOOKUP & SEARCH:", output)
+                self.assertIn("MECHANICAL & RELATIONSHIP QUERIES:", output)
+                self.assertIn("UTILITIES & SYSTEM:", output)
+
+                # Check for alignment/spacing
+                # Let's check that "<card name>" and other commands are padded correctly.
+                self.assertIn("  <card name>               - Show", output)
+                self.assertIn("  /search <q> (/s)          - Search", output)
+
+        # Test with color enabled
+        color_args = argparse.Namespace(**vars(self.args))
+        color_args.color = True
+        with patch('builtins.input', side_effect=['/help', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(color_args)
+                output = fake_out.getvalue()
+                # Yellow header for group headers
+                # Yellow is \033[93m
+                self.assertIn("\033[1m\033[93mCARD LOOKUP & SEARCH\033[0m:", output)
+                # Cyan bold command names
+                # Cyan is \033[96m
+                self.assertIn("\033[1m\033[96m<card name>\033[0m", output)
+
 if __name__ == '__main__':
     unittest.main()
