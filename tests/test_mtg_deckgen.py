@@ -135,5 +135,15 @@ class TestMtgDeckgen(unittest.TestCase):
             mtg_deckgen.main()
         self.assertIn("Warning: No non-creature spells found", mock_stderr.getvalue())
 
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('os.path.exists', return_value=False)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_main_interactive_missing_dataset(self, mock_stdout, mock_stderr, mock_exists, mock_isatty):
+        with patch('sys.argv', ['mtg_deckgen.py']), self.assertRaises(SystemExit) as cm:
+            mtg_deckgen.main()
+        self.assertEqual(cm.exception.code, 1)
+        self.assertIn("Error: Deck generation requires an input dataset or card pool.", mock_stderr.getvalue())
+
 if __name__ == '__main__':
     unittest.main()

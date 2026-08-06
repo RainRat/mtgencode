@@ -166,6 +166,14 @@ Usage Examples:
             if not args.quiet:
                 print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
 
+    # Graceful check for dataset requirements in interactive terminal (prevent hangs/misleading errors when default dataset is missing)
+    if args.infile == '-' and sys.stdin.isatty():
+        parser.print_help()
+        print("\nError: Deck generation requires an input dataset or card pool. "
+              "Please specify a file or pipe input, or make data/AllPrintings.json available.",
+              file=sys.stderr)
+        sys.exit(1)
+
     # Determine if we should use color
     use_color = False
     if args.color is True:
