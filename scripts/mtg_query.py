@@ -1416,8 +1416,7 @@ def handle_shell(args):
                         g_header = group_name
                         if use_color:
                             g_header = utils.colorize(g_header, utils.Ansi.BOLD + utils.Ansi.YELLOW)
-                        print(f"
-{g_header}:")
+                        print(f"\n{g_header}:")
 
                         for name, alias, desc in cmds:
                             left_part = f"  {name}"
@@ -1435,12 +1434,10 @@ def handle_shell(args):
                             else:
                                 print(f"{padded_left if 'padded_left' in locals() else left_part + (' ' * max(0, pad_len))}- {desc}")
 
-                    print("
-  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
+                    print("\n  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
                     print("        for any command, referring to the results of the last search.")
                     print("        The compare command (/c) also supports ranges and comma-separated")
                     print("        indices (e.g., '/compare 1-3, 5').")
-                    print()dices (e.g., '/compare 1-3, 5').")
                     print()
                 else:
                     valid_commands = [
