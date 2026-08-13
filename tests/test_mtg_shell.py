@@ -333,46 +333,6 @@ class TestMtgShell(unittest.TestCase):
                 err = fake_err.getvalue()
                 self.assertIn("No color-shifted counterparts found for Invasion of Tarkir.", err)
 
-            with patch('sys.stderr', new=io.StringIO()) as fake_err:
-                handle_shell(self.args)
-                err = fake_err.getvalue()
-                self.assertIn("No functional reprints found for Invasion of Tarkir.", err)
-
-        # 4. /similar
-        with patch('builtins.input', side_effect=['/search tarkir', '/similar', 'exit']):
-            with patch('sys.stdout', new=io.StringIO()) as fake_out:
-                handle_shell(self.args)
-                output = fake_out.getvalue()
-                self.assertIn("No similar cards found.", output)
-
-        # 5. /superior
-        with patch('builtins.input', side_effect=['/search tarkir', '/superior', 'exit']):
-            with patch('sys.stderr', new=io.StringIO()) as fake_err:
-                handle_shell(self.args)
-                err = fake_err.getvalue()
-                self.assertIn("No cards found that are superior to Invasion of Tarkir.", err)
-
-        # 6. /inferior
-        with patch('builtins.input', side_effect=['/search tarkir', '/inferior', 'exit']):
-            with patch('sys.stderr', new=io.StringIO()) as fake_err:
-                handle_shell(self.args)
-                err = fake_err.getvalue()
-                self.assertIn("No cards found that are inferior to Invasion of Tarkir.", err)
-
-        # 7. /substitutes
-        with patch('builtins.input', side_effect=['/search tarkir', '/substitutes', 'exit']):
-            with patch('sys.stderr', new=io.StringIO()) as fake_err:
-                handle_shell(self.args)
-                err = fake_err.getvalue()
-                self.assertIn("No suitable substitutes found for Invasion of Tarkir.", err)
-
-        # 8. /counterparts
-        with patch('builtins.input', side_effect=['/search tarkir', '/counterparts', 'exit']):
-            with patch('sys.stderr', new=io.StringIO()) as fake_err:
-                handle_shell(self.args)
-                err = fake_err.getvalue()
-                self.assertIn("No color-shifted counterparts found for Invasion of Tarkir.", err)
-
     def test_shell_help_ux_improvement(self):
         """Test the UX improvement in the help command output (logical groupings and alignment)."""
         # Test with color disabled

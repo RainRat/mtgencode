@@ -998,127 +998,6 @@ def handle_shell(args):
                         m = _execute_oracle(all_cards, o_args, include_indices=True)
                         if m: matched.extend(m)
                     if matched: last_results = matched
-                elif cmd in ['/compare', '/comp']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        if last_results:
-                            resolved_names = [last_results[0].name]
-                        else:
-                            err_msg = "Error: /compare requires a card name or active search results."
-                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                            print(err_msg)
-                            continue
-                    comp_results = []
-                    for name in resolved_names:
-                        c_args = copy.copy(args)
-                        c_args.query = name
-                        handle_compare_cards(c_args)
-                        if m: comp_results.extend(m)
-                    
-                elif cmd in ['/reprints', '/rep']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        if last_results:
-                            resolved_names = [last_results[0].name]
-                        else:
-                            err_msg = "Error: /reprints requires a card name or active search results."
-                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                            print(err_msg)
-                            continue
-                    rep_results = []
-                    for name in resolved_names:
-                        r_args = copy.copy(args)
-                        r_args.query = name
-                        m = handle_reprints(r_args, include_indices=True)
-                        if m: rep_results.extend(m)
-                    if rep_results: last_results = rep_results
-                elif cmd in ['/superior']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        if last_results:
-                            resolved_names = [last_results[0].name]
-                        else:
-                            err_msg = "Error: /superior requires a card name or active search results."
-                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                            print(err_msg)
-                            continue
-                    sup_results = []
-                    for name in resolved_names:
-                        sup_args = copy.copy(args)
-                        sup_args.query = name
-                        m = handle_superior(sup_args, include_indices=True)
-                        if m: sup_results.extend(m)
-                    if sup_results: last_results = sup_results
-                elif cmd in ['/inferior']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        if last_results:
-                            resolved_names = [last_results[0].name]
-                        else:
-                            err_msg = "Error: /inferior requires a card name or active search results."
-                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                            print(err_msg)
-                            continue
-                    inf_results = []
-                    for name in resolved_names:
-                        inf_args = copy.copy(args)
-                        inf_args.query = name
-                        m = handle_inferior(inf_args, include_indices=True)
-                        if m: inf_results.extend(m)
-                    if inf_results: last_results = inf_results
-                elif cmd in ['/substitutes', '/sub']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        if last_results:
-                            resolved_names = [last_results[0].name]
-                        else:
-                            err_msg = "Error: /substitutes requires a card name or active search results."
-                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                            print(err_msg)
-                            continue
-                    sub_results = []
-                    for name in resolved_names:
-                        sub_args = copy.copy(args)
-                        sub_args.query = name
-                        m = handle_substitutes(sub_args, include_indices=True)
-                        if m: sub_results.extend(m)
-                    if sub_results: last_results = sub_results
-                elif cmd in ['/counterparts', '/cp']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        if last_results:
-                            resolved_names = [last_results[0].name]
-                        else:
-                            err_msg = "Error: /counterparts requires a card name or active search results."
-                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                            print(err_msg)
-                            continue
-                    cp_results = []
-                    for name in resolved_names:
-                        cp_args = copy.copy(args)
-                        cp_args.query = name
-                        m = handle_counterparts(cp_args, include_indices=True)
-                        if m: cp_results.extend(m)
-                    if cp_results: last_results = cp_results
-                elif cmd in ['/similar']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        if last_results:
-                            resolved_names = [last_results[0].name]
-                        else:
-                            err_msg = "Error: /similar requires a card name or active search results."
-                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                            print(err_msg)
-                            continue
-                    sim_results = []
-                    for name in resolved_names:
-                        o_args = copy.copy(args)
-                        o_args.query = name
-                        o_args.similar = True
-                        if not hasattr(o_args, 'limit'): o_args.limit = 0
-                        m = _execute_oracle(all_cards, o_args, include_indices=True)
-                        if m: sim_results.extend(m)
-                    if sim_results: last_results = sim_results
                 elif cmd in ['/random', '/r']:
                     if not all_cards:
                         err_msg = "No cards loaded."
@@ -1166,86 +1045,6 @@ def handle_shell(args):
                     c_args = copy.copy(args)
                     c_args.names = resolved_args
                     handle_compare_cards(c_args)
-                elif cmd in ['/reprints', '/rep']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        err_msg = "Error: /reprints requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
-                    rep_results = []
-                    for name in resolved_names:
-                        rep_args = copy.copy(args)
-                        rep_args.query = name
-                        matched = handle_reprints(rep_args, include_indices=True)
-                        if matched:
-                            rep_results.extend(matched)
-                    if rep_results:
-                        last_results = rep_results
-                elif cmd in ['/superior', '/sup']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        err_msg = "Error: /superior requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
-                    sup_results = []
-                    for name in resolved_names:
-                        sup_args = copy.copy(args)
-                        sup_args.query = name
-                        matched = handle_superior(sup_args, include_indices=True)
-                        if matched:
-                            sup_results.extend(matched)
-                    if sup_results:
-                        last_results = sup_results
-                elif cmd in ['/inferior', '/inf']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        err_msg = "Error: /inferior requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
-                    inf_results = []
-                    for name in resolved_names:
-                        inf_args = copy.copy(args)
-                        inf_args.query = name
-                        matched = handle_inferior(inf_args, include_indices=True)
-                        if matched:
-                            inf_results.extend(matched)
-                    if inf_results:
-                        last_results = inf_results
-                elif cmd in ['/substitutes', '/sub']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        err_msg = "Error: /substitutes requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
-                    sub_results = []
-                    for name in resolved_names:
-                        sub_args = copy.copy(args)
-                        sub_args.query = name
-                        matched = handle_substitutes(sub_args, include_indices=True)
-                        if matched:
-                            sub_results.extend(matched)
-                    if sub_results:
-                        last_results = sub_results
-                elif cmd in ['/counterparts', '/cp']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        err_msg = "Error: /counterparts requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
-                    cp_results = []
-                    for name in resolved_names:
-                        cp_args = copy.copy(args)
-                        cp_args.query = name
-                        matched = handle_counterparts(cp_args, include_indices=True)
-                        if matched:
-                            cp_results.extend(matched)
-                    if cp_results:
-                        last_results = cp_results
                 elif cmd in ['/tribal', '/tr']:
                     resolved_names = _resolve_args(cmd_args)
                     if not resolved_names:
@@ -1262,24 +1061,7 @@ def handle_shell(args):
                             tr_results.extend(matched)
                     if tr_results:
                         last_results = tr_results
-                elif cmd in ['/similar']:
-                    resolved_names = _resolve_args(cmd_args)
-                    if not resolved_names:
-                        err_msg = "Error: /similar requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
-                    sim_results = []
-                    for name in resolved_names:
-                        o_args = copy.copy(args)
-                        o_args.query = name
-                        o_args.similar = True
-                        if not hasattr(o_args, 'limit'): o_args.limit = 0
-                        matched = _execute_oracle(all_cards, o_args, include_indices=True)
-                        if matched:
-                            sim_results.extend(matched)
-                    if sim_results:
-                        last_results = sim_results
+                elif cmd in ['/reprints', '/rep']:
                     resolved_args = _resolve_args(cmd_args)
                     if not resolved_args:
                         if last_results:
@@ -1408,7 +1190,7 @@ def handle_shell(args):
                             if alias:
                                 left_text += f" ({alias})"
                             max_width = max(max_width, utils.visible_len(left_text))
-                    col_width = max_width + 2
+                    col_width = max(28, max_width + 2)
 
                     utils.print_header("SHELL COMMANDS", use_color=use_color)
 
@@ -1416,8 +1198,7 @@ def handle_shell(args):
                         g_header = group_name
                         if use_color:
                             g_header = utils.colorize(g_header, utils.Ansi.BOLD + utils.Ansi.YELLOW)
-                        print(f"
-{g_header}:")
+                        print(f"\n{g_header}:")
 
                         for name, alias, desc in cmds:
                             left_part = f"  {name}"
@@ -1435,12 +1216,10 @@ def handle_shell(args):
                             else:
                                 print(f"{padded_left if 'padded_left' in locals() else left_part + (' ' * max(0, pad_len))}- {desc}")
 
-                    print("
-  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
+                    print("\n  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
                     print("        for any command, referring to the results of the last search.")
                     print("        The compare command (/c) also supports ranges and comma-separated")
                     print("        indices (e.g., '/compare 1-3, 5').")
-                    print()dices (e.g., '/compare 1-3, 5').")
                     print()
                 else:
                     valid_commands = [
