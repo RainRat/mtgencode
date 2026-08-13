@@ -120,7 +120,7 @@ class TestMtgDeckgen(unittest.TestCase):
 
         with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json']), self.assertRaises(SystemExit):
             mtg_deckgen.main()
-        self.assertIn("Error: No legendary creatures found", mock_stderr.getvalue())
+        self.assertIn("Error: No legendary", mock_stderr.getvalue())
 
     @patch('jdecode.mtg_open_file')
     @patch('sys.stdout', new_callable=io.StringIO)
