@@ -123,7 +123,7 @@ Usage Examples:
 
     # Group: Deck Configuration
     deck_group = parser.add_argument_group('Deck Configuration')
-    deck_group.add_argument('--format', choices=['commander', 'standard'], default='commander',
+    deck_group.add_argument('--format', choices=['commander', 'standard', 'brawl', 'pauper', 'limited'], default='commander',
                             help='Deck format (Default: commander).')
     deck_group.add_argument('--commander', help='Specific legendary creature to use as commander (case-insensitive).')
     deck_group.add_argument('--creatures', type=int, help='Override target number of creatures.')
@@ -200,14 +200,28 @@ Usage Examples:
     # Filter out basic lands for the main pool
     basic_land_names = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']
     pool = [c for c in all_cards if c.display_name not in basic_land_names]
+
+    if args.format == 'pauper':
+        all_cards = [c for c in all_cards if c.rarity_name.lower() in ('common', 'o')]
+        pool = [c for c in pool if c.rarity_name.lower() in ('common', 'o')]
+        if not pool:
+            print("Error: No common cards found in the card pool for Pauper format.", file=sys.stderr)
+            sys.exit(1)
     
     decklist = []
     actual_composition = Counter()
 
-    if args.format == 'commander':
-        creatures_target = args.creatures if args.creatures is not None else 30
-        spells_target = args.spells if args.spells is not None else 31
-        lands_target = args.lands if args.lands is not None else 38
+    if args.format in ('commander', 'brawl'):
+        if args.format == 'commander':
+            creatures_target = args.creatures if args.creatures is not None else 30
+            spells_target = args.spells if args.spells is not None else 31
+            lands_target = args.lands if args.lands is not None else 38
+            default_curve = {1: 5, 2: 15, 3: 15, 4: 10, 5: 8, 6: 8}
+        else: # brawl
+            creatures_target = args.creatures if args.creatures is not None else 18
+            spells_target = args.spells if args.spells is not None else 18
+            lands_target = args.lands if args.lands is not None else 24
+            default_curve = {1: 3, 2: 8, 3: 8, 4: 5, 5: 3, 6: 3}
         
         curve = None
         if args.curve:
@@ -223,18 +237,25 @@ Usage Examples:
                     if not args.quiet:
                         print(f"Warning: Invalid curve segment '{p}', skipping.", file=sys.stderr)
         else:
-            # Default Commander Curve
-            curve = {1: 5, 2: 15, 3: 15, 4: 10, 5: 8, 6: 8} 
+            curve = default_curve
 
         # Identify Commander candidates
-        legendary_creatures = [c for c in pool if any(s.lower() == 'legendary' for s in c.supertypes) and c.is_creature]
-        if not legendary_creatures:
-            print("Error: No legendary creatures found in the filtered card pool.", file=sys.stderr)
+        if args.format == 'brawl':
+            legendary_candidates = [c for c in pool if any(s.lower() == 'legendary' for s in c.supertypes) and (c.is_creature or c.is_planeswalker)]
+        else:
+            legendary_candidates = [c for c in pool if any(s.lower() == 'legendary' for s in c.supertypes) and c.is_creature]
+
+        if not legendary_candidates:
+            # Fallback if no planeswalkers
+            legendary_candidates = [c for c in pool if any(s.lower() == 'legendary' for s in c.supertypes) and c.is_creature]
+
+        if not legendary_candidates:
+            print("Error: No legendary commanders found in the filtered card pool.", file=sys.stderr)
             sys.exit(1)
             
         commander_card = None
         if args.commander:
-            matches = [c for c in legendary_creatures if c.display_name.lower() == args.commander.lower()]
+            matches = [c for c in legendary_candidates if c.display_name.lower() == args.commander.lower()]
             if matches:
                 commander_card = matches[0]
             else:
@@ -242,7 +263,7 @@ Usage Examples:
                     print(f"Warning: Commander '{args.commander}' not found. Picking a random one.", file=sys.stderr)
                 
         if not commander_card:
-            commander_card = random.choice(legendary_creatures)
+            commander_card = random.choice(legendary_candidates)
             
         cmd_id = get_color_identity_set(commander_card)
         cmd_id_str = "".join(sorted(list(cmd_id))) if cmd_id else "Colorless"
@@ -288,36 +309,43 @@ Usage Examples:
             decklist.append(f"{count} {l}")
             actual_composition['Lands'] += count
             
-    elif args.format == 'standard':
-        creatures_target = args.creatures if args.creatures is not None else 20
-        spells_target = args.spells if args.spells is not None else 16
-        lands_target = args.lands if args.lands is not None else 24
+    elif args.format in ('standard', 'pauper', 'limited'):
+        if args.format == 'limited':
+            creatures_target = args.creatures if args.creatures is not None else 15
+            spells_target = args.spells if args.spells is not None else 8
+            lands_target = args.lands if args.lands is not None else 17
+        else: # standard / pauper
+            creatures_target = args.creatures if args.creatures is not None else 20
+            spells_target = args.spells if args.spells is not None else 16
+            lands_target = args.lands if args.lands is not None else 24
         
         creatures_pool = [c for c in pool if c.is_creature]
         spells_pool = [c for c in pool if not c.is_creature and not c.is_land]
         
         if not creatures_pool and creatures_target > 0:
             if not args.quiet:
-                print("Warning: No creatures found in pool for standard deck.", file=sys.stderr)
+                print(f"Warning: No creatures found in pool for {args.format} deck.", file=sys.stderr)
             creatures_target = 0
 
         if not spells_pool and spells_target > 0:
             if not args.quiet:
-                print("Warning: No non-creature spells found in pool for standard deck.", file=sys.stderr)
+                print(f"Warning: No non-creature spells found in pool for {args.format} deck.", file=sys.stderr)
             spells_target = 0
 
         chosen_cards = []
         
         if creatures_target > 0:
             # In standard, we allow multiple copies, so we sample a smaller unique pool and then repeat
-            # Heuristic: about 4-of each unique card
-            c_sample = pick_cards_with_curve(creatures_pool, max(1, creatures_target // 4))
+            # Heuristic: about 4-of each unique card (or 2-of for limited)
+            divisor = 2 if args.format == 'limited' else 4
+            c_sample = pick_cards_with_curve(creatures_pool, max(1, creatures_target // divisor))
             if c_sample:
                 for _ in range(creatures_target):
                     chosen_cards.append(random.choice(c_sample))
             
         if spells_target > 0:
-            s_sample = pick_cards_with_curve(spells_pool, max(1, spells_target // 4))
+            divisor = 2 if args.format == 'limited' else 4
+            s_sample = pick_cards_with_curve(spells_pool, max(1, spells_target // divisor))
             if s_sample:
                 for _ in range(spells_target):
                     chosen_cards.append(random.choice(s_sample))
