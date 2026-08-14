@@ -46,6 +46,8 @@ Example Usage:
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--reverse', action='store_true',
                         help='Reverse the sort order.')
+    proc_group.add_argument('-p', '--dry-run', '--preview', dest='dry_run', action='store_true',
+                        help='Preview the matching card counts and set breakdown without writing the output file.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
@@ -154,6 +156,22 @@ Example Usage:
     for card in cards:
         set_code = (card.set_code or 'CUS').upper()
         set_buckets[set_code].append(card.to_dict())
+
+    if args.dry_run:
+        print(f"[DRY RUN] Subset Preview for '{args.infile}':")
+        print(f"  Matched Cards : {len(cards)}")
+        print(f"  Matched Sets  : {len(set_buckets)}")
+        print("  Set Breakdown :")
+        for code, set_cards in sorted(set_buckets.items()):
+            print(f"    - {code}: {len(set_cards)} card(s)")
+        print("  Sample Cards  :")
+        sample_size = min(10, len(cards))
+        for c in cards[:sample_size]:
+            print(f"    - {c.display_name}")
+        if len(cards) > sample_size:
+            print(f"    ... and {len(cards) - sample_size} more card(s)")
+        print(f"[DRY RUN] Preview complete. Output file '{args.outfile}' was not created or modified.")
+        return
 
     # Build the MTGJSON v5 structure
     subset_data = {"data": {}}
