@@ -101,8 +101,8 @@ Usage Examples:
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('file1', help='Base card dataset (JSON, CSV, XML, or encoded text) to compare from.')
-    io_group.add_argument('file2', help='Target card dataset to compare against the base.')
+    io_group.add_argument('file1', nargs='?', help='Base card dataset (JSON, CSV, XML, or encoded text) to compare from. Defaults to data/AllPrintings.json if only target file is specified.')
+    io_group.add_argument('file2', nargs='?', help='Target card dataset to compare against the base.')
     io_group.add_argument('-o', '--outfile', help='Save output to a file instead of printing.')
 
     # Group: Output Format
@@ -176,6 +176,25 @@ Usage Examples:
     color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # Resolve default files if positional arguments are omitted
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    default_base = 'data/AllPrintings.json'
+    if not os.path.exists(default_base):
+        rel_data = os.path.join(script_dir, '../data/AllPrintings.json')
+        if os.path.exists(rel_data):
+            default_base = rel_data
+
+    if args.file1 is None and args.file2 is None:
+        if sys.stdin.isatty():
+            parser.print_help(sys.stderr)
+            sys.exit(1)
+        else:
+            args.file1 = default_base
+            args.file2 = '-'
+    elif args.file1 is not None and args.file2 is None:
+        args.file2 = args.file1
+        args.file1 = default_base
 
     # Automatic format detection based on outfile extension
     if args.outfile:
