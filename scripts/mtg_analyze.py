@@ -35,13 +35,9 @@ except ImportError:
 try:
     import nltk
     from nltk.tokenize import word_tokenize
-    try:
-        nltk.data.find('tokenizers/punkt')
-        nltk.data.find('tokenizers/punkt_tab')
-    except LookupError:
-        def word_tokenize(text):
-            return re.findall(r"\b[a-zA-Z']+\b", text)
-except ImportError:
+    nltk.data.find('tokenizers/punkt')
+    nltk.data.find('tokenizers/punkt_tab')
+except (ImportError, LookupError):
     def word_tokenize(text):
         return re.findall(r"\b[a-zA-Z']+\b", text)
 
