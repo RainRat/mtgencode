@@ -25,6 +25,9 @@ Example Usage:
 
   # Filter a set by color identity and CMC
   python3 scripts/mtg_subset.py data/AllPrintings.json commander_subset.json --identity "WUB" --cmc "<=3"
+
+  # Preview matching cards without writing to output file
+  python3 scripts/mtg_subset.py data/AllPrintings.json output.json --set MOM --dry-run
 ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -46,6 +49,8 @@ Example Usage:
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--reverse', action='store_true',
                         help='Reverse the sort order.')
+    proc_group.add_argument('-p', '--dry-run', '--preview', dest='dry_run', action='store_true',
+                        help='Preview matching cards and statistics without creating or writing the output file.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
@@ -154,6 +159,18 @@ Example Usage:
     for card in cards:
         set_code = (card.set_code or 'CUS').upper()
         set_buckets[set_code].append(card.to_dict())
+
+    if args.dry_run:
+        print(f"--- Dry Run / Preview Mode ---")
+        print(f"Total matching cards: {len(cards)}")
+        print("Set Code Breakdown:")
+        for code, set_cards in sorted(set_buckets.items()):
+            print(f"  {code}: {len(set_cards)} cards")
+
+        sample_names = [c.name for c in cards[:10] if hasattr(c, 'name') and c.name]
+        if sample_names:
+            print(f"Sample matched cards (up to 10): {', '.join(sample_names)}")
+        return
 
     # Build the MTGJSON v5 structure
     subset_data = {"data": {}}
