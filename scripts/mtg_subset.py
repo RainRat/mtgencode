@@ -32,7 +32,7 @@ Example Usage:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', help='Input card data (JSON, CSV, XML, encoded text, or directory).')
-    io_group.add_argument('outfile', help='Path to save the filtered MTGJSON subset.')
+    io_group.add_argument('outfile', nargs='?', help='Path to save the filtered MTGJSON subset (required unless --dry-run is specified).')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
@@ -46,6 +46,8 @@ Example Usage:
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--reverse', action='store_true',
                         help='Reverse the sort order.')
+    proc_group.add_argument('-p', '--dry-run', '--preview', action='store_true', dest='dry_run',
+                        help='Preview matching card stats without writing output file.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
@@ -113,6 +115,9 @@ Example Usage:
 
     args = parser.parse_args()
 
+    if not args.dry_run and not args.outfile:
+        parser.error("the following arguments are required: outfile (unless --dry-run is specified)")
+
     # Handle --sample
     if args.sample > 0:
         args.shuffle = True
@@ -154,6 +159,19 @@ Example Usage:
     for card in cards:
         set_code = (card.set_code or 'CUS').upper()
         set_buckets[set_code].append(card.to_dict())
+
+    if args.dry_run:
+        print(f"Dry run summary for subset matching:")
+        print(f"  Total matched cards: {len(cards)}")
+        print(f"  Set breakdown:")
+        for code, set_cards in sorted(set_buckets.items()):
+            print(f"    {code}: {len(set_cards)} cards")
+        sample_names = [card.name for card in cards[:10] if getattr(card, 'name', None)]
+        if sample_names:
+            print(f"  Sample preview ({min(len(sample_names), 10)} cards):")
+            for name in sample_names:
+                print(f"    - {name}")
+        return
 
     # Build the MTGJSON v5 structure
     subset_data = {"data": {}}

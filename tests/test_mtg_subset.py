@@ -191,5 +191,40 @@ class TestMTGSubset(unittest.TestCase):
 
         mock_summary.assert_called_once_with("Subsetting", 2, 0, quiet=False)
 
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_dry_run_options(self, mock_stdout, mock_file, mock_open_file):
+        self.mock_card1.name = 'Card 1'
+        self.mock_card2.name = 'Card 2'
+        mock_open_file.return_value = self.mock_cards
+
+        for flag in ['--dry-run', '--preview', '-p']:
+            mock_stdout.truncate(0)
+            mock_stdout.seek(0)
+            mock_file.reset_mock()
+
+            test_args = ['mtg_subset.py', 'input.json', flag]
+            with patch('sys.argv', test_args):
+                mtg_subset.main()
+
+            mock_file.assert_not_called()
+            output = mock_stdout.getvalue()
+            self.assertIn("Dry run summary for subset matching:", output)
+            self.assertIn("Total matched cards: 2", output)
+            self.assertIn("ELD: 1 cards", output)
+            self.assertIn("MOM: 1 cards", output)
+            self.assertIn("Card 1", output)
+            self.assertIn("Card 2", output)
+
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_missing_outfile_without_dry_run(self, mock_stderr):
+        test_args = ['mtg_subset.py', 'input.json']
+        with patch('sys.argv', test_args), self.assertRaises(SystemExit) as cm:
+            mtg_subset.main()
+
+        self.assertNotEqual(cm.exception.code, 0)
+        self.assertIn("the following arguments are required: outfile", mock_stderr.getvalue())
+
 if __name__ == '__main__':
     unittest.main()
