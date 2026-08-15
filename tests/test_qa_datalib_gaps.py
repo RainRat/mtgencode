@@ -165,3 +165,9 @@ def test_print_breakdown_context_aware_coloring(capsys):
 def test_datamine_none_input():
     dm = Datamine([None])
     assert dm.cards == []
+
+def test_add_separator_row_empty():
+    rows = []
+    from datalib import add_separator_row
+    assert add_separator_row(rows) is None
+    assert rows == []
