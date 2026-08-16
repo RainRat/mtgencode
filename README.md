@@ -1216,7 +1216,7 @@ To ensure everything is working correctly, you can run the full test suite. We u
 
 ```bash
 # Run all tests
-PYTHONPATH=. python3 -m pytest
+python3 -m pytest -o pythonpath=.
 ```
 
 ### Contributing
