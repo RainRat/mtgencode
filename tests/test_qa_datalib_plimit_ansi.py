@@ -35,3 +35,12 @@ def test_plimit_ansi_multiple_codes_truncation():
     # "Color and More" vlen = 14, mlen = 8 -> "Color an"
     expected = f"{utils.Ansi.BOLD}{utils.Ansi.RED}Color{utils.Ansi.RESET} an[...]{utils.Ansi.RESET}"
     assert plimit(s, mlen=8) == expected
+
+def test_plimit_ansi_truncation_in_remaining_without_ansi():
+    s = f"Plain {utils.Ansi.RED}Text{utils.Ansi.RESET} remaining"
+    # "Plain Text remaining" vlen = 20, mlen = 12
+    # Visible text before last ANSI is "Plain Text" (len 10)
+    # Remaining string is " remaining" (len 10)
+    # Truncation in remaining at mlen 12 takes " r" (12 - 10 = 2)
+    expected = f"Plain {utils.Ansi.RED}Text{utils.Ansi.RESET} r[...]{utils.Ansi.RESET}"
+    assert plimit(s, mlen=12) == expected
