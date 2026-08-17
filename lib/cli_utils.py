@@ -115,6 +115,7 @@ def add_standard_output_args(parser):
     fmt_group.add_argument('-t', '--table', action='store_true', help='Generate a formatted table.')
     fmt_group.add_argument('--md-table', '--mdt', action='store_true', help='Output results as a Markdown table.')
     fmt_group.add_argument('-S', '--summary', action='store_true', help='Output a compact one-line summary for each card.')
+    fmt_group.add_argument('--deck', '--decklist', action='store_true', dest='deck_out', help='Output results as a standard MTG decklist (COUNT Card Name).')
     fmt_group.add_argument('--text', action='store_true', help='Force plain text output.')
 
     if isinstance(parser, argparse.ArgumentParser):
