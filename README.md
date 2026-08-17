@@ -541,6 +541,7 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `reprints`: Find functional reprints (identical mechanics) of a reference card.
 *   `substitutes`: Find functional alternatives to a reference card.
 *   `counterparts`: Find mechanical clones in different colors (color shifts).
+*   `tribal`: Find cards related to a reference card's subtypes.
 *   `superior`: Find cards that are generally better than a reference card.
 *   `inferior`: Find cards that are generally worse than a reference card.
 *   `extract`: Extract a single card object from a large JSON database.
@@ -686,6 +687,19 @@ python3 scripts/mtg_query.py counterparts "Concentrate"
 
 # Find color-shifted counterparts for Prodigal Sorcerer
 python3 scripts/mtg_query.py counterparts "Prodigal Sorcerer"
+```
+
+---
+
+#### **Subcommand: `tribal`**
+Finds cards related to a reference card's subtypes (such as Goblins or Elves). It identifies cards that share at least one subtype or mention any form of those subtypes in their rules text.
+
+```bash
+# Find Goblin-related cards using Goblin King as a reference
+python3 scripts/mtg_query.py tribal "Goblin King"
+
+# Find Elf-related cards in a specific set
+python3 scripts/mtg_query.py tribal "Elvish Archdruid" --set MOM
 ```
 
 ---
@@ -1216,7 +1230,7 @@ To ensure everything is working correctly, you can run the full test suite. We u
 
 ```bash
 # Run all tests
-PYTHONPATH=. python3 -m pytest
+python3 -m pytest -o pythonpath=.
 ```
 
 ### Contributing
