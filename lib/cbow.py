@@ -89,32 +89,16 @@ def makevector(vocabulary,vecs,sequence):
 
 
 import numpy
-def cosine_similarity(v1,v2):
-    A = numpy.array([v1,v2])
 
-    # from http://stackoverflow.com/questions/17627219/whats-the-fastest-way-in-python-to-calculate-cosine-similarity-given-sparse-mat
 
-    # base similarity matrix (all dot products)
-    # replace this with A.dot(A.T).todense() for sparse representation
-    similarity = numpy.dot(A, A.T)
-
-    # squared magnitude of preference vectors (number of occurrences)
-    square_mag = numpy.diag(similarity)
-
-    # inverse squared magnitude
-    inv_square_mag = 1 / square_mag
-
-    # if it doesn't occur, set its inverse magnitude to zero (instead of inf)
-    inv_square_mag[numpy.isinf(inv_square_mag)] = 0
-
-    # inverse of the magnitude
-    inv_mag = numpy.sqrt(inv_square_mag)
-    
-    # cosine similarity (elementwise multiply by inverse magnitudes)
-    cosine = similarity * inv_mag
-    cosine = cosine.T * inv_mag
-
-    return cosine[0][1]
+def cosine_similarity(v1, v2):
+    arr1 = numpy.asarray(v1)
+    arr2 = numpy.asarray(v2)
+    norm1 = numpy.linalg.norm(arr1)
+    norm2 = numpy.linalg.norm(arr2)
+    if norm1 == 0 or norm2 == 0:
+        return 0.0
+    return float(numpy.dot(arr1, arr2) / (norm1 * norm2))
 
 
 # we need to put the logic in a regular function (as opposed to a method of an object)
