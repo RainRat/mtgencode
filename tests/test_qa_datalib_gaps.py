@@ -132,6 +132,11 @@ def test_colorize_header_helper():
 def test_plimit_plain_truncation_helper():
     assert plimit("12345", mlen=3) == "123[...]"
 
+def test_plimit_ansi_trailing_remaining_truncation():
+    text = "\033[31mABC\033[0mDEFG"
+    result = plimit(text, mlen=5)
+    assert result == "\033[31mABC\033[0mDE[...]\033[0m"
+
 def test_print_breakdown_context_aware_coloring(capsys):
     _print_breakdown('Rarity Breakdown', {'Common': [None]}, 1, use_color=True)
     output = capsys.readouterr().out
