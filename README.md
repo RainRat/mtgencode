@@ -1212,11 +1212,11 @@ python3 scripts/mtg_analyze.py summary my_custom_set.xml
 ## Testing & Development
 
 ### Running Tests
-To ensure everything is working correctly, you can run the full test suite. We use `pytest` for testing:
+Run the test suite to verify that everything works correctly. We use `pytest` for testing:
 
 ```bash
 # Run all tests
-PYTHONPATH=. python3 -m pytest
+python3 -m pytest -o pythonpath=.
 ```
 
 ### Contributing
