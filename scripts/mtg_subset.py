@@ -46,6 +46,8 @@ Example Usage:
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--reverse', action='store_true',
                         help='Reverse the sort order.')
+    proc_group.add_argument('-p', '--dry-run', '--preview', dest='dry_run', action='store_true',
+                        help='Preview matching cards summary without writing to outfile.')
 
     # Group: Filtering Options (Standard across tools)
     filter_group = parser.add_argument_group('Filtering Options')
@@ -154,6 +156,17 @@ Example Usage:
     for card in cards:
         set_code = (card.set_code or 'CUS').upper()
         set_buckets[set_code].append(card.to_dict())
+
+    # If dry-run / preview mode requested, print summary and exit without writing file
+    if args.dry_run:
+        print(f"Dry Run Summary: {len(cards)} card(s) matched filters.")
+        print("Set Code Breakdown:")
+        for code, set_cards in sorted(set_buckets.items()):
+            print(f"  - {code}: {len(set_cards)} card(s)")
+        print("\nSample Preview (up to 10 cards):")
+        for card in cards[:10]:
+            print(f"  - {card.display_name}")
+        return
 
     # Build the MTGJSON v5 structure
     subset_data = {"data": {}}

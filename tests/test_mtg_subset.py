@@ -14,10 +14,12 @@ class TestMTGSubset(unittest.TestCase):
     def setUp(self):
         self.mock_card1 = MagicMock()
         self.mock_card1.set_code = 'MOM'
+        self.mock_card1.display_name = 'Card 1'
         self.mock_card1.to_dict.return_value = {'name': 'Card 1', 'setCode': 'MOM'}
 
         self.mock_card2 = MagicMock()
         self.mock_card2.set_code = 'ELD'
+        self.mock_card2.display_name = 'Card 2'
         self.mock_card2.to_dict.return_value = {'name': 'Card 2', 'setCode': 'ELD'}
 
         self.mock_cards = [self.mock_card1, self.mock_card2]
@@ -190,6 +192,28 @@ class TestMTGSubset(unittest.TestCase):
             mtg_subset.main()
 
         mock_summary.assert_called_once_with("Subsetting", 2, 0, quiet=False)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_dry_run_preview_option(self, mock_stdout, mock_file, mock_open_file):
+        mock_open_file.return_value = self.mock_cards
+
+        test_args = ['mtg_subset.py', 'input.json', 'output.json', '--dry-run']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        # Output file should NOT be opened/written
+        mock_file.assert_not_called()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Dry Run Summary: 2 card(s) matched filters.", output)
+        self.assertIn("Set Code Breakdown:", output)
+        self.assertIn("- ELD: 1 card(s)", output)
+        self.assertIn("- MOM: 1 card(s)", output)
+        self.assertIn("Sample Preview (up to 10 cards):", output)
+        self.assertIn("- Card 1", output)
+        self.assertIn("- Card 2", output)
 
 if __name__ == '__main__':
     unittest.main()
