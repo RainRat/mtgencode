@@ -191,5 +191,49 @@ class TestMTGSubset(unittest.TestCase):
 
         mock_summary.assert_called_once_with("Subsetting", 2, 0, quiet=False)
 
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_preview_mode(self, mock_stdout, mock_file, mock_open_file):
+        mock_card1 = MagicMock()
+        mock_card1.set_code = 'MOM'
+        mock_card1.name = 'Card 1'
+        mock_card1.display_name = 'Card 1'
+
+        mock_card2 = MagicMock()
+        mock_card2.set_code = 'ELD'
+        mock_card2.name = 'Card 2'
+        mock_card2.display_name = 'Card 2'
+
+        mock_open_file.return_value = [mock_card1, mock_card2]
+
+        test_args = ['mtg_subset.py', 'input.json', '-p']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        out_str = mock_stdout.getvalue()
+        self.assertIn("Matched 2 card(s):", out_str)
+        self.assertIn("Set Code Breakdown:", out_str)
+        self.assertIn("  - ELD: 1 card(s)", out_str)
+        self.assertIn("  - MOM: 1 card(s)", out_str)
+        self.assertIn("Sample Preview:", out_str)
+        self.assertIn("  - Card 1", out_str)
+        self.assertIn("  - Card 2", out_str)
+
+        # Confirm no output file was created/opened for writing
+        mock_file.assert_not_called()
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_missing_outfile_without_preview(self, mock_stderr, mock_open_file):
+        mock_open_file.return_value = self.mock_cards
+
+        test_args = ['mtg_subset.py', 'input.json']
+        with patch('sys.argv', test_args), self.assertRaises(SystemExit) as cm:
+            mtg_subset.main()
+
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("the following arguments are required: outfile", mock_stderr.getvalue())
+
 if __name__ == '__main__':
     unittest.main()
