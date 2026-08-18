@@ -32,10 +32,13 @@ Example Usage:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', help='Input card data (JSON, CSV, XML, encoded text, or directory).')
-    io_group.add_argument('outfile', help='Path to save the filtered MTGJSON subset.')
+    io_group.add_argument('outfile', nargs='?', default=None,
+                        help='Path to save the filtered MTGJSON subset (optional if --dry-run is specified).')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a summary of matching card stats (total matched card count, set code breakdown, and sample preview of up to 10 matching card names) to standard output without creating or modifying the target output file.')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
     proc_group.add_argument('--shuffle', action='store_true',
@@ -113,6 +116,9 @@ Example Usage:
 
     args = parser.parse_args()
 
+    if not args.dry_run and not args.outfile:
+        parser.error("the following arguments are required: outfile (unless --dry-run is specified)")
+
     # Handle --sample
     if args.sample > 0:
         args.shuffle = True
@@ -153,11 +159,25 @@ Example Usage:
     set_buckets = defaultdict(list)
     for card in cards:
         set_code = (card.set_code or 'CUS').upper()
-        set_buckets[set_code].append(card.to_dict())
+        set_buckets[set_code].append(card)
+
+    if args.dry_run:
+        print(f"Dry Run Summary: {len(cards)} card(s) matched.")
+        print("Set Code Breakdown:")
+        for code, set_cards in sorted(set_buckets.items()):
+            print(f"  {code}: {len(set_cards)} card(s)")
+        sample_names = [str(getattr(c, 'name', c)) for c in cards[:10]]
+        print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
+        return
+
+    # Convert card objects to dictionaries for JSON output
+    set_buckets_dict = defaultdict(list)
+    for code, set_cards in set_buckets.items():
+        set_buckets_dict[code] = [c.to_dict() for c in set_cards]
 
     # Build the MTGJSON v5 structure
     subset_data = {"data": {}}
-    for code, set_cards in set_buckets.items():
+    for code, set_cards in set_buckets_dict.items():
         subset_data["data"][code] = {
             "code": code,
             "cards": set_cards

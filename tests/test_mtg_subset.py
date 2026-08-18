@@ -13,10 +13,12 @@ class TestMTGSubset(unittest.TestCase):
 
     def setUp(self):
         self.mock_card1 = MagicMock()
+        self.mock_card1.name = 'Card 1'
         self.mock_card1.set_code = 'MOM'
         self.mock_card1.to_dict.return_value = {'name': 'Card 1', 'setCode': 'MOM'}
 
         self.mock_card2 = MagicMock()
+        self.mock_card2.name = 'Card 2'
         self.mock_card2.set_code = 'ELD'
         self.mock_card2.to_dict.return_value = {'name': 'Card 2', 'setCode': 'ELD'}
 
@@ -190,6 +192,48 @@ class TestMTGSubset(unittest.TestCase):
             mtg_subset.main()
 
         mock_summary.assert_called_once_with("Subsetting", 2, 0, quiet=False)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_dry_run_mode(self, mock_stdout, mock_file, mock_open_file):
+        mock_open_file.return_value = self.mock_cards
+
+        test_args = ['mtg_subset.py', 'input.json', '--dry-run']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        # Verify no file was written
+        mock_file.assert_not_called()
+
+        # Check stdout summary output
+        out = mock_stdout.getvalue()
+        self.assertIn("Dry Run Summary: 2 card(s) matched.", out)
+        self.assertIn("Set Code Breakdown:", out)
+        self.assertIn("MOM: 1 card(s)", out)
+        self.assertIn("ELD: 1 card(s)", out)
+        self.assertIn("Sample Preview (up to 10): Card 1, Card 2", out)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_preview_flag_aliases(self, mock_stdout, mock_file, mock_open_file):
+        mock_open_file.return_value = self.mock_cards
+
+        test_args = ['mtg_subset.py', 'input.json', '-p']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        mock_file.assert_not_called()
+        self.assertIn("Dry Run Summary: 2 card(s) matched.", mock_stdout.getvalue())
+
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_missing_outfile_without_dry_run(self, mock_stderr):
+        test_args = ['mtg_subset.py', 'input.json']
+        with patch('sys.argv', test_args), self.assertRaises(SystemExit) as cm:
+            mtg_subset.main()
+
+        self.assertNotEqual(cm.exception.code, 0)
 
 if __name__ == '__main__':
     unittest.main()
