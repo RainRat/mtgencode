@@ -792,7 +792,10 @@ def handle_shell(args):
     all_cards = cli_utils.load_and_filter_cards(args)
     if not all_cards:
         if not args.quiet:
-            print("Error: Could not load card database.", file=sys.stderr)
+            print("Error: Could not load the card database.\n\n"
+                  "Please make sure you have 'data/AllPrintings.json' in your project directory.\n"
+                  "If your file has a different name or is located in another folder, you can specify it directly:\n"
+                  "  python3 scripts/mtg_query.py shell path/to/your_file.json", file=sys.stderr)
         return
 
     last_results = []

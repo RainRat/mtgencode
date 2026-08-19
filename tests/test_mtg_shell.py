@@ -364,5 +364,15 @@ class TestMtgShell(unittest.TestCase):
                 # Cyan is \033[96m
                 self.assertIn("\033[1m\033[96m<card name>\033[0m", output)
 
+    @patch('cli_utils.load_and_filter_cards', return_value=[])
+    def test_shell_empty_database_error(self, mock_load):
+        """Test that the shell prints a helpful error message and exits when the database is empty."""
+        with patch('sys.stderr', new=io.StringIO()) as fake_err:
+            handle_shell(self.args)
+            err_output = fake_err.getvalue()
+            self.assertIn("Error: Could not load the card database.", err_output)
+            self.assertIn("Please make sure you have 'data/AllPrintings.json' in your project directory.", err_output)
+            self.assertIn("python3 scripts/mtg_query.py shell path/to/your_file.json", err_output)
+
 if __name__ == '__main__':
     unittest.main()
