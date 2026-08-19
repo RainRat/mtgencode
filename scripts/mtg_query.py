@@ -353,7 +353,7 @@ def _execute_search(cards, args, include_indices=False):
     
     if not (getattr(args, 'text', False) or getattr(args, 'table', False) or getattr(args, 'md_table', False) or
             getattr(args, 'json', False) or getattr(args, 'jsonl', False) or getattr(args, 'csv', False) or
-            getattr(args, 'summary', False)):
+            getattr(args, 'summary', False) or getattr(args, 'deck_out', False)):
         if getattr(args, 'outfile', None):
             if args.outfile.endswith('.json'): args.json = True
             elif args.outfile.endswith('.jsonl'): args.jsonl = True
@@ -361,11 +361,30 @@ def _execute_search(cards, args, include_indices=False):
             elif args.outfile.endswith('.md') or args.outfile.endswith('.mdt'): args.md_table = True
             elif args.outfile.endswith('.tbl') or args.outfile.endswith('.table'): args.table = True
             elif args.outfile.endswith('.sum') or args.outfile.endswith('.summary'): args.summary = True
+            elif args.outfile.endswith('.deck') or args.outfile.endswith('.dek'): args.deck_out = True
             else: args.text = True
         elif sys.stdout.isatty():
             args.table = True
         else:
             args.text = True
+
+    if getattr(args, 'deck_out', False):
+        card_counts = Counter()
+        first_seen_order = []
+        for c in cards:
+            d_name = c.display_name
+            if d_name not in card_counts:
+                first_seen_order.append(d_name)
+            card_counts[d_name] += 1
+
+        deck_lines = [f"{card_counts[name]} {name}" for name in first_seen_order]
+        res_text = "\n".join(deck_lines)
+        if getattr(args, 'outfile', None):
+            with open(args.outfile, 'w', encoding='utf-8') as f:
+                f.write(res_text + '\n')
+        else:
+            print(res_text)
+        return cards
 
     if getattr(args, 'json', False):
         res_text = json.dumps([c.to_dict() if hasattr(c, 'to_dict') else c.__dict__ for c in cards], indent=4)
@@ -573,7 +592,7 @@ def _execute_oracle(cards, args, include_indices=False):
         return
 
     # UI/UX Improvement: Support data output formats in oracle command
-    search_formats = ['json', 'jsonl', 'csv', 'table', 'md_table', 'summary', 'text']
+    search_formats = ['json', 'jsonl', 'csv', 'table', 'md_table', 'summary', 'text', 'deck_out']
     if any(getattr(args, f, False) for f in search_formats) or getattr(args, 'outfile', None):
         if not hasattr(args, 'fields'):
             args.fields = 'name,cost,type,stats,rarity,text'
@@ -2001,7 +2020,7 @@ def handle_random(args, include_indices=False):
     sampled = random.sample(cards, count)
 
     # If any search-specific output format is requested, use search display
-    search_formats = ['json', 'jsonl', 'csv', 'table', 'md_table', 'summary', 'text']
+    search_formats = ['json', 'jsonl', 'csv', 'table', 'md_table', 'summary', 'text', 'deck_out']
     if any(getattr(args, f, False) for f in search_formats) or getattr(args, 'outfile', None):
         return _execute_search(sampled, args, include_indices=include_indices)
     else:
