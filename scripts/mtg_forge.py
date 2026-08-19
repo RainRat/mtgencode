@@ -712,6 +712,8 @@ Usage Examples:
 
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
+    out_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a summary of forged card stats (total modified card count, set code breakdown, and sample preview of up to 10 modified card names) to standard output without creating or modifying the target output file.')
     out_group.add_argument('-o', '--outfile', help='Save output to a file instead of printing.')
     out_group.add_argument('--json', action='store_true', help='Output in JSON format (Default).')
     out_group.add_argument('--encoded', action='store_true', help='Output in encoded text format.')
@@ -799,6 +801,21 @@ Usage Examples:
                 if args.verbose:
                     print(f"Warning: Failed to validate modified card '{card.name}': {e}", file=sys.stderr)
 
+        if args.dry_run:
+            from collections import defaultdict
+            set_buckets = defaultdict(list)
+            for fc in final_cards:
+                code = (fc.set_code or 'CUS').upper()
+                set_buckets[code].append(fc)
+
+            print(f"Dry Run Summary: {len(final_cards)} card(s) forged/modified.")
+            print("Set Code Breakdown:")
+            for code, set_cards in sorted(set_buckets.items()):
+                print(f"  {code}: {len(set_cards)} card(s)")
+            sample_names = [str(getattr(fc, 'display_name', getattr(fc, 'name', fc))) for fc in final_cards[:10]]
+            print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
+            return
+
         # Output results
         output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
         try:
@@ -860,6 +877,21 @@ Usage Examples:
         except Exception as e:
             print(f"Error validating forged card: {e}", file=sys.stderr)
             sys.exit(1)
+
+        if args.dry_run:
+            print("Dry Run Summary: 1 card forged/modified.")
+            print(f"Name: {final_card.display_name}")
+            if final_card.cost and final_card.cost.format():
+                print(f"Mana Cost: {final_card.cost.format()}")
+            print(f"Type: {final_card.get_type_line()}")
+            stats = final_card.get_pt_display(include_parens=False) or final_card.get_loyalty_display(include_parens=False)
+            if stats:
+                print(f"Stats: {stats}")
+            if final_card.text and final_card.get_text(force_unpass=True):
+                print(f"Text: {final_card.get_text(force_unpass=True)}")
+            if final_card.set_code:
+                print(f"Set: {final_card.set_code.upper()}")
+            return
 
         # Output
         output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
