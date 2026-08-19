@@ -173,6 +173,42 @@ The tool detects the format automatically based on the file extension of your ou
 *   `.xml` -> Cockatrice XML database
 *   `.mse-set` -> Magic Set Editor file
 
+### `train.py` (Training Models)
+Train a character-level RNN neural network to generate new Magic: The Gathering cards from encoded card text, or sample new cards from a trained model checkpoint.
+
+```bash
+# Train a model on encoded cards
+python3 train.py --mode train --infile data/output.txt --epochs 10 --randomize_fields
+
+# Generate new cards from a trained model checkpoint
+python3 train.py --mode sample --checkpoint checkpoint.pt --length 2000 > generated.txt
+
+# Force specific card attributes during sampling (uses legacy field order)
+python3 train.py --mode sample --name "uthros" --supertypes "legendary" --types "creature"
+```
+*   **Options:**
+    *   `--mode {train,sample}`: Choose `train` to teach the model using your dataset, or `sample` to generate new card text (Default: `train`).
+    *   `--infile FILE`: Path to the encoded card file for training (Default: `data/output.txt`).
+    *   `--checkpoint FILE`: File path to save or load model checkpoints (Default: `checkpoint.pt`).
+    *   `--epochs N`: How many times the model processes the entire dataset (Default: 10).
+    *   `--max_hours N`: Maximum number of hours to train before saving and stopping (Default: 0 / no limit).
+    *   `--batch_size N`: Number of card fragments processed at once (Default: 64).
+    *   `--seq_len N`: Number of characters the model remembers when predicting the next character (Default: 100).
+    *   `--hidden_size N`: Size of the internal memory layer (Default: 256).
+    *   `--n_layers N`: Number of processing layers in the neural network (Default: 2).
+    *   `--lr RATE`: Learning rate for model updates (Default: 0.001).
+    *   `--dropout RATE`: Dropout rate to prevent memorization (Default: 0.2).
+    *   `--resume`: Continue training from an existing checkpoint file.
+    *   `--randomize_fields`: Randomly reorder card fields (like cost and types) during training to help the model learn better.
+    *   `--randomize_mana`: Shuffle mana symbols within costs during training.
+    *   `--sample_epochs N`: Generate and display sample text every N epochs (Default: 0 / disabled).
+    *   `--plot_loss`: Save a plot of the training loss curve (`loss_plot.png`) after training.
+    *   `--show_time`: Show current time and elapsed time during training.
+    *   `--length N`: Number of characters to generate when sampling (Default: 1000).
+    *   `--temp TEMP`: Sampling temperature controlling AI creativity. Higher values produce more unusual cards (Default: 0.8).
+    *   `--start_text TEXT`: Starting prompt text for generation (Default: `|`).
+    *   **Forcing Card Attributes:** Force specific field values during sampling (e.g., `--name`, `--supertypes`, `--types`, `--loyalty`, `--subtypes`, `--rarity`, `--powertoughness`, `--manacost`, `--bodytext_prepend`, `--bodytext_append`). Note: Forcing attributes requires legacy field order (`-e old`).
+
 ### Using Pipes
 You can chain these tools together using the pipe (`|`) symbol. This lets you process cards in one step without saving temporary files.
 
@@ -790,7 +826,7 @@ python3 scripts/mtg_analyze.py compare --set MOM --set ONE data/AllPrintings.jso
     *   Supports standard **Advanced Filtering** flags.
 
 ### `mtg_deckgen.py`
-Generates a complete Magic deck from a card pool. It supports Commander (EDH) and Standard formats, automatically handling commander color identity filtering and basic land distribution.
+Generates a complete Magic deck from a card pool. It supports Commander (EDH), Standard, Brawl, Pauper, and Limited formats, automatically handling commander color identity filtering and basic land distribution.
 ```bash
 # Generate a Commander deck with a random commander from a pool
 python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander
@@ -802,7 +838,7 @@ python3 scripts/mtg_deckgen.py data/AllPrintings.json --commander "Atraxa, Praet
 python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard
 ```
 *   **Options:**
-    *   `--format {commander,standard}`: Choose the deck format (Default: commander).
+    *   `--format {commander,standard,brawl,pauper,limited}`: Choose the deck format (Default: commander).
     *   `--commander NAME`: Specify a legendary creature to use as your commander.
     *   `--creatures N`, `--spells N`, `--lands N`: Override the target number of cards for each category.
     *   `--curve "1:5,2:10,..."`: Override the target mana curve for creatures.
@@ -931,15 +967,26 @@ python3 scripts/combinejson.py data/AllPrintings.json my_cards.json AllCards.jso
 ```
 
 ### `mtg_forge.py`
-Forges a new card or modifies ("reforges") an existing one using command-line arguments. This is useful for quickly creating custom cards for testing or adding to a dataset.
+Forges a new card or modifies ("reforges") existing ones in batch using command-line arguments. This is useful for quickly creating custom cards for testing, scaling stats, color-shifting, or batch editing dataset cards.
 ```bash
 # Create a card from scratch and view it
 python3 scripts/mtg_forge.py --name "Jules" --cost "{U}{R}" --type "Legendary Creature" --pt "2/2" --text "T: Draw a card." | python3 decode.py
 
 # Reforge an existing card (modifying stats and name)
 python3 scripts/mtg_forge.py --base "Grizzly Bears" --pt "3/3" --name "Super Bears"
+
+# Batch reforge cards with a text replacement and validate design rules
+python3 scripts/mtg_forge.py --infile data/AllPrintings.json --grep "Bear" --replace "Bear->Grizzly" --batch --validate
 ```
-*   **Options:** Supports `--name`, `--cost`, `--type`, `--text`, `--pt`, `--loyalty`, `--rarity`, and `--set`. Output formats include `--json` (Default), `--encoded`, and `--summary`.
+*   **Card Fields:** Supports `--name`, `--cost`, `--type`, `--text`, `--pt`, `--loyalty`, `--rarity`, and `--set`.
+*   **Output Formats:** Supports `--json` (Default), `--encoded`, `--summary`, `-V`/`--view`, and `-G`/`--gatherer`.
+*   **Transformational Modifiers:**
+    *   `--color-shift`: Shift card colors to target color or colors (e.g. `U,B` or `blue`).
+    *   `--buff` / `--nerf`: Increment or decrement power, toughness, loyalty, or defense.
+    *   `--scale-up` / `--scale-down`: Scale stats and generic mana costs proportionally.
+    *   `--replace`: Perform sed-like regex (`s/pattern/replacement/flags`) or literal (`pattern->replacement`) text replacements.
+    *   `--batch`: Process multiple cards matching filters.
+    *   `--validate`: Validate forged card(s) against design rules and color pie logic, printing warnings to stderr.
 
 ### `mtg_subset.py`
 Creates a filtered subset of an MTGJSON file while preserving its structure. This is useful for creating specialized training datasets or lightweight card databases without losing set-level metadata.
