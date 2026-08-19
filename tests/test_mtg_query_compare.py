@@ -46,3 +46,14 @@ def test_query_compare_multi_face():
     # Since Double Front matches the whole card (both faces) and Double Back matches only one face
     assert "(1/1) // (2/2)" in result.stdout
     assert "(2/2)" in result.stdout
+
+def test_query_compare_multiple_names_without_file():
+    """Test comparing 3+ card names when no file positional argument is passed."""
+    # When passing 3 names and a directory or file, all 3 names should be recognized as card names
+    cmd = ["python3", SCRIPT_PATH, "compare", "Double Front", "Double Back", "Invasion of Tarkir", "testdata/", "--no-color"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "CARD COMPARISON" in result.stdout
+    assert "Double Front" in result.stdout
+    assert "Double Back" in result.stdout
+    assert "Invasion of Tarkir" in result.stdout

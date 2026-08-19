@@ -2034,10 +2034,19 @@ def handle_compare_cards(args):
     names = getattr(args, 'names', [])
     infile = getattr(args, 'infile', '-')
 
-    if names and (infile == '-' or not os.path.exists(infile)):
-        if os.path.exists(names[-1]):
-            infile = names.pop()
-            setattr(args, 'infile', infile)
+    all_pos = list(names)
+    if infile and infile != '-':
+        all_pos.append(infile)
+
+    if all_pos and os.path.exists(all_pos[-1]):
+        infile = all_pos.pop()
+        names = all_pos
+    else:
+        infile = '-'
+        names = all_pos
+
+    setattr(args, 'infile', infile)
+    setattr(args, 'names', names)
 
     # Load all cards to perform fuzzy matching
     all_cards = cli_utils.load_and_filter_cards(args)
