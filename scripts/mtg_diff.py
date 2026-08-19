@@ -80,6 +80,7 @@ def compare_cards(c1, c2):
 
 def main():
     parser = argparse.ArgumentParser(
+        prog='mtg_diff.py',
         description="Compare two Magic: The Gathering card datasets and identify additions, removals, and modifications. "
                     "It highlights changes in mana cost, type, stats (P/T or loyalty), rules text, and rarity.",
         formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -14,6 +14,7 @@ import jdecode
 
 def main():
     parser = argparse.ArgumentParser(
+        prog='mtg_subset.py',
         description="Create a filtered subset of an MTGJSON file while preserving its structure.",
         epilog='''
 Example Usage:
