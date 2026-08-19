@@ -147,7 +147,6 @@ def test_mtg_csv_json_direct():
             data = json.load(f)
         assert data['data']['CUS']['cards'][0]['name'] == 'Test'
 
-        # Clear output
         os.remove(json_path)
 
         # 2. Test autodetection mode
@@ -157,3 +156,28 @@ def test_mtg_csv_json_direct():
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         assert data['data']['CUS']['cards'][0]['name'] == 'Test'
+
+def test_csv2json_and_json2csv_script_mains():
+    import scripts.csv2json as csv2json_mod
+    import scripts.json2csv as json2csv_mod
+
+    csv_content = 'name,manaCost,types,subtypes,text,pt,rarity\n"Test","{0}","Artifact","","Rules","","C"\n'
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, 'test.csv')
+        json_path = os.path.join(tmpdir, 'test.json')
+        csv_out_path = os.path.join(tmpdir, 'output.csv')
+
+        with open(csv_path, 'w', encoding='utf-8') as f:
+            f.write(csv_content)
+
+        with patch('sys.argv', ['csv2json.py', csv_path, json_path]):
+            csv2json_mod.main()
+
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        assert data['data']['CUS']['cards'][0]['name'] == 'Test'
+
+        with patch('sys.argv', ['json2csv.py', json_path, csv_out_path]):
+            json2csv_mod.main()
+
+        assert os.path.exists(csv_out_path)
