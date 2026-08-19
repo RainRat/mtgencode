@@ -269,3 +269,74 @@ def test_diff_outfile_text_redirect():
         assert "\033[" not in content
     finally:
         os.remove(temp_path)
+
+def test_diff_single_file_defaulting():
+    """Test that specifying only one file defaults file1 to AllPrintings.json and file2 to the target file."""
+    mock_stdout = MagicMock(spec=io.StringIO)
+    real_stdout = io.StringIO()
+    mock_stdout.write.side_effect = real_stdout.write
+    mock_stdout.getvalue.side_effect = real_stdout.getvalue
+
+    mock_stderr = MagicMock(spec=io.StringIO)
+    real_stderr = io.StringIO()
+    mock_stderr.write.side_effect = real_stderr.write
+    mock_stderr.getvalue.side_effect = real_stderr.getvalue
+
+    opened_files = []
+    with patch('sys.stdout', mock_stdout), \
+         patch('sys.stderr', mock_stderr), \
+         patch('scripts.mtg_diff.jdecode.mtg_open_file') as mock_open:
+
+        def mock_open_side_effect(infile, **kwargs):
+            opened_files.append(infile)
+            return []
+
+        mock_open.side_effect = mock_open_side_effect
+        with patch('sys.argv', ['mtg_diff.py', 'my_custom_set.json']):
+            mtg_diff.main()
+
+    assert len(opened_files) == 2
+    assert opened_files[0].endswith("AllPrintings.json")
+    assert opened_files[1] == "my_custom_set.json"
+
+def test_diff_zero_files_interactive():
+    """Test that running mtg_diff.py with no args in interactive session prints help and exits."""
+    mock_stderr = MagicMock(spec=io.StringIO)
+    real_stderr = io.StringIO()
+    mock_stderr.write.side_effect = real_stderr.write
+    mock_stderr.getvalue.side_effect = real_stderr.getvalue
+    mock_stderr.isatty.return_value = True
+
+    mock_stdin = MagicMock(spec=io.StringIO)
+    mock_stdin.isatty.return_value = True
+
+    with patch('sys.stderr', mock_stderr), \
+         patch('sys.stdin', mock_stdin), \
+         patch('sys.argv', ['mtg_diff.py']):
+        try:
+            mtg_diff.main()
+        except SystemExit as e:
+            assert e.code == 1
+
+    assert "usage: mtg_diff.py" in real_stderr.getvalue()
+
+def test_diff_zero_files_non_interactive():
+    """Test that running mtg_diff.py with no args in non-interactive mode defaults file1 to AllPrintings and file2 to stdin."""
+    opened_files = []
+    mock_stdin = MagicMock(spec=io.TextIOBase)
+    mock_stdin.isatty.return_value = False
+
+    with patch('sys.stdin', mock_stdin), \
+         patch('scripts.mtg_diff.jdecode.mtg_open_file') as mock_open:
+
+        def mock_open_side_effect(infile, **kwargs):
+            opened_files.append(infile)
+            return []
+
+        mock_open.side_effect = mock_open_side_effect
+        with patch('sys.argv', ['mtg_diff.py']):
+            mtg_diff.main()
+
+    assert len(opened_files) == 2
+    assert opened_files[0].endswith("AllPrintings.json")
+    assert opened_files[1] == "-"
