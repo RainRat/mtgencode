@@ -58,7 +58,8 @@ def run_csv2json(argv=None):
 Custom Card Workflow:
   1. Create a CSV file (e.g., custom.csv) following the format below.
   2. Convert to JSON:
-     python3 scripts/mtg_csv_json.py csv2json custom.csv custom.json
+     python3 scripts/csv2json.py custom.csv custom.json
+     (or: python3 scripts/mtg_csv_json.py csv2json custom.csv custom.json)
   3. Merge with official data:
      python3 scripts/combinejson.py data/AllPrintings.json custom.json AllCustom.json
 
