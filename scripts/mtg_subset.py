@@ -32,7 +32,8 @@ Example Usage:
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infile', help='Input card data (JSON, CSV, XML, encoded text, or directory).')
+    io_group.add_argument('infile', nargs='?', default=None,
+                        help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to data/AllPrintings.json if omitted.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the filtered MTGJSON subset (optional if --dry-run is specified).')
 
@@ -116,6 +117,32 @@ Example Usage:
     debug_group.add_argument('-q', '--quiet', action='store_true', help='Suppress status messages.')
 
     args = parser.parse_args()
+
+    # Determine default base dataset if infile is omitted
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    default_base = 'data/AllPrintings.json'
+    if not os.path.exists(default_base):
+        rel_data = os.path.join(script_dir, '../data/AllPrintings.json')
+        if os.path.exists(rel_data):
+            default_base = rel_data
+
+    # Handle omitted positional arguments intelligently:
+    # If infile is missing, check if default dataset exists or if run interactively.
+    if args.infile is None:
+        if os.path.exists(default_base):
+            args.infile = default_base
+        elif sys.stdin.isatty():
+            parser.print_help(sys.stderr)
+            sys.exit(1)
+        else:
+            args.infile = '-'
+    elif not args.dry_run and args.outfile is None:
+        # If user provided 1 positional argument, check if it's an output file (and use default_base as infile)
+        # or an input file.
+        # If infile does not exist on disk and default_base exists, treat infile as outfile.
+        if not os.path.exists(args.infile) and os.path.exists(default_base):
+            args.outfile = args.infile
+            args.infile = default_base
 
     if not args.dry_run and not args.outfile:
         parser.error("the following arguments are required: outfile (unless --dry-run is specified)")

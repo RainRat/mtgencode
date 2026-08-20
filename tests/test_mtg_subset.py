@@ -230,10 +230,52 @@ class TestMTGSubset(unittest.TestCase):
     @patch('sys.stderr', new_callable=io.StringIO)
     def test_missing_outfile_without_dry_run(self, mock_stderr):
         test_args = ['mtg_subset.py', 'input.json']
-        with patch('sys.argv', test_args), self.assertRaises(SystemExit) as cm:
+        with patch('sys.argv', test_args), patch('os.path.exists', return_value=False), self.assertRaises(SystemExit) as cm:
             mtg_subset.main()
 
         self.assertNotEqual(cm.exception.code, 0)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('os.path.exists')
+    def test_default_infile_fallback_in_dry_run(self, mock_exists, mock_stdout, mock_file, mock_open_file):
+        mock_exists.side_effect = lambda path: path == 'data/AllPrintings.json'
+        mock_open_file.return_value = self.mock_cards
+
+        test_args = ['mtg_subset.py', '--dry-run', '--set', 'MOM']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        mock_open_file.assert_called_once()
+        self.assertEqual(mock_open_file.call_args[0][0], 'data/AllPrintings.json')
+        self.assertIn("Dry Run Summary: 2 card(s) matched.", mock_stdout.getvalue())
+
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('os.path.exists')
+    def test_single_arg_treated_as_outfile_when_default_base_exists(self, mock_exists, mock_file, mock_open_file):
+        mock_exists.side_effect = lambda path: path == 'data/AllPrintings.json'
+        mock_open_file.return_value = self.mock_cards
+
+        test_args = ['mtg_subset.py', 'output.json', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        mock_open_file.assert_called_once()
+        self.assertEqual(mock_open_file.call_args[0][0], 'data/AllPrintings.json')
+        mock_file.assert_called_once_with('output.json', 'w', encoding='utf-8')
+
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('os.path.exists', return_value=False)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_omitted_infile_interactive_no_default_dataset(self, mock_stderr, mock_exists, mock_isatty):
+        test_args = ['mtg_subset.py', '--dry-run']
+        with patch('sys.argv', test_args), self.assertRaises(SystemExit) as cm:
+            mtg_subset.main()
+
+        self.assertEqual(cm.exception.code, 1)
+        self.assertIn("usage: mtg_subset.py", mock_stderr.getvalue())
 
 if __name__ == '__main__':
     unittest.main()
