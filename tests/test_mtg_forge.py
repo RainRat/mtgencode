@@ -341,5 +341,68 @@ class TestMtgForge(unittest.TestCase):
                 main()
         self.assertIn("Invalid replacement format", str(cm.exception))
 
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_dry_run_single_card(self, mock_stdout):
+        test_args = [
+            'mtg_forge.py',
+            '--name', 'DryRunCard',
+            '--cost', '{1}{W}',
+            '--type', 'Creature - Knight',
+            '--pt', '2/2',
+            '--text', 'First strike.',
+            '--rarity', 'Uncommon',
+            '--set', 'TST',
+            '--dry-run',
+            '--outfile', 'should_not_exist.json'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn('Dry Run Summary: 1 card forged.', output)
+        self.assertIn('Name: Dryruncard', output)
+        self.assertIn('P/T or Loyalty: (2/2)', output)
+        self.assertIn('Set: TST', output)
+        self.assertFalse(os.path.exists('should_not_exist.json'))
+
+    @patch('scripts.mtg_forge.jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_forge_dry_run_batch_mode(self, mock_stdout, mock_open):
+        card1 = MagicMock()
+        card1.name = "Bear 1"
+        card1.to_dict.return_value = {
+            'name': 'Bear 1',
+            'type': 'Creature - Bear',
+            'setCode': 'MOM'
+        }
+        card2 = MagicMock()
+        card2.name = "Bear 2"
+        card2.to_dict.return_value = {
+            'name': 'Bear 2',
+            'type': 'Creature - Bear',
+            'setCode': 'MOM'
+        }
+        mock_open.return_value = [card1, card2]
+
+        test_args = [
+            'mtg_forge.py',
+            '--infile', 'dummy.json',
+            '--batch',
+            '--pt', '3/3',
+            '--dry-run',
+            '--outfile', 'should_not_exist_batch.json'
+        ]
+
+        with patch('sys.argv', test_args):
+            main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn('Dry Run Summary: 2 card(s) forged/modified.', output)
+        self.assertIn('Set Code Breakdown:', output)
+        self.assertIn('MOM: 2 card(s)', output)
+        self.assertIn('Sample Preview (up to 10): Bear 1, Bear 2', output)
+        self.assertFalse(os.path.exists('should_not_exist_batch.json'))
+
 if __name__ == '__main__':
     unittest.main()
