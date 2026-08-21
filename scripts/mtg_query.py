@@ -982,8 +982,13 @@ def handle_shell(args):
                 cmd_args = parts[1:]
 
                 if cmd in ['/search', '/s']:
-                    cmd_args = _resolve_args(cmd_args)
-                    query = " ".join(cmd_args)
+                    resolved_args = _resolve_args(cmd_args)
+                    if not resolved_args:
+                        err_msg = "Error: /search requires a search query."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
+                        continue
+                    query = " ".join(resolved_args)
                     query_pat = re.compile(re.escape(query.replace('-', utils.dash_marker)), re.IGNORECASE)
                     matched_cards = [c for c in all_cards if c.search(query_pat)]
                     s_args = copy.copy(args)
