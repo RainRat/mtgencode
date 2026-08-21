@@ -171,3 +171,9 @@ def test_add_separator_row_empty():
     from datalib import add_separator_row
     assert add_separator_row(rows) is None
     assert rows == []
+
+def test_plimit_ansi_truncation_remaining():
+    import utils
+    s = f"{utils.Ansi.RED}12345678901"
+    expected = f"{utils.Ansi.RED}1234567890[...]{utils.Ansi.RESET}"
+    assert plimit(s, mlen=10) == expected
