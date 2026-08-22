@@ -712,6 +712,8 @@ Usage Examples:
 
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
+    out_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                           help='Print a summary preview of forged or modified cards without creating or modifying the target output file.')
     out_group.add_argument('-o', '--outfile', help='Save output to a file instead of printing.')
     out_group.add_argument('--json', action='store_true', help='Output in JSON format (Default).')
     out_group.add_argument('--encoded', action='store_true', help='Output in encoded text format.')
@@ -799,6 +801,20 @@ Usage Examples:
                 if args.verbose:
                     print(f"Warning: Failed to validate modified card '{card.name}': {e}", file=sys.stderr)
 
+        if args.dry_run:
+            from collections import defaultdict
+            set_buckets = defaultdict(int)
+            for fc in final_cards:
+                set_code = (fc.set_code or 'CUS').upper()
+                set_buckets[set_code] += 1
+            print(f"Dry Run Summary: {len(final_cards)} card(s) forged/modified.")
+            print("Set Code Breakdown:")
+            for code, count in sorted(set_buckets.items()):
+                print(f"  {code}: {count} card(s)")
+            sample_names = [fc.display_name for fc in final_cards[:10]]
+            print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
+            return
+
         # Output results
         output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
         try:
@@ -860,6 +876,26 @@ Usage Examples:
         except Exception as e:
             print(f"Error validating forged card: {e}", file=sys.stderr)
             sys.exit(1)
+
+        if args.dry_run:
+            print("Dry Run Summary: 1 card forged.")
+            print(f"  Name: {final_card.display_name}")
+            if final_card.cost.raw:
+                print(f"  Mana Cost: {final_card.cost.raw}")
+            print(f"  Type: {final_card.get_type_line()}")
+            stats = final_card.get_pt_display() or final_card.get_loyalty_display()
+            if stats:
+                print(f"  P/T or Loyalty: {stats}")
+            if final_card.rarity_name:
+                print(f"  Rarity: {final_card.rarity_name.capitalize()}")
+            if final_card.set_code:
+                print(f"  Set: {final_card.set_code.upper()}")
+            if final_card.text.raw:
+                text_snippet = final_card.text.raw.replace('\n', ' ')
+                if len(text_snippet) > 80:
+                    text_snippet = text_snippet[:77] + "..."
+                print(f"  Rules Text: {text_snippet}")
+            return
 
         # Output
         output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
