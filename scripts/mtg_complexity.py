@@ -306,6 +306,8 @@ Usage Examples:
 
         # Baseline for bar scaling
         max_avg = max(list(rarity_avg.values()) + list(color_avg.values())) if rarity_avg or color_avg else 1.0
+        if max_avg <= 0:
+            max_avg = 1.0
 
         # Rarity Averages Table
         output_f.write(f"  {datalib.color_line('Average Complexity by Rarity:', use_color)}\n")
