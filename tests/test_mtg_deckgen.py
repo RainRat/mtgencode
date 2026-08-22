@@ -145,5 +145,61 @@ class TestMtgDeckgen(unittest.TestCase):
         self.assertEqual(cm.exception.code, 1)
         self.assertIn("Error: Deck generation requires an input dataset or card pool.", mock_stderr.getvalue())
 
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_dry_run_commander(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        card1 = cardlib.Card({
+            'name': 'Goblin',
+            'types': ['Creature'],
+            'manaCost': '{1}{R}',
+            'rarity': 'common',
+            'text': ''
+        })
+        mock_open.return_value = [commander, card1]
+
+        outfile_path = 'test_dry_run_output.txt'
+        if os.path.exists(outfile_path):
+            os.remove(outfile_path)
+
+        try:
+            with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia', '--dry-run', '--outfile', outfile_path]):
+                mtg_deckgen.main()
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Dry Run Summary:", output)
+            self.assertIn("Commander: Galia", output)
+            self.assertIn("Composition Breakdown:", output)
+            self.assertIn("Sample Preview (up to 10 entries):", output)
+            self.assertFalse(os.path.exists(outfile_path))
+        finally:
+            if os.path.exists(outfile_path):
+                os.remove(outfile_path)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_dry_run_standard(self, mock_stderr, mock_stdout, mock_open):
+        c1 = cardlib.Card({'name': 'Soldier', 'types': ['Creature'], 'manaCost': '{W}', 'rarity': 'common'})
+        s1 = cardlib.Card({'name': 'Shock', 'types': ['Instant'], 'manaCost': '{R}', 'rarity': 'common'})
+        mock_open.return_value = [c1, s1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '-p']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Dry Run Summary:", output)
+        self.assertIn("Standard format", output)
+        self.assertIn("Composition Breakdown:", output)
+        self.assertIn("Sample Preview (up to 10 entries):", output)
+
 if __name__ == '__main__':
     unittest.main()

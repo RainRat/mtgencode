@@ -108,6 +108,9 @@ Usage Examples:
   # Filter the card pool (e.g., only Goblins)
   python3 scripts/mtg_deckgen.py data/AllPrintings.json --grep "Goblin"
 
+  # Preview deck generation without creating or modifying output files
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander --dry-run
+
   # Save the decklist to a file
   python3 scripts/mtg_deckgen.py data/AllPrintings.json --outfile my_deck.txt
 """
@@ -136,6 +139,8 @@ Usage Examples:
 
     # Group: Processing & Debugging
     proc_group = parser.add_argument_group('Processing & Debugging')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a summary of deck stats (total deck size, format, composition breakdown, and sample preview of up to 10 entries) to standard output without creating or modifying the target output file.')
     proc_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
     proc_group.add_argument('-q', '--quiet', action='store_true', help='Suppress non-critical status messages.')
     
@@ -367,9 +372,21 @@ Usage Examples:
         actual_composition['Creatures'] = creatures_target
         actual_composition['Spells'] = spells_target
 
+    total_deck_size = sum(actual_composition.values())
+
+    if getattr(args, 'dry_run', False):
+        print(f"Dry Run Summary: Generated {total_deck_size}-card deck ({args.format.capitalize()} format).")
+        if args.format in ('commander', 'brawl') and 'commander_card' in locals() and commander_card:
+            print(f"Commander: {commander_card.display_name}")
+        print("Composition Breakdown:")
+        for cat in sorted(actual_composition.keys()):
+            print(f"  {cat}: {actual_composition[cat]}")
+        sample_entries = decklist[:10]
+        print(f"Sample Preview (up to 10 entries):\n  " + "\n  ".join(sample_entries))
+        return
+
     # Final Summary to stderr
     if not args.quiet:
-        total_deck_size = sum(actual_composition.values())
         utils.print_header("DECK GENERATED", count=total_deck_size, file=sys.stderr, use_color=use_color)
         summary_rows = []
         # Sort keys for consistent output
