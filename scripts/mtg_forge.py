@@ -880,8 +880,9 @@ Usage Examples:
         if args.dry_run:
             print("Dry Run Summary: 1 card forged.")
             print(f"  Name: {final_card.display_name}")
-            if final_card.cost.raw:
-                print(f"  Mana Cost: {final_card.cost.raw}")
+            cost_str = final_card.cost.format()
+            if cost_str:
+                print(f"  Mana Cost: {cost_str}")
             print(f"  Type: {final_card.get_type_line()}")
             stats = final_card.get_pt_display() or final_card.get_loyalty_display()
             if stats:
@@ -890,8 +891,9 @@ Usage Examples:
                 print(f"  Rarity: {final_card.rarity_name.capitalize()}")
             if final_card.set_code:
                 print(f"  Set: {final_card.set_code.upper()}")
-            if final_card.text.raw:
-                text_snippet = final_card.text.raw.replace('\n', ' ')
+            rules_text = final_card.get_text()
+            if rules_text:
+                text_snippet = rules_text.replace('\n', ' ')
                 if len(text_snippet) > 80:
                     text_snippet = text_snippet[:77] + "..."
                 print(f"  Rules Text: {text_snippet}")

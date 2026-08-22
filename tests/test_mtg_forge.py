@@ -362,6 +362,8 @@ class TestMtgForge(unittest.TestCase):
         output = mock_stdout.getvalue()
         self.assertIn('Dry Run Summary: 1 card forged.', output)
         self.assertIn('Name: Dryruncard', output)
+        self.assertIn('Mana Cost: {1}{W}', output)
+        self.assertIn('Rules Text: First strike.', output)
         self.assertIn('P/T or Loyalty: (2/2)', output)
         self.assertIn('Set: TST', output)
         self.assertFalse(os.path.exists('should_not_exist.json'))

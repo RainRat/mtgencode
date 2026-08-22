@@ -62,7 +62,7 @@ After downloading, set up your data folder:
 1.  Create a folder named `data` in this project.
 2.  Place your downloaded file inside the `data` folder.
 
-> **Tip for ZIP Files:** MTGJSON downloads often come as `.zip` archives (such as `AllPrintings.json.zip`). You can extract the `.json` file into `data/` or leave the `.zip` file intact. The tools natively support both `.json` and `.zip` files.
+> **Tip for ZIP Files:** MTGJSON downloads often come as `.zip` archives (such as `AllPrintings.json.zip`). You can extract the `.json` file into `data/` or leave the `.zip` file intact. The tools support both `.json` and `.zip` files.
 
 ### 2. Encode Cards (Data to Text)
 Convert card data from various formats into a simple text format for AI training.
