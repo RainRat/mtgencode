@@ -264,14 +264,23 @@ class TestMtgShell(unittest.TestCase):
                 err = fake_err.getvalue()
                 self.assertIn("No functional reprints found for Invasion of Tarkir.", err)
 
+    def test_shell_search_empty(self):
+        """Test executing /search or /s without arguments displays an error message."""
+        for cmd in ['/search', '/s']:
+            with patch('builtins.input', side_effect=[cmd, 'exit']):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    handle_shell(self.args)
+                    output = fake_out.getvalue()
+                    self.assertIn("Error: /search requires a search query.", output)
+
     def test_shell_smart_defaults_empty(self):
         """Test that REPL commands gracefully report error when called without arguments and last_results is empty."""
-        commands = ['/oracle', '/compare', '/reprints', '/superior', '/inferior', '/substitutes', '/counterparts', '/similar']
+        commands = ['/search', '/s', '/oracle', '/compare', '/reprints', '/superior', '/inferior', '/substitutes', '/counterparts', '/similar']
         for cmd in commands:
             with patch('builtins.input', side_effect=[cmd, 'exit']):
                 with patch('sys.stdout', new=io.StringIO()) as fake_out:
                     handle_shell(self.args)
-                    self.assertIn(f"Error: {cmd} requires", fake_out.getvalue())
+                    self.assertIn(f"Error: {cmd if cmd not in ['/s'] else '/search'} requires", fake_out.getvalue())
 
     def test_shell_smart_defaults_with_results(self):
         """Test that REPL commands fall back to using previous results when called without arguments."""
