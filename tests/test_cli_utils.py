@@ -162,3 +162,18 @@ def test_load_and_filter_cards_auto_grep_append(mock_exists, mock_open):
 
     assert args.infile == '-'
     assert args.grep == ['query1', 'query2']
+
+@patch('lib.cli_utils.jdecode.mtg_open_file')
+@patch('sys.stdin.isatty')
+@patch('os.path.exists')
+def test_load_and_filter_cards_missing_default_dataset_warning(mock_exists, mock_isatty, mock_open, capsys):
+    mock_isatty.return_value = True
+    mock_exists.return_value = False
+    mock_open.return_value = []
+
+    args = argparse.Namespace(infile='-', quiet=False)
+    cli_utils.load_and_filter_cards(args)
+
+    captured = capsys.readouterr()
+    assert "Notice: No input file specified and default dataset" in captured.err
+    assert "Please specify a file path" in captured.err
