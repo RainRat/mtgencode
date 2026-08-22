@@ -117,6 +117,9 @@ Usage Examples:
 
   # Include activation costs in the pip analysis
   python3 scripts/mtg_manabase.py my_deck.txt --include-text
+
+  # Preview mana base calculation without creating or modifying output files
+  python3 scripts/mtg_manabase.py my_deck.txt my_deck.deck --lands 24 --dry-run
 """
     )
 
@@ -131,6 +134,11 @@ Usage Examples:
                         help='Target number of basic lands to recommend (Default: 24).')
     io_group.add_argument('--include-text', action='store_true',
                         help='Include mana symbols found in rules text (activation costs, etc.) in the analysis.')
+
+    # Group: Processing Options
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run summary of mana base recommendations (target land count, total pips, pip percentage breakdown, and suggested basic land distribution) to standard output without creating or modifying the target output file.')
 
     # Group: Output Format
     fmt_group_title = parser.add_argument_group('Output Format')
@@ -220,6 +228,19 @@ Usage Examples:
 
     # Calculate Advisor logic
     recommendation, pips, total_pips = calculate_manabase(cards, args.lands, include_text=args.include_text)
+
+    if getattr(args, 'dry_run', False):
+        print(f"Dry Run Summary: Calculated mana base for {len(cards)} card(s).")
+        print(f"Target Lands: {args.lands}")
+        print(f"Total Mana Pips: {total_pips}")
+        if total_pips > 0:
+            pip_strs = [f"{c}: {pips[c]} ({pips[c]/total_pips*100:.1f}%)" for c in 'WUBRG' if pips[c] > 0]
+            if pip_strs:
+                print("Pip Breakdown: " + ", ".join(pip_strs))
+        land_order = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']
+        suggested = [f"{recommendation[l]} {l}" for l in land_order if recommendation.get(l, 0) > 0]
+        print(f"Suggested Land Distribution: {', '.join(suggested)}")
+        return
 
     # Output preparation
     output_f = sys.stdout
