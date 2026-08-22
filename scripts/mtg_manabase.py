@@ -239,12 +239,6 @@ Usage Examples:
             }
             output_f.write(json.dumps(result, indent=2) + '\n')
         elif args.deck_out:
-            try:
-                from titlecase import titlecase
-            except ImportError:
-                def titlecase(text):
-                    return text.title()
-
             counts = OrderedDict()
             for card in cards:
                 if card.name.lower() in ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes']:
@@ -253,7 +247,7 @@ Usage Examples:
                 counts[key] = counts.get(key, 0) + 1
 
             for (name, set_code, number), count in counts.items():
-                line = f"{count} {titlecase(name)}"
+                line = f"{count} {cardlib.titlecase(name)}"
                 if set_code:
                     line += f" ({set_code.upper()})"
                     if number:
