@@ -25,25 +25,11 @@ class TestKeyDiff(unittest.TestCase):
         })
 
     def run_main(self, args_list):
+        import runpy
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
             with patch('sys.argv', ['keydiff.py'] + args_list):
                 try:
-                    # Trigger the actual __name__ == '__main__' block logic
-                    # by calling the part that contains it if possible,
-                    # but here we just call the main script logic.
-                    # Since we want coverage on the CLI part, we can't easily import it
-                    # without executing it if it's not guarded. It IS guarded.
-
-                    # We will manually invoke the code that is inside the if __name__ == '__main__'
-                    # but we'll do it in a way that pytest-cov sees it.
-
-                    import argparse
-                    parser = argparse.ArgumentParser()
-                    parser.add_argument('file1')
-                    parser.add_argument('file2', nargs='?', default=None)
-                    parser.add_argument('-v', '--verbose', action='store_true')
-                    args = parser.parse_args(args_list)
-                    keydiff.main(args.file1, args.file2, verbose=args.verbose)
+                    runpy.run_module('scripts.keydiff', run_name='__main__')
                     code = 0
                 except SystemExit as e:
                     code = e.code if isinstance(e.code, int) else 0
@@ -117,6 +103,11 @@ class TestKeyDiff(unittest.TestCase):
     def test_main_missing_file(self):
         with self.assertRaises(FileNotFoundError):
             keydiff.main("nonexistent1.txt", "nonexistent2.txt", False)
+
+    def test_main_cli_file_not_found(self):
+        code, out = self.run_main(["nonexistent1.txt", "nonexistent2.txt"])
+        self.assertEqual(code, 1)
+        self.assertIn("Error:", out)
 
 if __name__ == '__main__':
     unittest.main()
