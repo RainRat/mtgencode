@@ -456,7 +456,7 @@ def main(fname, oname = None, verbose = False, dump = False,
          identities=None, id_counts=None,
          shuffle = False, seed = None, quiet = False, decklist_file = None,
          booster = 0, sort = None, reverse_sort = False, limit = 0, use_color = None, box = 0,
-         color_pie = False):
+         color_pie = False, dry_run = False):
 
     if not color_pie:
         if 'color_pie' in props:
@@ -489,6 +489,19 @@ def main(fname, oname = None, verbose = False, dump = False,
 
     if limit > 0:
         cards = cards[:limit]
+
+    if dry_run:
+        ((total_all, total_good, total_bad, total_uncovered), values) = process_props(cards, dump=False, quiet=quiet)
+        good_pct = (total_good / total_all * 100.0) if total_all > 0 else 0.0
+        bad_pct = (total_bad / total_all * 100.0) if total_all > 0 else 0.0
+        print(f"Dry Run Summary: {total_all} card(s) validated.")
+        print(f"  Valid Cards: {total_good} ({good_pct:.1f}%)")
+        print(f"  Invalid Cards: {total_bad} ({bad_pct:.1f}%)")
+        if total_uncovered > 0:
+            print(f"  Uncovered Cards: {total_uncovered}")
+        sample_names = [str(getattr(c, 'name', c)) for c in cards[:10]]
+        print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
+        return
 
     # Initialize summary statistics to avoid UnboundLocalError
     total_all = 0
@@ -673,6 +686,8 @@ Usage Examples:
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run validation summary to standard output without creating or writing to the target output file.')
     proc_group.add_argument('-d', '--dump', action='store_true',
                         help='Show the text of cards that failed validation (useful for debugging).')
     proc_group.add_argument('--color-pie', action='store_true',
@@ -744,6 +759,8 @@ Usage Examples:
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--mechanic', action='append',
                         help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
+    filter_group.add_argument('--produces', action='append',
+                        help="Only include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).")
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file.')
 
@@ -798,5 +815,5 @@ Usage Examples:
          identities=args.identity, id_counts=args.id_count,
          shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, decklist_file = args.deck,
          booster = args.booster, sort = args.sort, reverse_sort = args.reverse, limit = args.limit, use_color = args.color, box = args.box,
-         color_pie = args.color_pie)
+         color_pie = args.color_pie, dry_run = args.dry_run)
     exit(0)
