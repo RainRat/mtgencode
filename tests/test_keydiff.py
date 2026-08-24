@@ -109,5 +109,43 @@ class TestKeyDiff(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("Error:", out)
 
+    def test_main_stdin(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            with open(file1, "w") as f:
+                f.write("apple: 10\n")
+
+            stdin_content = io.StringIO("apple: 15\nbanana: 5\n")
+            with patch('sys.stdin', stdin_content):
+                code, out = self.run_main([file1, "-"])
+                self.assertEqual(code, 0)
+                self.assertIn("shared: 1", out)
+                self.assertIn("2 only: 1", out)
+
+    def test_main_omitted_file2_interactive(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            with open(file1, "w") as f:
+                f.write("apple: 10\n")
+
+            with patch('sys.stdin.isatty', return_value=True):
+                with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                    code, out = self.run_main([file1])
+                    self.assertEqual(code, 1)
+                    self.assertIn("usage: keydiff.py", fake_err.getvalue())
+
+    def test_main_omitted_file2_non_interactive(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            with open(file1, "w") as f:
+                f.write("apple: 10\n")
+
+            stdin_content = io.StringIO("apple: 20\n")
+            with patch('sys.stdin', stdin_content):
+                with patch('sys.stdin.isatty', return_value=False):
+                    code, out = self.run_main([file1])
+                    self.assertEqual(code, 0)
+                    self.assertIn("shared: 1", out)
+
 if __name__ == '__main__':
     unittest.main()
