@@ -1275,9 +1275,17 @@ python3 scripts/mtg_analyze.py summary my_custom_set.xml
 ## Testing & Development
 
 ### Running Tests
-To ensure everything is working correctly, you can run the full test suite. We use `pytest` for testing:
+To ensure everything is working correctly, you can run the full test suite. We use `pytest` for testing.
+
+Make sure you have installed all required packages and downloaded the text processing data first:
 
 ```bash
+# Install dependencies
+python3 -m pip install -r requirements.txt
+
+# Download text processing data
+python3 -m nltk.downloader punkt punkt_tab
+
 # Run all tests
 python3 -m pytest -o pythonpath=.
 ```
