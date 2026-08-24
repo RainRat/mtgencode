@@ -108,5 +108,54 @@ class TestMtgManabase(unittest.TestCase):
             if os.path.exists("test_manabase.json"):
                 os.remove("test_manabase.json")
 
+    def test_main_dry_run_preview(self):
+        card_w = MagicMock(spec=cardlib.Card)
+        card_w.is_land = False
+        card_w.cost = MagicMock(spec=Manacost)
+        card_w.cost.allsymbols = {'W': 1, 'U': 1}
+        card_w.text = MagicMock(spec=Manatext)
+        card_w.text.costs = []
+        card_w.bside = None
+
+        outfile = "test_manabase_dry_run_out.txt"
+        if os.path.exists(outfile):
+            os.remove(outfile)
+
+        try:
+            with patch('jdecode.mtg_open_file', return_value=[card_w]):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', outfile, '--lands', '20', '--dry-run']):
+                        main()
+                        output = fake_out.getvalue()
+                        self.assertIn("Dry Run Summary:", output)
+                        self.assertIn("Target Lands: 20", output)
+                        self.assertIn("Total Mana Pips: 2", output)
+                        self.assertIn("Pip Breakdown:", output)
+                        self.assertIn("Suggested Land Distribution:", output)
+                        # Verify outfile was NOT created
+                        self.assertFalse(os.path.exists(outfile))
+        finally:
+            if os.path.exists(outfile):
+                os.remove(outfile)
+
+    def test_main_dry_run_no_pips(self):
+        card_c = MagicMock(spec=cardlib.Card)
+        card_c.is_land = False
+        card_c.cost = MagicMock(spec=Manacost)
+        card_c.cost.allsymbols = {}
+        card_c.text = MagicMock(spec=Manatext)
+        card_c.text.costs = []
+        card_c.bside = None
+
+        with patch('jdecode.mtg_open_file', return_value=[card_c]):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '-p', '--lands', '15']):
+                    main()
+                    output = fake_out.getvalue()
+                    self.assertIn("Dry Run Summary:", output)
+                    self.assertIn("Target Lands: 15", output)
+                    self.assertIn("Total Mana Pips: 0", output)
+                    self.assertIn("Suggested Land Distribution: 15 Wastes", output)
+
 if __name__ == '__main__':
     unittest.main()
