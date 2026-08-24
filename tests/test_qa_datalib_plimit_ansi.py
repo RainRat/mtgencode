@@ -2,11 +2,8 @@
 import sys
 import os
 
-# Ensure lib is in path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
-
-from datalib import plimit
-import utils
+from lib.datalib import plimit
+from lib import utils
 
 def test_plimit_ansi_no_truncation():
     s = f"{utils.Ansi.RED}Hello{utils.Ansi.RESET}"
