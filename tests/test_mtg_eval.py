@@ -95,5 +95,64 @@ class TestMTGEval(unittest.TestCase):
         self.assertEqual(result['summary']['accuracy'], 100.0)
         self.assertIn('types', result['properties'])
 
+    @patch('os.path.exists')
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_mtg_eval_positional_checkpoint(self, mock_stdout, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        mock_exists.return_value = True
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 1
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = ((1, 1, 0, 0), {'types': (1, 1, 0)})
+
+        with patch('sys.argv', ['mtg_eval.py', 'positional_model.pt', '--json']):
+            mtg_eval.main()
+
+        output = mock_stdout.getvalue()
+        result = json.loads(output)
+        self.assertEqual(result['checkpoint'], 'positional_model.pt')
+
+    @patch('os.path.exists')
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_mtg_eval_flag_override_and_default(self, mock_stdout, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        mock_exists.return_value = True
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 1
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = ((1, 1, 0, 0), {'types': (1, 1, 0)})
+
+        # Test flag override over positional
+        with patch('sys.argv', ['mtg_eval.py', 'pos.pt', '-c', 'flag.pt', '--json']):
+            mtg_eval.main()
+
+        output = mock_stdout.getvalue()
+        result = json.loads(output)
+        self.assertEqual(result['checkpoint'], 'flag.pt')
+
+        # Test default fallback when neither is provided
+        mock_stdout.seek(0)
+        mock_stdout.truncate(0)
+        with patch('sys.argv', ['mtg_eval.py', '--json']):
+            mtg_eval.main()
+
+        output = mock_stdout.getvalue()
+        result = json.loads(output)
+        self.assertEqual(result['checkpoint'], 'checkpoint.pt')
+
 if __name__ == '__main__':
     unittest.main()

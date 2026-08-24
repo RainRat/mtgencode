@@ -28,7 +28,7 @@ how many cards followed the rules.
 
 Usage Examples:
   # Evaluate a checkpoint by generating 100 cards
-  python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --count 100
+  python3 scripts/mtg_eval.py checkpoint.pt --count 100
 
   # Evaluate with higher creativity (temp)
   python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
@@ -40,7 +40,9 @@ Usage Examples:
 
     # Group: Model Options
     model_group = parser.add_argument_group('Model Options')
-    model_group.add_argument('-c', '--checkpoint', default='checkpoint.pt',
+    model_group.add_argument('checkpoint_pos', nargs='?', default=None, metavar='checkpoint',
+                        help='Path to the model checkpoint file. Defaults to checkpoint.pt or -c/--checkpoint.')
+    model_group.add_argument('-c', '--checkpoint', default=None,
                         help='Path to the model checkpoint file (Default: checkpoint.pt).')
     model_group.add_argument('-t', '--temp', type=float, default=0.8,
                         help='Creativity level for generation (Higher is more creative, Default: 0.8).')
@@ -67,6 +69,10 @@ Usage Examples:
     color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # Resolve checkpoint: prioritize explicit -c/--checkpoint, then positional, then default 'checkpoint.pt'
+    if not args.checkpoint:
+        args.checkpoint = args.checkpoint_pos or 'checkpoint.pt'
 
     # Determine if we should use color
     use_color = args.color if args.color is not None else sys.stdout.isatty()
