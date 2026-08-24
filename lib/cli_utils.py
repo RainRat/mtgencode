@@ -165,12 +165,17 @@ def load_and_filter_cards(args):
             os.path.join(os.path.dirname(script_dir), 'data/AllPrintings.json'),
             os.path.join(os.path.dirname(os.path.dirname(script_dir)), 'data/AllPrintings.json')
         ]
+        found = False
         for opt in options:
             if os.path.exists(opt):
                 infile = opt
+                found = True
                 if not getattr(args, 'quiet', False):
                     print(f"Notice: Using default dataset: {infile}", file=sys.stderr)
                 break
+        if not found and not getattr(args, 'quiet', False):
+            print("Notice: No input file specified and default dataset (data/AllPrintings.json) was not found.\n"
+                  "        Please specify a file path (e.g. 'path/to/cards.json') or pipe input into standard input.", file=sys.stderr)
     
     setattr(args, 'infile', infile)
 
