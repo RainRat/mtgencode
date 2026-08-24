@@ -1968,7 +1968,29 @@ def main():
     p_audit.set_defaults(func=handle_audit)
 
     # compare
-    p_comp = subparsers.add_parser('compare', help='Provide a side-by-side statistical comparison of two or more datasets.')
+    p_comp = subparsers.add_parser(
+        'compare',
+        help='Provide a side-by-side statistical comparison of two or more datasets.',
+        description=textwrap.dedent("""
+            Provides a side-by-side statistical comparison of two or more card
+            datasets. This is useful for evaluating how well a generated or
+            custom dataset matches the characteristics of official Magic data.
+
+            The comparison includes:
+            - Card counts and average stats (CMC, Power, Toughness, Power Rating, Complexity)
+            - Percentage breakdowns for colors and card types
+            - Differences relative to the baseline dataset
+        """),
+        epilog=textwrap.dedent("""
+            Usage Examples:
+              # Compare official data against generated cards
+              python3 scripts/mtg_analyze.py compare data/AllPrintings.json generated.txt
+
+              # Compare multiple sets from the official dataset
+              python3 scripts/mtg_analyze.py compare --set MOM --set ONE data/AllPrintings.json
+        """),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     p_comp.add_argument('infiles', nargs='*', help='Card data files to compare. Defaults to AllPrintings.json and stdin if empty.')
     add_std(p_comp)
     p_comp.set_defaults(func=handle_compare)
