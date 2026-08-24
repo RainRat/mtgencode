@@ -38,7 +38,7 @@ def identify_checkpoints(basedir, ident):
                       (epoch, vloss, temp))]
     return cp_infos
 
-def process_dir(basedir, targetdir, ident, copy_cp = False, verbose = False):
+def process_dir(basedir, targetdir, ident = 'output', copy_cp = False, verbose = False):
     (basepath, basedirname) = os.path.split(basedir)
     if basedirname == '':
         (basepath, basedirname) = os.path.split(basepath)
@@ -76,8 +76,7 @@ def process_dir(basedir, targetdir, ident, copy_cp = False, verbose = False):
         if os.path.isdir(fullpath):
             process_dir(fullpath, targetdir, ident, copy_cp=copy_cp, verbose=verbose)
             
-def main(basedir, targetdir, ident = 'output', copy_cp = False, verbose = False):
-    process_dir(basedir, targetdir, ident, copy_cp=copy_cp, verbose=verbose)
+main = process_dir
 
 if __name__ == '__main__':
     import argparse
