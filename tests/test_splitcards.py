@@ -134,3 +134,31 @@ def test_splitcards_three_way(tmp_path):
     with open(outputs[0]) as f: assert f.read().count("|1") == 7
     with open(outputs[1]) as f: assert f.read().count("|1") == 2
     with open(outputs[2]) as f: assert f.read().count("|1") == 1
+
+def test_splitcards_dry_run(tmp_path):
+    infile = tmp_path / "input.txt"
+    cards = ["|1Card Alpha|7common|5Type\n\n", "|1Card Beta|7common|5Type\n\n"]
+    infile.write_text("".join(cards))
+
+    out1 = tmp_path / "out1.txt"
+    out2 = tmp_path / "out2.txt"
+
+    cmd = [
+        "python3", "scripts/splitcards.py",
+        str(infile),
+        "--outputs", str(out1), str(out2),
+        "--ratios", "0.5", "0.5",
+        "--dry-run",
+        "--no-shuffle"
+    ]
+    res = subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+    # Verify that stdout contains dry run summary
+    assert "Dry Run Summary: 2 card(s) matched." in res.stdout
+    assert "Dataset Split Breakdown:" in res.stdout
+    assert str(out1) in res.stdout
+    assert str(out2) in res.stdout
+
+    # Output files must NOT exist in dry-run mode
+    assert not out1.exists()
+    assert not out2.exists()

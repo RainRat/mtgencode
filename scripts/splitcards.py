@@ -37,6 +37,8 @@ def main():
 
     # Group: Data Processing
     proc_group = parser.add_argument_group('Data Processing')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a summary of dataset splits (total card count, split file breakdown, and sample card preview per target) to standard output without creating or modifying output files.')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
     proc_group.add_argument('-s', '--stable', action='store_true',
@@ -184,6 +186,19 @@ def main():
             count = int(round(ratio * total_cards))
             indices.append((current, current + count))
             current += count
+
+    if args.dry_run:
+        print(f"Dry Run Summary: {total_cards} card(s) matched.")
+        print("Dataset Split Breakdown:")
+        for i, (start, end) in enumerate(indices):
+            outfile = args.outputs[i]
+            split_cards = cards[start:end]
+            ratio = args.ratios[i]
+            pct = (len(split_cards) / total_cards * 100) if total_cards > 0 else 0
+            sample_names = [str(getattr(c, 'name', c)) for c in split_cards[:5]]
+            preview_str = ", ".join(sample_names) if sample_names else "None"
+            print(f"  {outfile} (target: {ratio:.2f}, {len(split_cards)} card(s), {pct:.1f}%): {preview_str}")
+        return
 
     # Write splits
     for i, (start, end) in enumerate(indices):

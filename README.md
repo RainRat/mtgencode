@@ -1243,8 +1243,12 @@ python3 scripts/splitcards.py data/AllPrintings.json --outputs part1.json part2.
 
 # Create a filtered training set (Red and Black cards only)
 python3 scripts/splitcards.py data/AllPrintings.json --outputs rb_train.txt rb_val.txt --ratios 0.9 0.1 --colors RB
+
+# Preview split dataset sizes without writing output files (dry-run mode)
+python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --ratios 0.9 0.1 --dry-run
 ```
 *   **Options:**
+    *   `-p`, `--preview`, `--dry-run`: Print a summary of dataset splits without creating or modifying output files.
     *   `-f`, `--format`: Output format (`text`, `json`, `jsonl`, `csv`). Default is `text`.
     *   `-v`, `--verbose`: Enable detailed status messages.
     *   `-q`, `--quiet`: Suppress the progress bar.
