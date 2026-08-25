@@ -57,3 +57,26 @@ def test_query_compare_multiple_names_without_file():
     assert "Double Front" in result.stdout
     assert "Double Back" in result.stdout
     assert "Invasion of Tarkir" in result.stdout
+
+def test_query_compare_diff_only():
+    """Test --diff-only flag in card comparison."""
+    # Uthros and Invasion of Alara both have rarity "rare"
+    cmd = ["python3", SCRIPT_PATH, "compare", "Uthros", "Invasion of Alara", "testdata/", "--no-color", "--diff-only"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "CARD COMPARISON" in result.stdout
+    assert "Cost" in result.stdout
+    assert "CMC" in result.stdout
+    # Rarity is identical ("rare" for both) and should be hidden
+    assert "Rarity" not in result.stdout
+
+def test_query_compare_diff_only_short_flag():
+    """Test -d short flag in card comparison."""
+    cmd = ["python3", SCRIPT_PATH, "compare", "Double Front", "Double Back", "testdata/manual.json", "--no-color", "-d"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "CARD COMPARISON" in result.stdout
+    # Rarity differs ("common" vs "uncommon"), so it should be included
+    assert "Rarity" in result.stdout
+    # Color Pie is "Valid" for both, so it should be omitted
+    assert "Color Pie" not in result.stdout

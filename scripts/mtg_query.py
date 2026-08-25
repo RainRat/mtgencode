@@ -2241,7 +2241,10 @@ def handle_compare_cards(args):
 
                 # Always show basic identifying rows; hide others only if all are empty
                 is_identifying = field in ['cost', 'cmc', 'type', 'rarity', 'text']
-                if is_identifying or any(v for v in raw_vals):
+                if getattr(args, 'diff_only', False):
+                    if not is_all_same and any(v for v in raw_vals):
+                        group_rows.append([label] + display_vals)
+                elif is_identifying or any(v for v in raw_vals):
                     group_rows.append([label] + display_vals)
 
             if group_rows:
@@ -2504,6 +2507,8 @@ Usage Examples:
     p_compare.add_argument('infile', nargs='?', default='-',
                          help='Input card data. Defaults to data/AllPrintings.json if available.')
     p_compare.add_argument('-f', '--fields', help=FIELDS_HELP)
+    p_compare.add_argument('-d', '--diff-only', action='store_true',
+                         help='Only display fields that differ between compared cards.')
     cli_utils.add_standard_filters(p_compare)
     cli_utils.add_standard_output_args(p_compare)
     p_compare.set_defaults(func=handle_compare_cards)
