@@ -147,18 +147,32 @@ def check_characters(fname, vname):
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser()
-    
+    parser = argparse.ArgumentParser(
+        description="Inspect and verify character, vocabulary, and line-structure consistency in card data.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Check line separation behavior
+  python3 scripts/sanity.py data/output.txt -lines
+
+  # Display vocabulary counts from card text
+  python3 scripts/sanity.py data/output.txt -vocab
+
+  # Inspect character encoding vocabulary and save to JSON
+  python3 scripts/sanity.py data/output.txt -chars --vocab_name vocab.json
+"""
+    )
+
     parser.add_argument('infile', nargs='?', default=os.path.join(libdir, '../data/output.txt'),
-                        help='encoded card file or json corpus to process')
+                        help='Input card data file (encoded text or JSON dataset). Defaults to data/output.txt.')
     parser.add_argument('-lines', action='store_true',
-                        help='show behavior of line separation')
+                        help='Inspect and print line separation categories for card rules text.')
     parser.add_argument('-vocab', action='store_true',
-                        help='show vocabulary counts from encoded card text')
+                        help='Count word frequencies in encoded card text and display rare words.')
     parser.add_argument('-chars', action='store_true',
-                        help='generate and display vocabulary of characters used in encoding')
+                        help='Extract and display all unique characters used in card encoding.')
     parser.add_argument('--vocab_name', default=None,
-                        help='json file to write vocabulary to')
+                        help='Path to save the character vocabulary as a JSON file.')
     args = parser.parse_args()
 
     if args.lines:
