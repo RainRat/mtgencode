@@ -515,19 +515,6 @@ Usage Examples:
 
     args = parser.parse_args()
 
-    # Determine format
-    fmt_ordered = cardlib.fmt_ordered_default
-    if args.encoding == 'named':
-        fmt_ordered = cardlib.fmt_ordered_named
-    elif args.encoding == 'noname':
-        fmt_ordered = cardlib.fmt_ordered_noname
-    elif args.encoding == 'old':
-        fmt_ordered = cardlib.fmt_ordered_old
-    elif args.encoding == 'norarity':
-        fmt_ordered = cardlib.fmt_ordered_norarity
-
-    # We could support custom formats if needed, but this covers the main ones.
-
     # Handle --sample
     if args.sample > 0:
         args.shuffle = True
