@@ -11,16 +11,26 @@ def merge_dicts(d1, d2):
     d = {k: (d1.get(k), d2.get(k)) for k in set(d1) | set(d2)}
     return d
 
-def main(fname1, fname2, verbose = True):
+import sys
+from contextlib import nullcontext
+
+def open_keyfile(fname):
+    if fname == '-' or fname is None:
+        return nullcontext(sys.stdin)
+    return open(fname, 'rt')
+
+def main(fname1, fname2=None, verbose=True):
+    if fname2 is None:
+        fname2 = '-'
     if verbose:
         print('opening ' + fname1 + ' as base key/value store')
         print('opening ' + fname2 + ' as target key/value store')
 
     d1 = {}
     d2 = {}
-    with open(fname1, 'rt') as f1:
+    with open_keyfile(fname1) as f1:
         parse_keyfile(f1, d1, int)
-    with open(fname2, 'rt') as f2:
+    with open_keyfile(fname2) as f2:
         parse_keyfile(f2, d2, int)
     
     tot1 = sum(d1.values())
@@ -66,19 +76,42 @@ def main(fname1, fname2, verbose = True):
 if __name__ == '__main__':
     
     import argparse
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog='keydiff.py',
+        description='Compare two key/value store files and report shared keys, frequency ratios, and exclusive entries.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Usage Examples:
+  # Compare two key/value store files
+  python3 scripts/keydiff.py base_keys.txt target_keys.txt
+
+  # Compare a baseline file against standard input
+  cat target_keys.txt | python3 scripts/keydiff.py base_keys.txt
+
+  # Compare files with verbose logging enabled
+  python3 scripts/keydiff.py base_keys.txt target_keys.txt -v
+'''
+    )
     
-    parser.add_argument('file1', #nargs='?'. default=None,
+    parser.add_argument('file1',
                         help='base key file to diff against')
     parser.add_argument('file2', nargs='?', default=None,
-                        help='other file to compare against the baseline')
+                        help='other file to compare against the baseline. Defaults to stdin (-) if omitted in non-interactive sessions.')
     parser.add_argument('-v', '--verbose', action='store_true', 
                         help='verbose output')
 
     args = parser.parse_args()
+
+    if args.file2 is None:
+        if sys.stdin.isatty():
+            parser.print_help(sys.stderr)
+            sys.exit(1)
+        else:
+            args.file2 = '-'
+
     try:
         main(args.file1, args.file2, verbose=args.verbose)
     except FileNotFoundError as e:
         print(f"Error: {e}")
-        exit(1)
-    exit(0)
+        sys.exit(1)
+    sys.exit(0)
