@@ -108,11 +108,11 @@ def main(fname, oname, gmin = 2, gmax = 8, nltk = False, sep = False, verbose = 
                        + '-grams to ' + oname_full))
                 describe_bins(gramdict, bins)
 
-            with open(oname_full, 'wt') as f:
+            with open(oname_full, 'w', encoding='utf-8') as f:
                 for ngram in sorted(gramdict,
                                     key=lambda x: gramdict[x],
                                     reverse = True):
-                    f.write((ngram + ': ' + str(gramdict[ngram]) + '\n').encode('utf-8'))
+                    f.write(ngram + ': ' + str(gramdict[ngram]) + '\n')
 
 if __name__ == '__main__':
     
