@@ -95,6 +95,9 @@ Usage Examples:
   # Only show a count summary, not detailed card diffs
   python3 scripts/mtg_diff.py data/AllPrintings.json generated.txt --summary-only
 
+  # Preview comparison statistics without writing output files (dry-run mode)
+  python3 scripts/mtg_diff.py data/OldSet.json data/NewSet.json --dry-run
+
   # Filter comparison to only include cards matching a keyword
   python3 scripts/mtg_diff.py data/OldSet.json data/NewSet.json -g "Goblin"
 """,
@@ -113,6 +116,8 @@ Usage Examples:
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run summary of comparison statistics (total cards compared, additions, removals, modifications, and unchanged counts) to standard output without creating or writing to the target output file.')
     proc_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
     proc_group.add_argument('-q', '--quiet', action='store_true', help='Suppress the progress bar.')
     proc_group.add_argument('--summary-only', action='store_true',
@@ -269,6 +274,17 @@ Usage Examples:
 
     total_distinct = len(map1.keys() | map2.keys())
     unchanged_count = len(map1.keys() & map2.keys()) - len(modified)
+
+    if args.dry_run:
+        print(f"Dry Run Summary: {total_distinct} total card(s) evaluated across datasets.")
+        print("Comparison Breakdown:")
+        print(f"  Added: {len(added)} card(s)")
+        print(f"  Removed: {len(removed)} card(s)")
+        print(f"  Modified: {len(modified)} card(s)")
+        print(f"  Unchanged: {unchanged_count} card(s)")
+        sample_cards = [c.display_name for c in (added + [c for c, _ in modified] + removed)[:10]]
+        print(f"Sample Preview (up to 10 changed/added): {', '.join(sample_cards) if sample_cards else 'None'}")
+        return
 
     # 1. JSON Structured Output
     if args.json:

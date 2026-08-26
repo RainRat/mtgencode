@@ -340,3 +340,42 @@ def test_diff_zero_files_non_interactive():
     assert len(opened_files) == 2
     assert opened_files[0].endswith("AllPrintings.json")
     assert opened_files[1] == "-"
+
+def test_diff_dry_run_basic():
+    import tempfile
+    data1 = [{"name": "Old Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
+    data2 = [{"name": "New Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
+
+    with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as tf:
+        temp_path = tf.name
+
+    try:
+        stdout, stderr = run_diff(["--dry-run", "-o", temp_path], data1, data2)
+        assert "Dry Run Summary: 2 total card(s) evaluated across datasets." in stdout
+        assert "Comparison Breakdown:" in stdout
+        assert "Added: 1 card(s)" in stdout
+        assert "Removed: 1 card(s)" in stdout
+        assert "Modified: 0 card(s)" in stdout
+        assert "Unchanged: 0 card(s)" in stdout
+        assert "Sample Preview (up to 10 changed/added):" in stdout
+        # Verify output file was not created/modified by dry run
+        assert os.path.getsize(temp_path) == 0
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+def test_diff_preview_flag_aliases():
+    data1 = [{"name": "Old Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
+    data2 = [{"name": "New Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
+
+    for flag in ["--preview", "-p"]:
+        stdout, stderr = run_diff([flag], data1, data2)
+        assert "Dry Run Summary: 2 total card(s) evaluated across datasets." in stdout
+        assert "Added: 1 card(s)" in stdout
+
+def test_diff_dry_run_empty_sample():
+    data = [{"name": "Card A", "types": ["Land"]}]
+    stdout, stderr = run_diff(["--dry-run"], data, data)
+    assert "Dry Run Summary: 1 total card(s) evaluated across datasets." in stdout
+    assert "Unchanged: 1 card(s)" in stdout
+    assert "Sample Preview (up to 10 changed/added): None" in stdout
