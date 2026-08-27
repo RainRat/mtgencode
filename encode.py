@@ -265,6 +265,19 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    # Smart default dataset handling in interactive terminal sessions
+    if args.infile == '-' and sys.stdin.isatty():
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        default_dataset = os.path.join(script_dir, 'data', 'AllPrintings.json')
+        if os.path.exists(default_dataset):
+            args.infile = default_dataset
+            if not args.quiet:
+                print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
+        else:
+            parser.print_help(sys.stderr)
+            print("\nError: No input file specified and default dataset (data/AllPrintings.json) was not found.", file=sys.stderr)
+            sys.exit(1)
+
     # Handle --sample
     if args.sample > 0:
         args.limit = args.sample
