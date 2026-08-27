@@ -257,7 +257,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          produces=None,
          identities=None, id_counts=None,
          shuffle = False, seed = None, decklist_file = None,
-         booster = 0, box = 0):
+         booster = 0, box = 0, dry_run = False):
 
     # Determine format
     fmt_ordered = cardlib.fmt_ordered_default
@@ -314,6 +314,30 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     # Progress bar is shown unless --quiet is specified
     classes = sortcards(cards, verbose=not quiet, use_summary=use_summary, use_markdown=use_markdown, use_color=actual_use_color, fmt_ordered=fmt_ordered)
+
+    if dry_run:
+        print(f"Dry Run Summary: {len(cards)} card(s) matched.")
+        print("Category Breakdown:")
+        sections = OrderedDict()
+        current_header = "General:"
+        sections[current_header] = []
+        for key, value in classes.items():
+            if value is None:
+                current_header = key
+                sections[current_header] = []
+            else:
+                sections[current_header].append((key, value))
+
+        for header, categories in sections.items():
+            non_empty = [(cat, card_list) for cat, card_list in categories if card_list]
+            if non_empty:
+                print(f"  {header}")
+                for cat_name, card_list in non_empty:
+                    print(f"    {cat_name}: {len(card_list)} card(s)")
+
+        sample_names = [cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) if hasattr(c, 'name') and c.name else str(c) for c in cards[:10]]
+        print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
+        return
 
     outputter = sys.stdout
     ofile = None
@@ -398,6 +422,9 @@ Usage Examples:
   # Sort encoded cards with filters and sampling
   python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "Elf"
 
+  # Preview card sorting breakdown without writing an output file (dry-run mode)
+  python3 sortcards.py data/AllPrintings.json --grep "Elf" --dry-run
+
   # Encode, sort, and save to a file
   python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - sorted_cards.txt
 """
@@ -434,6 +461,8 @@ Usage Examples:
                         help='Randomize the order of cards before sorting.')
     proc_group.add_argument('--seed', type=int,
                         help='Seed for the random number generator.')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run summary of category breakdown and sample preview without creating or writing to the target output file.')
     proc_group.add_argument('--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
     # Group: Filtering Options
@@ -549,7 +578,7 @@ Usage Examples:
          produces=args.produces,
          identities=args.identity, id_counts=args.id_count,
          shuffle = args.shuffle, seed = args.seed, decklist_file = args.deck,
-         booster = args.booster, box = args.box)
+         booster = args.booster, box = args.box, dry_run = args.dry_run)
 
 if __name__ == '__main__':
     cli()
