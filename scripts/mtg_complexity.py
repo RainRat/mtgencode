@@ -122,6 +122,8 @@ Usage Examples:
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a summary of complexity statistics (total evaluated card count, average complexity score, and sample preview of up to 10 top complex cards) to standard output without creating or modifying the target output file.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Shuffle the cards before processing.')
     proc_group.add_argument('--sample', type=int, default=0,
@@ -213,6 +215,13 @@ Usage Examples:
     # Calculate global averages
     total_score = sum(c.complexity_score for c in cards)
     avg_score = total_score / len(cards)
+
+    if args.dry_run:
+        print(f"Dry Run Summary: {len(cards)} card(s) evaluated.")
+        print(f"Average Complexity Score: {avg_score:.2f}")
+        sample_items = [f"{cardlib.titlecase(c.name.replace(utils.dash_marker, '-'))} ({c.complexity_score})" for c in sorted_cards[:10]]
+        print(f"Sample Preview (up to 10): {', '.join(sample_items)}")
+        return
 
     # Averages by Rarity
     rarity_stats = defaultdict(list)
