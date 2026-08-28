@@ -57,12 +57,6 @@ def get_prompt_messages(card):
         }
     ]
 
-def get_prompt(card):
-    """Formats a card for AI model judgment (TinyLlama specific string format)."""
-    messages = get_prompt_messages(card)
-    prompt = f"<|system|>\n{messages[0]['content']}\n<|user|>\n{messages[1]['content']}\n<|assistant|>\n"
-    return prompt
-
 def parse_llm_response(text, card):
     """Extracts the judgment and reason from the AI model response text."""
     judgment_match = re.search(r'JUDGMENT:\s*(VALID|INVALID)', text, re.IGNORECASE)
@@ -170,7 +164,10 @@ def validate_cards_llm(cards, model_name, device, batch_size=1, quiet=False, ver
     # Batch processing (manual because pipeline batching can be tricky with different prompt lengths)
     for i in tqdm(range(0, len(cards), batch_size), disable=quiet or len(cards) < 2, desc="AI Validation"):
         batch = cards[i:i+batch_size]
-        prompts = [get_prompt(c) for c in batch]
+        prompts = [
+            f"<|system|>\n{m[0]['content']}\n<|user|>\n{m[1]['content']}\n<|assistant|>\n"
+            for m in (get_prompt_messages(c) for c in batch)
+        ]
 
         # Generation settings: do_sample=False for deterministic evaluation
         outputs = pipe(
