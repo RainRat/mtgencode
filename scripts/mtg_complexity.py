@@ -219,7 +219,7 @@ Usage Examples:
     if args.dry_run:
         print(f"Dry Run Summary: {len(cards)} card(s) evaluated.")
         print(f"Average Complexity Score: {avg_score:.2f}")
-        sample_items = [f"{cardlib.titlecase(c.name.replace(utils.dash_marker, '-'))} ({c.complexity_score})" for c in sorted_cards[:10]]
+        sample_items = [f"{cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) if hasattr(c, 'name') and c.name else str(c)} ({getattr(c, 'complexity_score', 0)})" for c in sorted_cards[:10]]
         print(f"Sample Preview (up to 10): {', '.join(sample_items)}")
         return
 

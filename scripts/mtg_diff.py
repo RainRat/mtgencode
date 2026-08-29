@@ -282,7 +282,7 @@ Usage Examples:
         print(f"  Removed: {len(removed)} card(s)")
         print(f"  Modified: {len(modified)} card(s)")
         print(f"  Unchanged: {unchanged_count} card(s)")
-        sample_cards = [c.display_name for c in (added + [c for c, _ in modified] + removed)[:10]]
+        sample_cards = [getattr(c, 'display_name', str(c)) for c in (added + [c for c, _ in modified] + removed)[:10]]
         print(f"Sample Preview (up to 10 changed/added): {', '.join(sample_cards) if sample_cards else 'None'}")
         return
 

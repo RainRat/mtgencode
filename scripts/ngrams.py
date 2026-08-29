@@ -103,7 +103,7 @@ def main(fname=None, oname=None, gmin=2, gmax=8, nltk=False, sep=False, verbose=
 
     if dry_run:
         print(f"Dry Run Summary: Evaluated {len(cards)} card(s).")
-        total_lines = sum(len(c.text_lines_words) for c in cards)
+        total_lines = sum(len(getattr(c, 'text_lines_words', [])) for c in cards)
         print(f"Total Text Lines: {total_lines}")
         if nltk:
             n = gmin
@@ -119,7 +119,7 @@ def main(fname=None, oname=None, gmin=2, gmax=8, nltk=False, sep=False, verbose=
             for grams in range(gmin, gmax + 1):
                 gramdict = {}
                 for card in cards:
-                    update_ngrams(card.text_lines_words, gramdict, grams)
+                    update_ngrams(getattr(card, 'text_lines_words', []), gramdict, grams)
                 print(f"  {grams}-gram: {len(gramdict)} unique n-gram(s)")
                 bin_lines = describe_bins(gramdict, bins)
                 for bl in bin_lines:
@@ -152,7 +152,7 @@ def main(fname=None, oname=None, gmin=2, gmax=8, nltk=False, sep=False, verbose=
                 print('generating ' + str(grams) + '-grams...')
             gramdict = {}
             for card in cards:
-                update_ngrams(card.text_lines_words, gramdict, grams)
+                update_ngrams(getattr(card, 'text_lines_words', []), gramdict, grams)
 
             oname_full = oname + '.' + str(grams) + 'g'
             if verbose:
