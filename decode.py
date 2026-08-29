@@ -913,6 +913,13 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    # Interactive terminal handling: decode.py expects encoded text files or piped input.
+    # Prevent hanging terminal sessions when executed interactively without an input file or piped stdin.
+    if args.infile == '-' and sys.stdin.isatty():
+        parser.print_help(sys.stderr)
+        print("\nError: No input file specified. Please provide an encoded card file or pipe input into standard input.", file=sys.stderr)
+        sys.exit(1)
+
     # If --mse is used, we must have an output filename.
     if args.mse and not args.outfile:
         parser.error("--mse requires an output filename.")
