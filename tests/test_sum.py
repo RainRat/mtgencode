@@ -4,6 +4,7 @@ import io
 import sys
 import os
 import tempfile
+import runpy
 
 # Add project root to sys.path
 sys.path.append(os.getcwd())
@@ -138,6 +139,21 @@ class TestSumCLI(unittest.TestCase):
                 code, out, err = self.run_sum_main(['somefile.txt'])
                 self.assertEqual(code, 1)
                 self.assertIn("Error reading somefile.txt", err)
+
+    def test_main_cli_execution(self):
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp:
+            tmp.write("0|Card A|1.0|0.8\n")
+            tmp_path = tmp.name
+
+        try:
+            with patch('sys.argv', ['sum.py', tmp_path]):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    with patch('sys.stderr', new=io.StringIO()):
+                        runpy.run_path('scripts/sum.py', run_name='__main__')
+                        self.assertIn("DISTANCE SUMMARY", fake_out.getvalue())
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
 if __name__ == '__main__':
     unittest.main()
