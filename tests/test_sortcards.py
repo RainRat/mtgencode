@@ -78,5 +78,36 @@ class TestSortCards(unittest.TestCase):
         self.assertIn(summary_str, classes['uncommon'])
         self.assertIn(summary_str, classes['CMC 2'])
 
+    def test_dry_run_mode(self):
+        import io
+        import os
+        import tempfile
+        from unittest.mock import patch
+
+        rare_data = {
+            "name": "Test Dry Run Card",
+            "manaCost": "{1}{R}",
+            "types": ["Creature"],
+            "rarity": "Rare",
+            "power": "2",
+            "toughness": "2"
+        }
+        card = Card(rare_data)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_file = os.path.join(tmpdir, "output.txt")
+            captured_stdout = io.StringIO()
+
+            with patch("sys.stdout", captured_stdout):
+                with patch("jdecode.mtg_open_file", return_value=[card]):
+                    sortcards.main("dummy_input.json", out_file, dry_run=True, quiet=True)
+
+            output = captured_stdout.getvalue()
+            self.assertIn("Dry Run Summary: 1 card(s) matched.", output)
+            self.assertIn("Category Breakdown:", output)
+            self.assertIn("creatures: 1 card(s)", output)
+            self.assertIn("Sample Preview (up to 10): Test Dry Run Card", output)
+            self.assertFalse(os.path.exists(out_file))
+
 if __name__ == '__main__':
     unittest.main()
