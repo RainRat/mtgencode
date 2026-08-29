@@ -22,7 +22,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          mechanics=None,
          produces=None,
          identities=None, id_counts=None,
-         seed=None, decklist_file=None, booster=0, box=0):
+         seed=None, decklist_file=None, booster=0, box=0,
+         dry_run=False):
     fmt_ordered = cardlib.fmt_ordered_default
     fmt_labeled = None if nolabel else cardlib.fmt_labeled_default
     fieldsep = utils.fieldsep
@@ -93,6 +94,23 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     if limit > 0:
         cards = cards[:limit]
+
+    if dry_run:
+        from collections import defaultdict
+        set_buckets = defaultdict(list)
+        for card in cards:
+            code = (getattr(card, 'set_code', None) or 'CUS').upper()
+            set_buckets[code].append(card)
+
+        print(f"Dry Run Summary: {len(cards)} card(s) matched for encoding.")
+        print(f"Encoding format: '{encoding}'")
+        if set_buckets:
+            print("Set Code Breakdown:")
+            for code, set_cards in sorted(set_buckets.items()):
+                print(f"  {code}: {len(set_cards)} card(s)")
+        sample_names = [cardlib.titlecase(getattr(c, 'name', str(c))) for c in cards[:10]]
+        print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
+        return
 
     def writecards(writer):
         success_count = 0
@@ -194,6 +212,8 @@ Usage Examples:
                         help='Sort cards by a specific criterion (enables --stable).')
     proc_group.add_argument('--reverse', action='store_true',
                         help='Reverse the sort order.')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run summary of matching card stats and encoding preview without creating or writing to the target output file.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -297,5 +317,6 @@ Usage Examples:
          mechanics=args.mechanic,
          produces=args.produces,
          identities=args.identity, id_counts=args.id_count,
-         seed=args.seed, decklist_file=args.deck, booster=args.booster, box=args.box)
+         seed=args.seed, decklist_file=args.deck, booster=args.booster, box=args.box,
+         dry_run=args.dry_run)
     exit(0)
