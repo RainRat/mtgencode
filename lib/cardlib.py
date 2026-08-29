@@ -14,7 +14,8 @@ from titlecase import titlecase
 # List of all mechanics recognized by get_face_mechanics()
 RECOGNIZED_MECHANICS = [
     'Activated', 'Triggered', 'ETB Effect', 'Modal/Choice', 'X-Cost/Effect',
-    'Kicker', 'Uncast', 'Equipment', 'Leveler', 'Counters',
+    'Kicker', 'Uncast', # Spell-countering abilities (e.g., "Counter target spell") encoded as 'uncast' to avoid collision with physical counters
+    'Equipment', 'Leveler', 'Counters',
     'Flying', 'Trample', 'Lifelink', 'Haste', 'Deathtouch', 'Vigilance',
     'Ward', 'Prowess', 'Menace', 'Reach', 'Flash', 'Indestructible',
     'Defender', 'Scry', 'Draw A Card', 'Mill', 'Exile', 'Token',
@@ -86,7 +87,7 @@ MECHANIC_COLORS = {
     'Flashback': 'URBWGC',
     'Infect': 'BGUC',
     'Toxic': 'BGWC',
-    'Uncast': 'UC', # "Counter target spell"
+    'Uncast': 'UC', # Spell-countering abilities (e.g., "Counter target spell")
 }
 
 # Mapping of functional actions to valid colors

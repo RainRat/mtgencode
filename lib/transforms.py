@@ -365,9 +365,9 @@ def text_pass_5_counters(s):
     return s
 
 
-# The word 'counter' is confusing when used to refer to what we do to spells
-# and sometimes abilities to make them not happen. Let's rename that.
-# Call this after doing the counter replacement to simplify the regexes.
+# Replace the verb 'counter' (neutralizing a spell or ability) with 'uncast' during encoding.
+# This prevents ambiguity between spell-countering actions and physical markers (+1/+1 counters).
+# Call this after doing counter-type replacement to simplify regex matching.
 counter_rename = 'uncast'
 def text_pass_6_uncast(s):
     replacements = [

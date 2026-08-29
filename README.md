@@ -245,7 +245,7 @@ Multi-faced cards (like Split or Transform cards) are written as separate blocks
 | `{ }` | Mana symbols. Single letters are doubled (e.g., `{WW}`). | `{GG}` |
 | `T` | The Tap symbol. | `T: Add {GG}` |
 | `Q` | The Untap symbol. | `Q: Untap @` |
-| `uncast` | Replaces the word "counter" when it means to cancel a spell. | `uncast target spell` |
+| `uncast` | Replaces the verb "counter" when canceling a spell or ability. This prevents confusion with physical markers like +1/+1 counters. | `uncast target spell` |
 
 ### Counting Numbers (Unary)
 To help the AI learn how to count, we write numbers as a sequence of symbols instead of using digits.
