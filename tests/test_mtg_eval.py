@@ -154,5 +154,35 @@ class TestMTGEval(unittest.TestCase):
         result = json.loads(output)
         self.assertEqual(result['checkpoint'], 'checkpoint.pt')
 
+    @patch('os.path.exists')
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_mtg_eval_length_autoscale(self, mock_stdout, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        mock_exists.return_value = True
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 1
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = ((1, 1, 0, 0), {'types': (1, 1, 0)})
+
+        # Test 1: Count 100 cards with no --length -> length auto-scales to max(5000, 100 * 250) = 25000
+        with patch('sys.argv', ['mtg_eval.py', '--checkpoint', 'fake.pt', '--count', '100', '--json']):
+            mtg_eval.main()
+
+        self.assertEqual(mock_generate.call_args[1]['length'], 25000)
+
+        # Test 2: Explicit --length 1234 overrides auto-scaling
+        mock_generate.reset_mock()
+        with patch('sys.argv', ['mtg_eval.py', '--checkpoint', 'fake.pt', '--count', '100', '--length', '1234', '--json']):
+            mtg_eval.main()
+
+        self.assertEqual(mock_generate.call_args[1]['length'], 1234)
+
 if __name__ == '__main__':
     unittest.main()

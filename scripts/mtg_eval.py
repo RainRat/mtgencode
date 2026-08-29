@@ -53,8 +53,8 @@ Usage Examples:
     eval_group = parser.add_argument_group('Evaluation Options')
     eval_group.add_argument('-n', '--count', type=int, default=50,
                         help='Number of cards to generate and validate (Default: 50).')
-    eval_group.add_argument('-l', '--length', type=int, default=5000,
-                        help='Character limit for the generation process (Default: 5000).')
+    eval_group.add_argument('-l', '--length', type=int, default=None,
+                        help='Character limit for the generation process. Automatically scales based on --count if omitted (Default: max(5000, count * 250)).')
 
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
@@ -125,8 +125,11 @@ Usage Examples:
                  'powertoughness', 'manacost', 'bodytext_prepend', 'bodytext_append']:
         if not hasattr(gen_args, attr): setattr(gen_args, attr, None)
 
-    # We use a large length to generate multiple cards
-    generated_raw = generate_text(model, char_to_idx, idx_to_char, vocab_size, device, gen_args, length=args.length)
+    # Resolve generation character length: auto-scale based on --count if --length was omitted
+    gen_length = args.length if args.length is not None else max(5000, args.count * 250)
+
+    # We use gen_length to generate enough text for the requested card count
+    generated_raw = generate_text(model, char_to_idx, idx_to_char, vocab_size, device, gen_args, length=gen_length)
 
     # Split into cards
     card_sources = [c for c in generated_raw.split(utils.cardsep) if c.strip()]
