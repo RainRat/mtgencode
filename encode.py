@@ -161,31 +161,31 @@ Usage Examples:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
-                        help='Input card data (MTGJSON or Scryfall JSON, JSONL, CSV, MSE, XML, ZIP, or MTG Decklist), an encoded file, or a directory. Defaults to stdin (-).')
+                        help='Path to card data (JSON, CSV, XML, ZIP, or decklist) or directory. Defaults to standard input (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console.')
 
     # Group: Content Formatting
     enc_group = parser.add_argument_group('Content Formatting')
     enc_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
-                        help="The encoding format to use: 'std' (Name last, default), 'named' (Name first), "
+                        help="Encoding format to use: 'std' (Name last, default), 'named' (Name first), "
                              "'noname' (No names), 'rfields' (Random field order), "
                              "'old' (Legacy), 'norarity' (No rarity), 'vec' (Numerical vectors), "
                              "or 'custom' (User-defined).",
     )
     enc_group.add_argument('--nolabel', action='store_true',
-                        help="Remove field labels (like '|cost|' or '|text|') from the output.")
+                        help="Remove field labels (such as '|cost|' or '|text|') from output text.")
     enc_group.add_argument('--nolinetrans', action='store_true',
-                        help='Keep the original order of card text lines (disable automatic reordering).')
+                        help='Keep original card text line order without automatic reordering.')
 
     # Group: Data Processing
     proc_group = parser.add_argument_group('Data Processing')
     proc_group.add_argument('-r', '--randomize', action='store_true',
-                        help='Randomize the order of mana symbols (e.g., {W}{U} vs {U}{W}) to help the AI learn better.')
+                        help='Randomize mana symbol order in costs (for example, {W}{U} versus {U}{W}).')
     proc_group.add_argument('-n', '--limit', type=int, default=0,
                         help='Only process the first N cards.')
     proc_group.add_argument('-s', '--stable', action='store_true',
-                        help='Keep the original order of cards from the input (do not shuffle).')
+                        help='Keep original card order without shuffling.')
     proc_group.add_argument('--seed', type=int,
                         help='Seed for the random number generator (Default: 1371367).')
     proc_group.add_argument('--sample', type=int, default=0,
