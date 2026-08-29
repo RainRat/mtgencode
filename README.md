@@ -185,8 +185,8 @@ python3 train.py --mode train --infile data/output.txt --epochs 10 --randomize_f
 # Generate new cards from a trained model checkpoint
 python3 train.py --mode sample --checkpoint checkpoint.pt --length 2000 > generated.txt
 
-# Force specific card attributes during sampling (uses legacy field order)
-python3 train.py --mode sample --name "uthros" --supertypes "legendary" --types "creature"
+# Force specific card attributes during sampling (requires a model trained on legacy field order: -e old)
+python3 train.py --mode sample --checkpoint checkpoint.pt --name "uthros" --supertypes "legendary" --types "creature"
 ```
 *   **Options:**
     *   `--mode {train,sample}`: Choose `train` to teach the model using your dataset, or `sample` to generate new card text (Default: `train`).
@@ -209,7 +209,7 @@ python3 train.py --mode sample --name "uthros" --supertypes "legendary" --types 
     *   `--length N`: Number of characters to generate when sampling (Default: 1000).
     *   `--temp TEMP`: Sampling temperature controlling AI creativity. Higher values produce more unusual cards (Default: 0.8).
     *   `--start_text TEXT`: Starting prompt text for generation (Default: `|`).
-    *   **Forcing Card Attributes:** Force specific field values during sampling (e.g., `--name`, `--supertypes`, `--types`, `--loyalty`, `--subtypes`, `--rarity`, `--powertoughness`, `--manacost`, `--bodytext_prepend`, `--bodytext_append`). Note: Forcing attributes requires legacy field order (`-e old`).
+    *   **Forcing Card Attributes:** Force specific field values during sampling (e.g., `--name`, `--supertypes`, `--types`, `--loyalty`, `--subtypes`, `--rarity`, `--powertoughness`, `--manacost`, `--bodytext_prepend`, `--bodytext_append`). Note: These options require a model trained on cards encoded with the legacy format (`python3 encode.py ... -e old`).
 
 ### Using Pipes
 You can chain these tools together using the pipe (`|`) symbol. This lets you process cards in one step without saving temporary files.
@@ -415,7 +415,7 @@ python3 scripts/mtg_analyze.py summary my_cards.json
 ## Training your own AI Model
 Use your encoded card data to train a neural network that can design its own Magic cards.
 
-1.  **Prepare the Data:** Create a text file of encoded cards.
+1.  **Prepare the Data:** Create a text file of encoded cards. To force specific attributes during sampling later, add `-e old` when encoding.
     ```bash
     python3 encode.py data/AllPrintings.json data/output.txt
     ```
