@@ -612,7 +612,12 @@ def _execute_oracle(cards, args, include_indices=False):
             count_str = f"Showing {len(display_cards)} of"
         else:
             count_str = f"Showing {len(display_cards)} of {prelimit_count}" if prelimit_count != len(display_cards) else str(len(display_cards))
-        header_title = "SIMILAR CARDS" if getattr(args, 'similar', False) else "SEARCH RESULTS"
+        if getattr(args, 'similar', False):
+            header_title = "SIMILAR CARDS"
+        elif len(display_cards) == 1:
+            header_title = "CARD DETAILS"
+        else:
+            header_title = "SEARCH RESULTS"
         utils.print_header(header_title, count=count_str, use_color=use_color)
 
     for c in display_cards:
@@ -660,7 +665,7 @@ def _execute_oracle(cards, args, include_indices=False):
             print_face(c)
 
             # Metadata Footer
-            print("  " + "\u2022" * min(20, term_width - 4)) # Grouping separator
+            print("  " + "-" * min(20, term_width - 4)) # Grouping separator
             footer_lines = []
 
             def fmt_label(label):
