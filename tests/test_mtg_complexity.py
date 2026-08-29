@@ -187,5 +187,25 @@ class TestMtgComplexity(unittest.TestCase):
                 err_out = fake_err.getvalue()
                 self.assertIn("No cards found matching the criteria.", err_out)
 
+    def test_complexity_cli_dry_run(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as tf:
+            temp_path = tf.name
+
+        try:
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                with patch('sys.argv', ['mtg_complexity.py', 'testdata/uthros.json', temp_path, '--dry-run']):
+                    complexity_main()
+                    output = fake_out.getvalue()
+                    self.assertIn("Dry Run Summary: 1 card(s) evaluated.", output)
+                    self.assertIn("Average Complexity Score: 107.00", output)
+                    self.assertIn("Sample Preview (up to 10): Uthros Research Craft (107)", output)
+
+            # File should not have been opened or written to
+            self.assertEqual(os.path.getsize(temp_path), 0)
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
 if __name__ == '__main__':
     unittest.main()
