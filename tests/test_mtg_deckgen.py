@@ -201,5 +201,130 @@ class TestMtgDeckgen(unittest.TestCase):
         self.assertIn("Composition Breakdown:", output)
         self.assertIn("Sample Preview (up to 10 entries):", output)
 
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_custom_curve_and_invalid_segment(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        card1 = cardlib.Card({
+            'name': 'Goblin',
+            'types': ['Creature'],
+            'manaCost': '{1}{R}',
+            'rarity': 'common',
+            'text': ''
+        })
+        mock_open.return_value = [commander, card1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia', '--curve', '1:2,2:4,6+:2,invalid']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        stderr = mock_stderr.getvalue()
+        self.assertIn("Galia", output)
+        self.assertIn("Warning: Invalid curve segment 'invalid', skipping.", stderr)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_outfile_writing(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        card1 = cardlib.Card({
+            'name': 'Goblin',
+            'types': ['Creature'],
+            'manaCost': '{1}{R}',
+            'rarity': 'common',
+            'text': ''
+        })
+        mock_open.return_value = [commander, card1]
+
+        outfile_path = 'test_deckgen_outfile.txt'
+        if os.path.exists(outfile_path):
+            os.remove(outfile_path)
+
+        try:
+            with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia', '--outfile', outfile_path]):
+                mtg_deckgen.main()
+
+            self.assertTrue(os.path.exists(outfile_path))
+            with open(outfile_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn("1 Galia *CMDR*", content)
+            self.assertIn("1 Goblin", content)
+        finally:
+            if os.path.exists(outfile_path):
+                os.remove(outfile_path)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_commander_fallback_warning(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        mock_open.return_value = [commander]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'NonexistentCommander']):
+            mtg_deckgen.main()
+
+        stderr = mock_stderr.getvalue()
+        self.assertIn("Warning: Commander 'NonexistentCommander' not found. Picking a random one.", stderr)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_pauper_empty_common_pool(self, mock_stderr, mock_open):
+        rare_card = cardlib.Card({
+            'name': 'Rare Dragon',
+            'types': ['Creature'],
+            'manaCost': '{3}{R}{R}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        mock_open.return_value = [rare_card]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'pauper']), self.assertRaises(SystemExit):
+            mtg_deckgen.main()
+
+        self.assertIn("Error: No common cards found in the card pool for Pauper format.", mock_stderr.getvalue())
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_positional_commander_query(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        mock_open.return_value = [commander]
+
+        # Passing "Galia" as first positional argument when Galia file doesn't exist on disk
+        with patch('sys.argv', ['mtg_deckgen.py', 'Galia', '--format', 'commander']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Galia *CMDR*", output)
+
 if __name__ == '__main__':
     unittest.main()
