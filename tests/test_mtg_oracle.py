@@ -7,8 +7,10 @@ def test_oracle_basic():
         capture_output=True, text=True
     )
     assert result.returncode == 0
+    assert 'CARD DETAILS (1)' in result.stdout
     assert 'Uthros Research Craft' in result.stdout
     assert 'Artifact - Spacecraft' in result.stdout
+    assert '--------------------' in result.stdout
 
 def test_oracle_fuzzy():
     """Test oracle fuzzy matching auto-fulfillment."""
