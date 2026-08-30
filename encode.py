@@ -108,7 +108,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             print("Set Code Breakdown:")
             for code, set_cards in sorted(set_buckets.items()):
                 print(f"  {code}: {len(set_cards)} card(s)")
-        sample_names = [cardlib.titlecase(getattr(c, 'name', str(c))) for c in cards[:10]]
+        sample_names = [cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) if hasattr(c, 'name') and c.name else str(c) for c in cards[:10]]
         print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
         return
 
@@ -160,6 +160,9 @@ if __name__ == '__main__':
 Usage Examples:
   # Basic encoding from JSON
   python3 encode.py data/AllPrintings.json encoded_output.txt --verbose
+
+  # Preview matching cards and encoding stats without writing output (dry run mode)
+  python3 encode.py data/AllPrintings.json --dry-run
 
   # Convert a Cockatrice XML database to encoded text
   python3 encode.py my_database.xml encoded_output.txt

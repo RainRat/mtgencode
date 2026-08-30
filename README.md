@@ -119,6 +119,7 @@ Customization options for formatting data:
 *   `--sample N`: Shorthand for `--limit N`. The tool shuffles cards by default unless you use `--stable`.
 *   `--booster N`: Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land.
 *   `--box N`: Simulate opening N booster boxes (36 packs each).
+*   `-p`, `--preview`, `--dry-run`: Print a summary of matching card statistics and sample preview without writing output files.
 *   `-q`, `--quiet`: Suppress the progress bar and status messages.
 *   `--report-unparsed FILE`: Save the raw JSON of cards that failed to parse into a separate file.
 
