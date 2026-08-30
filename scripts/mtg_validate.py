@@ -57,12 +57,6 @@ def list_only(l, items):
             return False
     return True
 
-def pct(x, total):
-    if total == 0:
-        return '(0.0%)'
-    pctstr = 100.0 * float(x) / float(total)
-    return '(' + str(pctstr)[:5] + '%)'
-
 def check_types(card):
     if 'instant' in card.types:
         return list_only(card.types, ['tribal', 'instant'])
