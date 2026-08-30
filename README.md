@@ -1263,6 +1263,56 @@ python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --r
     *   `--box N`: Simulate opening N booster boxes (36 packs each) before splitting.
     *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--grep`, `--colors`, `--cmc`, `--mechanic`).
 
+### `ngrams.py`
+Extracts n-grams (sequences of words) or builds an NLTK language model from encoded card text or Magic card datasets.
+```bash
+# Generate frequency files for 2-grams through 8-grams
+python3 scripts/ngrams.py testdata/uthros.json my_ngrams
+
+# Preview n-gram statistics without creating output files (dry-run mode)
+python3 scripts/ngrams.py testdata/uthros.json --dry-run
+
+# Build an NLTK language model saved as a file
+python3 scripts/ngrams.py testdata/uthros.json model.pkl -nltk -min 3
+```
+*   **Options:**
+    *   `-p`, `--preview`, `--dry-run`: Print a summary of n-gram statistics without writing output files.
+    *   `-min N`, `--min N`: Minimum n-gram size to compute (Default: 2).
+    *   `-max N`, `--max N`: Maximum n-gram size to compute (Default: 8).
+    *   `-nltk`: Build an NLTK maximum likelihood language model with n = min.
+    *   `-s`, `--separate`: Separate card text into individual lines when building an NLTK model.
+    *   `-v`, `--verbose`: Enable detailed status messages.
+
+### `keydiff.py`
+Compares entry counts and shared key ratios between two key-value data files (such as word or feature frequency tables).
+```bash
+# Compare two key-value store files
+python3 scripts/keydiff.py base_keys.txt target_keys.txt
+
+# Compare a baseline file against standard input
+cat target_keys.txt | python3 scripts/keydiff.py base_keys.txt
+```
+*   **Options:**
+    *   `-v`, `--verbose`: Enable detailed logging during key comparison.
+
+### `sanity.py`
+Inspects and verifies line structure, word vocabulary counts, and unique character sets in encoded card text.
+```bash
+# Inspect line separation behavior in card rules text
+python3 scripts/sanity.py data/output.txt -lines
+
+# Count word frequencies and display rare vocabulary entries
+python3 scripts/sanity.py data/output.txt -vocab
+
+# Extract unique characters and save the vocabulary to a JSON file
+python3 scripts/sanity.py data/output.txt -chars --vocab_name vocab.json
+```
+*   **Options:**
+    *   `-lines`: Inspect and print line separation categories for card rules text.
+    *   `-vocab`: Count word frequencies in card text and display rare words.
+    *   `-chars`: Extract and display all unique characters used in card encodings.
+    *   `--vocab_name FILE`: Save the character vocabulary to a JSON file.
+
 ---
 
 ## Troubleshooting
