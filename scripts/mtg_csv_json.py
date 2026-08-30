@@ -63,6 +63,10 @@ Custom Card Workflow:
   3. Merge with official data:
      python3 scripts/combinejson.py data/AllPrintings.json custom.json AllCustom.json
 
+Dry Run Mode:
+  Preview conversion statistics without creating output files:
+     python3 scripts/csv2json.py custom.csv --dry-run
+
 CSV Format (7 columns in this order):
   1. Name: The name of the card (e.g., "Giant Growth").
   2. Mana Cost: The mana symbols in braces (e.g., "{G}" or "{1}{W}{B}").
@@ -81,11 +85,23 @@ Note: The first row is ignored if the first column is exactly "name".
 ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('csv_file', help='Path to the input CSV file.')
-    parser.add_argument('json_output', help='Path to the output JSON file.')
+
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('csv_file', help='Path to the input CSV file.')
+    io_group.add_argument('json_output', nargs='?', help='Path to the output JSON file (optional if --dry-run is specified).')
+
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                            help='Print a summary of converted card statistics and sample preview without writing output file.')
+
     args = parser.parse_args(argv)
 
-    with open(args.csv_file, encoding='utf-8') as csvfile, open(args.json_output, 'w', encoding='utf-8') as jsonfile:
+    if not args.dry_run and not args.json_output:
+        parser.error("the following arguments are required: json_output (unless --dry-run is specified)")
+
+    json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
+
+    with open(args.csv_file, encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile)
         json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
 
@@ -129,6 +145,33 @@ Note: The first row is ignored if the first column is exactly "name".
             card["setCode"] = "CUS"
             json_data["data"]["CUS"]["cards"].append(card)
 
+    cards = json_data["data"]["CUS"]["cards"]
+
+    if args.dry_run:
+        multi_count = sum(1 for c in cards if "bside" in c)
+        single_count = len(cards) - multi_count
+        rarity_counts = {}
+        for c in cards:
+            r = c.get("rarity", "unknown")
+            rarity_counts[r] = rarity_counts.get(r, 0) + 1
+
+        print("=== CSV to JSON Conversion Summary (Dry Run) ===")
+        print(f"Source file: {args.csv_file}")
+        print(f"Total cards evaluated: {len(cards)}")
+        print(f"Single-faced cards: {single_count}")
+        print(f"Multi-faced cards: {multi_count}")
+        if rarity_counts:
+            r_str = ", ".join(f"{k}: {v}" for k, v in sorted(rarity_counts.items()))
+            print(f"Rarity distribution: {r_str}")
+
+        sample_names = [c["name"] for c in cards[:10]]
+        if sample_names:
+            print(f"\nSample Converted Cards ({min(10, len(cards))}/{len(cards)}):")
+            for name in sample_names:
+                print(f"  - {name}")
+        return
+
+    with open(args.json_output, 'w', encoding='utf-8') as jsonfile:
         json.dump(json_data, jsonfile)
 
 def run_json2csv(argv=None):
@@ -139,6 +182,10 @@ Multi-Faced Cards:
   This script supports multi-faced cards (Splits, Transforms, Battles). All faces
   are exported into a single CSV row, with fields merged using the " // " separator.
   This format is compatible with csv2json.py for round-trip data processing.
+
+Dry Run Mode:
+  Preview export statistics without creating output files:
+     python3 scripts/json2csv.py data/AllPrintings.json --dry-run
 ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -146,7 +193,11 @@ Multi-Faced Cards:
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', help='Input card data (JSON, JSONL, MSE, ZIP, or encoded text).')
-    io_group.add_argument('outfile', help='Output CSV file path.')
+    io_group.add_argument('outfile', nargs='?', help='Output CSV file path (optional if --dry-run is specified).')
+
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                            help='Print a summary of exported card statistics and sample preview without writing output file.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -203,6 +254,9 @@ Multi-Faced Cards:
 
     args = parser.parse_args(argv)
 
+    if not args.dry_run and not args.outfile:
+        parser.error("the following arguments are required: outfile (unless --dry-run is specified)")
+
     # Load cards using the standard loader
     cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose,
                                   grep=args.grep, vgrep=args.vgrep,
@@ -221,6 +275,30 @@ Multi-Faced Cards:
     if not cards:
         if args.verbose:
             print("No cards found matching the criteria.", file=sys.stderr)
+        if args.dry_run:
+            print("=== JSON to CSV Export Summary (Dry Run) ===")
+            print(f"Source file: {args.infile}")
+            print("Total cards evaluated: 0")
+        return
+
+    if args.dry_run:
+        rarity_counts = {}
+        for c in cards:
+            r = getattr(c, 'rarity', None) or 'unknown'
+            rarity_counts[r] = rarity_counts.get(r, 0) + 1
+
+        print("=== JSON to CSV Export Summary (Dry Run) ===")
+        print(f"Source file: {args.infile}")
+        print(f"Total cards evaluated: {len(cards)}")
+        if rarity_counts:
+            r_str = ", ".join(f"{k}: {v}" for k, v in sorted(rarity_counts.items()))
+            print(f"Rarity distribution: {r_str}")
+
+        sample_names = [c.name for c in cards[:10]]
+        if sample_names:
+            print(f"\nSample Exported Cards ({min(10, len(cards))}/{len(cards)}):")
+            for name in sample_names:
+                print(f"  - {name}")
         return
 
     with open(args.outfile, 'w', encoding='utf8', newline='') as f:
@@ -269,13 +347,14 @@ Autodetect mode:
     # We parse known args to check if we can autodetect, otherwise show help
     args, remaining = parser.parse_known_args()
     
-    if not args.infile or not args.outfile:
+    is_dry_run = '-p' in sys.argv or '--preview' in sys.argv or '--dry-run' in sys.argv
+    if not args.infile or (not args.outfile and not is_dry_run):
         parser.print_help()
         sys.exit(0)
 
     # Detect conversion direction
     in_ext = os.path.splitext(args.infile)[1].lower()
-    out_ext = os.path.splitext(args.outfile)[1].lower()
+    out_ext = os.path.splitext(args.outfile)[1].lower() if args.outfile else ""
 
     if in_ext == '.csv' or out_ext == '.json':
         # CSV to JSON
