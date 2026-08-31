@@ -969,9 +969,13 @@ python3 scripts/json2csv.py data/AllPrintings.json my_cards.csv --set MOM
 # Convert a spreadsheet to JSON
 python3 scripts/csv2json.py my_cards.csv my_cards.json
 
+# Preview conversion statistics without writing output files (dry-run mode)
+python3 scripts/csv2json.py my_cards.csv --dry-run
+
 # Merge custom cards with official data
 python3 scripts/combinejson.py data/AllPrintings.json my_cards.json AllCards.json
 ```
+*   `-p`, `--preview`, `--dry-run`: Print a dry run summary of conversion/export statistics without creating or writing output files.
 
 ### `mtg_forge.py`
 Forges a new card or modifies ("reforges") existing ones in batch using command-line arguments. This is useful for quickly creating custom cards for testing, scaling stats, color-shifting, or batch editing dataset cards.
