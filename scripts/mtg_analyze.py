@@ -1657,6 +1657,8 @@ def main():
     def add_std(p):
         cli_utils.add_standard_filters(p)
         cli_utils.add_standard_output_args(p)
+        p.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                       help='Print a dry run summary of analyzed card statistics (total card count, set code breakdown, and sample preview of up to 10 matching card names) to standard output without creating or modifying output files.')
         p.add_argument('query', nargs='?', help='Search query or input file.')
         p.add_argument('infile', nargs='?', default='-', help='Input card data.')
 
@@ -1854,6 +1856,8 @@ def main():
     p_ba.add_argument('--set', action='append', help='Filter inputs by set code.')
     p_ba.add_argument('--rarity', action='append', help='Filter inputs by rarity.')
     p_ba.add_argument('--limit', type=int, default=0, help='Only process the first N cards from each input.')
+    p_ba.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                      help='Print a dry run summary of analyzed card statistics (total card count, set code breakdown, and sample preview of up to 10 matching card names) to standard output without creating or modifying output files.')
     p_ba.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
     p_ba.add_argument('-q', '--quiet', action='store_true', help='Suppress status messages.')
     c_grp = p_ba.add_mutually_exclusive_group()
@@ -2043,6 +2047,28 @@ def main():
         except (ValueError, TypeError):
             pass
     if sample_val > 0: args.shuffle = True; args.limit = sample_val
+
+    if getattr(args, 'dry_run', False):
+        if args.command in ['balance', 'compare']:
+            _resolve_compare_inputs(args)
+            infile = args.infiles[0] if getattr(args, 'infiles', None) else '-'
+            cards = jdecode.mtg_open_file(infile, verbose=getattr(args, 'verbose', False))
+        else:
+            cards = cli_utils.load_and_filter_cards(args)
+
+        set_buckets = defaultdict(list)
+        for card in cards:
+            set_code = (getattr(card, 'set_code', None) or 'CUS').upper()
+            set_buckets[set_code].append(card)
+
+        print(f"Dry Run Summary: {len(cards)} card(s) matched.")
+        print("Set Code Breakdown:")
+        for code, set_cards in sorted(set_buckets.items()):
+            print(f"  {code}: {len(set_cards)} card(s)")
+        sample_names = [titlecase(str(getattr(c, 'name', c)).replace(utils.dash_marker, '-')) for c in cards[:10]]
+        print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
+        return
+
     args.func(args)
 
 if __name__ == "__main__": main()
