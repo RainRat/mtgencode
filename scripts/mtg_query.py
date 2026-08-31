@@ -1246,7 +1246,7 @@ def handle_shell(args):
                                 align_pad = col_width - utils.visible_len(left_part)
                                 print(" " * align_pad + f"- {desc}")
                             else:
-                                print(f"{padded_left if 'padded_left' in locals() else left_part + (' ' * max(0, pad_len))}- {desc}")
+                                print(f"{left_part}{' ' * max(0, pad_len)}- {desc}")
 
                     print("\n  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
                     print("        for any command, referring to the results of the last search.")
