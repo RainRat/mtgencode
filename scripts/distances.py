@@ -8,9 +8,25 @@ import jdecode
 from namediff import Namediff
 from cbow import CBOW
 
-def main(fname, oname, verbose = True, parallel = True):
-    # may need to set special arguments here
+default_infile = os.path.join(libdir, '../data/output.txt')
+
+def main(fname, oname, verbose = True, parallel = True, dry_run = False):
+    if not os.path.exists(fname):
+        print(f"Error: File not found: {fname}", file=sys.stderr)
+        sys.exit(1)
+
     cards = jdecode.mtg_open_file(fname, verbose=verbose)
+
+    if dry_run:
+        print(f"Dry Run Summary: {len(cards)} card(s) loaded from {fname}.")
+        print(f"Output File: {oname if oname else 'None'}")
+        print(f"Parallel Processing: {'Enabled' if parallel else 'Disabled'}")
+        sample_names = [getattr(c, 'name', str(c)) for c in cards[:10]]
+        if sample_names:
+            print("Sample Card Preview:")
+            for name in sample_names:
+                print(f"  - {name}")
+        return
 
     # this could reasonably be some separate function
     # might make sense to merge cbow and namediff and have this be the main interface
@@ -62,24 +78,48 @@ def main(fname, oname, verbose = True, parallel = True):
             ofile.write(ostr)
 
 if __name__ == '__main__':
-    
     import argparse
-    parser = argparse.ArgumentParser(description="Calculate the semantic and name distance between generated cards and the official dataset.")
-    
+
+    parser = argparse.ArgumentParser(
+        description="Calculate the semantic and name distance between generated cards and the official dataset.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Analyze distance stats with standard inputs and outputs
+  python3 scripts/distances.py data/output.txt distances.txt
+
+  # Run calculations using default output file (distances.txt)
+  python3 scripts/distances.py data/output.txt
+
+  # Enable parallel processing on all CPU cores
+  python3 scripts/distances.py data/output.txt distances.txt --parallel
+
+  # Preview card count and distance calculation settings without running
+  python3 scripts/distances.py data/output.txt --dry-run
+"""
+    )
+
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infile',
-                        help='The card dataset to analyze (JSON, CSV, or encoded text).')
-    io_group.add_argument('outfile',
-                        help='Path to save the distance data. This file is used as input for scripts/sum.py.')
+    io_group.add_argument('infile', nargs='?', default=default_infile,
+                        help='The card dataset to analyze (JSON, CSV, or encoded text). Defaults to data/output.txt.')
+    io_group.add_argument('outfile', nargs='?', default='distances.txt',
+                        help='Path to save the distance data (default: distances.txt). Used as input for scripts/sum.py.')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-p', '--parallel', action='store_true',
                         help='Run calculations in parallel on all CPU cores for faster processing.')
+    proc_group.add_argument('-d', '--dry-run', '--preview', dest='dry_run', action='store_true',
+                        help='Print a summary of distance analysis parameters (total cards loaded, parallel status, output destination, and sample card preview) without running calculations or writing output files.')
     proc_group.add_argument('-v', '--verbose', action='store_true',
                         help='Enable detailed status messages.')
 
     args = parser.parse_args()
-    main(args.infile, args.outfile, verbose=args.verbose, parallel=args.parallel)
+
+    if args.infile == default_infile and not os.path.exists(default_infile) and sys.stdin.isatty() and not args.dry_run:
+        parser.print_help()
+        sys.exit(1)
+
+    main(args.infile, args.outfile, verbose=args.verbose, parallel=args.parallel, dry_run=args.dry_run)
     exit(0)
