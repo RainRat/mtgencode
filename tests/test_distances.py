@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import tempfile
@@ -52,6 +53,13 @@ class TestDistances(unittest.TestCase):
                         with self.assertRaises(SystemExit) as cm:
                             runpy.run_path(os.path.join('scripts', 'distances.py'), run_name='__main__')
                         self.assertEqual(cm.exception.code, 1)
+
+    def test_main_stdin_dry_run(self):
+        outfile = os.path.join(self.temp_dir.name, 'out.txt')
+        sample_card = "Grizzly Bears|{1}{G}|Creature — Bear|2/2||\n"
+        with patch('sys.stdin', io.StringIO(sample_card)), patch('sys.stdout'):
+            distances.main('-', outfile, verbose=False, parallel=False, dry_run=True)
+        self.assertFalse(os.path.exists(outfile))
 
 if __name__ == '__main__':
     unittest.main()

@@ -11,7 +11,7 @@ from cbow import CBOW
 default_infile = os.path.join(libdir, '../data/output.txt')
 
 def main(fname, oname, verbose = True, parallel = True, dry_run = False):
-    if not os.path.exists(fname):
+    if fname != '-' and not os.path.exists(fname):
         print(f"Error: File not found: {fname}", file=sys.stderr)
         sys.exit(1)
 
