@@ -16,10 +16,10 @@ import psutil
 #   3) invoke wait_and_kill_self_noreturn(threads)
 # or, use the handy wrapper that does it for you
 
-def spawn_stream_threads(fds, runthread, mkargs):
+def spawn_stream_threads(fds, runthread):
     threads = []
     for i, fd in enumerate(fds):
-        stream_thread = threading.Thread(target=runthread, args=mkargs(i, fd))
+        stream_thread = threading.Thread(target=runthread, args=(i, fd))
         stream_thread.daemon = True
         stream_thread.start()
         threads.append(stream_thread)
@@ -62,9 +62,9 @@ def wait_and_kill_self_noreturn(threads):
         time.sleep(1)
     force_kill_self_noreturn()
 
-def streaming_noreturn(fds, write_stream, mkargs):
+def streaming_noreturn(fds, write_stream):
     install_suicide_handlers()
-    threads = spawn_stream_threads(fds, write_stream, mkargs)
+    threads = spawn_stream_threads(fds, write_stream)
     wait_and_kill_self_noreturn(threads)
     assert False, 'should not return from streaming'
 
@@ -102,10 +102,7 @@ def main(args):
                     f.write(card.encode(randomize_mana=True, randomize_lines=True))
                     f.write(utils.cardsep)
 
-    def mkargs(i, fd):
-        return i, fd
-
-    streaming_noreturn(fds, write_stream, mkargs)
+    streaming_noreturn(fds, write_stream)
 
 if __name__ == '__main__':
     import argparse
