@@ -524,15 +524,17 @@ python3 scripts/mtg_validate.py data/AllPrintings.json --dump
 Check the quality of an AI model by generating a sample of cards and running them through a validation check. This calculates an 'Accuracy Score' for the model.
 ```bash
 # Evaluate a checkpoint by generating 100 cards
-python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --count 100
+python3 scripts/mtg_eval.py checkpoint.pt --count 100
 
 # Evaluate with higher creativity (temp)
 python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
 ```
 *   **Options:**
-    *   `-c`, `--checkpoint`: Path to the model checkpoint file.
-    *   `-n`, `--count`: Number of cards to generate and validate.
-    *   `-t`, `--temp`: Creativity temperature for generation.
+    *   `checkpoint` / `-c`, `--checkpoint`: Path to the model checkpoint file (Default: `checkpoint.pt`).
+    *   `-n`, `--count`: Number of cards to generate and validate (Default: 50).
+    *   `-t`, `--temp`: Creativity level for generation (Default: 0.8).
+    *   `--seed`: Seed for the random number generator.
+    *   `-l`, `--length`: Character limit for the generation process (automatically scales based on `--count` if omitted).
     *   `-d`, `--dump`: Print full text of cards that failed validation.
     *   `-j`, `--json`: Output results in structured JSON format.
 
