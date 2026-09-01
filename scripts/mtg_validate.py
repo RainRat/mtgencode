@@ -206,7 +206,7 @@ def check_choices(card):
 def check_auras(card):
     # a bit loose
     if 'enchantment' in card.types or 'aura' in card.subtypes or 'enchant' in card.text.text:
-        return 'enchantment' in card.types or 'aura' in card.subtypes or 'enchant' in card.text.text
+        return True
     else:
         return None
 
