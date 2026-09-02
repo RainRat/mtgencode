@@ -68,8 +68,7 @@ def check_types(card):
         return list_only(card.types, ['tribal', 'planeswalker', 'artifact', 'land', 'enchantment'])
     if 'battle' in card.types:
         return list_only(card.types, ['tribal', 'battle', 'artifact', 'land', 'enchantment'])
-    else:
-        return list_only(card.types, ['tribal', 'artifact', 'land', 'enchantment'])
+    return list_only(card.types, ['tribal', 'artifact', 'land', 'enchantment'])
 
 def check_pt(card):
     if 'battle' in card.types:
@@ -88,8 +87,7 @@ def check_pt(card):
 def check_lands(card):
     if 'land' in card.types:
         return card.cost.format() == ''
-    else:
-        return None
+    return None
 
 # doesn't handle granted activated abilities in ""
 def check_X(card):
@@ -174,15 +172,13 @@ def check_kicker(card):
         # could also check for costs, at least make 'it's $ kicker,' not count as a kicker ability
         newtext = card.text.text.replace(utils.reserved_mana_marker + ' kicker', '')
         return 'kicker' in newtext and 'kicked' in newtext
-    else:
-        return None
+    return None
 
 def check_counters(card):
     uses = len(re.findall(re.escape(utils.counter_marker), card.text.text))
     if uses > 0:
         return uses > 1 and 'countertype ' + utils.counter_marker in card.text.text
-    else:
-        return None
+    return None
 
 def check_choices(card):
     bullets = len(re.findall(re.escape(utils.bullet_marker), card.text.text))
@@ -200,28 +196,24 @@ def check_choices(card):
         noobracks = len(re.findall(re.escape(utils.choice_open_delimiter), nochoices))
         nocbracks = len(re.findall(re.escape(utils.choice_close_delimiter), nochoices))
         return nobullets + noobracks + nocbracks == 0
-    else:
-        return None
+    return None
 
 def check_auras(card):
     # a bit loose
     if 'enchantment' in card.types or 'aura' in card.subtypes or 'enchant' in card.text.text:
         return True
-    else:
-        return None
+    return None
 
 def check_equipment(card):
     # probably even looser, could check for actual equip abilities and noncreatureness
     if 'equipment' in card.subtypes:
         return 'equip' in card.text.text
-    else:
-        return None
+    return None
 
 def check_vehicles(card):
     if 'vehicle' in card.subtypes:
         return 'crew' in card.text.text
-    else:
-        return None
+    return None
 
 def check_planeswalkers(card):
     if 'planeswalker' in card.types:
@@ -241,8 +233,7 @@ def check_planeswalkers(card):
             else:
                 bad_lines += 1
         return good_lines > 1 and bad_lines == 0
-    else:
-        return None
+    return None
 
 def check_levelup(card):
     if 'level' in card.text.text:
@@ -259,8 +250,7 @@ def check_levelup(card):
             elif 'level' in line.text:
                 llines += 1
         return uplines == 1 and llines > 0
-    else:
-        return None
+    return None
 
 def check_activated(card):
     activated = 0
@@ -277,8 +267,7 @@ def check_activated(card):
                 activated += 1
     if activated > 0:
         return list_only(card.types, ['creature', 'land', 'artifact', 'enchantment', 'planeswalker', 'tribal'])
-    else:
-        return None
+    return None
 
 def check_triggered(card):
     triggered = 0
@@ -316,8 +305,7 @@ def check_triggered(card):
         return list_only(card.types, ['creature', 'land', 'artifact', 'enchantment', 'planeswalker', 'tribal'])
     elif triggered_2:
         return True
-    else:
-        return None
+    return None
 
 def check_chosen(card):
     if 'chosen' in card.text.text:
@@ -326,8 +314,7 @@ def check_chosen(card):
                 or 'name' in card.text.text
                 or 'is chosen' in card.text.text
                 or 'search' in card.text.text)
-    else:
-        return None
+    return None
 
 def check_shuffle(card):
     retval = None
