@@ -1002,15 +1002,25 @@ python3 scripts/mtg_forge.py --infile data/AllPrintings.json --grep "Bear" --rep
     *   `--validate`: Validate forged card(s) against design rules and color pie logic, printing warnings to stderr.
 
 ### `mtg_subset.py`
-Creates a filtered subset of an MTGJSON file while preserving its structure. This is useful for creating specialized training datasets or lightweight card databases without losing set-level metadata.
+Creates a filtered subset of an MTGJSON file while preserving its set-level structure and metadata. This tool is useful for creating specialized training datasets or lightweight card databases.
 ```bash
 # Create a subset of only Legendary cards from a specific set
 python3 scripts/mtg_subset.py data/AllPrintings.json output.json --set MOM --grep "Legendary"
 
 # Create a tiny dataset of 100 random rare creatures
 python3 scripts/mtg_subset.py data/AllPrintings.json tiny.json --rarity rare --grep-type "Creature" --sample 100
+
+# Preview subset statistics without writing output files (dry-run mode)
+python3 scripts/mtg_subset.py data/AllPrintings.json --set MOM --dry-run
 ```
-*   Supports all **Advanced Filtering** flags and sorting.
+*   **Options:**
+    *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of matching card statistics and sample preview without creating or modifying the target output file.
+    *   `-n LIMIT`, `--limit LIMIT`: Only process the first N cards.
+    *   `--shuffle`: Randomize the order of cards.
+    *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+    *   `--sort CRITERIA`: Sort cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, `box`, `complexity`, `score`, `rating`, or `power_rating` before subsetting.
+    *   `--reverse`: Reverse the sort order.
+    *   Supports **Smart Dataset Detection** (defaults to `data/AllPrintings.json` if omitted) and all **Advanced Filtering** flags.
 
 ### `mtg_analyze.py grid`
 Provides a generic 2D cross-tabulation tool for card datasets. This allows you to cross-reference attributes like color, rarity, type, cmc, power, toughness, and mechanic to see how they are distributed.
