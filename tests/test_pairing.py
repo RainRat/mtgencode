@@ -183,3 +183,61 @@ def test_main_cli_execution(tmp_path):
         with pytest.raises(SystemExit) as exc_info:
             runpy.run_path(script_path, run_name='__main__')
         assert exc_info.value.code == 0
+
+
+def test_main_dry_run(tmp_path, capsys):
+    out_file = str(tmp_path / "output_dryrun.txt")
+    card_fake = DummyCard(name="Fake Card", types=["Creature"], colors=["U"])
+    card_real = DummyCard(name="Real Card", types=["Creature"], colors=["U"])
+
+    mock_cbow = MagicMock()
+    mock_cbow.nearest_par.return_value = [[(0.1, "Real Card")]]
+
+    stats = {
+        'dists': {'cbow': [0.5]},
+        'ngram': {'perp': [1.0], 'perp_per': [1.0], 'perp_max': [5.0]}
+    }
+
+    with patch('scripts.pairing.CBOW', return_value=mock_cbow), \
+         patch('scripts.pairing.jdecode.mtg_open_file', side_effect=[[card_real], [card_fake]]), \
+         patch('scripts.pairing.ngrams.build_ngram_model', return_value=MagicMock()), \
+         patch('scripts.pairing.analysis.get_statistics', return_value=stats), \
+         patch('scripts.pairing.mtg_validate.process_props', return_value=((None, 1, None, None), None)):
+
+        pairing.main("fake_input.txt", out_file, dry_run=True)
+
+    captured = capsys.readouterr()
+    assert "=== DRY RUN SUMMARY ===" in captured.out
+    assert "Input file: fake_input.txt" in captured.out
+    assert "Pairs matched: 1" in captured.out
+    assert "Fake: Fake Card -> Real: Real Card" in captured.out
+    assert not os.path.exists(out_file)
+    assert not os.path.exists(out_file + ".mse-set")
+
+
+def test_main_cli_dry_run(tmp_path, capsys):
+    test_args = ['scripts/pairing.py', 'fake_input.txt', '-p']
+    script_path = os.path.abspath('scripts/pairing.py')
+
+    card_fake = DummyCard(name="Fake Card", types=["Creature"], colors=["U"])
+    card_real = DummyCard(name="Real Card", types=["Creature"], colors=["U"])
+    mock_cbow = MagicMock()
+    mock_cbow.nearest_par.return_value = [[(0.1, "Real Card")]]
+    stats = {
+        'dists': {'cbow': [0.5]},
+        'ngram': {'perp': [1.0], 'perp_per': [1.0], 'perp_max': [5.0]}
+    }
+
+    with patch.object(sys, 'argv', test_args), \
+         patch('scripts.pairing.CBOW', return_value=mock_cbow), \
+         patch('scripts.pairing.jdecode.mtg_open_file', side_effect=[[card_real], [card_fake]]), \
+         patch('scripts.pairing.ngrams.build_ngram_model', return_value=MagicMock()), \
+         patch('scripts.pairing.analysis.get_statistics', return_value=stats), \
+         patch('scripts.pairing.mtg_validate.process_props', return_value=((None, 1, None, None), None)):
+
+        with pytest.raises(SystemExit) as exc_info:
+            runpy.run_path(script_path, run_name='__main__')
+        assert exc_info.value.code == 0
+
+    captured = capsys.readouterr()
+    assert "=== DRY RUN SUMMARY ===" in captured.out

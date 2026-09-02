@@ -69,7 +69,7 @@ def writecard(card, name, writer):
     writer.write(('\n' + fstring[:-1]).replace('\n', '\n\t\t'))
     writer.write('\n')
 
-def main(fname, oname, n=20, verbose=False):
+def main(fname, oname=None, n=20, verbose=False, dry_run=False):
     cbow = CBOW()
     realcards = jdecode.mtg_open_file(str(os.path.join(datadir, 'output.txt')), verbose=verbose)
     real_by_name = {c.name: c for c in realcards}
@@ -104,6 +104,20 @@ def main(fname, oname, n=20, verbose=False):
             if compare_to_real(card, realcard):
                 final += [(i, card, realcard, dist)]
                 break
+
+    if dry_run:
+        print('=== DRY RUN SUMMARY ===')
+        print(f'Input file: {fname}')
+        print(f'Total cards evaluated: {len(cards)}')
+        print(f'Candidates selected: {len(selected)}')
+        print(f'Pairs matched: {len(final)}')
+        if final:
+            print('Sample Preview (up to 10):')
+            for (i, card, realcard, dist) in final[:10]:
+                perp_per = stats['ngram']['perp_per'][i]
+                perp_max = stats['ngram']['perp_max'][i]
+                print(f'  Fake: {card.name} -> Real: {realcard.name} (dist: {dist:.4f}, perp_per: {perp_per:.2f}, perp_max: {perp_max:.2f})')
+        return
 
     for (i, card, realcard, dist) in final:
         print('-- real --')
@@ -144,19 +158,35 @@ def main(fname, oname, n=20, verbose=False):
                     os.remove('set')
 
 if __name__ == '__main__':
-    
+
     import argparse
-    parser = argparse.ArgumentParser()
-    
-    parser.add_argument('infile', #nargs='?'. default=None,
-                        help='encoded card file or json corpus to process')
-    parser.add_argument('outfile', nargs='?', default=None,
-                        help='output file, defaults to none')
-    parser.add_argument('-n', '--n', action='store',
-                        help='number of cards to consider for each pairing')
-    parser.add_argument('-v', '--verbose', action='store_true', 
-                        help='verbose output')
+    parser = argparse.ArgumentParser(
+        description="Pair generated cards with nearest real MTG cards using CBOW and n-gram perplexity analysis.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Pair generated cards and export to MSE set file
+  python3 scripts/pairing.py generated.txt output.txt
+
+  # Preview card pairings without writing output files (dry-run mode)
+  python3 scripts/pairing.py generated.txt --dry-run
+"""
+    )
+
+    io_group = parser.add_argument_group('Input / Output Options')
+    io_group.add_argument('infile', nargs='?', default=os.path.join(datadir, 'output.txt'),
+                        help='Encoded card file or JSON corpus to process (defaults to data/output.txt).')
+    io_group.add_argument('outfile', nargs='?', default=None,
+                        help='Output MSE card file path (optional if --dry-run is specified).')
+
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-n', '--n', action='store', type=int, default=20,
+                        help='Number of candidate cards to consider for each pairing.')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run summary of card pairings without creating or writing output files.')
+    proc_group.add_argument('-v', '--verbose', action='store_true',
+                        help='Verbose output.')
 
     args = parser.parse_args()
-    main(args.infile, args.outfile, n=args.n, verbose=args.verbose)
+    main(args.infile, args.outfile, n=args.n, verbose=args.verbose, dry_run=args.dry_run)
     exit(0)
