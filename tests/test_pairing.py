@@ -4,6 +4,9 @@ import sys
 from unittest.mock import MagicMock, patch
 import pytest
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '../lib'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
+
 from scripts import pairing
 
 

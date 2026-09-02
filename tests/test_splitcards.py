@@ -8,6 +8,10 @@ import runpy
 import pytest
 from unittest.mock import patch
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../lib'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
+
 from scripts.splitcards import main
 
 def test_splitcards_basic(tmp_path):

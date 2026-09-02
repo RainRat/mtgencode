@@ -4,7 +4,8 @@ import sys
 import os
 import io
 
-# Add scripts directory to path
+# Add scripts and lib directories to path
+sys.path.append(os.path.join(os.path.dirname(__file__), '../lib'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '../scripts'))
 import mtg_analyze
 
