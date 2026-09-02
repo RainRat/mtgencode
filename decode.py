@@ -34,7 +34,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          mechanics=None,
          produces=None,
          identities=None, id_counts=None,
-         shuffle=False, seed=None, decklist_file=None, booster=0, box=0):
+         shuffle=False, seed=None, decklist_file=None, booster=0, box=0,
+         dry_run=False):
 
     # Set default format to text if no specific output format is selected.
     # If an output filename is provided, we try to detect the format from its extension.
@@ -129,6 +130,36 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
     if limit > 0:
         cards = cards[:limit]
+
+    if dry_run:
+        from collections import defaultdict
+        fmt_name = 'text'
+        if html: fmt_name = 'html'
+        elif json_out: fmt_name = 'json'
+        elif jsonl_out: fmt_name = 'jsonl'
+        elif csv_out: fmt_name = 'csv'
+        elif md_out: fmt_name = 'markdown'
+        elif md_table_out: fmt_name = 'markdown table'
+        elif summary_out: fmt_name = 'summary'
+        elif table_out: fmt_name = 'table'
+        elif deck_out: fmt_name = 'decklist'
+        elif xml_out: fmt_name = 'xml'
+        elif for_mse: fmt_name = 'mse-set'
+
+        set_buckets = defaultdict(list)
+        for card in cards:
+            code = (getattr(card, 'set_code', None) or 'CUS').upper()
+            set_buckets[code].append(card)
+
+        print(f"Dry Run Summary: {len(cards)} card(s) matched for decoding.")
+        print(f"Target format: '{fmt_name}'")
+        if set_buckets:
+            print("Set Code Breakdown:")
+            for code, set_cards in sorted(set_buckets.items()):
+                print(f"  {code}: {len(set_cards)} card(s)")
+        sample_names = [cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) if hasattr(c, 'name') and c.name else str(c) for c in cards[:10]]
+        print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
+        return
 
     if creativity:
         namediff = Namediff()
@@ -832,6 +863,8 @@ Usage Examples:
                         help='Sort cards by a specific criterion.')
     proc_group.add_argument('--reverse', action='store_true',
                         help='Reverse the sort order.')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run summary of matching card stats, target output format, and sample preview without creating or writing to the target output file.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -947,6 +980,7 @@ Usage Examples:
          mechanics=args.mechanic,
          produces=args.produces,
          identities=args.identity, id_counts=args.id_count,
-         shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter, booster=args.booster, box=args.box)
+         shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter, booster=args.booster, box=args.box,
+         dry_run=args.dry_run)
 
     exit(0)

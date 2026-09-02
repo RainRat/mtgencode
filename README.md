@@ -148,6 +148,7 @@ Options for formatting the output. While primarily used for AI output, this tool
 *   `--seed N`: Seed for the random number generator.
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+*   `-p`, `--preview`, `--dry-run`: Print a dry run summary of matching card stats, target output format, and sample preview without creating or writing output files.
 *   `-q`, `--quiet`: Suppress the progress bar and status messages.
 *   `--booster N`: Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land.
 *   `--box N`: Simulate opening N booster boxes (36 packs each).
