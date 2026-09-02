@@ -109,9 +109,9 @@ Customization options for formatting data:
 *   `-e norarity`: Standard format but without rarity labels.
 *   `-e vec`: Numerical format for mathematical models.
 *   `-e custom`: Use your own user-defined formatting rules (see placeholders in `encode.py` and `decode.py`).
-*   `--nolabel`: Removes field labels (e.g., `|cost|`, `|text|`) from the output.
+*   `--nolabel`: Removes field labels (for example, `|cost|`, `|text|`) from the output.
 *   `--nolinetrans`: Disables the automatic reordering and normalization of card text lines.
-*   `-r`, `--randomize`: Randomizes mana symbol order (e.g., `{U}{W}` vs `{W}{U}`) to help the AI learn better.
+*   `-r`, `--randomize`: Randomizes mana symbol order (for example, `{U}{W}` versus `{W}{U}`) to help the AI learn better.
 *   `-s`, `--stable`: Preserve the original order of cards from the input (the tool shuffles cards by default).
 *   `--sort`: Sorts cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, `box`, `complexity`, `score`, `rating`, or `power_rating` before encoding. Automatically enables `--stable`.
 *   `--seed N`: Seed for the random number generator (Default: 1371367).
@@ -211,7 +211,7 @@ python3 train.py --mode sample --checkpoint checkpoint.pt --name "uthros" --supe
     *   `--length N`: Number of characters to generate when sampling (Default: 1000).
     *   `--temp TEMP`: Sampling temperature controlling AI creativity. Higher values produce more unusual cards (Default: 0.8).
     *   `--start_text TEXT`: Starting prompt text for generation (Default: `|`).
-    *   **Forcing Card Attributes:** Force specific field values during sampling (e.g., `--name`, `--supertypes`, `--types`, `--loyalty`, `--subtypes`, `--rarity`, `--powertoughness`, `--manacost`, `--bodytext_prepend`, `--bodytext_append`). Note: These options require a model trained on cards encoded with the legacy format (`python3 encode.py ... -e old`).
+    *   **Forcing Card Attributes:** Force specific field values during sampling (for example, `--name`, `--supertypes`, `--types`, `--loyalty`, `--subtypes`, `--rarity`, `--powertoughness`, `--manacost`, `--bodytext_prepend`, `--bodytext_append`). Note: These options require a model trained on cards encoded with the legacy format (`python3 encode.py ... -e old`).
 
 ### Using Pipes
 You can chain these tools together using the pipe (`|`) symbol. This lets you process cards in one step without saving temporary files.
@@ -244,7 +244,7 @@ Multi-faced cards (like Split or Transform cards) are written as separate blocks
 | `=` | Separates options in a list of choices. | `[&^ = Option A = Option B]` |
 | `%` | Replaces the word "counter" (like a +1/+1 counter). | `Put a % counter on @` |
 | `[` `]` | Groups multiple choices together. | `[&^ = Option A = Option B]` |
-| `{ }` | Mana symbols. Single letters are doubled (e.g., `{WW}`). | `{GG}` |
+| `{ }` | Mana symbols. Single letters are doubled (for example, `{WW}`). | `{GG}` |
 | `T` | The Tap symbol. | `T: Add {GG}` |
 | `Q` | The Untap symbol. | `Q: Untap @` |
 | `uncast` | Replaces the verb "counter" when canceling a spell or ability. This prevents confusion with physical markers like +1/+1 counters. | `uncast target spell` |
@@ -329,10 +329,10 @@ Filter cards using search patterns, set codes, rarities, or decklist files. Thes
     *   `--exclude-name`, `--exclude-type`, `--exclude-text`: Skip cards where the specific field matches the search pattern.
     *   `--exclude-cost`, `--exclude-pt`, `--exclude-loyalty`: Skip cards where the mana cost, power/toughness, or loyalty/defense matches the search pattern.
 *   **Metadata Filters:**
-    > **Note:** Use a flag multiple times to include multiple values (e.g., `--rarity rare --rarity mythic` finds both rares and mythics).
-    *   `--set CODE`: Include cards from specific sets (e.g., `MOM`, `MRD`).
-    *   `--rarity NAME`: Include cards of specific rarities (e.g., `common`, `rare`). You can use full names or shorthands: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), or `L` (Basic Land).
-    *   `--colors SYMBOLS`: Include cards with specific colors (e.g., `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
+    > **Note:** Use a flag multiple times to include multiple values (for example, `--rarity rare --rarity mythic` finds both rares and mythics).
+    *   `--set CODE`: Include cards from specific sets (for example, `MOM`, `MRD`).
+    *   `--rarity NAME`: Include cards of specific rarities (for example, `common`, `rare`). You can use full names or shorthands: `O` (Common), `N` (Uncommon), `A` (Rare), `Y` (Mythic), `I` (Special), or `L` (Basic Land).
+    *   `--colors SYMBOLS`: Include cards with specific colors (for example, `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
     *   `--identity SYMBOLS`: Include cards with specific colors in their color identity.
     *   `--produces COLORS`: Include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).
     *   **Numerical Filters:** These flags support exact values (`5`), inequalities (`>3`, `<=2`, `!=0`), and ranges (`1-4`).
@@ -344,8 +344,8 @@ Filter cards using search patterns, set codes, rarities, or decklist files. Thes
         *   `--complexity VALUE`: Filter by design complexity score.
         *   `--rating VALUE`: Filter by power rating (efficiency relative to cost).
         *   `--fair-mv VALUE`: Filter by recommended Fair Mana Value.
-    *   `--mechanic NAME`: Include cards with specific keyword abilities or features (e.g., `Flying`, `Activated`, `ETB Effect`).
-    *   `--action NAME`: Include cards with specific functional actions (e.g., `Removal`, `Protection`, `Buffs`, `Card Advantage`, `Disruption`, or `Mana`).
+    *   `--mechanic NAME`: Include cards with specific keyword abilities or features (for example, `Flying`, `Activated`, `ETB Effect`).
+    *   `--action NAME`: Include cards with specific functional actions (for example, `Removal`, `Protection`, `Buffs`, `Card Advantage`, `Disruption`, or `Mana`).
     *   `--deck-filter FILE`: Filter cards using a standard MTG decklist file. This also multiplies cards in the output based on their counts in the decklist.
 
 > **Tip:** You can use internal shorthand markers with the `--rarity` flag: `O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), and L (Basic Land).`
@@ -467,7 +467,7 @@ python3 scripts/mtg_analyze.py profile data/AllPrintings.json --set MOM
 python3 scripts/mtg_analyze.py profile my_deck.txt --top 20
 ```
 *   **Metrics:** Calculates Avg CMC, Power, Toughness, and Complexity differences.
-*   **Signature Features:** Identifies over-represented Mechanics, Actions, and Subtypes using a 'Lift' score (Relative Frequency vs. Baseline).
+*   **Signature Features:** Identifies over-represented Mechanics, Actions, and Subtypes using a 'Lift' score (Relative Frequency versus Baseline).
 *   **Options:** Supports all **Advanced Filtering** flags and the `--top N` argument.
 
 ### `mtg_analyze.py summary`
@@ -494,15 +494,15 @@ python3 scripts/mtg_analyze.py summary encoded_output.txt summary.json
     *   `--box N`: Simulate opening N booster boxes (36 packs each) and summarize the contents.
     *   `-j`, `--json`: Force JSON output.
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
-    *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--grep`, `--cmc`, `--mechanic`).
+    *   Supports all **Advanced Filtering** flags (for example, `--limit`, `--sample`, `--grep`, `--cmc`, `--mechanic`).
 
 ### `mtg_validate.py`
-Validates card data for rule and formatting consistency (e.g., checking creature stats or land costs). It works with all supported input formats (JSON, CSV, XML, encoded text, etc.).
+Validates card data for rule and formatting consistency (for example, checking creature stats or land costs). It works with all supported input formats (JSON, CSV, XML, encoded text, etc.).
 ```bash
 # Basic validation
 python3 scripts/mtg_validate.py encoded_output.txt
 
-# Check for color pie violations (e.g. Blue cards with Deathtouch)
+# Check for color pie violations (for example, Blue cards with Deathtouch)
 python3 scripts/mtg_validate.py generated.txt --color-pie --dump
 
 # Print details for invalid cards
@@ -546,10 +546,10 @@ Checks how well cards follow rules using an AI model. This tool asks the AI to j
 # Validate cards using the default local model (TinyLlama)
 python3 scripts/mtg_llm_validate.py generated_cards.txt
 
-# Use a remote API (e.g., OpenRouter)
+# Use a remote API (for example, OpenRouter)
 python3 scripts/mtg_llm_validate.py generated.txt --provider api --api-url "https://openrouter.ai/api/v1/chat/completions" --model "meta-llama/llama-3-8b-instruct" --api-key "YOUR_KEY"
 
-# Use a local API (e.g., Ollama)
+# Use a local API (for example, Ollama)
 python3 scripts/mtg_llm_validate.py generated.txt --provider api --api-url "http://localhost:11434/v1/chat/completions" --model "llama3"
 
 # Validate specific cards and output valid ones to a JSON file
@@ -563,7 +563,7 @@ python3 scripts/mtg_llm_validate.py generated.txt --grep "Grizzly Bears" --only-
     *   `--provider {transformers,api}`: The backend provider to use (Default: `transformers`).
     *   `--api-url URL`: The endpoint for the API (Required for `api` provider).
     *   `--api-key KEY`: Optional authentication token for the API.
-    *   `--model MODEL`: The model to use (e.g., a HuggingFace path or an API model name).
+    *   `--model MODEL`: The model to use (for example, a HuggingFace path or an API model name).
     *   `--device DEVICE`: Device for local models (`cuda`, `cpu`, or `mps`).
     *   `--batch-size N`: Number of cards to process at once (Local models only).
     *   `--only-valid`: Filter output to only include cards the LLM judged as valid.
@@ -724,7 +724,7 @@ python3 scripts/mtg_query.py substitutes "Counterspell" --set MOM
 Finds cards with identical CMC, types, stats, and mechanics/text as the reference card, but with a different color identity. This is useful for identifying "color-shifted" versions of cards.
 
 ```bash
-# Find color-shifted versions of Concentrate (e.g. Harmonize)
+# Find color-shifted versions of Concentrate (for example, Harmonize)
 python3 scripts/mtg_query.py counterparts "Concentrate"
 
 # Find color-shifted counterparts for Prodigal Sorcerer
@@ -816,12 +816,12 @@ python3 scripts/mtg_diff.py data/OldSet.json data/NewSet.json --dry-run
     *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of comparison statistics without creating or writing to the target output file.
     *   `--summary-only`: Only show count summary, not detailed card diffs.
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
-    *   Supports all **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
+    *   Supports all **Advanced Filtering** flags (for example, `--grep`, `--set`, `--rarity`).
 
 ### `mtg_analyze.py compare`
 Provides a side-by-side statistical comparison of two or more card datasets. This is useful for evaluating how well a generated dataset matches the characteristics of official Magic data.
 ```bash
-# Compare official data vs generated cards
+# Compare official data versus generated cards
 python3 scripts/mtg_analyze.py compare data/AllPrintings.json generated.txt
 
 # Compare multiple sets
@@ -868,7 +868,7 @@ python3 scripts/mtg_manabase.py my_deck.txt --include-text
 ```
 *   **Options:**
     *   `--lands N`: Target number of basic lands to recommend (Default: 24).
-    *   `--include-text`: Include mana symbols found in rules text (e.g., activation costs).
+    *   `--include-text`: Include mana symbols found in rules text (for example, activation costs).
     *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_analyze.py power`
@@ -892,7 +892,7 @@ Calculates average cards per booster pack (As-Fan) statistics for a card dataset
 # Calculate average cards per booster pack (As-Fan) for a specific set
 python3 scripts/mtg_analyze.py asfan data/AllPrintings.json --set MOM
 
-# Compare As-Fan statistics of a generated set vs official data
+# Compare As-Fan statistics of a generated set versus official data
 python3 scripts/mtg_analyze.py asfan data/AllPrintings.json --compare generated.txt
 ```
 *   **Options:**
@@ -918,7 +918,7 @@ python3 scripts/mtg_analyze.py interaction generated.txt --min-freq 5
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 ### `mtg_analyze.py types`
-Generates a Type vs. Color heatmap (matrix) cross-referencing card types with Color Identity (W, U, B, R, G, Colorless, Multicolored). This is essential for verifying color-pie balance and archetypal distribution in a set.
+Generates a Type versus Color heatmap (matrix) cross-referencing card types with Color Identity (W, U, B, R, G, Colorless, Multicolored). This is essential for verifying color-pie balance and archetypal distribution in a set.
 ```bash
 # Analyze the type/color distribution of a specific set
 python3 scripts/mtg_analyze.py types data/AllPrintings.json --set MOM
@@ -995,7 +995,7 @@ python3 scripts/mtg_forge.py --infile data/AllPrintings.json --grep "Bear" --rep
 *   **Card Fields:** Supports `--name`, `--cost`, `--type`, `--text`, `--pt`, `--loyalty`, `--rarity`, and `--set`.
 *   **Output Formats:** Supports `--json` (Default), `--encoded`, `--summary`, `-V`/`--view`, and `-G`/`--gatherer`.
 *   **Transformational Modifiers:**
-    *   `--color-shift`: Shift card colors to target color or colors (e.g. `U,B` or `blue`).
+    *   `--color-shift`: Shift card colors to target color or colors (for example, `U,B` or `blue`).
     *   `--buff` / `--nerf`: Increment or decrement power, toughness, loyalty, or defense.
     *   `--scale-up` / `--scale-down`: Scale stats and generic mana costs proportionally.
     *   `--replace`: Perform sed-like regex (`s/pattern/replacement/flags`) or literal (`pattern->replacement`) text replacements.
@@ -1026,10 +1026,10 @@ python3 scripts/mtg_subset.py data/AllPrintings.json --set MOM --dry-run
 ### `mtg_analyze.py grid`
 Provides a generic 2D cross-tabulation tool for card datasets. This allows you to cross-reference attributes like color, rarity, type, cmc, power, toughness, and mechanic to see how they are distributed.
 ```bash
-# Analyze Card Type vs Color Identity for a specific set
+# Analyze Card Type versus Color Identity for a specific set
 python3 scripts/mtg_analyze.py grid type color --set MOM
 
-# Analyze Rarity vs CMC for the whole dataset
+# Analyze Rarity versus CMC for the whole dataset
 python3 scripts/mtg_analyze.py grid rarity cmc data/AllPrintings.json
 ```
 *   **Dimensions:** `color`, `rarity`, `type`, `cmc`, `power`, `toughness`, `loyalty`, `mechanic`.
@@ -1039,7 +1039,7 @@ python3 scripts/mtg_analyze.py grid rarity cmc data/AllPrintings.json
     *   Supports all **Advanced Filtering** flags and 'Smart Positional Argument Handling'.
 
 ### `mtg_analyze.py mechanics`
-Lists all mechanical keywords (e.g., Flying, Trample, Ward) recognized by the toolkit and can calculate their frequency in a dataset. This is useful for seeing which keywords are currently tracked or for analyzing the mechanical profile of a set.
+Lists all mechanical keywords (for example, Flying, Trample, Ward) recognized by the toolkit and can calculate their frequency in a dataset. This is useful for seeing which keywords are currently tracked or for analyzing the mechanical profile of a set.
 ```bash
 # List all recognized mechanics
 python3 scripts/mtg_analyze.py mechanics
@@ -1050,7 +1050,7 @@ python3 scripts/mtg_analyze.py mechanics data/AllPrintings.json --set MOM
 *   **Options:**
     *   `--sort {name,count}`: Sort results by name or frequency.
     *   `--top N`: Only show the top N mechanics.
-    *   Supports standard **Advanced Filtering** flags (e.g., `--grep`, `--set`, `--rarity`).
+    *   Supports standard **Advanced Filtering** flags (for example, `--grep`, `--set`, `--rarity`).
 
 ### `mtg_analyze.py colorpie`
 Generates a Color Pie chart that shows which mechanics appear in each color. This helps you check if colors are using the correct mechanics or if some mechanics are appearing where they shouldn't.
@@ -1170,7 +1170,7 @@ python3 scripts/mtg_analyze.py curve data/AllPrintings.json --grep-type "Creatur
     *   Supports all **Advanced Filtering** flags.
 
 ### `mtg_analyze.py mana`
-Identifies mana-producing cards using rules text patterns (e.g., 'Add {G}', 'any color') and intrinsic basic land types. It categorizes producers into Creatures, Artifacts, Lands, and Spells, profiles produced colors, and identifies color-fixing density.
+Identifies mana-producing cards using rules text patterns (for example, 'Add {G}', 'any color') and intrinsic basic land types. It categorizes producers into Creatures, Artifacts, Lands, and Spells, profiles produced colors, and identifies color-fixing density.
 ```bash
 # Analyze mana production for a specific set
 python3 scripts/mtg_analyze.py mana data/AllPrintings.json --set MOM
@@ -1204,7 +1204,7 @@ Analyzes creature combat stats (Power/Toughness) and Planeswalker loyalty in a d
 # Analyze stats for a specific set
 python3 scripts/mtg_analyze.py stats data/AllPrintings.json --set MOM
 
-# Compare stats of rare creatures vs common creatures
+# Compare stats of rare creatures versus common creatures
 python3 scripts/mtg_analyze.py stats data/AllPrintings.json --rarity rare --grep-type "Creature"
 ```
 *   **Options:**
@@ -1232,7 +1232,7 @@ Analyzes the distribution of mana symbols (pips) in a dataset. It counts symbols
 # Analyze pip distribution for a set
 python3 scripts/mtg_analyze.py pips data/AllPrintings.json --set MOM
 
-# Include pips found in rules text (e.g. activation costs)
+# Include pips found in rules text (for example, activation costs)
 python3 scripts/mtg_analyze.py pips data/AllPrintings.json --set MOM --include-text
 ```
 *   **Options:**
@@ -1274,12 +1274,12 @@ python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --r
     *   `-f`, `--format`: Output format (`text`, `json`, `jsonl`, `csv`). Default is `text`.
     *   `-v`, `--verbose`: Enable detailed status messages.
     *   `-q`, `--quiet`: Suppress the progress bar.
-    *   `--encoding`: Choose the text encoding format (e.g., `std`, `named`, `vec`).
+    *   `--encoding`: Choose the text encoding format (for example, `std`, `named`, `vec`).
     *   `--shuffle` / `--no-shuffle`: Whether to randomize the order of cards before splitting (Enabled by default).
     *   `--sort CRITERIA`: Sort cards before splitting.
     *   `--booster N`: Simulate opening N booster packs before splitting.
     *   `--box N`: Simulate opening N booster boxes (36 packs each) before splitting.
-    *   Supports all **Advanced Filtering** flags (e.g., `--limit`, `--sample`, `--grep`, `--colors`, `--cmc`, `--mechanic`).
+    *   Supports all **Advanced Filtering** flags (for example, `--limit`, `--sample`, `--grep`, `--colors`, `--cmc`, `--mechanic`).
 
 ### `ngrams.py`
 Extracts n-grams (sequences of words) or builds an NLTK language model from encoded card text or Magic card datasets.
