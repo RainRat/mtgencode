@@ -10,8 +10,8 @@ To get the best results, follow these tips:
 
 *   **Balance:** Keep power level and rarity reasonable for a draft environment.
 *   **Rules:** Do not invent new keywords or rely on complex rules changes. The AI processes text literally and won't understand undefined mechanics.
-*   **Types:** You can create new creature or planeswalker types (e.g., "Creature — Gamer"), as long as they don't require special rules.
-*   **Templating:** Use modern wording (e.g., "Create a token" instead of "Put a token onto the battlefield"). This helps the AI recognize patterns.
+*   **Types:** You can create new creature or planeswalker types (for example, "Creature — Gamer"), as long as they don't require special rules.
+*   **Templating:** Use modern wording (for example, "Create a token" instead of "Put a token onto the battlefield"). This helps the AI recognize patterns.
 *   **Variety:** You can include simple, functional cards (Commons/Uncommons) as well as complex ones (Rares/Mythics).
 *   **Creativity:** Feel free to tweak existing cards or add radical new ideas.
 
@@ -34,9 +34,9 @@ Create a CSV file with your custom cards. You can start with this [Google Sheet 
 1.  Open the link.
 2.  Add your cards following the format:
     *   **Name**: Card title.
-    *   **Mana Cost**: Use brackets for symbols (e.g., `{1}{W}{B}`).
-    *   **Type**: Supertypes and Types (e.g., `Legendary Creature`).
-    *   **Subtypes**: (e.g., `Elf Warrior`).
+    *   **Mana Cost**: Use brackets for symbols (for example, `{1}{W}{B}`).
+    *   **Type**: Supertypes and Types (for example, `Legendary Creature`).
+    *   **Subtypes**: (for example, `Elf Warrior`).
     *   **Text**: Rules text. Use `\n` or literal newlines for new lines.
     *   **P/T, Loyalty, or Defense**: Use `3/3` for creatures, or a single number for Planeswalker loyalty or Battle defense.
     *   **Rarity**: Use shorthands: `C` (Common), `U` (Uncommon), `R` (Rare), `M` (Mythic), `L` (Basic Land), `I` (Special).
