@@ -129,7 +129,7 @@ Usage Examples:
     gen_length = args.length if args.length is not None else max(5000, args.count * 250)
 
     # We use gen_length to generate enough text for the requested card count
-    generated_raw = generate_text(model, char_to_idx, idx_to_char, vocab_size, device, gen_args, length=gen_length)
+    generated_raw = generate_text(model, char_to_idx, idx_to_char, vocab_size, device, gen_args, length=gen_length, quiet=args.quiet)
 
     # Split into cards
     card_sources = [c for c in generated_raw.split(utils.cardsep) if c.strip()]

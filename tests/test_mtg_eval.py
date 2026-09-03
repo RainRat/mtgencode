@@ -184,5 +184,57 @@ class TestMTGEval(unittest.TestCase):
 
         self.assertEqual(mock_generate.call_args[1]['length'], 1234)
 
+    @patch('os.path.exists')
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_mtg_eval_quiet_passed_to_generate_text(self, mock_stdout, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        mock_exists.return_value = True
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 1
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = ((1, 1, 0, 0), {'types': (1, 1, 0)})
+
+        # Test quiet=False (default when -q is not passed)
+        with patch('sys.argv', ['mtg_eval.py', '--checkpoint', 'fake.pt', '--json']):
+            mtg_eval.main()
+
+        self.assertFalse(mock_generate.call_args[1]['quiet'])
+
+        # Test quiet=True when -q / --quiet is passed
+        mock_generate.reset_mock()
+        with patch('sys.argv', ['mtg_eval.py', '--checkpoint', 'fake.pt', '-q', '--json']):
+            mtg_eval.main()
+
+        self.assertTrue(mock_generate.call_args[1]['quiet'])
+
+    @patch('train.tqdm')
+    def test_generate_text_quiet_param(self, mock_tqdm):
+        from train import generate_text
+        import torch
+        mock_model = MagicMock()
+        mock_model.init_hidden.return_value = None
+        mock_output = torch.zeros(1, 1, 2)
+        mock_model.return_value = (mock_output, None)
+
+        char_to_idx = {'|': 0, 'a': 1}
+        idx_to_char = {0: '|', 1: 'a'}
+        args = argparse.Namespace(start_text='|', temp=1.0)
+
+        # Test quiet=True (disable=True)
+        generate_text(mock_model, char_to_idx, idx_to_char, 2, torch.device('cpu'), args, length=5, quiet=True)
+        self.assertTrue(mock_tqdm.call_args[1]['disable'])
+
+        # Test quiet=False (disable=False)
+        mock_tqdm.reset_mock()
+        generate_text(mock_model, char_to_idx, idx_to_char, 2, torch.device('cpu'), args, length=5, quiet=False)
+        self.assertFalse(mock_tqdm.call_args[1]['disable'])
+
 if __name__ == '__main__':
     unittest.main()

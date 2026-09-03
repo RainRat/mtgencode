@@ -116,7 +116,7 @@ class CharRNN(nn.Module):
         return (torch.zeros(self.n_layers, batch_size, self.hidden_size).to(device),
                 torch.zeros(self.n_layers, batch_size, self.hidden_size).to(device))
 
-def generate_text(model, char_to_idx, idx_to_char, vocab_size, device, args, length=None):
+def generate_text(model, char_to_idx, idx_to_char, vocab_size, device, args, length=None, quiet=True):
     model.eval()
     if length is None:
         length = args.length
@@ -141,6 +141,8 @@ def generate_text(model, char_to_idx, idx_to_char, vocab_size, device, args, len
     
     generated = start_text
     field_count = start_text.count('|')
+
+    pbar = tqdm(total=length, desc="Generating", disable=quiet, leave=False)
     
     with torch.no_grad():
         i = 0
@@ -161,6 +163,7 @@ def generate_text(model, char_to_idx, idx_to_char, vocab_size, device, args, len
             generated += char
             x = torch.tensor([[char_idx]], dtype=torch.long).to(device)
             i += 1
+            pbar.update(1)
 
             # Forcing attribute logic: if a field is set, insert the text
             if char == '|' and field_count in whisper_map and whisper_map[field_count]:
@@ -172,6 +175,8 @@ def generate_text(model, char_to_idx, idx_to_char, vocab_size, device, args, len
                     output, hidden = model(x, hidden)
                     generated += w_char
                     i += 1
+                    pbar.update(1)
+    pbar.close()
     return generated
 
 def train(args):
