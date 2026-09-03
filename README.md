@@ -1254,6 +1254,20 @@ python3 scripts/sum.py distances.txt
 ```
 *   **Note:** Like the `--creativity` flag in `decode.py`, these tools require `data/cbow.bin` and `data/output.txt`. See [DEPENDENCIES.md](DEPENDENCIES.md) for setup instructions.
 
+### `pairing.py`
+Pairs generated cards with nearest real Magic cards using continuous bag-of-words (CBOW) embeddings and n-gram perplexity metrics, and exports matched card pairs to a Magic Set Editor set file.
+```bash
+# Pair generated cards and export to MSE set file
+python3 scripts/pairing.py generated_cards.txt paired_output.txt
+
+# Preview card pairings without writing output files (dry-run mode)
+python3 scripts/pairing.py generated_cards.txt --dry-run
+```
+*   **Options:**
+    *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of card pairings without creating or writing output files.
+    *   `-n N`: Number of candidate cards to consider for each pairing (Default: 20).
+    *   `-v`, `--verbose`: Enable detailed status output during pairing analysis.
+
 ### `splitcards.py`
 Splits a card dataset into multiple files. This is essential for creating training and validation sets for AI models. It supports all input formats (JSON, CSV, encoded text, etc.).
 ```bash
