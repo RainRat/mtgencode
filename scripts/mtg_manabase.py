@@ -155,6 +155,7 @@ Usage Examples:
     filter_group.add_argument('--set', action='append', help='Only include cards from specific sets.')
     filter_group.add_argument('--rarity', action='append', help='Only include cards of specific rarities.')
     filter_group.add_argument('--cmc', action='append', help='Only include cards with specific CMC values.')
+    filter_group.add_argument('--produces', action='append', help='Only include cards that produce specific mana colors (for example W, U, B, R, G, C, or Any).')
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file.')
 
@@ -218,7 +219,7 @@ Usage Examples:
     cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose,
                                   grep=args.grep, sets=args.set, rarities=args.rarity,
                                   cmcs=args.cmc,
-                                  produces=getattr(args, 'produces', None),
+                                  produces=args.produces,
                                   decklist_file=args.deck)
 
     if not cards:
