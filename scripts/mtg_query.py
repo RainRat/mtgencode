@@ -2040,26 +2040,37 @@ def handle_random(args, include_indices=False):
 
 def handle_compare_cards(args):
     # Custom redistribution for compare because it can take N names
-    # and the last positional argument might be a file.
-    names = getattr(args, 'names', [])
-    infile = getattr(args, 'infile', '-')
+    # and positional arguments might include input files or directories.
+    raw_names = getattr(args, 'names', [])
+    raw_infile = getattr(args, 'infile', '-')
 
-    all_pos = list(names)
-    if infile and infile != '-':
-        all_pos.append(infile)
+    all_pos = list(raw_names)
+    if raw_infile and raw_infile != '-':
+        all_pos.append(raw_infile)
 
-    if all_pos and os.path.exists(all_pos[-1]):
-        infile = all_pos.pop()
-        names = all_pos
-    else:
-        infile = '-'
-        names = all_pos
+    names = []
+    infiles = []
+    for pos in all_pos:
+        if os.path.exists(pos):
+            infiles.append(pos)
+        else:
+            names.append(pos)
 
-    setattr(args, 'infile', infile)
     setattr(args, 'names', names)
 
-    # Load all cards to perform fuzzy matching
-    all_cards = cli_utils.load_and_filter_cards(args)
+    if infiles:
+        all_cards = []
+        for path in infiles:
+            c_args = copy.copy(args)
+            c_args.infile = path
+            loaded = cli_utils.load_and_filter_cards(c_args)
+            if loaded:
+                all_cards.extend(loaded)
+        setattr(args, 'infile', infiles[0])
+    else:
+        setattr(args, 'infile', '-')
+        all_cards = cli_utils.load_and_filter_cards(args)
+
     if not all_cards:
         if not args.quiet:
             print("No cards found in the dataset.", file=sys.stderr)

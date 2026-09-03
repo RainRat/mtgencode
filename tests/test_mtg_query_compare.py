@@ -80,3 +80,13 @@ def test_query_compare_diff_only_short_flag():
     assert "Rarity" in result.stdout
     # Color Pie is "Valid" for both, so it should be omitted
     assert "Color Pie" not in result.stdout
+
+def test_query_compare_multiple_file_paths():
+    """Test comparing cards when multiple file paths are passed among positional arguments."""
+    cmd = ["python3", SCRIPT_PATH, "compare", "Invasion of Tarkir", "Uthros", "testdata/tarkir.json", "testdata/uthros.json", "--no-color"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "CARD COMPARISON" in result.stdout
+    assert "Invasion of Tarkir" in result.stdout
+    assert "Uthros Research Craft" in result.stdout
+    assert "Could not find card 'testdata/tarkir.json'" not in result.stderr
