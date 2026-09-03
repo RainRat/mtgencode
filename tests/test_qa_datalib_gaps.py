@@ -177,3 +177,11 @@ def test_plimit_ansi_truncation_remaining():
     s = f"{utils.Ansi.RED}12345678901"
     expected = f"{utils.Ansi.RED}1234567890[...]{utils.Ansi.RESET}"
     assert plimit(s, mlen=10) == expected
+
+def test_plimit_ansi_fallback_remaining_lines_131_132():
+    from unittest.mock import patch
+    import utils
+    s = "\033[31mhello\033[0m"
+    with patch.object(utils, 'visible_len', return_value=15):
+        result = plimit(s, mlen=10)
+        assert result == s
