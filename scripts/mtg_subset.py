@@ -198,17 +198,12 @@ Example Usage:
         print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
         return
 
-    # Convert card objects to dictionaries for JSON output
-    set_buckets_dict = defaultdict(list)
-    for code, set_cards in set_buckets.items():
-        set_buckets_dict[code] = [c.to_dict() for c in set_cards]
-
     # Build the MTGJSON v5 structure
     subset_data = {"data": {}}
-    for code, set_cards in set_buckets_dict.items():
+    for code, set_cards in set_buckets.items():
         subset_data["data"][code] = {
             "code": code,
-            "cards": set_cards
+            "cards": [c.to_dict() for c in set_cards]
         }
 
     # Save to file
