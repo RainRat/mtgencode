@@ -371,23 +371,20 @@ def mana_encode_direct(jsym):
     if jsym not in mana_symall_jdecode:
         raise ValueError('json string not found in decode table for mana_encode_direct(): '
                          + repr(jsym))
-    else:
-        return mana_symall_encode[mana_symall_jdecode[jsym]]
+    return mana_symall_encode[mana_symall_jdecode[jsym]]
 
 def mana_decode_direct(sym):
     if sym not in mana_symall_decode:
         raise ValueError('mana symbol not found in decode table for mana_decode_direct(): '
                          + repr(sym))
-    else:
-        return mana_symall_jencode[mana_symall_decode[sym]]
+    return mana_symall_jencode[mana_symall_decode[sym]]
 
 # hacked in support for mtgsalvation forum
 def mana_decode_direct_forum(sym):
     if sym not in mana_symall_decode:
         raise ValueError('mana symbol not found in decode table for mana_decode_direct_forum(): '
                          + repr(sym))
-    else:
-        return mana_sym_to_forum(mana_symall_decode[sym])
+    return mana_sym_to_forum(mana_symall_decode[sym])
 
 # processing entire strings
 def unique_string(s):
