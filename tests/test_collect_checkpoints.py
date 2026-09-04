@@ -1,4 +1,6 @@
 import os
+import sys
+import runpy
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -81,6 +83,62 @@ class TestCollectCheckpoints(unittest.TestCase):
 
     def test_alias_identity(self):
         self.assertIs(main, process_dir)
+
+    def test_identify_checkpoints_malformed_filenames(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # File with halves != 2 (must contain ident 'output')
+            with open(os.path.join(tmpdir, "lm_lstm_epoch10_extra_output_part.txt"), "w") as f:
+                f.write("content")
+            # File with parts != 6 (must contain ident 'output')
+            with open(os.path.join(tmpdir, "lm_lstm_epoch10_0.2500.output.txt"), "w") as f:
+                f.write("content")
+            # File with parts[3] != ident (parts[3] is 'wrong', but 'output' is in path)
+            with open(os.path.join(tmpdir, "lm_lstm_epoch10output_0.2500.t7.wrong.1.0.txt"), "w") as f:
+                f.write("content")
+
+            cp_infos = identify_checkpoints(tmpdir, "output")
+            self.assertEqual(len(cp_infos), 0)
+
+    def test_process_dir_trailing_slash(self):
+        with tempfile.TemporaryDirectory() as src_dir, tempfile.TemporaryDirectory() as target_dir:
+            dump_path = os.path.join(src_dir, "lm_lstm_epoch10_0.2500.t7.output.1.0.txt")
+            with open(dump_path, "w") as f:
+                f.write("head\n\nign\n\ncardA\n\ncardB\n\ntrail")
+
+            trailing_src_dir = src_dir + os.sep
+            process_dir(trailing_src_dir, target_dir, ident="output")
+
+            base_name = os.path.basename(src_dir)
+            out_dump = os.path.join(target_dir, f"{base_name}_epoch10_0.2500.output.1.0.txt")
+            self.assertTrue(os.path.exists(out_dump))
+
+    def test_cli_main_execution(self):
+        with tempfile.TemporaryDirectory() as src_dir, tempfile.TemporaryDirectory() as target_dir:
+            dump_path = os.path.join(src_dir, "lm_lstm_epoch10_0.2500.t7.output.1.0.txt")
+            cp_path = os.path.join(src_dir, "lm_lstm_epoch10_0.2500.t7")
+            cmd_path = os.path.join(src_dir, "command.txt")
+
+            with open(dump_path, "w") as f:
+                f.write("head\n\nign\n\ncardA\n\ncardB\n\ntrail")
+            with open(cp_path, "w") as f:
+                f.write("model_binary")
+            with open(cmd_path, "w") as f:
+                f.write("th train.lua")
+
+            test_args = ["collect_checkpoints.py", src_dir, target_dir, "-c", "-i", "output", "-v"]
+            with patch.object(sys, "argv", test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_module("scripts.collect_checkpoints", run_name="__main__")
+                self.assertEqual(cm.exception.code, 0)
+
+            base_name = os.path.basename(src_dir)
+            out_dump = os.path.join(target_dir, f"{base_name}_epoch10_0.2500.output.1.0.txt")
+            out_cp = os.path.join(target_dir, f"{base_name}_epoch10_0.2500.t7")
+            out_cmd = os.path.join(target_dir, f"{base_name}.command")
+
+            self.assertTrue(os.path.exists(out_dump))
+            self.assertTrue(os.path.exists(out_cp))
+            self.assertTrue(os.path.exists(out_cmd))
 
 
 if __name__ == "__main__":
