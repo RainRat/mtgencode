@@ -82,6 +82,25 @@ class TestCollectCheckpoints(unittest.TestCase):
     def test_alias_identity(self):
         self.assertIs(main, process_dir)
 
+    def test_cli_main_execution(self):
+        import runpy
+        import sys
+
+        with tempfile.TemporaryDirectory() as src_dir, tempfile.TemporaryDirectory() as target_dir:
+            test_args = [
+                "collect_checkpoints.py",
+                src_dir,
+                target_dir,
+                "-c",
+                "-v",
+                "-i",
+                "output",
+            ]
+            with patch.object(sys, "argv", test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_path("scripts/collect_checkpoints.py", run_name="__main__")
+                self.assertEqual(cm.exception.code, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

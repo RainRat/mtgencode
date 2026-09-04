@@ -80,19 +80,30 @@ main = process_dir
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser()
-    
-    parser.add_argument('basedir', #nargs='?'. default=None,
-                        help='base rnn directory, must contain sample.lua')
-    parser.add_argument('targetdir', #nargs='?', default=None,
-                        help='checkpoint directory, all subdirectories will be processed')
-    parser.add_argument('-c', '--copy_cp', action='store_true', 
-                        help='copy checkpoints used to generate the output files')
-    parser.add_argument('-i', '--ident', action='store', default='output',
-                        help='identifier to look for to determine checkpoints')
-    parser.add_argument('-v', '--verbose', action='store_true', 
-                        help='verbose output')
+    parser = argparse.ArgumentParser(
+        description='Collect and organize sampled text dumps and model checkpoints into a target output directory.',
+        epilog='''Examples:
+  # Collect sampled text dumps from checkpoints/ to output/
+  python3 scripts/collect_checkpoints.py checkpoints/ output/
 
+  # Copy model checkpoints alongside text dumps with detailed logging
+  python3 scripts/collect_checkpoints.py checkpoints/ output/ --copy_cp --verbose
+''',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    
+    parser.add_argument('basedir',
+                        help='Directory containing sampled text files and model checkpoints')
+    parser.add_argument('targetdir',
+                        help='Target directory where collected files will be saved')
+    parser.add_argument('-c', '--copy_cp', action='store_true', 
+                        help='Copy corresponding model checkpoint files (.t7) to the target directory')
+    parser.add_argument('-i', '--ident', action='store', default='output',
+                        help='Identifier string to match in sample dump filenames (default: output)')
+    parser.add_argument('-v', '--verbose', action='store_true', 
+                        help='Print detailed status messages during processing')
+
+    import sys
     args = parser.parse_args()
     main(args.basedir, args.targetdir, ident=args.ident, copy_cp=args.copy_cp, verbose=args.verbose)
-    exit(0)
+    sys.exit(0)
