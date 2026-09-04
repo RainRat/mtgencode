@@ -82,6 +82,77 @@ class TestCollectCheckpoints(unittest.TestCase):
     def test_alias_identity(self):
         self.assertIs(main, process_dir)
 
+    def test_dry_run_direct(self):
+        import io
+        with tempfile.TemporaryDirectory() as src_dir:
+            subdir = os.path.join(src_dir, "run1")
+            os.makedirs(subdir)
+
+            dump_path = os.path.join(subdir, "lm_lstm_epoch10_0.2500.t7.output.1.0.txt")
+            cp_path = os.path.join(subdir, "lm_lstm_epoch10_0.2500.t7")
+            cmd_path = os.path.join(subdir, "command.txt")
+
+            with open(dump_path, "w") as f:
+                f.write("head\n\nign\n\ncardA\n\ncardB\n\ntrail")
+            with open(cp_path, "w") as f:
+                f.write("model_binary")
+            with open(cmd_path, "w") as f:
+                f.write("th train.lua")
+
+            with patch("sys.stdout", new=io.StringIO()) as fake_out:
+                process_dir(src_dir, dry_run=True, copy_cp=True, verbose=True)
+                out = fake_out.getvalue()
+
+            self.assertIn("Dry Run Summary: 1 checkpoint dump file(s) identified.", out)
+            self.assertIn("Target Directory: [dry-run]", out)
+            self.assertIn("Checkpoints (.t7) Available: 1", out)
+            self.assertIn("Command Files Identified: 1", out)
+            self.assertIn("Sample Identified Checkpoints (up to 10):", out)
+            self.assertIn("Dry run complete. No files were written or copied.", out)
+
+    def test_dry_run_missing_targetdir_non_dryrun_raises(self):
+        with tempfile.TemporaryDirectory() as src_dir:
+            with self.assertRaises(ValueError) as ctx:
+                process_dir(src_dir, targetdir=None, dry_run=False)
+            self.assertIn("targetdir must be specified when dry_run is False", str(ctx.exception))
+
+    def test_cli_dry_run_runpy(self):
+        import io
+        import runpy
+        with tempfile.TemporaryDirectory() as src_dir:
+            subdir = os.path.join(src_dir, "run1")
+            os.makedirs(subdir)
+            dump_path = os.path.join(subdir, "lm_lstm_epoch10_0.2500.t7.output.1.0.txt")
+            with open(dump_path, "w") as f:
+                f.write("content")
+
+            args = ["collect_checkpoints.py", src_dir, "-p", "-c"]
+            with patch("sys.argv", args), patch("sys.stdout", new=io.StringIO()) as fake_out:
+                try:
+                    runpy.run_path("scripts/collect_checkpoints.py", run_name="__main__")
+                    code = 0
+                except SystemExit as e:
+                    code = e.code if isinstance(e.code, int) else 0
+
+                out = fake_out.getvalue()
+                self.assertEqual(code, 0)
+                self.assertIn("Dry Run Summary: 1 checkpoint dump file(s) identified.", out)
+
+    def test_cli_missing_targetdir_non_dryrun(self):
+        import io
+        import runpy
+        with tempfile.TemporaryDirectory() as src_dir:
+            args = ["collect_checkpoints.py", src_dir]
+            with patch("sys.argv", args), patch("sys.stderr", new=io.StringIO()) as fake_err:
+                try:
+                    runpy.run_path("scripts/collect_checkpoints.py", run_name="__main__")
+                    code = 0
+                except SystemExit as e:
+                    code = e.code if isinstance(e.code, int) else 0
+
+                self.assertEqual(code, 2)
+                self.assertIn("the following arguments are required: targetdir", fake_err.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
