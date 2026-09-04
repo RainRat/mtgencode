@@ -110,5 +110,12 @@ class TestSanity(unittest.TestCase):
             self.assertEqual(cm.exception.code, 0)
         self.assertTrue(os.path.exists(vocab_out))
 
+    def test_main_cli_no_flags(self):
+        test_args = ["sanity.py", self.infile]
+        with patch("sys.argv", test_args):
+            with self.assertRaises(SystemExit) as cm:
+                runpy.run_path("scripts/sanity.py", run_name="__main__")
+            self.assertEqual(cm.exception.code, 1)
+
 if __name__ == "__main__":
     unittest.main()

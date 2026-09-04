@@ -175,6 +175,10 @@ Usage Examples:
                         help='Path to save the character vocabulary as a JSON file.')
     args = parser.parse_args()
 
+    if not (args.lines or args.vocab or args.chars):
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
     if args.lines:
         check_lines(args.infile)
     if args.vocab:
@@ -182,4 +186,4 @@ Usage Examples:
     if args.chars:
         check_characters(args.infile, args.vocab_name)
 
-    exit(0)
+    sys.exit(0)
