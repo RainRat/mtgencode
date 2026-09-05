@@ -411,6 +411,7 @@ Usage Examples:
     else:
         if not args.quiet:
             print("--- Decklist ---", file=sys.stderr)
+        sys.stderr.flush()
         print(out_text, end="")
 
 if __name__ == '__main__':
