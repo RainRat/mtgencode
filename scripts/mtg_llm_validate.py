@@ -210,6 +210,9 @@ Usage Examples:
   # Validate specific cards by name
   python3 scripts/mtg_llm_validate.py --grep "Grizzly Bears"
 
+  # Preview LLM validation parameters and matched cards without running inference
+  python3 scripts/mtg_llm_validate.py generated_cards.txt --dry-run
+
   # Use an external API (e.g. OpenRouter)
   python3 scripts/mtg_llm_validate.py generated.txt --provider api --api-url "https://openrouter.ai/api/v1/chat/completions" --model "meta-llama/llama-3-8b-instruct" --api-key "YOUR_KEY"
 
@@ -251,6 +254,11 @@ Usage Examples:
     fmt_group.add_argument('--csv', action='store_true', help='Output results as CSV.')
     fmt_group.add_argument('-t', '--table', action='store_true', help='Output results as a table (Default).')
     fmt_group.add_argument('--only-valid', action='store_true', help='Only include valid cards in the output.')
+
+    # Group: Processing Options
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run summary of AI validation parameters and card sample preview without running model inference or calling external APIs.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
@@ -301,6 +309,21 @@ Usage Examples:
     if not cards:
         if args.verbose:
             print("No cards found matching criteria.", file=sys.stderr)
+        return
+
+    if getattr(args, 'dry_run', False):
+        fmt_name = "JSON" if args.json else ("CSV" if args.csv else "Table")
+        print(f"Dry Run Summary: {len(cards)} card(s) identified for AI validation.")
+        print(f"  Model: {args.model}")
+        print(f"  Provider: {args.provider}")
+        if args.provider == 'api':
+            print(f"  API URL: {args.api_url or 'Not specified'}")
+        else:
+            print(f"  Device: {args.device}")
+            print(f"  Batch Size: {args.batch_size}")
+        print(f"  Output Format: {fmt_name}{' (Only Valid)' if args.only_valid else ''}")
+        sample_names = [str(getattr(c, 'name', c)) for c in cards[:10]]
+        print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
         return
 
     # Run AI Model Validation
