@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import subprocess
 import random
 
@@ -8,8 +9,14 @@ def extract_cp_name(name):
     if not (name[:13] == 'lm_lstm_epoch' and name[-3:] == '.t7'):
         return None
     name = name[13:-3]
-    (epoch, vloss) = tuple(name.split('_'))
-    return (float(epoch), float(vloss))
+    try:
+        parts = name.split('_')
+        if len(parts) != 2:
+            return None
+        (epoch, vloss) = parts
+        return (float(epoch), float(vloss))
+    except (ValueError, TypeError):
+        return None
 
 def sample(cp, temp, count, seed = None, ident = 'output'):
     if seed is None:
@@ -96,4 +103,4 @@ if __name__ == '__main__':
         seed = int(args.seed)
     main(args.rnndir, args.cpdir, float(args.temperature), int(args.count), 
          seed=seed, ident=args.ident, verbose = args.verbose)
-    exit(0)
+    sys.exit(0)
