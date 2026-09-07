@@ -29,12 +29,6 @@ import jdecode
 import mtg_validate
 import ngrams
 
-def annotate_values(values):
-    for k in values:
-        (total, good, bad) = values[k]
-        values[k] = OrderedDict([('total', total), ('good', good), ('bad', bad)])
-    return values
-
 def print_statistics(stats, ident = 0):
     for k in stats:
         if isinstance(stats[k], OrderedDict):
@@ -78,7 +72,10 @@ def get_statistics(fname, lm = None, sep = False, verbose=False):
     ((total_all, total_good, total_bad, total_uncovered), 
          values) = mtg_validate.process_props(cards)
     
-    stats['props'] = annotate_values(values)
+    for k in values:
+        total, good, bad = values[k]
+        values[k] = OrderedDict([('total', total), ('good', good), ('bad', bad)])
+    stats['props'] = values
     stats['props']['overall'] = OrderedDict([('total', total_all), 
                                              ('good', total_good), 
                                              ('bad', total_bad), 
