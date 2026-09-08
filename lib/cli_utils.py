@@ -40,9 +40,9 @@ def add_standard_filters(parser):
     filter_group.add_argument('--exclude-loyalty', action='append',
                         help='Exclude cards whose loyalty/defense matches a search pattern.')
     filter_group.add_argument('--set', action='append',
-                        help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple values (OR logic).')
+                        help='Only include cards from specific sets (for example, MOM, MRD). Supports multiple values (OR logic).')
     filter_group.add_argument('--rarity', action='append',
-                        help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: "
+                        help="Only include cards of specific rarities. Supports full names (for example, 'common', 'mythic') or shorthands: "
                              "O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), or L (Basic Land). "
                              "Supports multiple values (OR logic).")
     filter_group.add_argument('--colors', action='append',
@@ -56,10 +56,10 @@ def add_standard_filters(parser):
                              "Matching a specific color also includes cards that produce 'Any'. Supports multiple values (OR logic).")
     filter_group.add_argument('--id-count', action='append',
                         help='Only include cards with specific color identity counts. Supports exact values ("2"), '
-                             'inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
+                             'inequalities (for example, ">3", "<=2"), ranges (for example, "1-4"), and multiple values (OR logic).')
     filter_group.add_argument('--cmc', action='append',
                         help='Only include cards with specific CMC (Converted Mana Cost) values. Supports exact values, '
-                             'inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
+                             'inequalities (for example, ">3", "<=2"), ranges (for example, "1-4"), and multiple values (OR logic).')
     filter_group.add_argument('--pow', '--power', action='append', dest='pow',
                         help='Only include cards with specific Power values. Supports exact values, '
                              'inequalities, ranges, and multiple values (OR logic).')
@@ -76,16 +76,16 @@ def add_standard_filters(parser):
     filter_group.add_argument('--fair-mv', '--fcmc', '--recommended-cmc', action='append', dest='fair_mv',
                         help='Only include cards with specific recommended Fair Mana Values. Supports inequalities and ranges.')
     filter_group.add_argument('--mechanic', action='append',
-                        help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). '
+                        help='Only include cards with specific mechanical features or keyword abilities (for example, Flying, Activated, ETB Effect). '
                              'Supports multiple values (OR logic).')
     filter_group.add_argument('--action', action='append',
                         help='Only include cards with specific functional actions (Removal, Protection, Buffs, Card Advantage, Disruption, or Mana). '
                              'Supports multiple values (OR logic).')
     filter_group.add_argument('--legal', '--format-legal', action='append',
-                        help='Only include cards that are legal in the specified format (e.g., standard, commander, legacy). '
+                        help='Only include cards that are legal in the specified format (for example, standard, commander, legacy). '
                              'Supports multiple values (AND logic).')
     filter_group.add_argument('--color-pie-break', action='store_true',
-                        help='Only include cards that violate the mechanical color pie (e.g. Green cards with Haste).')
+                        help='Only include cards that violate the mechanical color pie (for example, Green cards with Haste).')
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
                         help='Filter cards using a standard MTG decklist file. Also multiplies cards in the output based on their counts in the decklist.')
     filter_group.add_argument('--booster', type=int, default=0,
@@ -175,7 +175,7 @@ def load_and_filter_cards(args):
                 break
         if not found and not getattr(args, 'quiet', False):
             print("Notice: No input file specified and default dataset (data/AllPrintings.json) was not found.\n"
-                  "        Please specify a file path (e.g. 'path/to/cards.json') or pipe input into standard input.", file=sys.stderr)
+                  "        Please specify a file path (for example, 'path/to/cards.json') or pipe input into standard input.", file=sys.stderr)
     
     setattr(args, 'infile', infile)
 
