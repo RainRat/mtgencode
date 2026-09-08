@@ -844,14 +844,16 @@ python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander
 # Generate a Commander deck with a specific commander
 python3 scripts/mtg_deckgen.py data/AllPrintings.json --commander "Atraxa, Praetors' Voice"
 
-# Generate a Standard deck from a pool
-python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard
+# Generate a Standard deck with a 15-card sideboard
+python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard --sideboard
 ```
 *   **Options:**
     *   `--format {commander,standard,brawl,pauper,limited}`: Choose the deck format (Default: commander).
     *   `--commander NAME`: Specify a legendary creature to use as your commander.
     *   `--creatures N`, `--spells N`, `--lands N`: Override the target number of cards for each category.
     *   `--curve "1:5,2:10,..."`: Override the target mana curve for creatures.
+    *   `--sideboard`: Generate a sideboard for the deck (default size: 15 for Standard/Pauper/Limited, 10 for Commander/Brawl).
+    *   `--sideboard-size N`: Override the target number of cards for the sideboard.
     *   `--outfile FILE`: Save the decklist to a file instead of printing to the console.
 
 ### `mtg_manabase.py`
