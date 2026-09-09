@@ -1080,10 +1080,13 @@ def handle_shell(args):
                 elif cmd in ['/tribal', '/tr']:
                     resolved_names = _resolve_args(cmd_args)
                     if not resolved_names:
-                        err_msg = "Error: /tribal requires a card name."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
+                        if last_results:
+                            resolved_names = [last_results[0].name]
+                        else:
+                            err_msg = "Error: /tribal requires a card name or active search results."
+                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                            print(err_msg)
+                            continue
                     tr_results = []
                     for name in resolved_names:
                         tr_args = copy.copy(args)

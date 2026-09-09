@@ -275,12 +275,13 @@ class TestMtgShell(unittest.TestCase):
 
     def test_shell_smart_defaults_empty(self):
         """Test that REPL commands gracefully report error when called without arguments and last_results is empty."""
-        commands = ['/search', '/s', '/oracle', '/compare', '/reprints', '/superior', '/inferior', '/substitutes', '/counterparts', '/similar']
+        commands = ['/search', '/s', '/oracle', '/compare', '/reprints', '/superior', '/inferior', '/substitutes', '/counterparts', '/similar', '/tribal', '/tr']
         for cmd in commands:
             with patch('builtins.input', side_effect=[cmd, 'exit']):
                 with patch('sys.stdout', new=io.StringIO()) as fake_out:
                     handle_shell(self.args)
-                    self.assertIn(f"Error: {cmd if cmd not in ['/s'] else '/search'} requires", fake_out.getvalue())
+                    expected_cmd = '/search' if cmd == '/s' else ('/tribal' if cmd == '/tr' else cmd)
+                    self.assertIn(f"Error: {expected_cmd} requires", fake_out.getvalue())
 
     def test_shell_smart_defaults_with_results(self):
         """Test that REPL commands fall back to using previous results when called without arguments."""
@@ -341,6 +342,13 @@ class TestMtgShell(unittest.TestCase):
                 handle_shell(self.args)
                 err = fake_err.getvalue()
                 self.assertIn("No color-shifted counterparts found for Invasion of Tarkir.", err)
+
+        # 9. /tribal
+        with patch('builtins.input', side_effect=['/search tarkir', '/tribal', 'exit']):
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                handle_shell(self.args)
+                err = fake_err.getvalue()
+                self.assertIn("No tribal matches found for Invasion of Tarkir.", err)
 
     def test_shell_help_ux_improvement(self):
         """Test the UX improvement in the help command output (logical groupings and alignment)."""
