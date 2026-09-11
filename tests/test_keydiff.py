@@ -147,5 +147,17 @@ class TestKeyDiff(unittest.TestCase):
                     self.assertEqual(code, 0)
                     self.assertIn("shared: 1", out)
 
+    def test_main_default_fname2(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            with open(file1, "w") as f:
+                f.write("apple: 10\n")
+
+            stdin_content = io.StringIO("apple: 20\n")
+            with patch('sys.stdin', stdin_content):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    keydiff.main(file1)
+                    self.assertIn("shared: 1", fake_out.getvalue())
+
 if __name__ == '__main__':
     unittest.main()
