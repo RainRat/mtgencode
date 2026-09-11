@@ -33,6 +33,9 @@ Usage Examples:
   # Evaluate with higher creativity (temp)
   python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
 
+  # Preview model evaluation parameters without running PyTorch generation (dry-run mode)
+  python3 scripts/mtg_eval.py checkpoint.pt --count 100 --dry-run
+
   # Save details for cards that failed validation
   python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --dump
 """
@@ -56,6 +59,11 @@ Usage Examples:
     eval_group.add_argument('-l', '--length', type=int, default=None,
                         help='Character limit for the generation process. Automatically scales based on --count if omitted (Default: max(5000, count * 250)).')
 
+    # Group: Processing Options
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run summary of evaluation parameters (checkpoint path, target card count, character generation length, sampling temperature, random seed, and device settings) to standard output without running PyTorch model inference or text generation.')
+
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
     out_group.add_argument('-j', '--json', action='store_true', help='Output results as structured JSON.')
@@ -76,6 +84,22 @@ Usage Examples:
 
     # Determine if we should use color
     use_color = args.color if args.color is not None else sys.stdout.isatty()
+
+    # Resolve generation character length: auto-scale based on --count if --length was omitted
+    gen_length = args.length if args.length is not None else max(5000, args.count * 250)
+
+    if getattr(args, 'dry_run', False):
+        exists_str = "Found" if os.path.exists(args.checkpoint) else "Not found"
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        seed_str = str(args.seed) if args.seed is not None else "Not set"
+        print("Dry Run Summary: AI Model Evaluation Parameters")
+        print(f"  Checkpoint Path: {args.checkpoint} ({exists_str})")
+        print(f"  Target Card Count: {args.count}")
+        print(f"  Generation Character Limit: {gen_length}")
+        print(f"  Sampling Temperature: {args.temp}")
+        print(f"  Random Seed: {seed_str}")
+        print(f"  Device: {device}")
+        return
 
     if not os.path.exists(args.checkpoint):
         print(f"Error: Checkpoint file not found: {args.checkpoint}", file=sys.stderr)
@@ -124,9 +148,6 @@ Usage Examples:
     for attr in ['name', 'supertypes', 'types', 'loyalty', 'subtypes', 'rarity',
                  'powertoughness', 'manacost', 'bodytext_prepend', 'bodytext_append']:
         if not hasattr(gen_args, attr): setattr(gen_args, attr, None)
-
-    # Resolve generation character length: auto-scale based on --count if --length was omitted
-    gen_length = args.length if args.length is not None else max(5000, args.count * 250)
 
     # We use gen_length to generate enough text for the requested card count
     generated_raw = generate_text(model, char_to_idx, idx_to_char, vocab_size, device, gen_args, length=gen_length, quiet=args.quiet)

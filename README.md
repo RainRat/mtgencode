@@ -529,6 +529,9 @@ python3 scripts/mtg_eval.py checkpoint.pt --count 100
 
 # Evaluate with higher creativity (temp)
 python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
+
+# Preview model evaluation parameters without running PyTorch generation (dry-run mode)
+python3 scripts/mtg_eval.py checkpoint.pt --count 100 --dry-run
 ```
 *   **Options:**
     *   `checkpoint` / `-c`, `--checkpoint`: Path to the model checkpoint file (Default: `checkpoint.pt`).
@@ -536,6 +539,7 @@ python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --temp 1.0
     *   `-t`, `--temp`: Creativity level for generation (Default: 0.8).
     *   `--seed`: Seed for the random number generator.
     *   `-l`, `--length`: Character limit for the generation process (automatically scales based on `--count` if omitted).
+    *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of evaluation parameters without running PyTorch model inference or text generation.
     *   `-d`, `--dump`: Print full text of cards that failed validation.
     *   `-j`, `--json`: Output results in structured JSON format.
 
