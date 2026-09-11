@@ -149,5 +149,67 @@ class TestMtgDeckgenFormats(unittest.TestCase):
         self.assertIn("Chandra Brawl", output)
         self.assertIn("Chandra Spell", output)
 
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_standard_with_sideboard(self, mock_stderr, mock_stdout, mock_open):
+        """Test Standard format with default 15-card sideboard."""
+        creature = cardlib.Card({
+            'name': 'Bear',
+            'types': ['Creature'],
+            'manaCost': '{1}{G}',
+            'rarity': 'common',
+            'text': ''
+        })
+        spell = cardlib.Card({
+            'name': 'Growth',
+            'types': ['Instant'],
+            'manaCost': '{G}',
+            'rarity': 'common',
+            'text': ''
+        })
+
+        mock_open.return_value = [creature, spell]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--sideboard', '--seed', '42']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Sideboard", output)
+        # Verify deck composition includes Sideboard
+        stderr = mock_stderr.getvalue()
+        self.assertIn("Sideboard:", stderr)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_commander_with_custom_sideboard_size(self, mock_stderr, mock_stdout, mock_open):
+        """Test Commander format with custom sideboard size."""
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        card1 = cardlib.Card({
+            'name': 'Goblin',
+            'types': ['Creature'],
+            'manaCost': '{1}{R}',
+            'rarity': 'common',
+            'text': ''
+        })
+
+        mock_open.return_value = [commander, card1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia', '--sideboard-size', '5', '--seed', '1']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Sideboard", output)
+        stderr = mock_stderr.getvalue()
+        self.assertIn("Sideboard:", stderr)
+
 if __name__ == '__main__':
     unittest.main()

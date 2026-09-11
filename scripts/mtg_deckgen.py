@@ -108,6 +108,9 @@ Usage Examples:
   # Filter the card pool (e.g., only Goblins)
   python3 scripts/mtg_deckgen.py data/AllPrintings.json --grep "Goblin"
 
+  # Generate a Standard deck with a 15-card sideboard
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard --sideboard
+
   # Preview deck generation without creating or modifying output files
   python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander --dry-run
 
@@ -133,6 +136,10 @@ Usage Examples:
     deck_group.add_argument('--spells', type=int, help='Override target number of non-creature spells.')
     deck_group.add_argument('--lands', type=int, help='Override target number of lands.')
     deck_group.add_argument('--curve', help='Override mana curve for creatures. Format "1:5,2:10,3:10,4:8,5:5,6+:5"')
+    deck_group.add_argument('--sideboard', action='store_true',
+                            help='Generate a sideboard for the deck (Default size: 15 for Standard/Pauper/Limited, 10 for Commander/Brawl unless --sideboard-size is specified).')
+    deck_group.add_argument('--sideboard-size', type=int,
+                            help='Override target number of cards for the sideboard.')
 
     # Group: Filtering Options (Standard across tools)
     cli_utils.add_standard_filters(parser)
@@ -313,7 +320,33 @@ Usage Examples:
         for l, count in sorted(land_counts.items()):
             decklist.append(f"{count} {l}")
             actual_composition['Lands'] += count
-            
+
+        # Determine sideboard size for Commander/Brawl
+        if args.sideboard_size is not None:
+            sideboard_target = max(0, args.sideboard_size)
+        elif args.sideboard:
+            sideboard_target = 10
+        else:
+            sideboard_target = 0
+
+        if sideboard_target > 0:
+            used_main = set(deck_creatures + deck_spells)
+            side_candidates = [c for c in valid_pool if c not in used_main]
+            if len(side_candidates) < sideboard_target:
+                side_cards = list(side_candidates)
+                needed = sideboard_target - len(side_cards)
+                if valid_pool:
+                    side_cards.extend(random.choices(valid_pool, k=needed))
+            else:
+                side_cards = random.sample(side_candidates, sideboard_target)
+
+            if side_cards:
+                decklist.append("")
+                decklist.append("Sideboard")
+                for c in side_cards:
+                    decklist.append(f"1 {c.display_name}")
+                actual_composition['Sideboard'] = len(side_cards)
+
     elif args.format in ('standard', 'pauper', 'limited'):
         if args.format == 'limited':
             creatures_target = args.creatures if args.creatures is not None else 15
@@ -371,6 +404,33 @@ Usage Examples:
         
         actual_composition['Creatures'] = creatures_target
         actual_composition['Spells'] = spells_target
+
+        # Determine sideboard size for Standard/Pauper/Limited
+        if args.sideboard_size is not None:
+            sideboard_target = max(0, args.sideboard_size)
+        elif args.sideboard:
+            sideboard_target = 15
+        else:
+            sideboard_target = 0
+
+        if sideboard_target > 0:
+            valid_spells_and_creatures = creatures_pool + spells_pool
+            if valid_spells_and_creatures:
+                divisor = 2 if args.format == 'limited' else 4
+                side_sample_count = max(1, sideboard_target // divisor)
+                unused_cards = [c for c in valid_spells_and_creatures if c not in chosen_cards]
+                side_candidates = unused_cards if unused_cards else valid_spells_and_creatures
+                side_sample = random.sample(side_candidates, min(side_sample_count, len(side_candidates)))
+                side_chosen = []
+                for _ in range(sideboard_target):
+                    side_chosen.append(random.choice(side_sample))
+
+                side_grouped = Counter([c.display_name for c in side_chosen])
+                decklist.append("")
+                decklist.append("Sideboard")
+                for name, count in sorted(side_grouped.items()):
+                    decklist.append(f"{count} {name}")
+                actual_composition['Sideboard'] = sum(side_grouped.values())
 
     total_deck_size = sum(actual_composition.values())
 
