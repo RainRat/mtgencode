@@ -326,5 +326,20 @@ class TestMtgDeckgen(unittest.TestCase):
         output = mock_stdout.getvalue()
         self.assertIn("Galia *CMDR*", output)
 
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_stream_flushing(self, mock_stderr, mock_stdout, mock_open):
+        c1 = cardlib.Card({'name': 'Soldier', 'types': ['Creature'], 'manaCost': '{W}', 'rarity': 'common', 'text': ''})
+        s1 = cardlib.Card({'name': 'Shock', 'types': ['Instant'], 'manaCost': '{R}', 'rarity': 'common', 'text': ''})
+        mock_open.return_value = [c1, s1]
+
+        mock_stderr.flush = MagicMock()
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard']):
+            mtg_deckgen.main()
+
+        mock_stderr.flush.assert_called()
+
 if __name__ == '__main__':
     unittest.main()
