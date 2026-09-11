@@ -3,6 +3,7 @@ import runpy
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.collect_checkpoints import (
     cleanup_dump,

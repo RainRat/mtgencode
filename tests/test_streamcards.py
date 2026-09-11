@@ -142,11 +142,12 @@ class TestStreamCards(unittest.TestCase):
             streamcards.main(args)
         self.assertIn("break loop", str(ctx.exception))
 
+    @patch('builtins.open', new_callable=mock_open)
     @patch('psutil.Process')
     @patch('os.getppid', return_value=1)
     @patch('jdecode.mtg_open_file')
     @patch('sys.argv', ['streamcards.py', '3', '4', '-s', '123'])
-    def test_cli_execution(self, mock_mtg_open, mock_getppid, mock_psutil):
+    def test_cli_execution(self, mock_mtg_open, mock_getppid, mock_psutil, mock_file):
         mock_mtg_open.return_value = []
         script_path = os.path.join(os.path.dirname(__file__), '../scripts/streamcards.py')
         with self.assertRaises(AssertionError) as ctx:
