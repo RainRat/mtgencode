@@ -546,6 +546,9 @@ Checks how well cards follow rules using an AI model. This tool asks the AI to j
 # Validate cards using the default local model (TinyLlama)
 python3 scripts/mtg_llm_validate.py generated_cards.txt
 
+# Preview validation parameters and matched cards without running inference (dry-run mode)
+python3 scripts/mtg_llm_validate.py generated_cards.txt --dry-run
+
 # Use a remote API (for example, OpenRouter)
 python3 scripts/mtg_llm_validate.py generated.txt --provider api --api-url "https://openrouter.ai/api/v1/chat/completions" --model "meta-llama/llama-3-8b-instruct" --api-key "YOUR_KEY"
 
@@ -560,6 +563,7 @@ python3 scripts/mtg_llm_validate.py generated.txt --grep "Grizzly Bears" --only-
     *   **Local Models:** Requires `transformers`, `torch`, and `accelerate` (installed via `requirements.txt`).
     *   **API Providers:** Only requires the standard Python library (no heavy dependencies).
 *   **Options:**
+    *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of AI validation parameters and card sample preview without running model inference or calling external APIs.
     *   `--provider {transformers,api}`: The backend provider to use (Default: `transformers`).
     *   `--api-url URL`: The endpoint for the API (Required for `api` provider).
     *   `--api-key KEY`: Optional authentication token for the API.

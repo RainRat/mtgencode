@@ -104,5 +104,45 @@ class TestMtgLlmValidateGaps(unittest.TestCase):
                     mtg_llm_validate.main()
                 self.assertEqual(cm.exception.code, 1)
 
+    @patch('mtg_llm_validate.validate_cards_llm')
+    @patch('jdecode.mtg_open_file')
+    def test_main_dry_run_transformers(self, mock_open_file, mock_validate):
+        mock_card = MagicMock(spec=cardlib.Card)
+        mock_card.name = "DryRun Card"
+        mock_open_file.return_value = [mock_card]
+
+        stdout = io.StringIO()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()):
+            with patch('sys.argv', ['mtg_llm_validate.py', 'dummy.txt', '--dry-run', '--json', '--only-valid']):
+                mtg_llm_validate.main()
+
+        output = stdout.getvalue()
+        self.assertIn("Dry Run Summary: 1 card(s) identified for AI validation.", output)
+        self.assertIn("Model: TinyLlama/TinyLlama-1.1B-Chat-v1.0", output)
+        self.assertIn("Provider: transformers", output)
+        self.assertIn("Output Format: JSON (Only Valid)", output)
+        self.assertIn("Sample Preview (up to 10): DryRun Card", output)
+        mock_validate.assert_not_called()
+
+    @patch('mtg_llm_validate.validate_cards_llm')
+    @patch('jdecode.mtg_open_file')
+    def test_main_dry_run_api_provider(self, mock_open_file, mock_validate):
+        mock_card = MagicMock(spec=cardlib.Card)
+        mock_card.name = "API DryRun Card"
+        mock_open_file.return_value = [mock_card]
+
+        stdout = io.StringIO()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()):
+            with patch('sys.argv', ['mtg_llm_validate.py', 'dummy.txt', '-p', '--provider', 'api', '--api-url', 'http://localhost:11434/v1/chat/completions']):
+                mtg_llm_validate.main()
+
+        output = stdout.getvalue()
+        self.assertIn("Dry Run Summary: 1 card(s) identified for AI validation.", output)
+        self.assertIn("Provider: api", output)
+        self.assertIn("API URL: http://localhost:11434/v1/chat/completions", output)
+        self.assertIn("Output Format: Table", output)
+        self.assertIn("Sample Preview (up to 10): API DryRun Card", output)
+        mock_validate.assert_not_called()
+
 if __name__ == '__main__':
     unittest.main()
