@@ -109,5 +109,37 @@ class TestSortCards(unittest.TestCase):
             self.assertIn("Sample Preview (up to 10): Test Dry Run Card", output)
             self.assertFalse(os.path.exists(out_file))
 
+    def test_cli_interactive_default_dataset(self):
+        import io
+        from unittest.mock import patch
+
+        captured_stderr = io.StringIO()
+        with patch("sys.stdin.isatty", return_value=True):
+            with patch("os.path.exists", return_value=True):
+                with patch("sys.argv", ["sortcards.py"]):
+                    with patch("sys.stderr", captured_stderr):
+                        with patch("sortcards.main") as mock_main:
+                            sortcards.cli()
+                            mock_main.assert_called_once()
+                            args = mock_main.call_args[0]
+                            self.assertTrue(args[0].endswith("AllPrintings.json"))
+        stderr_val = captured_stderr.getvalue()
+        self.assertIn("Notice: Using default dataset:", stderr_val)
+
+    def test_cli_interactive_missing_dataset(self):
+        import io
+        from unittest.mock import patch
+
+        captured_stderr = io.StringIO()
+        with patch("sys.stdin.isatty", return_value=True):
+            with patch("os.path.exists", return_value=False):
+                with patch("sys.argv", ["sortcards.py"]):
+                    with patch("sys.stderr", captured_stderr):
+                        with self.assertRaises(SystemExit) as cm:
+                            sortcards.cli()
+                        self.assertEqual(cm.exception.code, 1)
+        stderr_val = captured_stderr.getvalue()
+        self.assertIn("Error: No input file specified and default dataset", stderr_val)
+
 if __name__ == '__main__':
     unittest.main()
