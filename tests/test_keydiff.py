@@ -1,6 +1,8 @@
 import unittest
 import io
 import os
+import json
+import csv
 import tempfile
 from unittest.mock import patch
 import scripts.keydiff as keydiff
@@ -158,6 +160,100 @@ class TestKeyDiff(unittest.TestCase):
                 with patch('sys.stdout', new=io.StringIO()) as fake_out:
                     keydiff.main(file1)
                     self.assertIn("shared: 1", fake_out.getvalue())
+
+    def test_main_json_output(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            file2 = os.path.join(tmpdir, "f2.txt")
+
+            with open(file1, "w") as f:
+                f.write("apple: 10\nbanana: 20\n")
+            with open(file2, "w") as f:
+                f.write("apple: 15\ncherry: 5\n")
+
+            code, out = self.run_main([file1, file2, "-j"])
+            self.assertEqual(code, 0)
+            data = json.loads(out)
+            self.assertIn("summary", data)
+            self.assertEqual(data["summary"]["shared_count"], 1)
+            self.assertEqual(data["summary"]["only_file1_count"], 1)
+            self.assertEqual(data["summary"]["only_file2_count"], 1)
+            self.assertEqual(data["shared"][0]["key"], "apple")
+            self.assertEqual(data["only_file1"][0]["key"], "banana")
+            self.assertEqual(data["only_file2"][0]["key"], "cherry")
+
+    def test_main_csv_output(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            file2 = os.path.join(tmpdir, "f2.txt")
+
+            with open(file1, "w") as f:
+                f.write("apple: 10\nbanana: 20\n")
+            with open(file2, "w") as f:
+                f.write("apple: 15\ncherry: 5\n")
+
+            code, out = self.run_main([file1, file2, "--csv"])
+            self.assertEqual(code, 0)
+            lines = out.strip().splitlines()
+            self.assertEqual(lines[0], "Category,Key,Count1,Count2,Ratio")
+            self.assertIn("Shared,apple,10,15,", out)
+            self.assertIn("File1_Only,banana,20,,", out)
+            self.assertIn("File2_Only,cherry,,5,", out)
+
+    def test_main_outfile_auto_detect_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            file2 = os.path.join(tmpdir, "f2.txt")
+            outfile = os.path.join(tmpdir, "out.json")
+
+            with open(file1, "w") as f:
+                f.write("apple: 10\n")
+            with open(file2, "w") as f:
+                f.write("apple: 20\n")
+
+            code, out = self.run_main([file1, file2, "-o", outfile])
+            self.assertEqual(code, 0)
+            self.assertTrue(os.path.exists(outfile))
+            with open(outfile, 'r') as f:
+                data = json.load(f)
+            self.assertEqual(data["summary"]["shared_count"], 1)
+
+    def test_main_outfile_auto_detect_csv(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            file2 = os.path.join(tmpdir, "f2.txt")
+            outfile = os.path.join(tmpdir, "out.csv")
+
+            with open(file1, "w") as f:
+                f.write("apple: 10\n")
+            with open(file2, "w") as f:
+                f.write("apple: 20\n")
+
+            code, out = self.run_main([file1, file2, "-o", outfile])
+            self.assertEqual(code, 0)
+            self.assertTrue(os.path.exists(outfile))
+            with open(outfile, 'r') as f:
+                content = f.read()
+            self.assertIn("Category,Key,Count1,Count2,Ratio", content)
+
+    def test_main_dry_run(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            file2 = os.path.join(tmpdir, "f2.txt")
+
+            with open(file1, "w") as f:
+                f.write("apple: 10\nbanana: 20\n")
+            with open(file2, "w") as f:
+                f.write("apple: 15\ncherry: 5\n")
+
+            code, out = self.run_main([file1, file2, "--dry-run"])
+            self.assertEqual(code, 0)
+            self.assertIn("Dry Run Summary:", out)
+            self.assertIn("Base Keys", out)
+            self.assertIn("Target Keys", out)
+            self.assertIn("Shared: 1 key(s)", out)
+            self.assertIn("Sample Shared Ratios Preview", out)
+>>>>>>> origin/feat-keydiff-export-dryrun-7380652946975983184
 
 if __name__ == '__main__':
     unittest.main()

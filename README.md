@@ -1351,8 +1351,18 @@ python3 scripts/keydiff.py base_keys.txt target_keys.txt
 
 # Compare a baseline file against standard input
 cat target_keys.txt | python3 scripts/keydiff.py base_keys.txt
+
+# Save key difference report to JSON
+python3 scripts/keydiff.py base_keys.txt target_keys.txt -o diff.json
+
+# Preview key comparison statistics without writing output files (dry-run mode)
+python3 scripts/keydiff.py base_keys.txt target_keys.txt --dry-run
 ```
 *   **Options:**
+    *   `-o FILE`, `--outfile FILE`: Save output report to a file (automatically detects `.json` or `.csv` format from extension).
+    *   `-j`, `--json`: Output key comparison in structured JSON format.
+    *   `--csv`: Output key comparison in CSV format.
+    *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of key statistics and ratio preview without writing output files.
     *   `-v`, `--verbose`: Enable detailed logging during key comparison.
 
 ### `sanity.py`
