@@ -2270,8 +2270,11 @@ def handle_compare_cards(args):
                 rows.append([header_label] + [""] * num_cards)
                 rows.extend(group_rows)
 
-        datalib.add_separator_row(rows)
-        datalib.printrows(datalib.padrows(rows, aligns=['l'] * (num_cards + 1)), indent=2)
+        if len(rows) <= 1:
+            print("  No differences found between the compared cards.")
+        else:
+            datalib.add_separator_row(rows)
+            datalib.printrows(datalib.padrows(rows, aligns=['l'] * (num_cards + 1)), indent=2)
 
 # --- Main Entry Point ---
 

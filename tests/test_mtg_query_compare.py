@@ -90,3 +90,11 @@ def test_query_compare_multiple_file_paths():
     assert "Invasion of Tarkir" in result.stdout
     assert "Uthros Research Craft" in result.stdout
     assert "Could not find card 'testdata/tarkir.json'" not in result.stderr
+
+def test_query_compare_diff_only_no_differences():
+    """Test --diff-only flag when comparing identical cards."""
+    cmd = ["python3", SCRIPT_PATH, "compare", "Invasion of Tarkir", "Invasion of Tarkir", "testdata/invasion_of_tarkir.json", "--no-color", "-d"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "CARD COMPARISON" in result.stdout
+    assert "No differences found between the compared cards." in result.stdout
