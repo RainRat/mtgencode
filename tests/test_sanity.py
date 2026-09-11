@@ -87,6 +87,13 @@ class TestSanity(unittest.TestCase):
         self.assertIn("token_to_idx", data)
         self.assertIn("idx_to_token", data)
 
+    def test_main_cli_no_flags(self):
+        test_args = ["sanity.py", self.infile]
+        with patch("sys.argv", test_args):
+            with self.assertRaises(SystemExit) as cm:
+                runpy.run_path("scripts/sanity.py", run_name="__main__")
+            self.assertEqual(cm.exception.code, 1)
+
     def test_main_cli_lines(self):
         test_args = ["sanity.py", self.infile, "-lines"]
         with patch("sys.argv", test_args):
