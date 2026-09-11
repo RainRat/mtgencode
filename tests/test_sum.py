@@ -140,6 +140,43 @@ class TestSumCLI(unittest.TestCase):
                 self.assertEqual(code, 1)
                 self.assertIn("Error reading somefile.txt", err)
 
+    def test_cli_default_distances_txt_exists(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dist_path = os.path.join(tmpdir, 'distances.txt')
+            with open(dist_path, 'w', encoding='utf-8') as f:
+                f.write("0|Card A|1.0|0.8\n")
+
+            cwd = os.getcwd()
+            os.chdir(tmpdir)
+            try:
+                with patch('sys.stdin.isatty', return_value=True):
+                    code, out, err = self.run_sum_main([], stdout_isatty=True)
+                    self.assertEqual(code, 0)
+                    self.assertIn("DISTANCE SUMMARY", out)
+            finally:
+                os.chdir(cwd)
+
+    def test_cli_default_no_distances_txt_interactive(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cwd = os.getcwd()
+            os.chdir(tmpdir)
+            try:
+                with patch('sys.stdin.isatty', return_value=True):
+                    code, out, err = self.run_sum_main([])
+                    self.assertEqual(code, 1)
+                    self.assertIn("usage: sum.py", err)
+            finally:
+                os.chdir(cwd)
+
+    def test_cli_stdin_pipe(self):
+        stdin_data = "0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n"
+        with patch('sys.stdin', io.StringIO(stdin_data)):
+            with patch('sys.stdin.isatty', return_value=False):
+                code, out, err = self.run_sum_main([])
+                self.assertEqual(code, 0)
+                self.assertIn("DISTANCE SUMMARY", out)
+                self.assertIn("0.8000", out)
+
     def test_main_cli_execution(self):
         with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp:
             tmp.write("0|Card A|1.0|0.8\n")
