@@ -1315,6 +1315,24 @@ python3 scripts/ngrams.py testdata/uthros.json model.pkl -nltk -min 3
     *   `-s`, `--separate`: Separate card text into individual lines when building an NLTK model.
     *   `-v`, `--verbose`: Enable detailed status messages.
 
+### `collect_checkpoints.py`
+Collects and organizes neural network checkpoint output dumps, model files, and training commands from an RNN directory tree into a target output directory.
+```bash
+# Collect output dumps from RNN directory to a target folder
+python3 scripts/collect_checkpoints.py check_dir target_dir
+
+# Collect output dumps and copy matching model checkpoint files
+python3 scripts/collect_checkpoints.py check_dir target_dir -c
+
+# Preview identified checkpoints without copying or writing files (dry-run mode)
+python3 scripts/collect_checkpoints.py check_dir -p
+```
+*   **Options:**
+    *   `-p`, `--preview`, `--dry-run`: Print a summary of identified checkpoints, dump files, and target paths without copying or writing files.
+    *   `-c`, `--copy_cp`: Copy model checkpoint files (`.t7`) and training command files (`.command`) alongside cleaned output text dumps.
+    *   `-i IDENT`, `--ident IDENT`: Identifier string to look for in dump filenames (Default: `output`).
+    *   `-v`, `--verbose`: Enable detailed logging during checkpoint collection.
+
 ### `keydiff.py`
 Compares entry counts and shared key ratios between two key-value data files (such as word or feature frequency tables).
 ```bash
