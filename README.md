@@ -1345,6 +1345,47 @@ python3 scripts/sanity.py data/output.txt -chars --vocab_name vocab.json
     *   `-chars`: Extract and display all unique characters used in card encodings.
     *   `--vocab_name FILE`: Save the character vocabulary to a JSON file.
 
+### `autosample.py`
+Scans checkpoint directories for model files, identifies the best checkpoint with the lowest validation loss, and generates sample card text.
+```bash
+# Automatically sample from the best checkpoint in a directory
+python3 scripts/autosample.py /path/to/torch-rnn /path/to/checkpoints
+
+# Sample with custom temperature and character count
+python3 scripts/autosample.py /path/to/torch-rnn /path/to/checkpoints -t 0.8 -c 500000
+```
+*   **Options:**
+    *   `-t`, `--temperature`: Sampling creativity level (Default: 1.0).
+    *   `-c`, `--count`: Number of characters to sample (Default: 1000000).
+    *   `-s`, `--seed`: Fixed seed for reproducible generation.
+    *   `-i`, `--ident`: Custom identifier tag included in output filenames (Default: `output`).
+    *   `-v`, `--verbose`: Enable detailed progress logging.
+
+### `collect_checkpoints.py`
+Gathers and cleans up model checkpoints, generated text dump files, and training command logs from directory trees into a single output folder.
+```bash
+# Collect and clean up generated dump files from a model directory
+python3 scripts/collect_checkpoints.py /path/to/rnn_runs /path/to/collected_dumps
+
+# Collect dump files and also copy model checkpoint files
+python3 scripts/collect_checkpoints.py /path/to/rnn_runs /path/to/collected_dumps -c
+```
+*   **Options:**
+    *   `-c`, `--copy_cp`: Copy model checkpoint (`.t7`) files alongside cleaned dump files.
+    *   `-i`, `--ident`: Identifier string to filter target checkpoint files (Default: `output`).
+    *   `-v`, `--verbose`: Enable detailed status logging.
+
+### `streamcards.py`
+Streams randomized encoded card data continuously to file descriptors for training neural networks in parallel threads without creating orphaned processes.
+```bash
+# Stream encoded card data to file descriptor 3
+python3 scripts/streamcards.py 3 -f data/output.txt
+```
+*   **Options:**
+    *   `-f`, `--fname`: Source file containing cards (Default: `data/output.txt`).
+    *   `-n`, `--block_size`: Number of characters to process per stream block (Default: 10000).
+    *   `-s`, `--seed`: Random seed for reproducible shuffling.
+
 ---
 
 ## Troubleshooting
