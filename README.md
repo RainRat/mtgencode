@@ -1418,6 +1418,17 @@ python3 scripts/autosample.py /path/to/rnn_repo /path/to/checkpoints --dry-run
     *   `-i IDENT`, `--ident IDENT`: Custom identifier suffix to include in output filenames (Default: `output`).
     *   `-v`, `--verbose`: Enable detailed status logging during directory scanning.
 
+### `streamcards.py`
+Streams randomized encoded card data continuously to file descriptors for training neural networks in parallel threads without creating orphaned processes.
+```bash
+# Stream encoded card data to file descriptor 3
+python3 scripts/streamcards.py 3 -f data/output.txt
+```
+*   **Options:**
+    *   `-f`, `--fname`: Source file containing cards (Default: `data/output.txt`).
+    *   `-n`, `--block_size`: Number of characters to process per stream block (Default: `10000`).
+    *   `-s`, `--seed`: Random seed for reproducible shuffling.
+
 ---
 
 ## Troubleshooting
