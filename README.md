@@ -1363,6 +1363,23 @@ python3 scripts/sanity.py data/output.txt -chars --vocab_name vocab.json
     *   `-chars`: Extract and display all unique characters used in card encodings.
     *   `--vocab_name FILE`: Save the character vocabulary to a JSON file.
 
+### `autosample.py`
+Scans a directory tree for model checkpoints (`.t7` files), identifies the lowest validation-loss checkpoint in each subdirectory, and automatically samples generated text output using Torch's `sample.lua`.
+```bash
+# Automatically sample all model checkpoints in a folder
+python3 scripts/autosample.py /path/to/rnn_repo /path/to/checkpoints
+
+# Preview sampling commands and identified checkpoints without executing (dry-run mode)
+python3 scripts/autosample.py /path/to/rnn_repo /path/to/checkpoints --dry-run
+```
+*   **Options:**
+    *   `-p`, `--preview`, `--dry-run`: Print a dry run summary preview of identified checkpoints and sampling commands without executing `sample.lua` or writing output files.
+    *   `-t TEMP`, `--temperature TEMP`: Sampling temperature (Default: `1.0`).
+    *   `-c COUNT`, `--count COUNT`: Number of characters to sample per checkpoint (Default: `1000000`).
+    *   `-s SEED`, `--seed SEED`: Seed for random number generation.
+    *   `-i IDENT`, `--ident IDENT`: Custom identifier suffix to include in output filenames (Default: `output`).
+    *   `-v`, `--verbose`: Enable detailed status logging during directory scanning.
+
 ---
 
 ## Troubleshooting
