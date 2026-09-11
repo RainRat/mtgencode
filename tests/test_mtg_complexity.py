@@ -207,5 +207,74 @@ class TestMtgComplexity(unittest.TestCase):
             if os.path.exists(temp_path):
                 os.remove(temp_path)
 
+    def test_complexity_cli_outfile_flag(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as tf:
+            temp_path = tf.name
+        try:
+            with patch('sys.stderr', new=io.StringIO()):
+                with patch('sys.argv', ['mtg_complexity.py', 'testdata/uthros.json', '-o', temp_path, '--no-color']):
+                    complexity_main()
+            with open(temp_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn("COMPLEXITY ANALYSIS", content)
+            self.assertIn("Uthros Research Craft", content)
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    def test_complexity_cli_outfile_autodetect_json(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as tf:
+            temp_path = tf.name
+        try:
+            with patch('sys.stderr', new=io.StringIO()):
+                with patch('sys.argv', ['mtg_complexity.py', 'testdata/uthros.json', '-o', temp_path]):
+                    complexity_main()
+            with open(temp_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            self.assertEqual(data['average_complexity'], 107.0)
+            self.assertEqual(data['top_cards'][0]['name'], 'Uthros Research Craft')
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    def test_complexity_cli_outfile_autodetect_csv(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.csv', delete=False) as tf:
+            temp_path = tf.name
+        try:
+            with patch('sys.stderr', new=io.StringIO()):
+                with patch('sys.argv', ['mtg_complexity.py', 'testdata/uthros.json', '--outfile', temp_path]):
+                    complexity_main()
+            with open(temp_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn("Name,Complexity,Rarity,Type", content)
+            self.assertIn("Uthros Research Craft,107,rare,", content)
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    def test_complexity_cli_smart_grep_with_outfile_flag(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as tf:
+            temp_path = tf.name
+        try:
+            with patch('sys.stdin.isatty', return_value=False), \
+                 patch('scripts.mtg_complexity.jdecode.mtg_open_file', return_value=[Card({
+                     "name": "Dragon Token", "manaCost": "{5}", "types": ["Creature"],
+                     "subtypes": ["Dragon"], "power": "5", "toughness": "5", "rarity": "Rare", "text": "Flying"
+                 })]) as mock_open:
+                with patch('sys.argv', ['mtg_complexity.py', 'Dragon', '-o', temp_path]):
+                    complexity_main()
+                    self.assertEqual(mock_open.call_args[0][0], '-')
+                    self.assertEqual(mock_open.call_args[1]['grep'], ['Dragon'])
+            with open(temp_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            self.assertEqual(data['top_cards'][0]['name'], 'Dragon Token')
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
 if __name__ == '__main__':
     unittest.main()

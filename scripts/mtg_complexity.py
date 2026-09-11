@@ -56,6 +56,8 @@ Usage Examples:
                              'Defaults to stdin (-). If stdin is a TTY, AllPrintings.json is used if available.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the results. If not provided, results print to the console.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_flag', default=None,
+                        help='Path to save the results. Overrides positional outfile argument.')
     io_group.add_argument('-n', '--limit', type=int, default=20,
                         help='Number of top complex cards to show in the table (Default: 20).')
     io_group.add_argument('-j', '--json', action='store_true', help='Output results in structured JSON format.')
@@ -143,9 +145,20 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    # Consolidate --outfile flag vs positional argument
+    if args.outfile_flag:
+        args.outfile = args.outfile_flag
+
+    # Auto-detect structured output format from file extension if not specified
+    if args.outfile and not args.json and not args.csv:
+        if args.outfile.lower().endswith('.json'):
+            args.json = True
+        elif args.outfile.lower().endswith('.csv'):
+            args.csv = True
+
     # UX Improvement: Smart positional argument handling
-    # If the user provides a single argument that isn't a file, treat it as a search query.
-    if args.infile and args.infile != '-' and not os.path.exists(args.infile) and not args.outfile:
+    # If the user provides an argument that isn't a file, treat it as a search query.
+    if args.infile and args.infile != '-' and not os.path.exists(args.infile):
         if not args.grep:
             args.grep = [args.infile]
         else:
