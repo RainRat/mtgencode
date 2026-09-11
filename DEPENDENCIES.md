@@ -55,7 +55,7 @@ You do not have to extract the file. Our tools natively support reading directly
 
 *   **Windows:** Download the installer from the [official website](https://magicseteditor.boards.net/page/downloads) and run it.
 *   **Linux/macOS:** MSE is a Windows application, but it runs well on Linux and macOS using [Wine](https://www.winehq.org/), which acts as a compatibility layer.
-    1.  **Install Wine:** Use your system's package manager (e.g., `sudo apt install wine` on Ubuntu, or `brew install --cask wine-stable` on macOS).
+    1.  **Install Wine:** Use your system's package manager (for example, `sudo apt install wine` on Ubuntu, or `brew install --cask wine-stable` on macOS).
     2.  **Download MSE:** Get the standard Windows installer from the MSE website.
     3.  **Run Installer:** Open your terminal and run the installer with Wine: `wine mse-installer.exe`.
     4.  **Run MSE:** After installation, launch MSE using Wine: `wine "C:/Program Files/Magic Set Editor 2/mse.exe"` (path may vary).
