@@ -7,7 +7,7 @@ create comprehensive datasets for AI training, validation, or mechanical
 analysis.
 
 Conflict Resolution:
-If the same key (e.g., a set code or card identifier) exists in both files,
+If the same key (for example, a set code or card identifier) exists in both files,
 the value from the second file (custom_file) will overwrite the value from
 the first file (base_file).
 """
@@ -104,7 +104,7 @@ Example:
 ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('base_file', help='Path to the primary JSON file (e.g., data/AllPrintings.json).')
+    parser.add_argument('base_file', help='Path to the primary JSON file (for example, data/AllPrintings.json).')
     parser.add_argument('custom_file', help='Path to the second JSON file containing your custom cards.')
     parser.add_argument('output_file', nargs='?', default=None,
                         help='Path where the merged JSON file will be saved (optional if --dry-run is specified).')
