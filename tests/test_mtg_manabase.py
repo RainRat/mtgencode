@@ -157,5 +157,24 @@ class TestMtgManabase(unittest.TestCase):
                     self.assertIn("Total Mana Pips: 0", output)
                     self.assertIn("Suggested Land Distribution: 15 Wastes", output)
 
+    def test_main_produces_filtering(self):
+        card_g = MagicMock(spec=cardlib.Card)
+        card_g.is_land = False
+        card_g.cost = MagicMock(spec=Manacost)
+        card_g.cost.allsymbols = {'G': 1}
+        card_g.text = MagicMock(spec=Manatext)
+        card_g.text.costs = []
+        card_g.bside = None
+
+        with patch('jdecode.mtg_open_file', return_value=[card_g]) as mock_open:
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '--produces', 'G', '--lands', '20', '--no-color']):
+                    main()
+                    output = fake_out.getvalue()
+                    mock_open.assert_called_once()
+                    self.assertEqual(mock_open.call_args[1]['produces'], ['G'])
+                    self.assertIn("MANA BASE ADVISOR", output)
+                    self.assertIn("Forest", output)
+
 if __name__ == '__main__':
     unittest.main()
