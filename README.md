@@ -588,6 +588,7 @@ A unified tool for searching, extracting, and listing card data. It consolidates
 *   `sets`: List and filter sets in an MTGJSON file.
 *   `functional`: Identify and group cards with the same mechanics but different names.
 *   `compare`: Compare two cards side-by-side by name to identify differences.
+*   `diff`: Compare two card datasets and identify additions, removals, and modifications.
 *   `reprints`: Find functional reprints (identical mechanics) of a reference card.
 *   `substitutes`: Find functional alternatives to a reference card.
 *   `counterparts`: Find mechanical clones in different colors (color shifts).
@@ -696,6 +697,23 @@ python3 scripts/mtg_query.py compare --set MOM --rarity rare
 # Compare cards in a specific file
 python3 scripts/mtg_query.py compare "Uthros" "Invasion" testdata/ --color
 ```
+
+---
+
+#### **Subcommand: `diff`**
+Dataset-level comparison between two card files, identifying added, removed, and modified cards across datasets.
+
+```bash
+# Compare two JSON card datasets
+python3 scripts/mtg_query.py diff data/OldSet.json data/NewSet.json
+
+# Compare generated cards against official dataset
+python3 scripts/mtg_query.py diff data/AllPrintings.json generated.txt
+
+# Preview comparison statistics without writing files (dry-run mode)
+python3 scripts/mtg_query.py diff data/OldSet.json data/NewSet.json --dry-run
+```
+*   **Options:** `--json`, `--csv`, `--summary-only`, `-p`/`--preview`/`--dry-run`, `-o`/`--outfile`.
 
 ---
 

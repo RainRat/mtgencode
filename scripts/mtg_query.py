@@ -28,6 +28,11 @@ import namediff
 import sortlib
 from titlecase import titlecase
 
+try:
+    import mtg_diff
+except ImportError:
+    from scripts import mtg_diff
+
 # --- Search Logic (from mtg_search.py) ---
 
 FIELD_MAP = {
@@ -900,6 +905,7 @@ def handle_shell(args):
                     '/sets ', '/st ',
                     '/functional ', '/f ',
                     '/compare ', '/c ',
+                    '/diff ', '/d ',
                     '/superior ', '/sup ',
                     '/inferior ', '/inf ',
                     '/reprints ', '/rep ',
@@ -1077,6 +1083,12 @@ def handle_shell(args):
                     c_args = copy.copy(args)
                     c_args.names = resolved_args
                     handle_compare_cards(c_args)
+                elif cmd in ['/diff', '/d']:
+                    d_args = copy.copy(args)
+                    d_args.file1 = cmd_args[0] if len(cmd_args) > 0 else None
+                    d_args.file2 = cmd_args[1] if len(cmd_args) > 1 else None
+                    d_args.outfile = None
+                    handle_diff(d_args)
                 elif cmd in ['/tribal', '/tr']:
                     resolved_names = _resolve_args(cmd_args)
                     if not resolved_names:
@@ -1197,6 +1209,7 @@ def handle_shell(args):
                             ("/random [n]", "/r", "Show [n] random cards from the dataset."),
                             ("/sets [q]", "/st", "List and filter card sets."),
                             ("/compare <n>...", "/c", "Compare multiple cards side-by-side."),
+                            ("/diff [f1] [f2]", "/d", "Compare two card datasets and identify additions, removals, and modifications."),
                             ("/list", "/l, /results", "Re-display the results of the last search or query in tabular format."),
                         ]),
                         ("MECHANICAL & RELATIONSHIP QUERIES", [
@@ -2279,6 +2292,275 @@ def handle_compare_cards(args):
             datalib.add_separator_row(rows)
             datalib.printrows(datalib.padrows(rows, aligns=['l'] * (num_cards + 1)), indent=2)
 
+# --- Diff Logic ---
+
+def handle_diff(args):
+    # Resolve file1 and file2 default logic
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    default_base = 'data/AllPrintings.json'
+    if not os.path.exists(default_base):
+        rel_data = os.path.join(script_dir, '../data/AllPrintings.json')
+        if os.path.exists(rel_data):
+            default_base = rel_data
+
+    file1 = getattr(args, 'file1', None)
+    file2 = getattr(args, 'file2', None)
+
+    if file1 is None and file2 is None:
+        if sys.stdin.isatty():
+            file1 = default_base
+            file2 = '-'
+        else:
+            file1 = default_base
+            file2 = '-'
+    elif file1 is not None and file2 is None:
+        if os.path.exists(file1):
+            file2 = file1
+            file1 = default_base
+        else:
+            # If file1 is not an existing file path, treat as default dataset comparison
+            file2 = file1
+            file1 = default_base
+
+    args.file1 = file1
+    args.file2 = file2
+
+    # Automatic output format detection
+    if getattr(args, 'outfile', None):
+        if args.outfile.endswith('.json') and not getattr(args, 'csv', False):
+            args.json = True
+        elif args.outfile.endswith('.csv') and not getattr(args, 'json', False):
+            args.csv = True
+
+    # Load filtered datasets using mtg_open_file
+    cards1 = cli_utils.load_and_filter_cards(argparse.Namespace(
+        infile=args.file1, outfile=None,
+        grep=getattr(args, 'grep', None), vgrep=getattr(args, 'vgrep', None),
+        grep_name=getattr(args, 'grep_name', None), exclude_name=getattr(args, 'exclude_name', None),
+        grep_type=getattr(args, 'grep_type', None), exclude_type=getattr(args, 'exclude_type', None),
+        grep_text=getattr(args, 'grep_text', None), exclude_text=getattr(args, 'exclude_text', None),
+        grep_cost=getattr(args, 'grep_cost', None), exclude_cost=getattr(args, 'exclude_cost', None),
+        grep_pt=getattr(args, 'grep_pt', None), exclude_pt=getattr(args, 'exclude_pt', None),
+        grep_loyalty=getattr(args, 'grep_loyalty', None), exclude_loyalty=getattr(args, 'exclude_loyalty', None),
+        set=getattr(args, 'set', None), rarity=getattr(args, 'rarity', None),
+        colors=getattr(args, 'colors', None), cmc=getattr(args, 'cmc', None),
+        pow=getattr(args, 'pow', None), tou=getattr(args, 'tou', None),
+        loy=getattr(args, 'loy', None), mechanic=getattr(args, 'mechanic', None),
+        action=getattr(args, 'action', None), produces=getattr(args, 'produces', None),
+        legal=getattr(args, 'legal', None), color_pie_break=getattr(args, 'color_pie_break', False),
+        identity=getattr(args, 'identity', None), id_count=getattr(args, 'id_count', None),
+        complexity=getattr(args, 'complexity', None), rating=getattr(args, 'rating', None),
+        fair_mv=getattr(args, 'fair_mv', None), deck=getattr(args, 'deck', None),
+        booster=getattr(args, 'booster', 0), box=getattr(args, 'box', 0),
+        limit=getattr(args, 'limit', 0), shuffle=getattr(args, 'shuffle', False),
+        sample=getattr(args, 'sample', 0), seed=getattr(args, 'seed', None),
+        verbose=getattr(args, 'verbose', False), quiet=getattr(args, 'quiet', False)
+    ))
+
+    cards2 = cli_utils.load_and_filter_cards(argparse.Namespace(
+        infile=args.file2, outfile=None,
+        grep=getattr(args, 'grep', None), vgrep=getattr(args, 'vgrep', None),
+        grep_name=getattr(args, 'grep_name', None), exclude_name=getattr(args, 'exclude_name', None),
+        grep_type=getattr(args, 'grep_type', None), exclude_type=getattr(args, 'exclude_type', None),
+        grep_text=getattr(args, 'grep_text', None), exclude_text=getattr(args, 'exclude_text', None),
+        grep_cost=getattr(args, 'grep_cost', None), exclude_cost=getattr(args, 'exclude_cost', None),
+        grep_pt=getattr(args, 'grep_pt', None), exclude_pt=getattr(args, 'exclude_pt', None),
+        grep_loyalty=getattr(args, 'grep_loyalty', None), exclude_loyalty=getattr(args, 'exclude_loyalty', None),
+        set=getattr(args, 'set', None), rarity=getattr(args, 'rarity', None),
+        colors=getattr(args, 'colors', None), cmc=getattr(args, 'cmc', None),
+        pow=getattr(args, 'pow', None), tou=getattr(args, 'tou', None),
+        loy=getattr(args, 'loy', None), mechanic=getattr(args, 'mechanic', None),
+        action=getattr(args, 'action', None), produces=getattr(args, 'produces', None),
+        legal=getattr(args, 'legal', None), color_pie_break=getattr(args, 'color_pie_break', False),
+        identity=getattr(args, 'identity', None), id_count=getattr(args, 'id_count', None),
+        complexity=getattr(args, 'complexity', None), rating=getattr(args, 'rating', None),
+        fair_mv=getattr(args, 'fair_mv', None), deck=getattr(args, 'deck', None),
+        booster=getattr(args, 'booster', 0), box=getattr(args, 'box', 0),
+        limit=getattr(args, 'limit', 0), shuffle=getattr(args, 'shuffle', False),
+        sample=getattr(args, 'sample', 0), seed=getattr(args, 'seed', None),
+        verbose=getattr(args, 'verbose', False), quiet=getattr(args, 'quiet', False)
+    ))
+
+    map1 = mtg_diff.get_card_map(cards1)
+    map2 = mtg_diff.get_card_map(cards2)
+
+    added = []
+    removed = []
+    modified = []
+
+    for name, c1 in map1.items():
+        if name not in map2:
+            removed.append(c1)
+        else:
+            c2 = map2[name]
+            diffs = mtg_diff.compare_cards(c1, c2)
+            if diffs:
+                modified.append((c2, diffs))
+
+    for name, c2 in map2.items():
+        if name not in map1:
+            added.append(c2)
+
+    total_distinct = len(map1.keys() | map2.keys())
+    unchanged_count = len(map1.keys() & map2.keys()) - len(modified)
+
+    if getattr(args, 'dry_run', False):
+        print(f"Dry Run Summary: {total_distinct} total card(s) evaluated across datasets.")
+        print("Comparison Breakdown:")
+        print(f"  Added: {len(added)} card(s)")
+        print(f"  Removed: {len(removed)} card(s)")
+        print(f"  Modified: {len(modified)} card(s)")
+        print(f"  Unchanged: {unchanged_count} card(s)")
+        sample_cards = [getattr(c, 'display_name', str(c)) for c in (added + [c for c, _ in modified] + removed)[:10]]
+        print(f"Sample Preview (up to 10 changed/added): {', '.join(sample_cards) if sample_cards else 'None'}")
+        return
+
+    # Structured JSON output
+    if getattr(args, 'json', False):
+        json_report = {
+            "summary": {
+                "added": len(added),
+                "removed": len(removed),
+                "modified": len(modified),
+                "unchanged": unchanged_count,
+                "total": total_distinct
+            },
+            "added": [c.to_dict() for c in added],
+            "removed": [c.to_dict() for c in removed],
+            "modified": [
+                {
+                    "name": c.display_name,
+                    "card": c.to_dict(),
+                    "diffs": [{"field": field, "old": old, "new": new} for field, old, new in diffs]
+                }
+                for c, diffs in modified
+            ]
+        }
+        res_text = json.dumps(json_report, indent=2)
+        if getattr(args, 'outfile', None):
+            with open(args.outfile, 'w', encoding='utf-8') as f:
+                f.write(res_text + '\n')
+        else:
+            print(res_text)
+        return
+
+    # Structured CSV output
+    if getattr(args, 'csv', False):
+        output_buffer = io.StringIO()
+        writer = csv.writer(output_buffer)
+        writer.writerow(['Status', 'Name', 'Field', 'Old Value', 'New Value'])
+        for c in added:
+            writer.writerow(['Added', c.display_name, '', '', ''])
+        for c in removed:
+            writer.writerow(['Removed', c.display_name, '', '', ''])
+        for c, diffs in modified:
+            for field, old, new in diffs:
+                writer.writerow(['Modified', c.display_name, field, str(old), str(new)])
+
+        res_text = output_buffer.getvalue()
+        if getattr(args, 'outfile', None):
+            with open(args.outfile, 'w', encoding='utf-8', newline='') as f:
+                f.write(res_text)
+        else:
+            sys.stdout.write(res_text)
+        return
+
+    # Plain text summary output
+    use_color = args.color if getattr(args, 'color', None) is not None else (sys.stdout.isatty() and not getattr(args, 'outfile', None))
+
+    if getattr(args, 'outfile', None):
+        out_ctx = open(args.outfile, 'w', encoding='utf-8')
+    else:
+        class DummyContext:
+            def __enter__(self): return sys.stdout
+            def __exit__(self, exc_type, exc_val, exc_tb): pass
+        out_ctx = DummyContext()
+
+    with out_ctx as out_f:
+        with redirect_stdout(out_f):
+            added_color = utils.Ansi.BOLD + utils.Ansi.GREEN
+            removed_color = utils.Ansi.BOLD + utils.Ansi.RED
+            mod_color = utils.Ansi.BOLD + utils.Ansi.YELLOW
+
+            utils.print_header("SUMMARY", use_color=use_color)
+
+            rows = [[
+                utils.colorize("Category", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Category",
+                utils.colorize("Count", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Count",
+                utils.colorize("Percent", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Percent",
+                utils.colorize("Progress", utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else "Progress"
+            ]]
+
+            summary_data = [
+                ('Added', len(added), utils.Ansi.BOLD + utils.Ansi.GREEN),
+                ('Removed', len(removed), utils.Ansi.BOLD + utils.Ansi.RED),
+                ('Modified', len(modified), utils.Ansi.BOLD + utils.Ansi.YELLOW),
+                ('Unchanged', unchanged_count, utils.Ansi.BOLD)
+            ]
+
+            for label, count, color in summary_data:
+                percent = (count / total_distinct * 100) if total_distinct > 0 else 0
+                bar = datalib.get_bar_chart(percent, use_color, color=color)
+
+                if use_color:
+                    label_str = utils.colorize(label, color)
+                    count_str = datalib.color_count(count, use_color, color)
+                else:
+                    label_str = label
+                    count_str = str(count)
+
+                rows.append([label_str, count_str, f"{percent:5.1f}%", bar])
+
+            datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=2)
+            print()
+
+            if getattr(args, 'summary_only', False):
+                return
+
+            if removed:
+                utils.print_header("REMOVED CARDS", count=len(removed), use_color=use_color)
+                for c in removed:
+                    name = c.name
+                    if use_color:
+                        name = utils.colorize(name, removed_color)
+                    print(f"  - {name}")
+                print()
+
+            if added:
+                utils.print_header("ADDED CARDS", count=len(added), use_color=use_color)
+                for c in added:
+                    name = c.name
+                    if use_color:
+                        name = utils.colorize(name, added_color)
+                    print(f"  - {name}")
+                print()
+
+            if modified:
+                utils.print_header("MODIFIED CARDS", count=len(modified), use_color=use_color)
+                for c, diffs in modified:
+                    name = c.name
+                    if use_color:
+                        name = utils.colorize(name, mod_color)
+                    print(f"  * {name}")
+
+                    diff_rows = []
+                    for field, old, new in diffs:
+                        field_str = f"{field}:"
+                        if use_color:
+                            field_str = utils.colorize(field_str, utils.Ansi.CYAN)
+                            old_str = utils.colorize(str(old), utils.Ansi.RED)
+                            new_str = utils.colorize(str(new), utils.Ansi.GREEN)
+                        else:
+                            old_str = str(old)
+                            new_str = str(new)
+                        diff_rows.append([f"    {field_str}", old_str, "->", new_str])
+
+                    for row in datalib.padrows(diff_rows, aligns=['l', 'r', 'c', 'l']):
+                        print(row)
+                print()
+
+            utils.print_operation_summary("Comparison", len(map2), 0, quiet=getattr(args, 'quiet', False))
+
 # --- Main Entry Point ---
 
 def main():
@@ -2287,7 +2569,7 @@ def main():
     valid_subcommands = ['search', 's', 'oracle', 'o', 'random', 'r', 'extract', 'e',
                          'sets', 'st', 'functional', 'f', 'reprints', 'rep',
                          'substitutes', 'sub', 'counterparts', 'cp',
-                         'compare', 'c', 'superior', 'sup', 'inferior', 'inf',
+                         'compare', 'c', 'diff', 'd', 'superior', 'sup', 'inferior', 'inf',
                          'tribal', 'tr',
                          'shell', 'sh', 'interactive', 'repl']
 
@@ -2534,6 +2816,35 @@ Usage Examples:
     cli_utils.add_standard_filters(p_compare)
     cli_utils.add_standard_output_args(p_compare)
     p_compare.set_defaults(func=handle_compare_cards)
+
+    # Diff Subparser
+    p_diff = subparsers.add_parser(
+        'diff',
+        aliases=['d'],
+        help='Compare two card datasets and identify additions, removals, and modifications.',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Compare two JSON datasets
+  python3 scripts/mtg_query.py diff data/OldSet.json data/NewSet.json
+
+  # Compare encoded text against official data
+  python3 scripts/mtg_query.py diff data/AllPrintings.json generated_cards.txt
+
+  # Preview comparison statistics without writing output files (dry-run mode)
+  python3 scripts/mtg_query.py diff data/OldSet.json data/NewSet.json --dry-run
+"""
+    )
+    p_diff.add_argument('file1', nargs='?', help='Base card dataset to compare from. Defaults to data/AllPrintings.json if only target file is specified.')
+    p_diff.add_argument('file2', nargs='?', help='Target card dataset to compare against the base.')
+    p_diff.add_argument('-o', '--outfile', help='Save output to a file instead of printing.')
+    p_diff.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                       help='Print a dry run summary of comparison statistics to standard output without creating or writing to output files.')
+    p_diff.add_argument('--summary-only', action='store_true',
+                       help='Only show a count summary of additions, removals, and modifications.')
+    cli_utils.add_standard_filters(p_diff)
+    cli_utils.add_standard_output_args(p_diff)
+    p_diff.set_defaults(func=handle_diff)
 
     # Superior Subparser
     p_superior = subparsers.add_parser(
