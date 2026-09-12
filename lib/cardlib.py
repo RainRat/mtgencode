@@ -1530,25 +1530,15 @@ class Card:
 
     def search(self, pattern):
         """Returns True if the pattern matches any of the card's fields."""
-        if self.search_name(pattern):
-            return True
-        if self.search_types(pattern):
-            return True
-        if self.search_text(pattern):
-            return True
-        if self.search_cost(pattern):
-            return True
-        if self.search_pt(pattern):
-            return True
-        if self.search_loyalty(pattern):
-            return True
-        if self.search_rarity(pattern):
-            return True
-        if self.search_mechanics(pattern):
-            return True
-        if self.search_actions(pattern):
-            return True
-        return False
+        return (self.search_name(pattern) or
+                self.search_types(pattern) or
+                self.search_text(pattern) or
+                self.search_cost(pattern) or
+                self.search_pt(pattern) or
+                self.search_loyalty(pattern) or
+                self.search_rarity(pattern) or
+                self.search_mechanics(pattern) or
+                self.search_actions(pattern))
 
     def search_name(self, pattern):
         """Returns True if the pattern matches the card's name."""
