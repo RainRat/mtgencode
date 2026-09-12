@@ -1067,8 +1067,17 @@ def handle_shell(args):
                     if hasattr(st_args, 'fields'): delattr(st_args, 'fields')
                     handle_sets(st_args)
                 elif cmd in ['/functional', '/f']:
+                    resolved_args = _resolve_args(cmd_args)
+                    if not resolved_args:
+                        if last_results:
+                            resolved_args = [last_results[0].name]
+                        else:
+                            err_msg = "Error: /functional requires a card name or active search results."
+                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                            print(err_msg)
+                            continue
                     f_args = copy.copy(args)
-                    f_args.grep = _resolve_args(cmd_args)
+                    f_args.grep = resolved_args
                     last_results = handle_functional(f_args, include_indices=True)
                 elif cmd in ['/compare', '/c']:
                     resolved_args = _resolve_args(cmd_args)
