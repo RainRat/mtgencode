@@ -2,6 +2,8 @@
 import sys
 import os
 import argparse
+import json
+import csv
 from collections import OrderedDict
 
 # Add lib directory to path
@@ -257,7 +259,8 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
          produces=None,
          identities=None, id_counts=None,
          shuffle = False, seed = None, decklist_file = None,
-         booster = 0, box = 0, dry_run = False):
+         booster = 0, box = 0, dry_run = False,
+         use_json = False, use_csv = False):
 
     # Determine format
     fmt_ordered = cardlib.fmt_ordered_default
@@ -270,9 +273,14 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
     elif encoding == 'norarity':
         fmt_ordered = cardlib.fmt_ordered_norarity
 
-    # Auto-detect markdown format from extension
-    if not use_markdown and oname and oname.endswith('.md'):
-        use_markdown = True
+    # Auto-detect output format from extension if not explicitly set
+    if not use_markdown and not use_json and not use_csv and oname:
+        if oname.endswith('.md'):
+            use_markdown = True
+        elif oname.endswith('.json'):
+            use_json = True
+        elif oname.endswith('.csv'):
+            use_csv = True
 
     # Use the robust jdecode.mtg_open_file for loading and filtering.
     # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
@@ -337,6 +345,48 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
 
         sample_names = [cardlib.titlecase(c.name.replace(utils.dash_marker, '-')) if hasattr(c, 'name') and c.name else str(c) for c in cards[:10]]
         print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
+        return
+
+    if use_json:
+        json_data = OrderedDict()
+        for key, value in classes.items():
+            if value is not None and len(value) > 0:
+                json_data[key] = value
+
+        if oname:
+            if verbose:
+                print(f'Writing output to: {oname}', file=sys.stderr)
+            with open(oname, 'w', encoding='utf-8') as ofile:
+                json.dump(json_data, ofile, indent=2)
+                ofile.write('\n')
+        else:
+            json.dump(json_data, sys.stdout, indent=2)
+            sys.stdout.write('\n')
+        return
+
+    if use_csv:
+        ofile = None
+        outputter = sys.stdout
+        if oname:
+            if verbose:
+                print(f'Writing output to: {oname}', file=sys.stderr)
+            try:
+                ofile = open(oname, 'w', encoding='utf-8', newline='')
+                outputter = ofile
+            except Exception as e:
+                print(f"Error opening output file {oname}: {e}", file=sys.stderr)
+                sys.exit(1)
+
+        try:
+            writer = csv.writer(outputter)
+            writer.writerow(['Category', 'Card'])
+            for key, value in classes.items():
+                if value is not None:
+                    for card_str in value:
+                        writer.writerow([key, card_str])
+        finally:
+            if ofile:
+                ofile.close()
         return
 
     outputter = sys.stdout
@@ -527,6 +577,10 @@ Usage Examples:
                         help='Output compact card summaries instead of full encoded text.')
     proc_group.add_argument('--md', '--markdown', action='store_true',
                         help='Output in Markdown format with collapsible sections (Auto-detected for .md).')
+    proc_group.add_argument('-j', '--json', action='store_true',
+                        help='Output categorized cards in structured JSON format (Auto-detected for .json).')
+    proc_group.add_argument('--csv', action='store_true',
+                        help='Output categorized cards in CSV format (Auto-detected for .csv).')
 
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
@@ -578,7 +632,8 @@ Usage Examples:
          produces=args.produces,
          identities=args.identity, id_counts=args.id_count,
          shuffle = args.shuffle, seed = args.seed, decklist_file = args.deck,
-         booster = args.booster, box = args.box, dry_run = args.dry_run)
+         booster = args.booster, box = args.box, dry_run = args.dry_run,
+         use_json = args.json, use_csv = args.csv)
 
 if __name__ == '__main__':
     cli()
