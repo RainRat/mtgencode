@@ -95,10 +95,8 @@ class TestMtgShell(unittest.TestCase):
                 self.assertIn("custom", output)
 
     def test_shell_functional(self):
-        """Test the /functional command."""
-        # Need at least 2 cards for functional to match if no grep.
-        # Actually /functional uses load_and_filter_cards(args).
-        with patch('builtins.input', side_effect=['/functional', 'exit']):
+        """Test the /functional command with explicit search argument."""
+        with patch('builtins.input', side_effect=['/functional tarkir', 'exit']):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
                 with patch('sys.stderr', new=io.StringIO()) as fake_err:
                     handle_shell(self.args)
@@ -275,12 +273,12 @@ class TestMtgShell(unittest.TestCase):
 
     def test_shell_smart_defaults_empty(self):
         """Test that REPL commands gracefully report error when called without arguments and last_results is empty."""
-        commands = ['/search', '/s', '/oracle', '/compare', '/reprints', '/superior', '/inferior', '/substitutes', '/counterparts', '/similar', '/tribal', '/tr']
+        commands = ['/search', '/s', '/oracle', '/compare', '/reprints', '/superior', '/inferior', '/substitutes', '/counterparts', '/similar', '/tribal', '/tr', '/functional', '/f']
         for cmd in commands:
             with patch('builtins.input', side_effect=[cmd, 'exit']):
                 with patch('sys.stdout', new=io.StringIO()) as fake_out:
                     handle_shell(self.args)
-                    expected_cmd = '/search' if cmd == '/s' else ('/tribal' if cmd == '/tr' else cmd)
+                    expected_cmd = '/search' if cmd == '/s' else ('/tribal' if cmd == '/tr' else ('/functional' if cmd == '/f' else cmd))
                     self.assertIn(f"Error: {expected_cmd} requires", fake_out.getvalue())
 
     def test_shell_smart_defaults_with_results(self):
@@ -349,6 +347,13 @@ class TestMtgShell(unittest.TestCase):
                 handle_shell(self.args)
                 err = fake_err.getvalue()
                 self.assertIn("No tribal matches found for Invasion of Tarkir.", err)
+
+        # 10. /functional
+        with patch('builtins.input', side_effect=['/search tarkir', '/functional', 'exit']):
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                handle_shell(self.args)
+                err = fake_err.getvalue()
+                self.assertIn("No cards with the same mechanics found.", err)
 
     def test_shell_help_ux_improvement(self):
         """Test the UX improvement in the help command output (logical groupings and alignment)."""
