@@ -4,6 +4,7 @@ import os
 import argparse
 import json
 import re
+import csv
 
 # Add lib directory to path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -648,6 +649,9 @@ Usage Examples:
   # Create a card and save it to a JSON file
   python3 scripts/mtg_forge.py --name "Test" --type "Instant" --cost "{U}" --text "Counter target spell." --outfile card.json
 
+  # Export forged card to CSV format
+  python3 scripts/mtg_forge.py --name "Test" --type "Instant" --cost "{U}" --text "Counter target spell." --csv
+
   # Batch reforge all Bears to be Green 3/3s
   python3 scripts/mtg_forge.py --infile data/AllPrintings.json --grep "Bear" --pt "3/3" --batch
 """
@@ -716,6 +720,7 @@ Usage Examples:
                            help='Print a summary preview of forged or modified cards without creating or modifying the target output file.')
     out_group.add_argument('-o', '--outfile', help='Save output to a file instead of printing.')
     out_group.add_argument('--json', action='store_true', help='Output in JSON format (Default).')
+    out_group.add_argument('--csv', action='store_true', help='Output in CSV format.')
     out_group.add_argument('--encoded', action='store_true', help='Output in encoded text format.')
     out_group.add_argument('-S', '--summary', action='store_true', help='Output a one-line summary.')
     out_group.add_argument('-V', '--view', action='store_true', help='Output a human-readable detailed card view.')
@@ -736,6 +741,10 @@ Usage Examples:
     if len(sys.argv) == 1 and sys.stdin.isatty():
         parser.print_help()
         sys.exit(0)
+
+    # Auto-detect CSV format from outfile extension if no specific output format specified
+    if args.outfile and args.outfile.endswith('.csv') and not (args.json or args.csv or args.encoded or args.summary or args.view or args.gatherer):
+        args.csv = True
 
     # Determine if we are in batch mode
     is_batch = args.batch
@@ -818,7 +827,13 @@ Usage Examples:
         # Output results
         output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
         try:
-            if args.encoded:
+            if args.csv:
+                fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'pt', 'rarity']
+                writer = csv.writer(output_f, lineterminator='\n')
+                writer.writerow(fieldnames)
+                for fc in final_cards:
+                    writer.writerow(fc._get_csv_data())
+            elif args.encoded:
                 for fc in final_cards:
                     output_f.write(fc.encode() + utils.cardsep)
             elif args.summary:
@@ -903,7 +918,12 @@ Usage Examples:
         output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
 
         try:
-            if args.encoded:
+            if args.csv:
+                fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'pt', 'rarity']
+                writer = csv.writer(output_f, lineterminator='\n')
+                writer.writerow(fieldnames)
+                writer.writerow(final_card._get_csv_data())
+            elif args.encoded:
                 output_f.write(final_card.encode() + '\n')
             elif args.summary:
                 output_f.write(final_card.summary(ansi_color=use_color) + '\n')
