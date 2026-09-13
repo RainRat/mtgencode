@@ -2203,7 +2203,7 @@ def handle_compare_cards(args):
 
         def get_header_name(c):
             # For clean columns and high density in comparisons, we only show the primary face's name
-            return cardlib.titlecase(c.name.replace(utils.dash_marker, '-'))
+            return titlecase(c.name.replace(utils.dash_marker, '-'))
 
         rows = []
         header = ["Field"] + [get_header_name(c) for c in comparison_cards]
