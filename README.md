@@ -452,6 +452,8 @@ python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "El
 *   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, `--booster`, `--box`, and all **Advanced Filtering** flags.
 *   `-S`, `--summary`: Output compact card summaries instead of full text.
 *   `--md`, `--markdown`: Output in Markdown format with collapsible sections.
+*   `-j`, `--json`: Output categorized cards in structured JSON format (Auto-detected for `.json`).
+*   `--csv`: Output categorized cards in CSV format (Auto-detected for `.csv`).
 *   `--color` / `--no-color`: Enable or disable ANSI color output.
 
 ### `mtg_analyze.py profile`
