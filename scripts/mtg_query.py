@@ -2119,6 +2119,7 @@ def handle_compare_cards(args):
         if close:
             if not args.quiet:
                 print(f"Notice: Card '{name}' not found. Using best match: {cardlib.titlecase(close[0].replace(utils.dash_marker, '-'))}", file=sys.stderr)
+                sys.stderr.flush()
             return search_names[close[0]]
 
         return None
@@ -2136,6 +2137,7 @@ def handle_compare_cards(args):
         target = comparison_cards[0]
         if not args.quiet:
             print(f"Notice: Only one card provided. Finding most mechanically similar card to {target.display_name}...", file=sys.stderr)
+            sys.stderr.flush()
         nd = namediff.Namediff(verbose=False, cards=all_cards)
         results = nd.nearest_card(target, n=2) # 1st is always itself
         for ratio, name in results:
@@ -2152,9 +2154,11 @@ def handle_compare_cards(args):
         if not comparison_cards:
             if not args.quiet:
                 print("Error: No cards matching criteria for comparison.", file=sys.stderr)
+                sys.stderr.flush()
             return
         if not args.quiet:
             print(f"Notice: Comparing pool of {len(comparison_cards)} cards.", file=sys.stderr)
+            sys.stderr.flush()
 
     use_color = args.color if args.color is not None else sys.stdout.isatty()
 
