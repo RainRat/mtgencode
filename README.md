@@ -1284,6 +1284,16 @@ python3 scripts/sum.py distances.txt
 ```
 *   **Note:** Like the `--creativity` flag in `decode.py`, these tools require `data/cbow.bin` and `data/output.txt`. See [DEPENDENCIES.md](DEPENDENCIES.md) for setup instructions.
 
+### `analysis.py`
+Evaluates card datasets and calculates statistical summaries, including rule validation properties, dataset distances, and n-gram perplexity metrics.
+```bash
+# Analyze validation properties and n-gram perplexity for a card file
+python3 scripts/analysis.py encoded_output.txt
+```
+*   **Options:**
+    *   `-v`, `--verbose`: Enable detailed status messages.
+*   **Note:** Requires `data/output.txt` to build the baseline language model.
+
 ### `pairing.py`
 Pairs generated cards with nearest real Magic cards using continuous bag-of-words (CBOW) embeddings and n-gram perplexity metrics, and exports matched card pairs to a Magic Set Editor set file.
 ```bash
