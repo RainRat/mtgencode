@@ -271,6 +271,15 @@ class TestMtgShell(unittest.TestCase):
                     output = fake_out.getvalue()
                     self.assertIn("Error: /search requires a search query.", output)
 
+    def test_shell_diff_empty(self):
+        """Test executing /diff or /d without arguments in the shell displays an error message."""
+        for cmd in ['/diff', '/d']:
+            with patch('builtins.input', side_effect=[cmd, 'exit']):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    handle_shell(self.args)
+                    output = fake_out.getvalue()
+                    self.assertIn("Error: /diff requires dataset file paths", output)
+
     def test_shell_smart_defaults_empty(self):
         """Test that REPL commands gracefully report error when called without arguments and last_results is empty."""
         commands = ['/search', '/s', '/oracle', '/compare', '/reprints', '/superior', '/inferior', '/substitutes', '/counterparts', '/similar', '/tribal', '/tr', '/functional', '/f']
