@@ -336,3 +336,76 @@ def test_main_cli_execution(tmp_path):
         runpy.run_path("scripts/splitcards.py", run_name="__main__")
 
     assert out1.exists()
+
+def test_splitcards_presets_and_defaults(tmp_path):
+    infile = tmp_path / "input.txt"
+    cards = ["|1C{:d}|7common|5Type\n\n".format(i) for i in range(10)]
+    infile.write_text("".join(cards))
+
+    old_cwd = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        # Default run (no outputs, no ratios, no preset -> preset train-val 90/10)
+        args_default = ["splitcards.py", str(infile), "-s"]
+        with patch("sys.argv", args_default):
+            main()
+        assert os.path.exists("train.txt")
+        assert os.path.exists("val.txt")
+
+        # Clean up created files
+        os.remove("train.txt")
+        os.remove("val.txt")
+
+        # Preset train-val-test
+        args_tvt = ["splitcards.py", str(infile), "--preset", "train-val-test", "-s"]
+        with patch("sys.argv", args_tvt):
+            main()
+        assert os.path.exists("train.txt")
+        assert os.path.exists("val.txt")
+        assert os.path.exists("test.txt")
+        os.remove("train.txt")
+        os.remove("val.txt")
+        os.remove("test.txt")
+
+        # Preset 50-50 with JSON format
+        args_5050 = ["splitcards.py", str(infile), "--preset", "50-50", "--format", "json", "-s"]
+        with patch("sys.argv", args_5050):
+            main()
+        assert os.path.exists("split1.json")
+        assert os.path.exists("split2.json")
+        os.remove("split1.json")
+        os.remove("split2.json")
+
+        # Preset train-test
+        args_tt = ["splitcards.py", str(infile), "--preset", "train-test", "-s"]
+        with patch("sys.argv", args_tt):
+            main()
+        assert os.path.exists("train.txt")
+        assert os.path.exists("test.txt")
+        os.remove("train.txt")
+        os.remove("test.txt")
+
+        # Outputs without ratios (auto-derived equal ratios)
+        args_no_ratios = ["splitcards.py", str(infile), "--outputs", "custom1.txt", "custom2.txt", "-s"]
+        with patch("sys.argv", args_no_ratios):
+            main()
+        assert os.path.exists("custom1.txt")
+        assert os.path.exists("custom2.txt")
+        os.remove("custom1.txt")
+        os.remove("custom2.txt")
+
+        # Ratios without outputs (2 ratios -> train/val, 3 ratios -> train/val/test, 4 ratios -> split_1..4)
+        args_ratios_4 = ["splitcards.py", str(infile), "--ratios", "0.25", "0.25", "0.25", "0.25", "-s"]
+        with patch("sys.argv", args_ratios_4):
+            main()
+        assert os.path.exists("split_1.txt")
+        assert os.path.exists("split_2.txt")
+        assert os.path.exists("split_3.txt")
+        assert os.path.exists("split_4.txt")
+        os.remove("split_1.txt")
+        os.remove("split_2.txt")
+        os.remove("split_3.txt")
+        os.remove("split_4.txt")
+
+    finally:
+        os.chdir(old_cwd)
