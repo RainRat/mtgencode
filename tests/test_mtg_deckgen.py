@@ -289,6 +289,50 @@ class TestMtgDeckgen(unittest.TestCase):
         self.assertIn("Warning: Commander 'NonexistentCommander' not found. Picking a random one.", stderr)
 
     @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_commander_partial_matching(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': "Galia, Bearer of Mischief",
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        mock_open.return_value = [commander]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        stderr = mock_stderr.getvalue()
+        self.assertIn("1 Galia, Bearer of Mischief *CMDR*", output)
+        self.assertIn("Notice: Commander 'Galia' matched: Galia, Bearer of Mischief", stderr)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_commander_fuzzy_matching(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': "Galia, Bearer of Mischief",
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        mock_open.return_value = [commander]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia, Bearer of Mischaef']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        stderr = mock_stderr.getvalue()
+        self.assertIn("1 Galia, Bearer of Mischief *CMDR*", output)
+        self.assertIn("Notice: Commander 'Galia, Bearer of Mischaef' matched: Galia, Bearer of Mischief", stderr)
+
+    @patch('jdecode.mtg_open_file')
     @patch('sys.stderr', new_callable=io.StringIO)
     def test_main_pauper_empty_common_pool(self, mock_stderr, mock_open):
         rare_card = cardlib.Card({
