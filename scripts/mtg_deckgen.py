@@ -3,6 +3,9 @@ import sys
 import os
 import argparse
 import random
+import json
+import csv
+import io
 from collections import defaultdict, Counter
 
 # Add lib directory to path
@@ -114,8 +117,9 @@ Usage Examples:
   # Preview deck generation without creating or modifying output files
   python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander --dry-run
 
-  # Save the decklist to a file
-  python3 scripts/mtg_deckgen.py data/AllPrintings.json --outfile my_deck.txt
+  # Export decklist in JSON or CSV format
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard --json
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander --outfile deck.csv
 """
     )
 
@@ -126,6 +130,12 @@ Usage Examples:
                              'Defaults to stdin (-) or data/AllPrintings.json if run interactively. '
                              'If this is not a valid path, it is treated as a commander name query.')
     io_group.add_argument('--outfile', help='Output decklist file (.txt or .dec). Prints to stdout if omitted.')
+
+    # Group: Output Format
+    fmt_group_title = parser.add_argument_group('Output Format')
+    fmt_group = fmt_group_title.add_mutually_exclusive_group()
+    fmt_group.add_argument('-j', '--json', action='store_true', help='Export generated decklist in structured JSON format.')
+    fmt_group.add_argument('--csv', action='store_true', help='Export generated decklist in CSV format.')
 
     # Group: Deck Configuration
     deck_group = parser.add_argument_group('Deck Configuration')
@@ -186,6 +196,14 @@ Usage Examples:
               file=sys.stderr)
         sys.exit(1)
 
+    # Auto-detect export format based on outfile extension if not explicitly specified
+    if not (args.json or args.csv):
+        if args.outfile:
+            if args.outfile.lower().endswith('.json'):
+                args.json = True
+            elif args.outfile.lower().endswith('.csv'):
+                args.csv = True
+
     # Determine if we should use color
     use_color = False
     if args.color is True:
@@ -221,6 +239,7 @@ Usage Examples:
             sys.exit(1)
     
     decklist = []
+    structured_records = []
     actual_composition = Counter()
 
     if args.format in ('commander', 'brawl'):
@@ -308,18 +327,64 @@ Usage Examples:
             
         decklist.append(f"1 {commander_card.display_name} *CMDR*")
         actual_composition['Commander'] = 1
+        cmc_val = float(commander_card.cost.cmc) if hasattr(commander_card, 'cost') and hasattr(commander_card.cost, 'cmc') else 0.0
+        type_line = commander_card.type_line if hasattr(commander_card, 'type_line') else getattr(commander_card, 'types_str', 'Creature')
+        set_str = commander_card.set_code.upper() if getattr(commander_card, 'set_code', None) else ''
+        structured_records.append({
+            'count': 1,
+            'name': commander_card.display_name,
+            'section': 'Commander',
+            'category': 'Commander',
+            'type': type_line,
+            'cmc': cmc_val,
+            'set': set_str
+        })
         
         for c in deck_creatures:
             decklist.append(f"1 {c.display_name}")
             actual_composition['Creatures'] += 1
+            cmc_val = float(c.cost.cmc) if hasattr(c, 'cost') and hasattr(c.cost, 'cmc') else 0.0
+            type_line = c.type_line if hasattr(c, 'type_line') else getattr(c, 'types_str', 'Creature')
+            set_str = c.set_code.upper() if getattr(c, 'set_code', None) else ''
+            structured_records.append({
+                'count': 1,
+                'name': c.display_name,
+                'section': 'Maindeck',
+                'category': 'Creature',
+                'type': type_line,
+                'cmc': cmc_val,
+                'set': set_str
+            })
+
         for c in deck_spells:
             decklist.append(f"1 {c.display_name}")
             actual_composition['Spells'] += 1
+            cmc_val = float(c.cost.cmc) if hasattr(c, 'cost') and hasattr(c.cost, 'cmc') else 0.0
+            type_line = c.type_line if hasattr(c, 'type_line') else getattr(c, 'types_str', 'Spell')
+            set_str = c.set_code.upper() if getattr(c, 'set_code', None) else ''
+            structured_records.append({
+                'count': 1,
+                'name': c.display_name,
+                'section': 'Maindeck',
+                'category': 'Spell',
+                'type': type_line,
+                'cmc': cmc_val,
+                'set': set_str
+            })
             
         land_counts = Counter(deck_lands)
         for l, count in sorted(land_counts.items()):
             decklist.append(f"{count} {l}")
             actual_composition['Lands'] += count
+            structured_records.append({
+                'count': count,
+                'name': l,
+                'section': 'Maindeck',
+                'category': 'Land',
+                'type': 'Basic Land',
+                'cmc': 0.0,
+                'set': ''
+            })
 
         # Determine sideboard size for Commander/Brawl
         if args.sideboard_size is not None:
@@ -345,6 +410,18 @@ Usage Examples:
                 decklist.append("Sideboard")
                 for c in side_cards:
                     decklist.append(f"1 {c.display_name}")
+                    cmc_val = float(c.cost.cmc) if hasattr(c, 'cost') and hasattr(c.cost, 'cmc') else 0.0
+                    type_line = c.type_line if hasattr(c, 'type_line') else getattr(c, 'types_str', 'Card')
+                    set_str = c.set_code.upper() if getattr(c, 'set_code', None) else ''
+                    structured_records.append({
+                        'count': 1,
+                        'name': c.display_name,
+                        'section': 'Sideboard',
+                        'category': 'Sideboard',
+                        'type': type_line,
+                        'cmc': cmc_val,
+                        'set': set_str
+                    })
                 actual_composition['Sideboard'] = len(side_cards)
 
     elif args.format in ('standard', 'pauper', 'limited'):
@@ -397,10 +474,33 @@ Usage Examples:
                 grouped[land] += count
             
         basics_to_add = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']
+        # Map card metadata for chosen_cards
+        card_meta_map = {}
+        for c in chosen_cards:
+            if c.display_name not in card_meta_map:
+                cmc_val = float(c.cost.cmc) if hasattr(c, 'cost') and hasattr(c.cost, 'cmc') else 0.0
+                type_line = c.type_line if hasattr(c, 'type_line') else getattr(c, 'types_str', 'Card')
+                cat = 'Creature' if getattr(c, 'is_creature', False) else 'Spell'
+                set_str = c.set_code.upper() if getattr(c, 'set_code', None) else ''
+                card_meta_map[c.display_name] = {'category': cat, 'type': type_line, 'cmc': cmc_val, 'set': set_str}
+
         for name, count in sorted(grouped.items()):
             decklist.append(f"{count} {name}")
             if name in basics_to_add:
                 actual_composition['Lands'] += count
+                meta = {'category': 'Land', 'type': 'Basic Land', 'cmc': 0.0, 'set': ''}
+            else:
+                meta = card_meta_map.get(name, {'category': 'Card', 'type': 'Card', 'cmc': 0.0, 'set': ''})
+
+            structured_records.append({
+                'count': count,
+                'name': name,
+                'section': 'Maindeck',
+                'category': meta['category'],
+                'type': meta['type'],
+                'cmc': meta['cmc'],
+                'set': meta['set']
+            })
         
         actual_composition['Creatures'] = creatures_target
         actual_composition['Spells'] = spells_target
@@ -426,16 +526,35 @@ Usage Examples:
                     side_chosen.append(random.choice(side_sample))
 
                 side_grouped = Counter([c.display_name for c in side_chosen])
+                side_meta_map = {}
+                for c in side_chosen:
+                    if c.display_name not in side_meta_map:
+                        cmc_val = float(c.cost.cmc) if hasattr(c, 'cost') and hasattr(c.cost, 'cmc') else 0.0
+                        type_line = c.type_line if hasattr(c, 'type_line') else getattr(c, 'types_str', 'Card')
+                        set_str = c.set_code.upper() if getattr(c, 'set_code', None) else ''
+                        side_meta_map[c.display_name] = {'type': type_line, 'cmc': cmc_val, 'set': set_str}
+
                 decklist.append("")
                 decklist.append("Sideboard")
                 for name, count in sorted(side_grouped.items()):
                     decklist.append(f"{count} {name}")
+                    meta = side_meta_map.get(name, {'type': 'Card', 'cmc': 0.0, 'set': ''})
+                    structured_records.append({
+                        'count': count,
+                        'name': name,
+                        'section': 'Sideboard',
+                        'category': 'Sideboard',
+                        'type': meta['type'],
+                        'cmc': meta['cmc'],
+                        'set': meta['set']
+                    })
                 actual_composition['Sideboard'] = sum(side_grouped.values())
 
     total_deck_size = sum(actual_composition.values())
 
     if getattr(args, 'dry_run', False):
-        print(f"Dry Run Summary: Generated {total_deck_size}-card deck ({args.format.capitalize()} format).")
+        fmt_desc = "JSON" if args.json else ("CSV" if args.csv else "Text")
+        print(f"Dry Run Summary: Generated {total_deck_size}-card deck ({args.format.capitalize()} format, Output: {fmt_desc}).")
         if args.format in ('commander', 'brawl') and 'commander_card' in locals() and commander_card:
             print(f"Commander: {commander_card.display_name}")
         print("Composition Breakdown:")
@@ -461,18 +580,37 @@ Usage Examples:
             print(row, file=sys.stderr)
         print(file=sys.stderr)
 
+    # Prepare formatted export content
+    if args.json:
+        export_data = {
+            'format': args.format,
+            'total_cards': total_deck_size,
+            'composition': dict(actual_composition),
+            'deck': structured_records
+        }
+        out_content = json.dumps(export_data, indent=2) + "\n"
+    elif args.csv:
+        csv_buf = io.StringIO()
+        fieldnames = ['count', 'name', 'section', 'category', 'type', 'cmc', 'set']
+        writer = csv.DictWriter(csv_buf, fieldnames=fieldnames)
+        writer.writeheader()
+        for rec in structured_records:
+            writer.writerow(rec)
+        out_content = csv_buf.getvalue()
+    else:
+        out_content = "\n".join(decklist) + "\n"
+
     # Output Decklist
-    out_text = "\n".join(decklist) + "\n"
     if args.outfile:
         with open(args.outfile, 'w', encoding='utf-8') as f:
-            f.write(out_text)
+            f.write(out_content)
         if not args.quiet:
             print(f"Decklist saved to {args.outfile}", file=sys.stderr)
     else:
-        if not args.quiet:
+        if not args.quiet and not (args.json or args.csv):
             print("--- Decklist ---", file=sys.stderr)
         sys.stderr.flush()
-        print(out_text, end="")
+        print(out_content, end="")
 
 if __name__ == '__main__':
     main()

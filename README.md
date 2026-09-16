@@ -882,7 +882,9 @@ python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard --sidebo
     *   `--curve "1:5,2:10,..."`: Override the target mana curve for creatures.
     *   `--sideboard`: Generate a sideboard for the deck (default size: 15 for Standard/Pauper/Limited, 10 for Commander/Brawl).
     *   `--sideboard-size N`: Override the target number of cards for the sideboard.
-    *   `--outfile FILE`: Save the decklist to a file instead of printing to the console.
+    *   `-j`, `--json`: Export decklist in structured JSON format.
+    *   `--csv`: Export decklist in CSV format.
+    *   `--outfile FILE`: Save the decklist to a file instead of printing to the console (auto-detects `.json` or `.csv` from extension).
 
 ### `mtg_manabase.py`
 Recommends a basic land distribution (Mana Base) for a decklist or card dataset. It analyzes the mana pips in casting costs and suggests a proportional count of basic lands (Plains, Islands, Swamps, Mountains, Forests, and Wastes) to meet those requirements.
