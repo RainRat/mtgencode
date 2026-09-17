@@ -145,7 +145,12 @@ Example Usage:
             args.infile = default_base
 
     if not args.dry_run and not args.outfile:
-        parser.error("the following arguments are required: outfile (unless --dry-run is specified)")
+        if sys.stdin.isatty() or sys.stdout.isatty():
+            args.dry_run = True
+            if not args.quiet:
+                print("Notice: No output file specified. Running in dry-run preview mode.", file=sys.stderr)
+        else:
+            parser.error("the following arguments are required: outfile (unless --dry-run is specified)")
 
     # Handle --sample
     if args.sample > 0:

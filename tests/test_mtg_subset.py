@@ -228,12 +228,28 @@ class TestMTGSubset(unittest.TestCase):
         self.assertIn("Dry Run Summary: 2 card(s) matched.", mock_stdout.getvalue())
 
     @patch('sys.stderr', new_callable=io.StringIO)
-    def test_missing_outfile_without_dry_run(self, mock_stderr):
+    @patch('sys.stdin.isatty', return_value=False)
+    @patch('sys.stdout.isatty', return_value=False)
+    def test_missing_outfile_without_dry_run(self, mock_stdout_tty, mock_stdin_tty, mock_stderr):
         test_args = ['mtg_subset.py', 'input.json']
         with patch('sys.argv', test_args), patch('os.path.exists', return_value=False), self.assertRaises(SystemExit) as cm:
             mtg_subset.main()
 
         self.assertNotEqual(cm.exception.code, 0)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_missing_outfile_interactive_auto_dry_run(self, mock_stdout, mock_stderr, mock_isatty, mock_open_file):
+        mock_open_file.return_value = self.mock_cards
+
+        test_args = ['mtg_subset.py', 'input.json']
+        with patch('sys.argv', test_args), patch('os.path.exists', side_effect=lambda path: path == 'input.json'):
+            mtg_subset.main()
+
+        self.assertIn("Notice: No output file specified. Running in dry-run preview mode.", mock_stderr.getvalue())
+        self.assertIn("Dry Run Summary: 2 card(s) matched.", mock_stdout.getvalue())
 
     @patch('jdecode.mtg_open_file')
     @patch('builtins.open', new_callable=mock_open)
