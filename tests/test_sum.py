@@ -5,6 +5,7 @@ import sys
 import os
 import tempfile
 import runpy
+import json
 
 # Add project root to sys.path
 sys.path.append(os.getcwd())
@@ -122,14 +123,14 @@ class TestSumCLI(unittest.TestCase):
                 os.remove(tmp_path)
 
     def test_cli_invalid_content(self):
-         with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp:
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp:
             tmp.write("invalid line\n")
             tmp_path = tmp.name
-         try:
+        try:
             code, out, err = self.run_sum_main([tmp_path])
             self.assertEqual(code, 0)
             self.assertIn("No valid distance data found", err)
-         finally:
+        finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
@@ -176,6 +177,110 @@ class TestSumCLI(unittest.TestCase):
                 self.assertEqual(code, 0)
                 self.assertIn("DISTANCE SUMMARY", out)
                 self.assertIn("0.8000", out)
+
+    def test_cli_json_export(self):
+        stdin_data = "0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n"
+        with patch('sys.stdin', io.StringIO(stdin_data)):
+            with patch('sys.stdin.isatty', return_value=False):
+                code, out, err = self.run_sum_main(['-j'])
+                self.assertEqual(code, 0)
+                data = json.loads(out)
+                self.assertEqual(data['total_records'], 2)
+                self.assertEqual(data['name_similarity']['average'], 0.8)
+                self.assertEqual(data['name_similarity']['duplicates'], 1)
+                self.assertEqual(data['semantic_similarity']['average'], 0.6)
+                self.assertEqual(data['semantic_similarity']['duplicates'], 0)
+
+    def test_cli_csv_export(self):
+        stdin_data = "0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n"
+        with patch('sys.stdin', io.StringIO(stdin_data)):
+            with patch('sys.stdin.isatty', return_value=False):
+                code, out, err = self.run_sum_main(['--csv'])
+                self.assertEqual(code, 0)
+                self.assertIn("Category,Avg Similarity,Duplicates", out)
+                self.assertIn("Names,0.8000,1", out)
+                self.assertIn("Cards,0.6000,0", out)
+
+    def test_cli_outfile_json_auto_detect(self):
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp_in:
+            tmp_in.write("0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n")
+            in_path = tmp_in.name
+
+        out_path = tempfile.mktemp(suffix='.json')
+        try:
+            code, out, err = self.run_sum_main([in_path, '-o', out_path])
+            self.assertEqual(code, 0)
+            self.assertTrue(os.path.exists(out_path))
+            with open(out_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            self.assertEqual(data['total_records'], 2)
+            self.assertEqual(data['name_similarity']['average'], 0.8)
+        finally:
+            if os.path.exists(in_path):
+                os.remove(in_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
+
+    def test_cli_outfile_csv_auto_detect(self):
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp_in:
+            tmp_in.write("0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n")
+            in_path = tmp_in.name
+
+        out_path = tempfile.mktemp(suffix='.csv')
+        try:
+            code, out, err = self.run_sum_main([in_path, '-o', out_path])
+            self.assertEqual(code, 0)
+            self.assertTrue(os.path.exists(out_path))
+            with open(out_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn("Category,Avg Similarity,Duplicates", content)
+            self.assertIn("Names,0.8000,1", content)
+        finally:
+            if os.path.exists(in_path):
+                os.remove(in_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
+
+    def test_cli_outfile_table(self):
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp_in:
+            tmp_in.write("0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n")
+            in_path = tmp_in.name
+
+        out_path = tempfile.mktemp(suffix='.txt')
+        try:
+            code, out, err = self.run_sum_main([in_path, '-o', out_path, '-t'])
+            self.assertEqual(code, 0)
+            self.assertTrue(os.path.exists(out_path))
+            with open(out_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn("DISTANCE SUMMARY", content)
+            self.assertIn("Names", content)
+        finally:
+            if os.path.exists(in_path):
+                os.remove(in_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
+
+    def test_cli_dry_run(self):
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp_in:
+            tmp_in.write("0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n")
+            in_path = tmp_in.name
+
+        out_path = tempfile.mktemp(suffix='.json')
+        try:
+            code, out, err = self.run_sum_main([in_path, '-o', out_path, '--dry-run'])
+            self.assertEqual(code, 0)
+            self.assertIn("Dry Run Summary:", out)
+            self.assertIn("Distance data loaded from", out)
+            self.assertIn("Name Similarity Avg: 0.8000", out)
+            self.assertIn("Card Similarity Avg: 0.6000", out)
+            self.assertIn(out_path, out)
+            self.assertFalse(os.path.exists(out_path))
+        finally:
+            if os.path.exists(in_path):
+                os.remove(in_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
 
     def test_main_cli_execution(self):
         with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp:
