@@ -1696,8 +1696,8 @@ def main():
 
     # grid
     p_gr = subparsers.add_parser('grid', help='Generate a 2D table to cross-reference card attributes (like color vs. rarity).')
-    p_gr.add_argument('row_dim', choices=DIMENSIONS.keys(), help='Dimension to use for rows (e.g., color, rarity, type).')
-    p_gr.add_argument('col_dim', choices=DIMENSIONS.keys(), help='Dimension to use for columns (e.g., cmc, mechanic).')
+    p_gr.add_argument('row_dim', choices=DIMENSIONS.keys(), help='Dimension to use for rows (for example, color, rarity, type).')
+    p_gr.add_argument('col_dim', choices=DIMENSIONS.keys(), help='Dimension to use for columns (for example, cmc, mechanic).')
     add_std(p_gr)
     p_gr.set_defaults(func=handle_grid)
 
@@ -1722,7 +1722,7 @@ def main():
     p_pi = subparsers.add_parser('pips', help='Analyze the distribution of mana symbols (pips).')
     add_std(p_pi)
     p_pi.add_argument('outfile', nargs='?', default=None, help='Save pip distribution to a file.')
-    p_pi.add_argument('--include-text', action='store_true', help='Include mana symbols found in rules text (e.g., activation costs).')
+    p_pi.add_argument('--include-text', action='store_true', help='Include mana symbols found in rules text (for example, activation costs).')
     p_pi.add_argument('--sort', choices=['name','count'], default='count', help='Sort results by symbol name or distribution.')
     p_pi.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
     p_pi.set_defaults(func=handle_pips)
