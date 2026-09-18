@@ -1093,6 +1093,11 @@ def handle_shell(args):
                     c_args.names = resolved_args
                     handle_compare_cards(c_args)
                 elif cmd in ['/diff', '/d']:
+                    if not cmd_args:
+                        err_msg = "Error: /diff requires dataset file paths (e.g., '/diff new_set.json' or '/diff old_set.json new_set.json')."
+                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                        print(err_msg)
+                        continue
                     d_args = copy.copy(args)
                     d_args.file1 = cmd_args[0] if len(cmd_args) > 0 else None
                     d_args.file2 = cmd_args[1] if len(cmd_args) > 1 else None
