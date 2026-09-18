@@ -1094,7 +1094,7 @@ def handle_shell(args):
                     handle_compare_cards(c_args)
                 elif cmd in ['/diff', '/d']:
                     if not cmd_args:
-                        err_msg = "Error: /diff requires dataset file paths (e.g., '/diff new_set.json' or '/diff old_set.json new_set.json')."
+                        err_msg = "Error: /diff requires dataset file paths (for example, '/diff new_set.json' or '/diff old_set.json new_set.json')."
                         if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
                         print(err_msg)
                         continue
