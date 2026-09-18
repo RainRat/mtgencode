@@ -108,12 +108,11 @@ class TestCollectCheckpoints(unittest.TestCase):
             with open(dump_path, "w") as f:
                 f.write("head\n\nign\n\ncardA\n\ncardB\n\ntrail")
 
-            script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts", "collect_checkpoints.py"))
             orig_argv = sys.argv
             sys.argv = ["collect_checkpoints.py", src_dir, target_dir, "-c", "-i", "output", "-v"]
             try:
                 with self.assertRaises(SystemExit) as cm:
-                    runpy.run_path(script_path, run_name="__main__")
+                    runpy.run_module("scripts.collect_checkpoints", run_name="__main__")
                 self.assertEqual(cm.exception.code, 0)
             finally:
                 sys.argv = orig_argv
@@ -171,7 +170,7 @@ class TestCollectCheckpoints(unittest.TestCase):
             args = ["collect_checkpoints.py", src_dir, "-p", "-c"]
             with patch("sys.argv", args), patch("sys.stdout", new=io.StringIO()) as fake_out:
                 try:
-                    runpy.run_path("scripts/collect_checkpoints.py", run_name="__main__")
+                    runpy.run_module("scripts.collect_checkpoints", run_name="__main__")
                     code = 0
                 except SystemExit as e:
                     code = e.code if isinstance(e.code, int) else 0
@@ -187,13 +186,50 @@ class TestCollectCheckpoints(unittest.TestCase):
             args = ["collect_checkpoints.py", src_dir]
             with patch("sys.argv", args), patch("sys.stderr", new=io.StringIO()) as fake_err:
                 try:
-                    runpy.run_path("scripts/collect_checkpoints.py", run_name="__main__")
+                    runpy.run_module("scripts.collect_checkpoints", run_name="__main__")
                     code = 0
                 except SystemExit as e:
                     code = e.code if isinstance(e.code, int) else 0
 
                 self.assertEqual(code, 2)
                 self.assertIn("the following arguments are required: targetdir", fake_err.getvalue())
+
+    def test_dry_run_trailing_slash_path_normalization(self):
+        import io
+        with tempfile.TemporaryDirectory() as src_dir:
+            subdir = os.path.join(src_dir, "run3") + os.sep
+            os.makedirs(subdir)
+            dump_path = os.path.join(subdir, "lm_lstm_epoch5_0.1000.t7.output.1.0.txt")
+            with open(dump_path, "w") as f:
+                f.write("content")
+
+            with patch("sys.stdout", new=io.StringIO()) as fake_out:
+                process_dir(subdir, dry_run=True)
+                out = fake_out.getvalue()
+
+            self.assertIn("Dry Run Summary: 1 checkpoint dump file(s) identified.", out)
+
+    def test_cli_file_not_found_error_handling(self):
+        import io
+        non_existent_dir = os.path.join(tempfile.gettempdir(), "non_existent_dir_collect_cp_12345")
+        target_dir = os.path.join(tempfile.gettempdir(), "target_dir_collect_cp_12345")
+        args = ["collect_checkpoints.py", non_existent_dir, target_dir]
+        with patch("sys.argv", args), patch("sys.stderr", new=io.StringIO()) as fake_err:
+            with self.assertRaises(SystemExit) as cm:
+                runpy.run_module("scripts.collect_checkpoints", run_name="__main__")
+            self.assertEqual(cm.exception.code, 1)
+            self.assertIn("Error:", fake_err.getvalue())
+
+    def test_cli_value_error_handling(self):
+        import io
+        with tempfile.TemporaryDirectory() as src_dir:
+            args = ["collect_checkpoints.py", src_dir, "target_dir"]
+            with patch("sys.argv", args), patch("os.listdir", side_effect=ValueError("Custom value error")):
+                with patch("sys.stderr", new=io.StringIO()) as fake_err:
+                    with self.assertRaises(SystemExit) as cm:
+                        runpy.run_module("scripts.collect_checkpoints", run_name="__main__")
+                    self.assertEqual(cm.exception.code, 1)
+                    self.assertIn("Error: Custom value error", fake_err.getvalue())
 
 
 if __name__ == "__main__":
