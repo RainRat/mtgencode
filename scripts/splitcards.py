@@ -19,10 +19,12 @@ def main():
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', help='Input card data (JSON, JSONL, CSV, MSE, ZIP, or encoded text).')
-    io_group.add_argument('--outputs', nargs='+', required=True,
-                        help='Output filenames for each split (for example, train.txt val.txt).')
-    io_group.add_argument('--ratios', type=float, nargs='+', required=True,
+    io_group.add_argument('--outputs', nargs='+',
+                        help='Output filenames for each split (for example, train.txt val.txt). Auto-derived if omitted.')
+    io_group.add_argument('--ratios', type=float, nargs='+',
                         help='Ratios for each split (for example, 0.9 0.1). Must match the number of outputs and sum to 1.0.')
+    io_group.add_argument('--preset', choices=['train-val-test', 'train-val', 'train-test', '50-50'],
+                        help='Preset splitting strategy: train-val-test (80/10/10), train-val (90/10), train-test (80/20), or 50-50 (50/50). Default: train-val.')
 
     # Group: Output Format
     fmt_group = parser.add_argument_group('Output Format')
@@ -128,6 +130,37 @@ def main():
 
     if args.sort:
         args.stable = True
+
+    PRESETS = {
+        'train-val-test': {'ratios': [0.8, 0.1, 0.1], 'names': ['train', 'val', 'test']},
+        'train-val': {'ratios': [0.9, 0.1], 'names': ['train', 'val']},
+        'train-test': {'ratios': [0.8, 0.2], 'names': ['train', 'test']},
+        '50-50': {'ratios': [0.5, 0.5], 'names': ['split1', 'split2']},
+    }
+
+    ext_map = {'json': 'json', 'jsonl': 'jsonl', 'csv': 'csv', 'text': 'txt'}
+    ext = ext_map.get(args.format, 'txt')
+
+    if args.preset:
+        preset_info = PRESETS[args.preset]
+        if args.ratios is None:
+            args.ratios = preset_info['ratios']
+        if args.outputs is None:
+            args.outputs = [f"{name}.{ext}" for name in preset_info['names']]
+    elif args.outputs is None and args.ratios is None:
+        preset_info = PRESETS['train-val']
+        args.ratios = preset_info['ratios']
+        args.outputs = [f"{name}.{ext}" for name in preset_info['names']]
+    elif args.outputs is not None and args.ratios is None:
+        args.ratios = [1.0 / len(args.outputs)] * len(args.outputs)
+    elif args.outputs is None and args.ratios is not None:
+        if len(args.ratios) == 2:
+            names = ['train', 'val']
+        elif len(args.ratios) == 3:
+            names = ['train', 'val', 'test']
+        else:
+            names = [f"split_{i+1}" for i in range(len(args.ratios))]
+        args.outputs = [f"{name}.{ext}" for name in names]
 
     if len(args.outputs) != len(args.ratios):
         print("Error: The number of outputs must match the number of ratios.", file=sys.stderr)
