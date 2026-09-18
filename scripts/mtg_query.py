@@ -1203,14 +1203,26 @@ def handle_shell(args):
                     if not hasattr(o_args, 'limit'): o_args.limit = 0
                     last_results = _execute_oracle(all_cards, o_args, include_indices=True)
                 elif cmd in ['/extract', '/e']:
-                    if len(cmd_args) < 2:
-                        err_msg = "Error: /extract requires <set_code> and <card_name>."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
-                        continue
+                    resolved_args = _resolve_args(cmd_args)
+                    if not resolved_args:
+                        if last_results:
+                            set_code = 'ANY'
+                            card_name = last_results[0].name
+                        else:
+                            err_msg = "Error: /extract requires a card name or active search results."
+                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                            print(err_msg)
+                            continue
+                    elif len(resolved_args) == 1:
+                        set_code = 'ANY'
+                        card_name = resolved_args[0]
+                    else:
+                        set_code = resolved_args[0]
+                        card_name = " ".join(resolved_args[1:])
+
                     e_args = copy.copy(args)
-                    e_args.set_code = cmd_args[0]
-                    e_args.card_name = " ".join(cmd_args[1:])
+                    e_args.set_code = set_code
+                    e_args.card_name = card_name
                     e_args.outfile = '-'
                     handle_extract(e_args)
                 elif cmd in ['/help', '/h', '/?']:
@@ -1237,7 +1249,7 @@ def handle_shell(args):
                             ("/similar <n>", "", "Find cards mechanically similar to the named card."),
                         ]),
                         ("UTILITIES & SYSTEM", [
-                            ("/extract <s> <n>", "/e", "Extract raw card JSON by set code and name."),
+                            ("/extract [s] <n>", "/e", "Extract raw card JSON by set code and name (defaults to any set)."),
                             ("/clear", "/cls", "Clear the terminal screen."),
                             ("/help", "/h, /?", "Show this help message."),
                             ("/exit", "/quit, /q", "Exit the interactive shell."),
