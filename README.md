@@ -1272,6 +1272,18 @@ python3 scripts/mtg_analyze.py pips data/AllPrintings.json --set MOM --include-t
     *   `--csv`: Output results in CSV format.
     *   Supports standard **Advanced Filtering** flags and simulation.
 
+### `analysis.py`
+Evaluates card validation properties, dataset distances, and n-gram language model perplexity for encoded card text or card datasets.
+```bash
+# Analyze card validation properties and n-gram perplexity for a card dataset
+python3 scripts/analysis.py data/output.txt
+
+# Enable verbose progress output
+python3 scripts/analysis.py data/output.txt -v
+```
+*   **Options:**
+    *   `-v`, `--verbose`: Enable detailed status messages during statistical analysis.
+
 ### `distances.py` & `sum.py`
 These tools allow for bulk creativity analysis of your generated cards. `distances.py` calculates the semantic and name distance between your cards and the official dataset, and `sum.py` provides a statistical summary of the results.
 

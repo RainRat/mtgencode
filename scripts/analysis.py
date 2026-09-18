@@ -156,14 +156,23 @@ def main(infile, verbose = False):
     print_statistics(stats)
 
 if __name__ == '__main__':
-    
     import argparse
-    parser = argparse.ArgumentParser()
-    
-    parser.add_argument('infile', #nargs='?'. default=None,
-                        help='encoded card file or json corpus to process')
-    parser.add_argument('-v', '--verbose', action='store_true', 
-                        help='verbose output')
+    parser = argparse.ArgumentParser(
+        description="Analyze card validation properties, dataset distances, and n-gram perplexity for card data.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Analyze card validation properties and n-gram perplexity for a card dataset
+  python3 scripts/analysis.py data/output.txt
+
+  # Enable verbose progress output
+  python3 scripts/analysis.py data/output.txt -v
+"""
+    )
+    parser.add_argument('infile',
+                        help='Encoded card file or JSON card dataset to analyze.')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable detailed status messages during processing.')
 
     args = parser.parse_args()
     main(args.infile, verbose=args.verbose)
