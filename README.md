@@ -11,22 +11,17 @@ This project helps you turn Magic: The Gathering card data into a format that AI
 ## Installation
 
 ### Prerequisites
-Before installing, make sure you have:
 *   **Python 3.9 or newer:** Check your installed Python version by running `python3 --version`.
 *   **Git:** Required to clone the project repository.
-*   **Docker (Optional):** Required if you choose the containerized setup option.
+*   **Docker (Optional):** Required for containerized setup.
 
 ### Option 1: Use Docker (Recommended)
-Docker provides an isolated container with all required dependencies pre-installed.
-
 1.  Make sure Docker Desktop or Docker Engine is running on your system.
 2.  Start an interactive terminal session:
     *   **Linux/macOS:** Run `bash docker-interactive.sh` or `./docker-interactive.sh`
     *   **Windows:** Run `./docker-interactive.bat`
 
-### Option 2: Install on your computer
-Follow these steps if you want to run the tools directly on your machine:
-
+### Option 2: Install directly
 1.  **Download this project:**
     ```bash
     git clone https://github.com/billzorn/mtgencode.git
@@ -34,7 +29,6 @@ Follow these steps if you want to run the tools directly on your machine:
     ```
 
 2.  **Create a virtual environment (Recommended):**
-    Creating an isolated Python virtual environment prevents conflicts with system packages:
     ```bash
     python3 -m venv venv
     source venv/bin/activate  # On Windows, run: venv\Scripts\activate
@@ -900,14 +894,18 @@ Recommends a basic land distribution (Mana Base) for a decklist or card dataset.
 # Analyze a decklist and recommend 24 lands
 python3 scripts/mtg_manabase.py my_deck.txt --lands 24
 
-# Calculate a mana base for a specific set (40-card Limited deck)
-python3 scripts/mtg_manabase.py data/AllPrintings.json --set MOM --lands 17
+# Recommend lands using Commander format preset defaults (38 lands)
+python3 scripts/mtg_manabase.py my_deck.txt --format commander
+
+# Calculate a mana base for a specific set (40-card Limited deck, 17 lands)
+python3 scripts/mtg_manabase.py data/AllPrintings.json --set MOM --format limited
 
 # Include activation costs in the pip analysis
 python3 scripts/mtg_manabase.py my_deck.txt --include-text
 ```
 *   **Options:**
-    *   `--lands N`: Target number of basic lands to recommend (Default: 24).
+    *   `-f FORMAT`, `--format FORMAT`: Deck format preset to auto-set default target land count (`commander`: 38, `limited`: 17, `standard`/`brawl`/`pauper`: 24).
+    *   `--lands N`: Target number of basic lands to recommend (Default: 24, or format preset default).
     *   `--include-text`: Include mana symbols found in rules text (for example, activation costs).
     *   Supports all **Advanced Filtering** flags.
 

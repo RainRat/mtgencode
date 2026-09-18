@@ -30,6 +30,7 @@ def calculate_stats(data):
 
 def main():
     parser = argparse.ArgumentParser(
+        prog="sum.py",
         description="Summarize the distance statistics (similarity ratios) produced by scripts/distances.py.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""

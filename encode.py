@@ -316,4 +316,4 @@ Usage Examples:
          identities=args.identity, id_counts=args.id_count,
          seed=args.seed, decklist_file=args.deck, booster=args.booster, box=args.box,
          dry_run=args.dry_run)
-    exit(0)
+    sys.exit(0)

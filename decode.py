@@ -983,4 +983,4 @@ Usage Examples:
          shuffle=args.shuffle, seed=args.seed, decklist_file=args.deck_filter, booster=args.booster, box=args.box,
          dry_run=args.dry_run)
 
-    exit(0)
+    sys.exit(0)

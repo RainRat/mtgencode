@@ -122,4 +122,4 @@ Usage Examples:
         sys.exit(1)
 
     main(args.infile, args.outfile, verbose=args.verbose, parallel=args.parallel, dry_run=args.dry_run)
-    exit(0)
+    sys.exit(0)

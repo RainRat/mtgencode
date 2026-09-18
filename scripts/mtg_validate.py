@@ -797,4 +797,4 @@ Usage Examples:
          shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, decklist_file = args.deck,
          booster = args.booster, sort = args.sort, reverse_sort = args.reverse, limit = args.limit, use_color = args.color, box = args.box,
          color_pie = args.color_pie, dry_run = args.dry_run)
-    exit(0)
+    sys.exit(0)

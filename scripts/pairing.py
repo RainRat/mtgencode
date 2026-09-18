@@ -189,4 +189,4 @@ Usage Examples:
 
     args = parser.parse_args()
     main(args.infile, args.outfile, n=args.n, verbose=args.verbose, dry_run=args.dry_run)
-    exit(0)
+    sys.exit(0)

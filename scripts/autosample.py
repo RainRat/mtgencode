@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import subprocess
 import random
 
@@ -156,4 +157,4 @@ Usage Examples:
         seed = int(args.seed)
     main(args.rnndir, args.cpdir, float(args.temperature), int(args.count), 
          seed=seed, ident=args.ident, verbose=args.verbose, dry_run=args.dry_run)
-    exit(0)
+    sys.exit(0)
