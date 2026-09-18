@@ -176,5 +176,38 @@ class TestMtgManabase(unittest.TestCase):
                     self.assertIn("MANA BASE ADVISOR", output)
                     self.assertIn("Forest", output)
 
+    def test_main_format_presets(self):
+        card_w = MagicMock(spec=cardlib.Card)
+        card_w.is_land = False
+        card_w.cost = MagicMock(spec=Manacost)
+        card_w.cost.allsymbols = {'W': 1}
+        card_w.text = MagicMock(spec=Manatext)
+        card_w.text.costs = []
+        card_w.bside = None
+
+        # Test --format commander -> defaults to 38 lands
+        with patch('jdecode.mtg_open_file', return_value=[card_w]):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '--format', 'commander', '--dry-run']):
+                    main()
+                    output = fake_out.getvalue()
+                    self.assertIn("Target Lands: 38", output)
+
+        # Test --format limited -> defaults to 17 lands
+        with patch('jdecode.mtg_open_file', return_value=[card_w]):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '-f', 'limited', '-p']):
+                    main()
+                    output = fake_out.getvalue()
+                    self.assertIn("Target Lands: 17", output)
+
+        # Test explicit --lands overriding format default
+        with patch('jdecode.mtg_open_file', return_value=[card_w]):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '--format', 'commander', '--lands', '35', '-p']):
+                    main()
+                    output = fake_out.getvalue()
+                    self.assertIn("Target Lands: 35", output)
+
 if __name__ == '__main__':
     unittest.main()

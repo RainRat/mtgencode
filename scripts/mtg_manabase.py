@@ -109,11 +109,11 @@ It analyzes mana pips (W, U, B, R, G) in casting costs and recommends Plains, Is
 Mountains, and Forests accordingly.
 
 Usage Examples:
-  # Analyze a decklist and recommend 24 lands
-  python3 scripts/mtg_manabase.py my_deck.txt --lands 24
+  # Analyze a decklist and recommend lands based on Commander format defaults (38 lands)
+  python3 scripts/mtg_manabase.py my_deck.txt --format commander
 
-  # Use the default dataset to calculate a mana base for a specific set (40-card Limited deck)
-  python3 scripts/mtg_manabase.py data/AllPrintings.json --set MOM --lands 17
+  # Use the default dataset to calculate a mana base for a specific set (40-card Limited deck, 17 lands)
+  python3 scripts/mtg_manabase.py data/AllPrintings.json --set MOM --format limited
 
   # Include activation costs in the pip analysis
   python3 scripts/mtg_manabase.py my_deck.txt --include-text
@@ -130,9 +130,14 @@ Usage Examples:
                              'Defaults to stdin (-). If stdin is a TTY, AllPrintings.json is used if available.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save results. If not provided, results print to the console.')
-    io_group.add_argument('--lands', type=int, default=24,
-                        help='Target number of basic lands to recommend (Default: 24).')
-    io_group.add_argument('--include-text', action='store_true',
+
+    # Group: Deck Configuration
+    deck_group = parser.add_argument_group('Deck Configuration')
+    deck_group.add_argument('-f', '--format', choices=['commander', 'standard', 'brawl', 'pauper', 'limited'],
+                            help='Deck format preset to auto-set default target land count (commander: 38, limited: 17, standard/brawl/pauper: 24).')
+    deck_group.add_argument('--lands', type=int, default=None,
+                        help='Target number of basic lands to recommend (Default: format-specific preset, or 24 if unspecified).')
+    deck_group.add_argument('--include-text', action='store_true',
                         help='Include mana symbols found in rules text (activation costs, etc.) in the analysis.')
 
     # Group: Processing Options
@@ -170,6 +175,21 @@ Usage Examples:
     color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # Format land preset defaults
+    format_land_defaults = {
+        'commander': 38,
+        'limited': 17,
+        'standard': 24,
+        'brawl': 24,
+        'pauper': 24
+    }
+
+    if args.lands is None:
+        if args.format and args.format in format_land_defaults:
+            args.lands = format_land_defaults[args.format]
+        else:
+            args.lands = 24
 
     # UX Improvement: Smart positional argument handling
     if args.infile and args.infile != '-' and not os.path.exists(args.infile):
