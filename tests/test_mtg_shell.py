@@ -130,12 +130,44 @@ class TestMtgShell(unittest.TestCase):
                 self.assertIn("No cards found that are inferior to Invasion of Tarkir.", err)
 
     def test_shell_extract(self):
-        """Test the /extract command."""
+        """Test the /extract command with explicit set code and card name."""
         with patch('builtins.input', side_effect=['/extract CUS "invasion of tarkir"', 'exit']):
             with patch('sys.stdout', new=io.StringIO()) as fake_out:
                 handle_shell(self.args)
                 output = fake_out.getvalue()
                 self.assertIn('"name": "invasion of tarkir"', output)
+
+    def test_shell_extract_single_arg(self):
+        """Test the /extract command with single argument defaulting set code to ANY."""
+        with patch('builtins.input', side_effect=['/extract "invasion of tarkir"', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn('"name": "invasion of tarkir"', output)
+
+    def test_shell_extract_index(self):
+        """Test the /extract command with numeric index from previous search results."""
+        with patch('builtins.input', side_effect=['/search tarkir', '/extract 1', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn('"name": "invasion of tarkir"', output)
+
+    def test_shell_extract_smart_defaults_with_results(self):
+        """Test that /extract falls back to top active search result when called without arguments."""
+        with patch('builtins.input', side_effect=['/search tarkir', '/extract', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn('"name": "invasion of tarkir"', output)
+
+    def test_shell_extract_empty_error(self):
+        """Test that /extract reports an error when called without arguments and no active search results."""
+        with patch('builtins.input', side_effect=['/extract', 'exit']):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                handle_shell(self.args)
+                output = fake_out.getvalue()
+                self.assertIn("Error: /extract requires a card name or active search results.", output)
 
     def test_shell_clear(self):
         """Test the /clear command."""
