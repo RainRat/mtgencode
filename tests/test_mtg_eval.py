@@ -236,5 +236,162 @@ class TestMTGEval(unittest.TestCase):
         generate_text(mock_model, char_to_idx, idx_to_char, 2, torch.device('cpu'), args, length=5, quiet=False)
         self.assertFalse(mock_tqdm.call_args[1]['disable'])
 
+    @patch('os.path.exists', return_value=False)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_missing_checkpoint_file(self, mock_stderr, mock_exists):
+        with patch('sys.argv', ['mtg_eval.py', '--checkpoint', 'missing_model.pt']):
+            with self.assertRaises(SystemExit) as cm:
+                mtg_eval.main()
+            self.assertEqual(cm.exception.code, 1)
+            self.assertIn("Error: Checkpoint file not found: missing_model.pt", mock_stderr.getvalue())
+
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load', side_effect=RuntimeError("Corrupt weights file"))
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_checkpoint_load_exception(self, mock_stderr, mock_torch_load, mock_exists):
+        with patch('sys.argv', ['mtg_eval.py', '--checkpoint', 'corrupt.pt']):
+            with self.assertRaises(SystemExit) as cm:
+                mtg_eval.main()
+            self.assertEqual(cm.exception.code, 1)
+            self.assertIn("Error loading checkpoint: Corrupt weights file", mock_stderr.getvalue())
+
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_excess_generated_cards_truncated(self, mock_stderr, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 1
+        }
+        card = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_generate.return_value = card * 5
+        mock_process_props.return_value = ((2, 2, 0, 0), {'types': (2, 2, 0)})
+
+        with patch('sys.argv', ['mtg_eval.py', '-c', 'model.pt', '--count', '2', '--json']):
+            mtg_eval.main()
+
+        # Check process_props received 2 cards (truncated from 5)
+        self.assertEqual(len(mock_process_props.call_args[0][0]), 2)
+
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_fewer_generated_cards_warning(self, mock_stderr, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 1
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = ((1, 1, 0, 0), {'types': (1, 1, 0)})
+
+        with patch('sys.argv', ['mtg_eval.py', '-c', 'model.pt', '--count', '10', '--json']):
+            mtg_eval.main()
+
+        self.assertIn("Warning: Only generated 1 cards (requested 10). Increase --length.", mock_stderr.getvalue())
+
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    @patch('sys.stderr', new_callable=io.StringIO)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_verbose_and_seed_initialization(self, mock_stdout, mock_stderr, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 3
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = ((1, 1, 0, 0), {'types': (1, 1, 0)})
+
+        with patch('sys.argv', ['mtg_eval.py', '-c', 'valid.pt', '-v', '--seed', '12345', '--json']):
+            mtg_eval.main()
+
+        self.assertIn("Loading model from valid.pt...", mock_stderr.getvalue())
+
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text', return_value="invalid gibberish without card separators")
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_no_cards_parsed_error(self, mock_stderr, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 1
+        }
+
+        with patch('mtg_eval.cardlib.Card', side_effect=ValueError("Invalid raw text")):
+            with patch('sys.argv', ['mtg_eval.py', '-c', 'model.pt']):
+                with self.assertRaises(SystemExit) as cm:
+                    mtg_eval.main()
+                self.assertEqual(cm.exception.code, 1)
+                self.assertIn("Error: No cards were successfully generated/parsed.", mock_stderr.getvalue())
+
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_color_output_formatting(self, mock_stdout, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 2
+        }
+        card1 = "|creature|legendary|elf|&|&^^/&^^|@ has flying\\@ has trample|{GG}|O|uthros|"
+        mock_generate.return_value = card1 + "\n\n"
+        mock_process_props.return_value = (
+            (1, 1, 0, 0),
+            {'types': (1, 1, 0)}
+        )
+
+        with patch('sys.argv', ['mtg_eval.py', '-c', 'colored.pt', '--color']):
+            mtg_eval.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("\033[", output)  # Asserts ANSI escape codes are included in output
+
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load')
+    @patch('train.CharRNN.load_state_dict')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_cli_main_execution(self, mock_stdout, mock_process_props, mock_generate, mock_load_state_dict, mock_torch_load, mock_exists):
+        import runpy
+
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 1
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = ((1, 1, 0, 0), {'types': (1, 1, 0)})
+
+        script_path = os.path.join(os.path.dirname(__file__), '../scripts/mtg_eval.py')
+        with patch('sys.argv', ['mtg_eval.py', '-c', 'runpy_model.pt', '--json']):
+            runpy.run_path(script_path, run_name='__main__')
+
+        output = mock_stdout.getvalue()
+        result = json.loads(output)
+        self.assertEqual(result['checkpoint'], 'runpy_model.pt')
+
 if __name__ == '__main__':
     unittest.main()
