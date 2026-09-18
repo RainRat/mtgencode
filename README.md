@@ -10,26 +10,34 @@ This project helps you turn Magic: The Gathering card data into a format that AI
 
 ## Installation
 
-Use Docker for the easiest setup. It installs everything automatically.
+### Prerequisites
+Before installing, make sure you have:
+*   **Python 3.9 or newer:** Check your installed Python version by running `python3 --version`.
+*   **Git:** Required to clone the project repository.
+*   **Docker (Optional):** Required if you choose the containerized setup option.
 
 ### Option 1: Use Docker (Recommended)
-*   **Linux/macOS:** Run `./docker-interactive.sh`
-*   **Windows:** Run `./docker-interactive.bat`
+Docker provides an isolated container with all required dependencies pre-installed.
+
+1.  Make sure Docker Desktop or Docker Engine is running on your system.
+2.  Start an interactive terminal session:
+    *   **Linux/macOS:** Run `bash docker-interactive.sh` or `./docker-interactive.sh`
+    *   **Windows:** Run `./docker-interactive.bat`
 
 ### Option 2: Install on your computer
-Follow these steps if you want to run the tool directly on your machine:
+Follow these steps if you want to run the tools directly on your machine:
 
-1.  **Install Python:**
-    Download Python 3.9 or newer from [python.org](https://www.python.org/).
-    Check your version:
-    ```bash
-    python3 --version
-    ```
-
-2.  **Download this project:**
+1.  **Download this project:**
     ```bash
     git clone https://github.com/billzorn/mtgencode.git
     cd mtgencode
+    ```
+
+2.  **Create a virtual environment (Recommended):**
+    Creating an isolated Python virtual environment prevents conflicts with system packages:
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate  # On Windows, run: venv\Scripts\activate
     ```
 
 3.  **Install required libraries:**
