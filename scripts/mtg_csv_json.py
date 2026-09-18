@@ -87,8 +87,9 @@ Note: The first row is ignored if the first column is exactly "name".
     )
 
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('csv_file', help='Path to the input CSV file.')
-    io_group.add_argument('json_output', nargs='?', help='Path to the output JSON file (optional if --dry-run is specified).')
+    io_group.add_argument('csv_file', nargs='?', help='Path to the input CSV file.')
+    io_group.add_argument('json_output', nargs='?', help='Path to the output JSON file.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', help='Path to the output JSON file.')
 
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
@@ -96,8 +97,18 @@ Note: The first row is ignored if the first column is exactly "name".
 
     args = parser.parse_args(argv)
 
-    if not args.dry_run and not args.json_output:
-        parser.error("the following arguments are required: json_output (unless --dry-run is specified)")
+    if not args.csv_file:
+        if sys.stdin.isatty() and os.path.exists("custom.csv"):
+            args.csv_file = "custom.csv"
+        else:
+            parser.error("the following arguments are required: csv_file")
+
+    json_output = args.json_output or args.outfile_opt
+    if not args.dry_run and not json_output:
+        base, _ = os.path.splitext(args.csv_file)
+        json_output = base + ".json"
+
+    args.json_output = json_output
 
     json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
 
@@ -192,8 +203,9 @@ Dry Run Mode:
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infile', help='Input card data (JSON, JSONL, MSE, ZIP, or encoded text).')
-    io_group.add_argument('outfile', nargs='?', help='Output CSV file path (optional if --dry-run is specified).')
+    io_group.add_argument('infile', nargs='?', help='Input card data (JSON, JSONL, MSE, ZIP, or encoded text).')
+    io_group.add_argument('outfile', nargs='?', help='Output CSV file path.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', help='Output CSV file path.')
 
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
@@ -254,8 +266,18 @@ Dry Run Mode:
 
     args = parser.parse_args(argv)
 
-    if not args.dry_run and not args.outfile:
-        parser.error("the following arguments are required: outfile (unless --dry-run is specified)")
+    if not args.infile:
+        if sys.stdin.isatty() and os.path.exists("data/AllPrintings.json"):
+            args.infile = "data/AllPrintings.json"
+        else:
+            parser.error("the following arguments are required: infile")
+
+    outfile = args.outfile or args.outfile_opt
+    if not args.dry_run and not outfile:
+        base, _ = os.path.splitext(args.infile)
+        outfile = base + ".csv"
+
+    args.outfile = outfile
 
     # Load cards using the standard loader
     cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose,
@@ -348,9 +370,14 @@ Autodetect mode:
     args, remaining = parser.parse_known_args()
     
     is_dry_run = '-p' in sys.argv or '--preview' in sys.argv or '--dry-run' in sys.argv
-    if not args.infile or (not args.outfile and not is_dry_run):
-        parser.print_help()
-        sys.exit(0)
+    if not args.infile:
+        if sys.stdin.isatty() and os.path.exists("custom.csv"):
+            args.infile = "custom.csv"
+        elif sys.stdin.isatty() and os.path.exists("data/AllPrintings.json"):
+            args.infile = "data/AllPrintings.json"
+        else:
+            parser.print_help()
+            sys.exit(0 if not sys.argv[1:] else 1)
 
     # Detect conversion direction
     in_ext = os.path.splitext(args.infile)[1].lower()

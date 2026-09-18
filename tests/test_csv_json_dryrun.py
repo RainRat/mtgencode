@@ -47,10 +47,24 @@ class TestCSVJSONDryRun(unittest.TestCase):
         self.assertIn("=== CSV to JSON Conversion Summary (Dry Run) ===", output)
         self.assertFalse(os.path.exists(outfile))
 
-    def test_csv2json_missing_outfile_without_dryrun_raises(self):
-        stderr_capture = io.StringIO()
-        with patch('sys.stderr', stderr_capture), self.assertRaises(SystemExit):
+    def test_csv2json_autoderive_outfile(self):
+        expected_outfile = os.path.splitext(self.csv_path)[0] + ".json"
+        try:
             run_csv2json([self.csv_path])
+            self.assertTrue(os.path.exists(expected_outfile))
+        finally:
+            if os.path.exists(expected_outfile):
+                os.remove(expected_outfile)
+
+    def test_csv2json_outfile_flag(self):
+        outfile = os.path.join(self.temp_dir.name, "custom_flag.json")
+        run_csv2json([self.csv_path, '-o', outfile])
+        self.assertTrue(os.path.exists(outfile))
+
+    def test_csv2json_missing_infile_raises(self):
+        stderr_capture = io.StringIO()
+        with patch('sys.stdin.isatty', return_value=False), patch('sys.stderr', stderr_capture), self.assertRaises(SystemExit):
+            run_csv2json([])
 
     def test_json2csv_dry_run_no_outfile(self):
         stdout_capture = io.StringIO()
@@ -72,10 +86,24 @@ class TestCSVJSONDryRun(unittest.TestCase):
         self.assertIn("=== JSON to CSV Export Summary (Dry Run) ===", output)
         self.assertFalse(os.path.exists(outfile))
 
-    def test_json2csv_missing_outfile_without_dryrun_raises(self):
+    def test_json2csv_autoderive_outfile(self):
+        temp_json = os.path.join(self.temp_dir.name, "sample.json")
+        expected_csv = os.path.join(self.temp_dir.name, "sample.csv")
+        with open(self.json_path, 'r', encoding='utf-8') as src, open(temp_json, 'w', encoding='utf-8') as dst:
+            dst.write(src.read())
+
+        run_json2csv([temp_json])
+        self.assertTrue(os.path.exists(expected_csv))
+
+    def test_json2csv_outfile_flag(self):
+        outfile = os.path.join(self.temp_dir.name, "custom_flag.csv")
+        run_json2csv([self.json_path, '-o', outfile])
+        self.assertTrue(os.path.exists(outfile))
+
+    def test_json2csv_missing_infile_raises(self):
         stderr_capture = io.StringIO()
-        with patch('sys.stderr', stderr_capture), self.assertRaises(SystemExit):
-            run_json2csv([self.json_path])
+        with patch('sys.stdin.isatty', return_value=False), patch('sys.stderr', stderr_capture), self.assertRaises(SystemExit):
+            run_json2csv([])
 
     def test_json2csv_dry_run_no_matching_cards(self):
         stdout_capture = io.StringIO()
@@ -101,6 +129,32 @@ class TestCSVJSONDryRun(unittest.TestCase):
 
         output = stdout_capture.getvalue()
         self.assertIn("=== JSON to CSV Export Summary (Dry Run) ===", output)
+
+    def test_csv2json_interactive_default(self):
+        stdout_capture = io.StringIO()
+        real_exists = os.path.exists
+        real_open = open
+        csv_data = 'name,manaCost,types,subtypes,text,pt,rarity\n"Test","{0}","Artifact","","Rules","","C"\n'
+        with patch('sys.stdin.isatty', return_value=True), \
+             patch('os.path.exists', side_effect=lambda p: True if p == 'custom.csv' else real_exists(p)), \
+             patch('builtins.open', side_effect=lambda file, *args, **kwargs: io.StringIO(csv_data) if file == 'custom.csv' else real_open(file, *args, **kwargs)), \
+             patch('sys.stdout', stdout_capture):
+            run_csv2json(['--dry-run'])
+        output = stdout_capture.getvalue()
+        self.assertIn("=== CSV to JSON Conversion Summary (Dry Run) ===", output)
+        self.assertIn("Source file: custom.csv", output)
+
+    def test_json2csv_interactive_default(self):
+        stdout_capture = io.StringIO()
+        real_exists = os.path.exists
+        with patch('sys.stdin.isatty', return_value=True), \
+             patch('os.path.exists', side_effect=lambda p: True if p == 'data/AllPrintings.json' else real_exists(p)), \
+             patch('scripts.mtg_csv_json.jdecode.mtg_open_file', return_value=[]), \
+             patch('sys.stdout', stdout_capture):
+            run_json2csv(['--dry-run'])
+        output = stdout_capture.getvalue()
+        self.assertIn("=== JSON to CSV Export Summary (Dry Run) ===", output)
+        self.assertIn("data/AllPrintings.json", output)
 
 if __name__ == '__main__':
     unittest.main()
