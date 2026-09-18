@@ -82,5 +82,35 @@ class TestEncodeDryRun(unittest.TestCase):
             if os.path.exists(target_outfile):
                 os.remove(target_outfile)
 
+    def test_cli_interactive_default_dataset_autodetect(self):
+        fake_dataset_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'AllPrintings.json'))
+
+        def custom_exists(path):
+            if path == fake_dataset_path:
+                return True
+            return False
+
+        target_outfile = self.temp_file.name + ".default_dataset.txt"
+        test_args = ['encode.py', '-', target_outfile, '--dry-run']
+
+        stderr_capture = io.StringIO()
+        stdout_capture = io.StringIO()
+        try:
+            with patch('sys.argv', test_args), \
+                 patch('sys.stdin.isatty', return_value=True), \
+                 patch('os.path.exists', side_effect=custom_exists), \
+                 patch('jdecode.mtg_open_file', return_value=[]), \
+                 patch('sys.stderr', stderr_capture), \
+                 patch('sys.stdout', stdout_capture):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_path('encode.py', run_name='__main__')
+                self.assertEqual(cm.exception.code, 0)
+
+            stderr_out = stderr_capture.getvalue()
+            self.assertIn("Notice: Using default dataset:", stderr_out)
+        finally:
+            if os.path.exists(target_outfile):
+                os.remove(target_outfile)
+
 if __name__ == '__main__':
     unittest.main()
