@@ -3,6 +3,7 @@ import sys
 import os
 import argparse
 import random
+import difflib
 from collections import defaultdict, Counter
 
 # Add lib directory to path
@@ -267,12 +268,28 @@ Usage Examples:
             
         commander_card = None
         if args.commander:
-            matches = [c for c in legendary_candidates if c.display_name.lower() == args.commander.lower()]
+            cmd_lower = args.commander.lower()
+            # 1. Exact match
+            matches = [c for c in legendary_candidates if c.display_name.lower() == cmd_lower]
             if matches:
                 commander_card = matches[0]
             else:
-                if not args.quiet:
-                    print(f"Warning: Commander '{args.commander}' not found. Picking a random one.", file=sys.stderr)
+                # 2. Substring / partial match
+                matches = [c for c in legendary_candidates if cmd_lower in c.display_name.lower()]
+                if matches:
+                    commander_card = matches[0]
+                    if not args.quiet:
+                        print(f"Notice: Commander '{args.commander}' matched: {commander_card.display_name}", file=sys.stderr)
+                else:
+                    # 3. Fuzzy match
+                    cand_map = {c.display_name.lower(): c for c in legendary_candidates}
+                    close = difflib.get_close_matches(cmd_lower, list(cand_map.keys()), n=1, cutoff=0.6)
+                    if close:
+                        commander_card = cand_map[close[0]]
+                        if not args.quiet:
+                            print(f"Notice: Commander '{args.commander}' matched: {commander_card.display_name}", file=sys.stderr)
+                    elif not args.quiet:
+                        print(f"Warning: Commander '{args.commander}' not found. Picking a random one.", file=sys.stderr)
                 
         if not commander_card:
             commander_card = random.choice(legendary_candidates)
