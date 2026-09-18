@@ -133,19 +133,13 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
                 fail_count += 1
         return success_count, fail_count
 
-    total_success = 0
-    total_fail = 0
     if oname:
         if verbose:
             print(utils.colorize('Writing output to: ', utils.Ansi.BOLD + utils.Ansi.CYAN) + oname, file=sys.stderr)
         with open(oname, 'w', encoding='utf8') as ofile:
-            s, f = writecards(ofile)
-            total_success += s
-            total_fail += f
+            total_success, total_fail = writecards(ofile)
     else:
-        s, f = writecards(sys.stdout)
-        total_success += s
-        total_fail += f
+        total_success, total_fail = writecards(sys.stdout)
         sys.stdout.flush()
 
     # Provide clear feedback on operation completion
