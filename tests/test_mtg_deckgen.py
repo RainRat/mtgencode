@@ -3,6 +3,8 @@ from unittest.mock import patch, MagicMock
 import sys
 import os
 import io
+import json
+import csv
 
 # Add lib and scripts directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -384,6 +386,79 @@ class TestMtgDeckgen(unittest.TestCase):
             mtg_deckgen.main()
 
         mock_stderr.flush.assert_called()
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_json_export(self, mock_stderr, mock_stdout, mock_open):
+        c1 = cardlib.Card({'name': 'Soldier', 'types': ['Creature'], 'manaCost': '{W}', 'rarity': 'common', 'setCode': 'MOM', 'text': ''})
+        s1 = cardlib.Card({'name': 'Shock', 'types': ['Instant'], 'manaCost': '{R}', 'rarity': 'common', 'setCode': 'MOM', 'text': ''})
+        mock_open.return_value = [c1, s1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--json']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        data = json.loads(output)
+        self.assertEqual(data['format'], 'standard')
+        self.assertEqual(data['total_cards'], sum(data['composition'].values()))
+        self.assertIn('deck', data)
+        self.assertTrue(len(data['deck']) > 0)
+        names = [entry['name'] for entry in data['deck']]
+        self.assertIn('Soldier', names)
+        self.assertIn('Shock', names)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_csv_export(self, mock_stderr, mock_stdout, mock_open):
+        c1 = cardlib.Card({'name': 'Soldier', 'types': ['Creature'], 'manaCost': '{W}', 'rarity': 'common', 'setCode': 'MOM', 'text': ''})
+        s1 = cardlib.Card({'name': 'Shock', 'types': ['Instant'], 'manaCost': '{R}', 'rarity': 'common', 'setCode': 'MOM', 'text': ''})
+        mock_open.return_value = [c1, s1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--csv']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        reader = csv.DictReader(io.StringIO(output))
+        rows = list(reader)
+        self.assertTrue(len(rows) > 0)
+        self.assertIn('count', rows[0])
+        self.assertIn('name', rows[0])
+        self.assertIn('section', rows[0])
+        names = [r['name'] for r in rows]
+        self.assertIn('Soldier', names)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_outfile_auto_detect_json_and_csv(self, mock_stderr, mock_stdout, mock_open):
+        c1 = cardlib.Card({'name': 'Soldier', 'types': ['Creature'], 'manaCost': '{W}', 'rarity': 'common', 'setCode': 'MOM', 'text': ''})
+        s1 = cardlib.Card({'name': 'Shock', 'types': ['Instant'], 'manaCost': '{R}', 'rarity': 'common', 'setCode': 'MOM', 'text': ''})
+        mock_open.return_value = [c1, s1]
+
+        json_out = 'test_deck_autodetect.json'
+        csv_out = 'test_deck_autodetect.csv'
+
+        try:
+            # Auto-detect JSON
+            with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--outfile', json_out]):
+                mtg_deckgen.main()
+            self.assertTrue(os.path.exists(json_out))
+            with open(json_out, 'r', encoding='utf-8') as f:
+                parsed_json = json.load(f)
+            self.assertEqual(parsed_json['format'], 'standard')
+
+            # Auto-detect CSV
+            with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--outfile', csv_out]):
+                mtg_deckgen.main()
+            self.assertTrue(os.path.exists(csv_out))
+            with open(csv_out, 'r', encoding='utf-8') as f:
+                parsed_csv = list(csv.DictReader(f))
+            self.assertTrue(len(parsed_csv) > 0)
+        finally:
+            if os.path.exists(json_out): os.remove(json_out)
+            if os.path.exists(csv_out): os.remove(csv_out)
 
 if __name__ == '__main__':
     unittest.main()
