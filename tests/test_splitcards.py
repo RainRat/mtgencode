@@ -407,5 +407,23 @@ def test_splitcards_presets_and_defaults(tmp_path):
         os.remove("split_3.txt")
         os.remove("split_4.txt")
 
+        args_ratios_2 = ["splitcards.py", str(infile), "--ratios", "0.9", "0.1", "-s"]
+        with patch("sys.argv", args_ratios_2):
+            main()
+        assert os.path.exists("train.txt")
+        assert os.path.exists("val.txt")
+        os.remove("train.txt")
+        os.remove("val.txt")
+
+        args_ratios_3 = ["splitcards.py", str(infile), "--ratios", "0.8", "0.1", "0.1", "-s"]
+        with patch("sys.argv", args_ratios_3):
+            main()
+        assert os.path.exists("train.txt")
+        assert os.path.exists("val.txt")
+        assert os.path.exists("test.txt")
+        os.remove("train.txt")
+        os.remove("val.txt")
+        os.remove("test.txt")
+
     finally:
         os.chdir(old_cwd)
