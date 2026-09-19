@@ -81,7 +81,7 @@ MSE requires specific fonts to render card text and symbols correctly. Without t
 ### Usage
 To generate an MSE set file:
 ```bash
-python3 decode.py encoded_output.txt my_set --mse
+python3 decode.py encoded_output.txt my_set.mse-set
 ```
 This creates a file named `my_set.mse-set`. Double-click it (or open it via Wine) to view your cards.
 
@@ -111,8 +111,11 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
         ```bash
         make
         ```
-    *   **Copy the binary:**
-        Move the `word2vec` file into your `mtgencode` root folder so the scripts can find it.
+    *   **Copy the binary and return to project root:**
+        ```bash
+        cp word2vec ..
+        cd ..
+        ```
 
 2.  **Generate Reference Data and Vectors:**
     The creativity analyzer compares your custom cards against a reference dataset of real cards. This requires two files in your `data/` folder:
