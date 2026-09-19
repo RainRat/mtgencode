@@ -299,13 +299,19 @@ def _execute_search(cards, args, include_indices=False):
     if not cards:
         if not args.quiet:
             print("No cards found matching the criteria.", file=sys.stderr)
-        if getattr(args, 'grep_name', None) and not args.quiet:
+        grep_queries = []
+        if getattr(args, 'grep_name', None):
+            grep_queries.extend(args.grep_name)
+        if getattr(args, 'grep', None):
+            grep_queries.extend(args.grep)
+
+        if grep_queries and not args.quiet:
             all_cards = jdecode.mtg_open_file(args.infile, verbose=False)
             search_map = _build_search_map(all_cards)
-            
+
             matches = []
-            for gn in args.grep_name:
-                matches.extend(difflib.get_close_matches(gn.lower(), list(search_map.keys()), n=3, cutoff=0.6))
+            for gq in grep_queries:
+                matches.extend(difflib.get_close_matches(gq.lower(), list(search_map.keys()), n=3, cutoff=0.6))
             if matches:
                 print("Did you mean:", file=sys.stderr)
                 seen = set()
@@ -1006,6 +1012,7 @@ def handle_shell(args):
                     # Use same default fields as shell subcommand
                     s_args.fields = getattr(args, 'fields', 'name,cost,type,stats,rarity')
                     s_args.table = True
+                    s_args.grep = [query]
                     if not hasattr(s_args, 'limit'): s_args.limit = 0
                     last_results = _execute_search(matched_cards, s_args, include_indices=True)
                 elif cmd in ['/list', '/l', '/results']:

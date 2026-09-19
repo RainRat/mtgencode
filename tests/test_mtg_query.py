@@ -17,6 +17,23 @@ def test_query_search_basic():
     assert "Artifact" in result.stdout
     assert "Spacecraft" in result.stdout
 
+def test_query_search_fuzzy_grep_suggestions():
+    """Test fuzzy suggestions on stderr when positional or grep queries match no cards."""
+    cmd = ["python3", SCRIPT_PATH, "search", "testdata/uthros.json", "--grep", "Uthros Crft", "--no-color"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "No cards found matching the criteria." in result.stderr
+    assert "Did you mean:" in result.stderr
+    assert "Uthros Research Craft" in result.stderr
+
+    # Test with positional query
+    cmd_pos = ["python3", SCRIPT_PATH, "search", "Uthros Crft", "testdata/uthros.json", "--no-color"]
+    result_pos = subprocess.run(cmd_pos, capture_output=True, text=True)
+    assert result_pos.returncode == 0
+    assert "No cards found matching the criteria." in result_pos.stderr
+    assert "Did you mean:" in result_pos.stderr
+    assert "Uthros Research Craft" in result_pos.stderr
+
 def test_query_oracle_basic():
     """Test basic oracle lookup."""
     cmd = ["python3", SCRIPT_PATH, "oracle", "Uthros", "testdata/uthros.json", "--no-color"]
