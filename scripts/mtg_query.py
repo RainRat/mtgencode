@@ -2161,17 +2161,22 @@ def handle_compare_cards(args):
     # Auto-similarity: compare against closest mechanical match if only one card provided
     if len(comparison_cards) == 1:
         target = comparison_cards[0]
-        if not args.quiet:
-            print(f"Notice: Only one card provided. Finding most mechanically similar card to {target.display_name}...", file=sys.stderr)
-            sys.stderr.flush()
         nd = namediff.Namediff(verbose=False, cards=all_cards)
         results = nd.nearest_card(target, n=2) # 1st is always itself
+        matched_card = None
         for ratio, name in results:
             if name.lower() != target.name.lower():
                 match = resolve_card(name, all_cards)
                 if match:
                     comparison_cards.append(match)
+                    matched_card = match
                     break
+        if not args.quiet:
+            if matched_card:
+                print(f"Notice: Only one card provided. Comparing {target.display_name} with most mechanically similar match: {matched_card.display_name}", file=sys.stderr)
+            else:
+                print(f"Notice: Only one card provided. Finding most mechanically similar card to {target.display_name}...", file=sys.stderr)
+            sys.stderr.flush()
 
     # Pool comparison: if no names provided, use the filtered result pool
     if not comparison_cards:

@@ -98,3 +98,10 @@ def test_query_compare_diff_only_no_differences():
     assert result.returncode == 0
     assert "CARD COMPARISON" in result.stdout
     assert "No differences found between the compared cards." in result.stdout
+
+def test_query_compare_single_card_notice():
+    """Test notice output when only a single card is provided for comparison."""
+    cmd = ["python3", SCRIPT_PATH, "compare", "Invasion of Tarkir", "testdata/tarkir.json", "--no-color"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "Notice: Only one card provided. Comparing Invasion of Tarkir with most mechanically similar match: Defiant Thundermaw" in result.stderr
