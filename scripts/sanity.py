@@ -160,24 +160,53 @@ Usage Examples:
 
   # Inspect character encoding vocabulary and save to JSON
   python3 scripts/sanity.py data/output.txt -chars --vocab_name vocab.json
+
+  # Dry-run preview mode without processing or saving vocabulary JSON
+  python3 scripts/sanity.py data/output.txt -chars --vocab_name vocab.json -p
 """
     )
 
-    parser.add_argument('infile', nargs='?', default=os.path.join(libdir, '../data/output.txt'),
+    io_group = parser.add_argument_group('Input / Output Options')
+    io_group.add_argument('infile', nargs='?', default=os.path.join(libdir, '../data/output.txt'),
                         help='Input card data file (encoded text or JSON dataset). Defaults to data/output.txt.')
-    parser.add_argument('-lines', action='store_true',
-                        help='Inspect and print line separation categories for card rules text.')
-    parser.add_argument('-vocab', action='store_true',
-                        help='Count word frequencies in encoded card text and display rare words.')
-    parser.add_argument('-chars', action='store_true',
-                        help='Extract and display all unique characters used in card encoding.')
-    parser.add_argument('--vocab_name', default=None,
+    io_group.add_argument('--vocab_name', default=None,
                         help='Path to save the character vocabulary as a JSON file.')
+
+    check_group = parser.add_argument_group('Sanity Check Options')
+    check_group.add_argument('-lines', action='store_true',
+                        help='Inspect and print line separation categories for card rules text.')
+    check_group.add_argument('-vocab', action='store_true',
+                        help='Count word frequencies in encoded card text and display rare words.')
+    check_group.add_argument('-chars', action='store_true',
+                        help='Extract and display all unique characters used in card encoding.')
+
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a summary of active sanity checks, target files, and card dataset statistics without running calculations or writing files.')
+
     args = parser.parse_args()
 
     if not (args.lines or args.vocab or args.chars):
         parser.print_help(sys.stderr)
         sys.exit(1)
+
+    if args.dry_run:
+        cards = jdecode.mtg_open_file(args.infile, verbose=False, linetrans=True)
+        active_modes = []
+        if args.lines:
+            active_modes.append("lines")
+        if args.vocab:
+            active_modes.append("vocab")
+        if args.chars:
+            active_modes.append("chars")
+        print("Dry Run Summary:")
+        print(f"  Input File: {args.infile} ({len(cards)} card(s) loaded)")
+        print(f"  Active Checks: {', '.join(active_modes)}")
+        print(f"  Vocab Output Target: {args.vocab_name if args.vocab_name else 'None'}")
+        sample_names = [card.name for card in cards[:10] if hasattr(card, 'name') and card.name]
+        if sample_names:
+            print(f"  Sample Cards Preview: {', '.join(sample_names)}")
+        sys.exit(0)
 
     if args.lines:
         check_lines(args.infile)

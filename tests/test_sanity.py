@@ -117,5 +117,19 @@ class TestSanity(unittest.TestCase):
             self.assertEqual(cm.exception.code, 0)
         self.assertTrue(os.path.exists(vocab_out))
 
+    def test_main_cli_dry_run(self):
+        vocab_out = os.path.join(self.tmpdir.name, "vocab_dryrun.json")
+        test_args = ["sanity.py", self.infile, "-lines", "-vocab", "-chars", "--vocab_name", vocab_out, "-p"]
+        with patch("sys.argv", test_args):
+            with patch("builtins.print") as mock_print:
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_path("scripts/sanity.py", run_name="__main__")
+                self.assertEqual(cm.exception.code, 0)
+                printed_strings = [str(call[0][0]) for call in mock_print.call_args_list if call[0]]
+                self.assertTrue(any("Dry Run Summary:" in s for s in printed_strings))
+                self.assertTrue(any("Active Checks: lines, vocab, chars" in s for s in printed_strings))
+        # Ensure vocab output JSON file was NOT created in dry-run mode
+        self.assertFalse(os.path.exists(vocab_out))
+
 if __name__ == "__main__":
     unittest.main()
