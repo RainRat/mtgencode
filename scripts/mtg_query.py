@@ -2186,137 +2186,176 @@ def handle_compare_cards(args):
             print(f"Notice: Comparing pool of {len(comparison_cards)} cards.", file=sys.stderr)
             sys.stderr.flush()
 
-    use_color = args.color if args.color is not None else sys.stdout.isatty()
+    # Automatic output format detection
+    if getattr(args, 'outfile', None):
+        if args.outfile.endswith('.json') and not getattr(args, 'csv', False):
+            args.json = True
+        elif args.outfile.endswith('.csv') and not getattr(args, 'json', False):
+            args.csv = True
 
-    if args.json:
-        diff_data = {f"card{i+1}": c.to_dict() for i, c in enumerate(comparison_cards)}
-        print(json.dumps(diff_data, indent=4))
+    use_color = args.color if args.color is not None else (sys.stdout.isatty() and not getattr(args, 'outfile', None))
+
+    if getattr(args, 'fields', None):
+        custom_fields = []
+        for f in args.fields.split(','):
+            canon = get_field_canonical_name(f)
+            header = FIELD_MAP.get(canon, {}).get('header', f.strip().title())
+            custom_fields.append((header, canon))
+        field_groups = [(None, custom_fields)]
     else:
-        if not args.quiet:
-            utils.print_header("CARD COMPARISON", use_color=use_color)
+        field_groups = [
+            ('BASIC', [
+                ('Set', 'set'),
+                ('Cost', 'cost'),
+                ('CMC', 'cmc'),
+                ('Type', 'type'),
+                ('Stats', 'stats'),
+                ('Rarity', 'rarity'),
+            ]),
+            ('MECHANICAL', [
+                ('Identity', 'identity'),
+                ('Produced', 'produced'),
+                ('Tokens', 'tokens'),
+                ('Mechanics', 'mechanics'),
+                ('Actions', 'actions'),
+                ('Signature', 'signature'),
+            ]),
+            ('DESIGN', [
+                ('Fair MV', 'fair_cmc'),
+                ('Rating', 'rating'),
+                ('Complexity', 'complexity'),
+                ('Color Pie', 'color_pie'),
+            ]),
+            ('RULES', [
+                ('Text', 'text'),
+            ]),
+        ]
 
-        if getattr(args, 'fields', None):
-            custom_fields = []
-            for f in args.fields.split(','):
-                canon = get_field_canonical_name(f)
-                header = FIELD_MAP.get(canon, {}).get('header', f.strip().title())
-                custom_fields.append((header, canon))
-            field_groups = [(None, custom_fields)]
+    # Signature logic: identify unique mechanical features
+    def get_features(c):
+        f = c.mechanics | c.actions
+        f.update(set(t.title() for t in c.types))
+        f.update(set(s.title() for s in c.supertypes))
+        f.update(set(titlecase(s.replace(utils.dash_marker, '-')) for s in c.subtypes))
+        produced = c.produced_colors
+        if produced:
+            if "Any" in produced: f.add("Produces Any Color")
+            else: f.add("Produces " + "".join(sorted(list(produced))))
+        f.update(set(t['name'] for t in c.tokens))
+        if c.bside:
+            f.update(get_features(c.bside))
+        return f
+
+    card_features = [get_features(c) for c in comparison_cards]
+    signatures = []
+    for i in range(len(comparison_cards)):
+        others_features = set()
+        for j in range(len(comparison_cards)):
+            if i == j: continue
+            others_features |= card_features[j]
+        signatures.append(sorted(list(card_features[i] - others_features)))
+
+    output_f = open(args.outfile, 'w', encoding='utf-8') if getattr(args, 'outfile', None) else sys.stdout
+    try:
+        if args.json:
+            diff_data = {f"card{i+1}": c.to_dict() for i, c in enumerate(comparison_cards)}
+            res_text = json.dumps(diff_data, indent=4) + '\n'
+            output_f.write(res_text)
+        elif getattr(args, 'csv', False):
+            output_buffer = io.StringIO()
+            writer = csv.writer(output_buffer)
+            header = ["Field"] + [titlecase(c.name.replace(utils.dash_marker, '-')) for c in comparison_cards]
+            writer.writerow(header)
+
+            for group_name, group_fields in field_groups:
+                for label, field in group_fields:
+                    raw_vals = []
+                    if field == 'signature':
+                        for sig_list in signatures:
+                            raw_vals.append(", ".join(sig_list))
+                    else:
+                        for c in comparison_cards:
+                            raw_vals.append(get_field_value(c, field, ansi_color=False))
+
+                    is_all_same = all(v == raw_vals[0] for v in raw_vals)
+                    is_identifying = field in ['cost', 'cmc', 'type', 'rarity', 'text']
+                    if getattr(args, 'diff_only', False):
+                        if not is_all_same and any(v for v in raw_vals):
+                            writer.writerow([label] + raw_vals)
+                    elif is_identifying or any(v for v in raw_vals):
+                        writer.writerow([label] + raw_vals)
+
+            output_f.write(output_buffer.getvalue())
         else:
-            field_groups = [
-                ('BASIC', [
-                    ('Set', 'set'),
-                    ('Cost', 'cost'),
-                    ('CMC', 'cmc'),
-                    ('Type', 'type'),
-                    ('Stats', 'stats'),
-                    ('Rarity', 'rarity'),
-                ]),
-                ('MECHANICAL', [
-                    ('Identity', 'identity'),
-                    ('Produced', 'produced'),
-                    ('Tokens', 'tokens'),
-                    ('Mechanics', 'mechanics'),
-                    ('Actions', 'actions'),
-                    ('Signature', 'signature'),
-                ]),
-                ('DESIGN', [
-                    ('Fair MV', 'fair_cmc'),
-                    ('Rating', 'rating'),
-                    ('Complexity', 'complexity'),
-                    ('Color Pie', 'color_pie'),
-                ]),
-                ('RULES', [
-                    ('Text', 'text'),
-                ]),
-            ]
+            with redirect_stdout(output_f):
+                if not args.quiet:
+                    utils.print_header("CARD COMPARISON", use_color=use_color)
 
-        rows = []
-        header = ["Field"] + [titlecase(c.name.replace(utils.dash_marker, '-')) for c in comparison_cards]
-        if use_color:
-            header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
-        rows.append(header)
-
-        # Signature logic: identify unique mechanical features
-        def get_features(c):
-            f = c.mechanics | c.actions
-            f.update(set(t.title() for t in c.types))
-            f.update(set(s.title() for s in c.supertypes))
-            f.update(set(titlecase(s.replace(utils.dash_marker, '-')) for s in c.subtypes))
-            produced = c.produced_colors
-            if produced:
-                if "Any" in produced: f.add("Produces Any Color")
-                else: f.add("Produces " + "".join(sorted(list(produced))))
-            f.update(set(t['name'] for t in c.tokens))
-            if c.bside:
-                f.update(get_features(c.bside))
-            return f
-
-        card_features = [get_features(c) for c in comparison_cards]
-        signatures = []
-        for i in range(len(comparison_cards)):
-            others_features = set()
-            for j in range(len(comparison_cards)):
-                if i == j: continue
-                others_features |= card_features[j]
-            signatures.append(sorted(list(card_features[i] - others_features)))
-
-        term_width = utils.get_terminal_width(max_width=200) # Wider for comparison
-        num_cards = len(comparison_cards)
-        # Allocate width: total terminal width minus column headers/spacing, divided by cards
-        # We ensure a minimum of 30 characters for the data columns to keep them readable.
-        wrap_width = max(30, (term_width - 24) // num_cards)
-
-        for group_name, group_fields in field_groups:
-            group_rows = []
-            for label, field in group_fields:
-                display_vals = []
-                raw_vals = []
-
-                if field == 'signature':
-                    for i, sig_list in enumerate(signatures):
-                        v = ", ".join(sig_list)
-                        raw_vals.append(v)
-                        if use_color and v:
-                            v = utils.colorize(v, utils.Ansi.BOLD + utils.Ansi.GREEN)
-                        display_vals.append(utils.wrap_ansi(v, wrap_width))
-                else:
-                    for c in comparison_cards:
-                        v_raw = get_field_value(c, field, ansi_color=False)
-                        v_display = get_field_value(c, field, ansi_color=use_color)
-                        raw_vals.append(v_raw)
-                        if field in ['text', 'tokens', 'mechanics', 'actions']:
-                            v_display = utils.wrap_ansi(v_display, wrap_width)
-                        display_vals.append(v_display)
-
-                # Highlight differences or matches
-                is_all_same = all(v == raw_vals[0] for v in raw_vals)
-                if not is_all_same:
-                    if use_color:
-                        label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
-                elif use_color:
-                    label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
-
-                # Always show basic identifying rows; hide others only if all are empty
-                is_identifying = field in ['cost', 'cmc', 'type', 'rarity', 'text']
-                if getattr(args, 'diff_only', False):
-                    if not is_all_same and any(v for v in raw_vals):
-                        group_rows.append([label] + display_vals)
-                elif is_identifying or any(v for v in raw_vals):
-                    group_rows.append([label] + display_vals)
-
-            if group_rows:
-                header_label = f"--- {group_name} ---"
+                rows = []
+                header = ["Field"] + [titlecase(c.name.replace(utils.dash_marker, '-')) for c in comparison_cards]
                 if use_color:
-                    header_label = utils.colorize(header_label, utils.Ansi.BOLD + utils.Ansi.CYAN)
-                rows.append([header_label] + [""] * num_cards)
-                rows.extend(group_rows)
+                    header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+                rows.append(header)
 
-        if len(rows) <= 1:
-            print("  No differences found between the compared cards.")
-        else:
-            datalib.add_separator_row(rows)
-            datalib.printrows(datalib.padrows(rows, aligns=['l'] * (num_cards + 1)), indent=2)
+                term_width = utils.get_terminal_width(max_width=200) # Wider for comparison
+                num_cards = len(comparison_cards)
+                # Allocate width: total terminal width minus column headers/spacing, divided by cards
+                # We ensure a minimum of 30 characters for the data columns to keep them readable.
+                wrap_width = max(30, (term_width - 24) // num_cards)
+
+                for group_name, group_fields in field_groups:
+                    group_rows = []
+                    for label, field in group_fields:
+                        display_vals = []
+                        raw_vals = []
+
+                        if field == 'signature':
+                            for i, sig_list in enumerate(signatures):
+                                v = ", ".join(sig_list)
+                                raw_vals.append(v)
+                                if use_color and v:
+                                    v = utils.colorize(v, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                                display_vals.append(utils.wrap_ansi(v, wrap_width))
+                        else:
+                            for c in comparison_cards:
+                                v_raw = get_field_value(c, field, ansi_color=False)
+                                v_display = get_field_value(c, field, ansi_color=use_color)
+                                raw_vals.append(v_raw)
+                                if field in ['text', 'tokens', 'mechanics', 'actions']:
+                                    v_display = utils.wrap_ansi(v_display, wrap_width)
+                                display_vals.append(v_display)
+
+                        # Highlight differences or matches
+                        is_all_same = all(v == raw_vals[0] for v in raw_vals)
+                        if not is_all_same:
+                            if use_color:
+                                label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.YELLOW)
+                        elif use_color:
+                            label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+
+                        # Always show basic identifying rows; hide others only if all are empty
+                        is_identifying = field in ['cost', 'cmc', 'type', 'rarity', 'text']
+                        if getattr(args, 'diff_only', False):
+                            if not is_all_same and any(v for v in raw_vals):
+                                group_rows.append([label] + display_vals)
+                        elif is_identifying or any(v for v in raw_vals):
+                            group_rows.append([label] + display_vals)
+
+                    if group_rows:
+                        header_label = f"--- {group_name} ---"
+                        if use_color:
+                            header_label = utils.colorize(header_label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                        rows.append([header_label] + [""] * num_cards)
+                        rows.extend(group_rows)
+
+                if len(rows) <= 1:
+                    print("  No differences found between the compared cards.")
+                else:
+                    datalib.add_separator_row(rows)
+                    datalib.printrows(datalib.padrows(rows, aligns=['l'] * (num_cards + 1)), indent=2)
+    finally:
+        if getattr(args, 'outfile', None):
+            output_f.close()
 
 # --- Diff Logic ---
 
@@ -2836,6 +2875,7 @@ Usage Examples:
     p_compare.add_argument('names', nargs='*', help='Card names to compare. Supports comparing any number of cards. If one name is provided, it is compared against its closest mechanical match. If no names are provided, the filtered result pool is used.')
     p_compare.add_argument('infile', nargs='?', default='-',
                          help='Input card data. Defaults to data/AllPrintings.json if available.')
+    p_compare.add_argument('-o', '--outfile', help='Path to save comparison results. If not provided, results print to the console.')
     p_compare.add_argument('-f', '--fields', help=FIELDS_HELP)
     p_compare.add_argument('-d', '--diff-only', action='store_true',
                          help='Only display fields that differ between compared cards.')

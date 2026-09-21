@@ -64,5 +64,56 @@ class TestMtgQueryCompareEnhanced(unittest.TestCase):
         self.assertEqual(data['card1']['name'], 'Beast Summoner')
         self.assertEqual(data['card2']['name'], 'Black Lotus')
 
+    def test_compare_csv(self):
+        """Test CSV export format for comparison."""
+        output, _ = self.run_compare(['Beast Summoner', 'Black Lotus', self.testdata_path, '--csv'])
+        self.assertIn('Field,Beast Summoner,Black Lotus', output)
+        self.assertIn('Cost', output)
+        self.assertIn('CMC', output)
+
+    def test_compare_outfile_plain_text(self):
+        """Test writing plain text comparison to output file."""
+        outfile = 'test_compare_out.txt'
+        try:
+            _, _ = self.run_compare(['Beast Summoner', 'Black Lotus', self.testdata_path, '-o', outfile])
+            self.assertTrue(os.path.exists(outfile))
+            with open(outfile, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn('CARD COMPARISON', content)
+            self.assertIn('Beast Summoner', content)
+            self.assertIn('Black Lotus', content)
+        finally:
+            if os.path.exists(outfile):
+                os.remove(outfile)
+
+    def test_compare_outfile_json_autodetect(self):
+        """Test auto-detection of JSON format when outfile ends with .json."""
+        outfile = 'test_compare_out.json'
+        try:
+            _, _ = self.run_compare(['Beast Summoner', 'Black Lotus', self.testdata_path, '-o', outfile])
+            self.assertTrue(os.path.exists(outfile))
+            with open(outfile, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            self.assertIn('card1', data)
+            self.assertIn('card2', data)
+            self.assertEqual(data['card1']['name'], 'Beast Summoner')
+        finally:
+            if os.path.exists(outfile):
+                os.remove(outfile)
+
+    def test_compare_outfile_csv_autodetect(self):
+        """Test auto-detection of CSV format when outfile ends with .csv."""
+        outfile = 'test_compare_out.csv'
+        try:
+            _, _ = self.run_compare(['Beast Summoner', 'Black Lotus', self.testdata_path, '-o', outfile])
+            self.assertTrue(os.path.exists(outfile))
+            with open(outfile, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn('Field,Beast Summoner,Black Lotus', content)
+            self.assertIn('Cost', content)
+        finally:
+            if os.path.exists(outfile):
+                os.remove(outfile)
+
 if __name__ == '__main__':
     unittest.main()
