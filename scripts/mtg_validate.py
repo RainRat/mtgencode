@@ -721,9 +721,9 @@ Usage Examples:
     filter_group.add_argument('--exclude-loyalty', action='append',
                         help='Exclude cards whose loyalty/defense matches a search pattern.')
     filter_group.add_argument('--set', action='append',
-                        help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
+                        help='Only include cards from specific sets (for example, MOM, MRD). Supports multiple sets (OR logic).')
     filter_group.add_argument('--rarity', action='append',
-                        help="Only include cards of specific rarities. Supports full names (e.g., 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple values (OR logic).")
+                        help="Only include cards of specific rarities. Supports full names (for example, 'common', 'mythic') or shorthands: O (Common), N (Uncommon), A (Rare), Y (Mythic), I (Special), L (Basic Land). Supports multiple values (OR logic).")
     filter_group.add_argument('--colors', action='append',
                         help="Only include cards of specific colors (W, U, B, R, G). Use 'C' or 'A' for colorless. Supports multiple values (OR logic).")
     filter_group.add_argument('--identity', action='append',
@@ -731,7 +731,7 @@ Usage Examples:
     filter_group.add_argument('--id-count', action='append',
                         help='Only include cards with specific color identity counts. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--cmc', action='append',
-                        help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (e.g., ">3", "<=2"), ranges (e.g., "1-4"), and multiple values (OR logic).')
+                        help='Only include cards with specific CMC (Converted Mana Cost) values. Supports inequalities (for example, ">3", "<=2"), ranges (for example, "1-4"), and multiple values (OR logic).')
     filter_group.add_argument('--pow', '--power', action='append', dest='pow',
                         help='Only include cards with specific Power values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--tou', '--toughness', action='append', dest='tou',
@@ -739,7 +739,7 @@ Usage Examples:
     filter_group.add_argument('--loy', '--loyalty', '--defense', action='append', dest='loy',
                         help='Only include cards with specific Loyalty or Defense values. Supports inequalities, ranges, and multiple values (OR logic).')
     filter_group.add_argument('--mechanic', action='append',
-                        help='Only include cards with specific mechanical features or keyword abilities (e.g., Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
+                        help='Only include cards with specific mechanical features or keyword abilities (for example, Flying, Activated, ETB Effect). Supports multiple values (OR logic).')
     filter_group.add_argument('--produces', action='append',
                         help="Only include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).")
     filter_group.add_argument('--deck-filter', '--decklist-filter', dest='deck',
