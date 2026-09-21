@@ -1286,10 +1286,18 @@ Evaluates card validation properties, dataset distances, and n-gram language mod
 # Analyze card validation properties and n-gram perplexity for a card dataset
 python3 scripts/analysis.py data/output.txt
 
-# Enable verbose progress output
-python3 scripts/analysis.py data/output.txt -v
+# Save statistical analysis report in structured JSON or CSV format
+python3 scripts/analysis.py data/output.txt -o summary.json
+python3 scripts/analysis.py data/output.txt --csv -o summary.csv
+
+# Preview analysis parameters without building language models or running calculations (dry-run mode)
+python3 scripts/analysis.py data/output.txt --dry-run
 ```
 *   **Options:**
+    *   `-o FILE`, `--outfile FILE`: Save output report to a file (automatically detects `.json` or `.csv` format from extension).
+    *   `-j`, `--json`: Output statistical report in structured JSON format.
+    *   `--csv`: Output statistical report in CSV format.
+    *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of analysis settings without building language models or writing output files.
     *   `-v`, `--verbose`: Enable detailed status messages during statistical analysis.
 
 ### `distances.py` & `sum.py`

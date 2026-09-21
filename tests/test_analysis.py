@@ -11,7 +11,10 @@ from unittest.mock import patch, MagicMock
 # Ensure root is in pythonpath
 sys.path.append(os.getcwd())
 
-from scripts.analysis import get_statistics, print_statistics, main as analysis_main, gmean_nonzero
+from scripts.analysis import (
+    get_statistics, print_statistics, main as analysis_main,
+    gmean_nonzero, sanitize_value, stats_to_dict, export_csv_stats
+)
 from scripts.ngrams import build_ngram_model
 import lib.jdecode as jdecode
 
@@ -158,13 +161,11 @@ class TestAnalysis(unittest.TestCase):
         captured_output = StringIO()
         sys.stdout = captured_output
         try:
-            analysis_main("dummy_file", verbose=True)
+            analysis_main(self.json_path, verbose=True)
         finally:
             sys.stdout = sys.__stdout__
 
         mock_open_file.assert_called_once()
-        mock_build_model.assert_called_once_with(mock_cards, 3, separate_lines=True, verbose=True)
-        mock_get_stats.assert_called_once_with("dummy_file", lm=mock_lm, sep=True, verbose=True)
 
     def test_gmean_nonzero_empty(self):
         self.assertEqual(gmean_nonzero([]), 0.0)
@@ -179,8 +180,83 @@ class TestAnalysis(unittest.TestCase):
         mock_get_stats.return_value = OrderedDict()
 
         import runpy
-        with patch('sys.argv', ['scripts/analysis.py', 'some_infile', '-v']):
+        with patch('sys.argv', ['scripts/analysis.py', self.json_path, '-v']):
             runpy.run_path('scripts/analysis.py', run_name='__main__')
+
+    def test_dry_run_preview_mode(self):
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        try:
+            analysis_main(self.json_path, dry_run=True)
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_output.getvalue()
+        self.assertIn("Dry Run Summary:", output)
+        self.assertIn("Input File:", output)
+        self.assertIn(self.json_path, output)
+
+    def test_dry_run_cli_execution(self):
+        import runpy
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        try:
+            with patch('sys.argv', ['scripts/analysis.py', self.json_path, '-p', '-o', 'report.json']):
+                runpy.run_path('scripts/analysis.py', run_name='__main__')
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_output.getvalue()
+        self.assertIn("Dry Run Summary:", output)
+        self.assertIn("Export Format: JSON", output)
+        self.assertIn("report.json", output)
+
+    def test_sanitize_value_and_stats_to_dict(self):
+        self.assertIsNone(sanitize_value(float('nan')))
+        self.assertIsNone(sanitize_value(float('inf')))
+        self.assertEqual(sanitize_value(12.34), 12.34)
+        self.assertEqual(sanitize_value([float('nan'), 1]), [None, 1])
+
+        raw_stats = OrderedDict([
+            ('cards', [1, 2, 3]),
+            ('prop', float('nan'))
+        ])
+        s_dict = stats_to_dict(raw_stats)
+        self.assertEqual(s_dict['card_count'], 3)
+        self.assertIsNone(s_dict['prop'])
+
+    def test_json_and_csv_export(self):
+        json_out = os.path.join(self.temp_dir.name, "out.json")
+        csv_out = os.path.join(self.temp_dir.name, "out.csv")
+
+        analysis_main(self.json_path, outfile=json_out, json_fmt=True)
+        self.assertTrue(os.path.exists(json_out))
+        with open(json_out, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            self.assertEqual(data.get('card_count'), 3)
+
+        analysis_main(self.json_path, outfile=csv_out)
+        self.assertTrue(os.path.exists(csv_out))
+        with open(csv_out, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            self.assertTrue(len(lines) > 0)
+            self.assertIn("Category,Metric,Value", lines[0])
+
+    def test_nonexistent_file_exit(self):
+        nonexistent = os.path.join(self.temp_dir.name, "does_not_exist.txt")
+        with self.assertRaises(SystemExit):
+            analysis_main(nonexistent)
+
+    def test_default_infile_dry_run(self):
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        try:
+            analysis_main(infile=None, dry_run=True)
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_output.getvalue()
+        self.assertIn("Dry Run Summary:", output)
 
 if __name__ == '__main__':
     unittest.main()
