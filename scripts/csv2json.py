@@ -9,4 +9,4 @@ from mtg_csv_json import run_csv2json
 main = run_csv2json
 
 if __name__ == '__main__':
-    main()
+    run_csv2json()
