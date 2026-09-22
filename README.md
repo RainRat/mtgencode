@@ -1041,18 +1041,24 @@ python3 scripts/mtg_forge.py --infile data/AllPrintings.json --grep "Bear" --rep
     *   `--validate`: Validate forged card(s) against design rules and color pie logic, printing warnings to stderr.
 
 ### `mtg_subset.py`
-Creates a filtered subset of an MTGJSON file while preserving its set-level structure and metadata. This tool is useful for creating specialized training datasets or lightweight card databases.
+Creates a filtered subset of MTG card data in JSON, CSV, or encoded text format. This tool is useful for creating specialized training datasets, lightweight card databases, or tabular exports.
 ```bash
 # Create a subset of only Legendary cards from a specific set
 python3 scripts/mtg_subset.py data/AllPrintings.json output.json --set MOM --grep "Legendary"
 
-# Create a tiny dataset of 100 random rare creatures
-python3 scripts/mtg_subset.py data/AllPrintings.json tiny.json --rarity rare --grep-type "Creature" --sample 100
+# Create a tiny dataset of 100 random rare creatures in CSV format
+python3 scripts/mtg_subset.py data/AllPrintings.json tiny.csv --rarity rare --grep-type "Creature" --sample 100
+
+# Export encoded text format for neural network training
+python3 scripts/mtg_subset.py data/AllPrintings.json training.txt --identity "WUB" --cmc "<=3" --encoded
 
 # Preview subset statistics without writing output files (dry-run mode)
 python3 scripts/mtg_subset.py data/AllPrintings.json --set MOM --dry-run
 ```
 *   **Options:**
+    *   `-j`, `--json`: Output in MTGJSON format (default).
+    *   `--csv`: Output in CSV format. Auto-detected when `--outfile` ends in `.csv`.
+    *   `--encoded`: Output in encoded text format. Auto-detected when `--outfile` ends in `.txt` or `.encoded`.
     *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of matching card statistics and sample preview without creating or modifying the target output file.
     *   `-n LIMIT`, `--limit LIMIT`: Only process the first N cards.
     *   `--shuffle`: Randomize the order of cards.

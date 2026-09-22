@@ -293,5 +293,76 @@ class TestMTGSubset(unittest.TestCase):
         self.assertEqual(cm.exception.code, 1)
         self.assertIn("usage: mtg_subset.py", mock_stderr.getvalue())
 
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_csv_export_flag_and_autodetect(self, mock_file, mock_open_file):
+        self.mock_card1._get_csv_data.return_value = ['Card 1', '{1}{W}', 'Creature', 'Human', 'Text 1', '2/2', 'rare']
+        self.mock_card2._get_csv_data.return_value = ['Card 2', '{2}{U}', 'Instant', '', 'Text 2', '', 'common']
+        mock_open_file.return_value = self.mock_cards
+
+        # 1. Test explicit --csv flag
+        test_args = ['mtg_subset.py', 'input.json', 'output.dat', '--csv', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        handle = mock_file()
+        written_data = "".join(call.args[0] for call in handle.write.call_args_list)
+        self.assertIn('name,mana_cost,type,subtypes,text,pt,rarity', written_data)
+        self.assertIn('Card 1,{1}{W},Creature,Human,Text 1,2/2,rare', written_data)
+
+        mock_file.reset_mock()
+
+        # 2. Test auto-detection via .csv extension
+        test_args = ['mtg_subset.py', 'input.json', 'output.csv', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        handle = mock_file()
+        written_data = "".join(call.args[0] for call in handle.write.call_args_list)
+        self.assertIn('name,mana_cost,type,subtypes,text,pt,rarity', written_data)
+        self.assertIn('Card 2,{2}{U},Instant,,Text 2,,common', written_data)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_encoded_export_flag_and_autodetect(self, mock_file, mock_open_file):
+        self.mock_card1.encode.return_value = 'Card 1 | 1W | Creature'
+        self.mock_card2.encode.return_value = 'Card 2 | 2U | Instant'
+        mock_open_file.return_value = self.mock_cards
+
+        # 1. Test explicit --encoded flag
+        test_args = ['mtg_subset.py', 'input.json', 'output.dat', '--encoded', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        handle = mock_file()
+        written_data = "".join(call.args[0] for call in handle.write.call_args_list)
+        self.assertIn('Card 1 | 1W | Creature\n\nCard 2 | 2U | Instant\n\n', written_data)
+
+        mock_file.reset_mock()
+
+        # 2. Test auto-detection via .txt extension
+        test_args = ['mtg_subset.py', 'input.json', 'output.txt', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        handle = mock_file()
+        written_data = "".join(call.args[0] for call in handle.write.call_args_list)
+        self.assertIn('Card 1 | 1W | Creature\n\nCard 2 | 2U | Instant\n\n', written_data)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_explicit_json_flag(self, mock_file, mock_open_file):
+        mock_open_file.return_value = self.mock_cards
+
+        test_args = ['mtg_subset.py', 'input.json', 'output.dat', '-j', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        handle = mock_file()
+        written_data = "".join(call.args[0] for call in handle.write.call_args_list)
+        parsed_data = json.loads(written_data)
+        self.assertIn('data', parsed_data)
+        self.assertIn('MOM', parsed_data['data'])
+
 if __name__ == '__main__':
     unittest.main()
