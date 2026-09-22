@@ -64,5 +64,51 @@ class TestMtgQueryCompareEnhanced(unittest.TestCase):
         self.assertEqual(data['card1']['name'], 'Beast Summoner')
         self.assertEqual(data['card2']['name'], 'Black Lotus')
 
+    def test_compare_outfile_plain_text(self):
+        """Test saving plain text table output to a file via -o / --outfile."""
+        outfile = 'test_compare_out.txt'
+        try:
+            output, _ = self.run_compare(['Beast Summoner', 'Black Lotus', self.testdata_path, '-o', outfile])
+            self.assertTrue(os.path.exists(outfile))
+            with open(outfile, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn('CARD COMPARISON', content)
+            self.assertIn('Beast Summoner', content)
+            self.assertIn('Black Lotus', content)
+        finally:
+            if os.path.exists(outfile):
+                os.remove(outfile)
+
+    def test_compare_outfile_json_autodetect(self):
+        """Test auto-detecting JSON export from .json output filename extension."""
+        outfile = 'test_compare_out.json'
+        try:
+            output, _ = self.run_compare(['Beast Summoner', 'Black Lotus', self.testdata_path, '-o', outfile])
+            self.assertTrue(os.path.exists(outfile))
+            with open(outfile, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            self.assertIn('card1', data)
+            self.assertIn('card2', data)
+            self.assertEqual(data['card1']['name'], 'Beast Summoner')
+            self.assertEqual(data['card2']['name'], 'Black Lotus')
+        finally:
+            if os.path.exists(outfile):
+                os.remove(outfile)
+
+    def test_compare_outfile_csv_autodetect(self):
+        """Test CSV format output via --csv and auto-detection from .csv filename extension."""
+        outfile = 'test_compare_out.csv'
+        try:
+            output, _ = self.run_compare(['Beast Summoner', 'Black Lotus', self.testdata_path, '-o', outfile])
+            self.assertTrue(os.path.exists(outfile))
+            with open(outfile, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn('Field,Beast Summoner,Black Lotus', content)
+            self.assertIn('Cost,{2}{G},{0}', content)
+            self.assertIn('CMC,3,0', content)
+        finally:
+            if os.path.exists(outfile):
+                os.remove(outfile)
+
 if __name__ == '__main__':
     unittest.main()
