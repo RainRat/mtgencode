@@ -112,7 +112,11 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
         make
         ```
     *   **Copy the binary:**
-        Move the `word2vec` file into your `mtgencode` root folder so the scripts can find it.
+        Move the `word2vec` file into your `mtgencode` root folder so the scripts can find it:
+        ```bash
+        cp word2vec ..
+        cd ..
+        ```
 
 2.  **Generate Reference Data and Vectors:**
     The creativity analyzer compares your custom cards against a reference dataset of real cards. This requires two files in your `data/` folder:
