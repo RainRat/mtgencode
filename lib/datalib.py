@@ -339,44 +339,6 @@ def _print_color_pie(pie_groups, pie_mechanics, all_mechanics, use_color, vsize=
 
     printrows(padrows(rows, aligns=['l', 'r', 'r', 'r', 'r', 'r', 'r', 'r']), indent=4)
 
-def _print_lexical_analysis(word_counts, total_words, unique_words, ttr, avg_words, use_color, vsize=20):
-    if not word_counts:
-        return
-    print()
-    print('  ' + color_line('Vocabulary & Lexicon (Word Distribution):', use_color))
-
-    metrics = [
-        ('Total Words', str(total_words)),
-        ('Unique Words', str(unique_words)),
-        ('Lexical Diversity (TTR)', f"{ttr:.3f}"),
-        ('Avg Words per Card', f"{avg_words:.2f}")
-    ]
-
-    for label, val in metrics:
-        if use_color:
-            label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
-            val = utils.colorize(val, utils.Ansi.BOLD + utils.Ansi.GREEN)
-        print(f"    {label}: {val}")
-    print()
-
-    header = _colorize_header(['Word', 'Count', 'Percent', 'Distribution'], use_color)
-    rows = [header]
-
-    top_words = word_counts.most_common(vsize)
-    for word, count in top_words:
-        percent = (count / total_words * 100) if total_words > 0 else 0
-        bar = get_bar_chart(percent, use_color, color=utils.Ansi.CYAN)
-
-        rows.append([
-            word,
-            color_count(count, use_color),
-            f"{percent:5.1f}%",
-            bar
-        ])
-
-    add_separator_row(rows)
-    printrows(padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=4)
-
 class Datamine:
     # build the global indices
     def __init__(self, cards_input, search_stats=None):
@@ -695,7 +657,41 @@ class Datamine:
         _print_color_pie(self.pie_groups, self.pie_mechanics, self.by_mechanic, use_color, vsize=vsize)
 
         # Lexical analysis
-        _print_lexical_analysis(self.global_word_counts, self.total_words, self.unique_words, self.ttr, self.avg_words_per_card, use_color, vsize=vsize*2)
+        if self.global_word_counts:
+            print()
+            print('  ' + color_line('Vocabulary & Lexicon (Word Distribution):', use_color))
+
+            metrics = [
+                ('Total Words', str(self.total_words)),
+                ('Unique Words', str(self.unique_words)),
+                ('Lexical Diversity (TTR)', f"{self.ttr:.3f}"),
+                ('Avg Words per Card', f"{self.avg_words_per_card:.2f}")
+            ]
+
+            for label, val in metrics:
+                if use_color:
+                    label = utils.colorize(label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                    val = utils.colorize(val, utils.Ansi.BOLD + utils.Ansi.GREEN)
+                print(f"    {label}: {val}")
+            print()
+
+            header = _colorize_header(['Word', 'Count', 'Percent', 'Distribution'], use_color)
+            rows = [header]
+
+            top_words = self.global_word_counts.most_common(vsize * 2)
+            for word, count in top_words:
+                percent = (count / self.total_words * 100) if self.total_words > 0 else 0
+                bar = get_bar_chart(percent, use_color, color=utils.Ansi.CYAN)
+
+                rows.append([
+                    word,
+                    color_count(count, use_color),
+                    f"{percent:5.1f}%",
+                    bar
+                ])
+
+            add_separator_row(rows)
+            printrows(padrows(rows, aligns=['l', 'r', 'r', 'l']), indent=4)
         print()
 
     # describe outliers in the indices
