@@ -2,6 +2,7 @@
 import sys
 import os
 import json
+import csv
 import argparse
 from collections import defaultdict
 
@@ -15,17 +16,17 @@ import jdecode
 def main():
     parser = argparse.ArgumentParser(
         prog='mtg_subset.py',
-        description="Create a filtered subset of an MTGJSON file while preserving its structure.",
+        description="Create a filtered subset of MTG card data in JSON, CSV, or encoded text format.",
         epilog='''
 Example Usage:
   # Create a subset of only Legendary cards from a specific set
   python3 scripts/mtg_subset.py data/AllPrintings.json output.json --set MOM --grep "Legendary"
 
-  # Create a tiny dataset of just 100 random rare creatures
-  python3 scripts/mtg_subset.py data/AllPrintings.json tiny.json --rarity rare --grep-type "Creature" --sample 100
+  # Create a tiny dataset of just 100 random rare creatures in CSV format
+  python3 scripts/mtg_subset.py data/AllPrintings.json tiny.csv --rarity rare --grep-type "Creature" --sample 100
 
-  # Filter a set by color identity and CMC
-  python3 scripts/mtg_subset.py data/AllPrintings.json commander_subset.json --identity "WUB" --cmc "<=3"
+  # Export encoded text format for neural network training
+  python3 scripts/mtg_subset.py data/AllPrintings.json training.txt --identity "WUB" --cmc "<=3" --encoded
 ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -35,7 +36,13 @@ Example Usage:
     io_group.add_argument('infile', nargs='?', default=None,
                         help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to data/AllPrintings.json if omitted.')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save the filtered MTGJSON subset (optional if --dry-run is specified).')
+                        help='Path to save the filtered card subset (optional if --dry-run is specified). Auto-detects format from extension (.csv, .txt/.encoded, .json).')
+    io_group.add_argument('-j', '--json', action='store_true',
+                        help='Output in MTGJSON format (Default).')
+    io_group.add_argument('--csv', action='store_true',
+                        help='Output in CSV format.')
+    io_group.add_argument('--encoded', action='store_true',
+                        help='Output in encoded text format.')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
@@ -211,10 +218,28 @@ Example Usage:
             "cards": [c.to_dict() for c in set_cards]
         }
 
+    # Auto-detect format from outfile extension if no explicit format flag is specified
+    if args.outfile and not (args.json or args.csv or args.encoded):
+        if args.outfile.endswith('.csv'):
+            args.csv = True
+        elif args.outfile.endswith('.txt') or args.outfile.endswith('.encoded'):
+            args.encoded = True
+
     # Save to file
     try:
         with open(args.outfile, 'w', encoding='utf-8') as f:
-            json.dump(subset_data, f, indent=2)
+            if args.csv:
+                fieldnames = ['name', 'mana_cost', 'type', 'subtypes', 'text', 'pt', 'rarity']
+                writer = csv.writer(f, lineterminator='\n')
+                writer.writerow(fieldnames)
+                for c in cards:
+                    if hasattr(c, '_get_csv_data'):
+                        writer.writerow(c._get_csv_data())
+            elif args.encoded:
+                for c in cards:
+                    f.write(c.encode() + utils.cardsep)
+            else:
+                json.dump(subset_data, f, indent=2)
 
         if not args.quiet:
             utils.print_operation_summary("Subsetting", len(cards), 0, quiet=args.quiet)
