@@ -38,6 +38,60 @@ class TestMtgLlmValidateGaps(unittest.TestCase):
         self.assertEqual(results[0]['judgment'], 'UNKNOWN')
         self.assertIn("API Error: API Down", results[0]['reason'])
 
+    @patch('urllib.request.urlopen')
+    def test_validate_cards_llm_api_verbose_error(self, mock_urlopen):
+        mock_card = MagicMock(spec=cardlib.Card)
+        mock_card.name = "Error Card Verbose"
+        mock_card.format.return_value = "Rules"
+
+        mock_urlopen.side_effect = Exception("Verbose API Failure")
+
+        cards = [mock_card]
+        stderr = io.StringIO()
+        with patch('sys.stderr', stderr):
+            results = mtg_llm_validate.validate_cards_llm(
+                cards, "model", "cpu", provider='api', api_url="http://test.api", verbose=True
+            )
+
+        self.assertEqual(len(results), 1)
+        self.assertIn("Error calling API for card 'Error Card Verbose': Verbose API Failure", stderr.getvalue())
+
+    def test_validate_cards_llm_api_missing_url(self):
+        mock_card = MagicMock(spec=cardlib.Card)
+        with patch('sys.stderr', io.StringIO()):
+            with self.assertRaises(SystemExit) as cm:
+                mtg_llm_validate.validate_cards_llm([mock_card], "model", "cpu", provider='api', api_url=None)
+            self.assertEqual(cm.exception.code, 1)
+
+    @patch('mtg_llm_validate.pipeline')
+    def test_validate_cards_llm_pipeline_init_exception(self, mock_pipeline):
+        mock_pipeline.side_effect = Exception("CUDA Out of Memory")
+        mock_card = MagicMock(spec=cardlib.Card)
+
+        stderr = io.StringIO()
+        with patch('sys.stderr', stderr):
+            with self.assertRaises(SystemExit) as cm:
+                mtg_llm_validate.validate_cards_llm([mock_card], "model", "cuda", provider='transformers', verbose=True)
+            self.assertEqual(cm.exception.code, 1)
+        self.assertIn("Error initializing model: CUDA Out of Memory", stderr.getvalue())
+
+    @patch('mtg_llm_validate.pipeline')
+    def test_validate_cards_llm_transformers_response_formatting(self, mock_pipeline):
+        mock_card = MagicMock(spec=cardlib.Card)
+        mock_card.name = "Format Card"
+        mock_card.format.return_value = "Format rules"
+
+        mock_pipe = MagicMock()
+        mock_pipe.tokenizer.eos_token_id = 2
+        # Single dict output rather than list of dicts to test single output normalization
+        mock_pipe.return_value = [{'generated_text': "Plain JUDGMENT: VALID\nREASON: Output without assistant tag"}]
+        mock_pipeline.return_value = mock_pipe
+
+        results = mtg_llm_validate.validate_cards_llm([mock_card], "model", "cpu", provider='transformers')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['judgment'], 'VALID')
+        self.assertEqual(results[0]['reason'], 'Output without assistant tag')
+
     @patch('mtg_llm_validate.validate_cards_llm')
     @patch('jdecode.mtg_open_file')
     def test_main_csv_output(self, mock_open_file, mock_validate):
@@ -75,6 +129,16 @@ class TestMtgLlmValidateGaps(unittest.TestCase):
 
         # Verify that validate_cards_llm was called with only 2 cards
         self.assertEqual(len(mock_validate.call_args[0][0]), 2)
+
+    @patch('jdecode.mtg_open_file')
+    def test_main_no_cards_verbose(self, mock_open_file):
+        mock_open_file.return_value = []
+        stderr = io.StringIO()
+        with patch('sys.stderr', stderr):
+            with patch('sys.argv', ['mtg_llm_validate.py', 'dummy.txt', '-v']):
+                mtg_llm_validate.main()
+
+        self.assertIn("No cards found matching criteria.", stderr.getvalue())
 
     @patch('jdecode.mtg_open_file')
     @patch('os.path.exists')
@@ -143,6 +207,36 @@ class TestMtgLlmValidateGaps(unittest.TestCase):
         self.assertIn("Output Format: Table", output)
         self.assertIn("Sample Preview (up to 10): API DryRun Card", output)
         mock_validate.assert_not_called()
+
+    @patch('mtg_llm_validate.validate_cards_llm')
+    @patch('jdecode.mtg_open_file')
+    def test_main_outfile_and_color_formatting(self, mock_open_file, mock_validate):
+        card1 = MagicMock(spec=cardlib.Card)
+        card1.name = "Valid Card"
+        card2 = MagicMock(spec=cardlib.Card)
+        card2.name = "Invalid Card"
+        card3 = MagicMock(spec=cardlib.Card)
+        card3.name = "Unknown Card"
+
+        mock_open_file.return_value = [card1, card2, card3]
+
+        mock_validate.return_value = [
+            {'card': card1, 'judgment': 'VALID', 'reason': 'Ok'},
+            {'card': card2, 'judgment': 'INVALID', 'reason': 'Bad'},
+            {'card': card3, 'judgment': 'UNKNOWN', 'reason': 'Error'},
+        ]
+
+        m_open = mock_open()
+        with patch('builtins.open', m_open), patch('sys.stderr', io.StringIO()):
+            with patch('sys.argv', ['mtg_llm_validate.py', 'dummy.txt', 'out.txt', '--color']):
+                mtg_llm_validate.main()
+
+        m_open.assert_called_with('out.txt', 'w', encoding='utf8')
+        handle = m_open()
+        written = "".join(call.args[0] for call in handle.write.call_args_list)
+        self.assertIn("Valid Card", written)
+        self.assertIn("Invalid Card", written)
+        self.assertIn("Unknown Card", written)
 
 if __name__ == '__main__':
     unittest.main()
