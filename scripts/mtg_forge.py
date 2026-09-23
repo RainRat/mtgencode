@@ -373,6 +373,126 @@ def apply_scale(card_dict, factor, multiply=True):
         card_dict['bside'] = apply_scale(card_dict['bside'], factor, multiply)
     return card_dict
 
+def apply_add_type(card_dict, new_type_str):
+    if not new_type_str:
+        return card_dict
+
+    current_type = card_dict.get('type', '')
+    if not current_type:
+        front_parts = []
+        if card_dict.get('supertypes'):
+            front_parts.extend(card_dict['supertypes'])
+        if card_dict.get('types'):
+            front_parts.extend(card_dict['types'])
+        current_type = " ".join(front_parts)
+        if card_dict.get('subtypes'):
+            current_type += " \u2014 " + " ".join(card_dict['subtypes'])
+
+    # Determine standard supertypes, main types, and subtypes
+    supertypes_list, types_list, subtypes_list = utils.parse_type_line(current_type)
+
+    new_super, new_types, new_sub = utils.parse_type_line(new_type_str)
+
+    # Append new supertypes, types, subtypes preserving order
+    for s in new_super:
+        if s not in supertypes_list:
+            supertypes_list.append(s)
+    for t in new_types:
+        if t not in types_list:
+            types_list.append(t)
+    for sub in new_sub:
+        if sub not in subtypes_list:
+            subtypes_list.append(sub)
+
+    # Rebuild type line
+    front = " ".join(supertypes_list + types_list)
+    if subtypes_list:
+        rebuilt = f"{front} \u2014 {' '.join(subtypes_list)}"
+    else:
+        rebuilt = front
+
+    card_dict['type'] = rebuilt
+    if supertypes_list: card_dict['supertypes'] = supertypes_list
+    else: card_dict.pop('supertypes', None)
+    if types_list: card_dict['types'] = types_list
+    else: card_dict.pop('types', None)
+    if subtypes_list: card_dict['subtypes'] = subtypes_list
+    else: card_dict.pop('subtypes', None)
+
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_add_type(card_dict['bside'], new_type_str)
+
+    return card_dict
+
+def apply_add_keyword(card_dict, keyword_str):
+    if not keyword_str:
+        return card_dict
+
+    # Support comma-separated or list of keywords
+    keywords = [k.strip() for k in keyword_str.split(',') if k.strip()]
+    if not keywords:
+        return card_dict
+
+    existing_text = card_dict.get('text', '').strip()
+    formatted_kw = ", ".join(k.capitalize() if not k.istitle() else k for k in keywords)
+
+    if existing_text:
+        card_dict['text'] = f"{formatted_kw}\n{existing_text}"
+    else:
+        card_dict['text'] = formatted_kw
+
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_add_keyword(card_dict['bside'], keyword_str)
+
+    return card_dict
+
+def apply_preset(card_dict, preset):
+    if not preset:
+        return card_dict
+
+    preset = preset.lower()
+
+    if preset == 'pauperize':
+        # Sets rarity to common
+        card_dict['rarity'] = 'common'
+    elif preset == 'commanderify':
+        # Makes card Legendary
+        card_dict = apply_add_type(card_dict, 'Legendary')
+    elif preset == 'french-vanilla':
+        # Strip all rules text except simple keyword abilities line if first line is keywords
+        existing_text = card_dict.get('text', '').strip()
+        if existing_text:
+            lines = existing_text.split('\n')
+            # Check if first line consists only of common keywords
+            first_line = lines[0].strip()
+            card_dict['text'] = first_line
+    elif preset == 'invert-pt':
+        # Swap power and toughness
+        p = card_dict.get('power')
+        t = card_dict.get('toughness')
+        if p is not None or t is not None:
+            card_dict['power'] = t if t is not None else p
+            card_dict['toughness'] = p if p is not None else t
+        if 'pt' in card_dict and '/' in str(card_dict['pt']):
+            parts = str(card_dict['pt']).split('/', 1)
+            card_dict['pt'] = f"{parts[1].strip()}/{parts[0].strip()}"
+    elif preset == 'token-creator':
+        # Append token creation text based on creature stats or generic 1/1
+        name = card_dict.get('name', 'this spell')
+        p = card_dict.get('power', '1')
+        t = card_dict.get('toughness', '1')
+        token_text = f"Create a {p}/{t} colorless Construct artifact creature token."
+        existing = card_dict.get('text', '').strip()
+        if existing:
+            card_dict['text'] = f"{existing}\n{token_text}"
+        else:
+            card_dict['text'] = token_text
+
+    if 'bside' in card_dict:
+        card_dict['bside'] = apply_preset(card_dict['bside'], preset)
+
+    return card_dict
+
 def print_detailed_card(c, use_color=False, output_f=sys.stdout):
     term_width = utils.get_terminal_width()
 
@@ -553,7 +673,7 @@ def print_detailed_card(c, use_color=False, output_f=sys.stdout):
     print(file=output_f)
 
 def apply_modifiers(card_dict, args):
-    # Apply Overrides
+    # Apply Overrides first (base values)
     if args.name: card_dict['name'] = args.name
     if args.cost: card_dict['manaCost'] = args.cost
     if args.type:
@@ -588,6 +708,19 @@ def apply_modifiers(card_dict, args):
 
     if args.rarity: card_dict['rarity'] = args.rarity
     if args.set: card_dict['setCode'] = args.set
+
+    # Apply Preset transformations
+    if getattr(args, 'preset', None):
+        card_dict = apply_preset(card_dict, args.preset)
+
+    # Apply Incremental Additions
+    if getattr(args, 'add_type', None):
+        for t_str in args.add_type:
+            card_dict = apply_add_type(card_dict, t_str)
+
+    if getattr(args, 'add_keyword', None):
+        for kw_str in args.add_keyword:
+            card_dict = apply_add_keyword(card_dict, kw_str)
 
     # Apply Transformational Modifiers
     if args.color_shift:
@@ -645,6 +778,9 @@ Usage Examples:
 
   # Reforge an existing card (requires data/AllPrintings.json)
   python3 scripts/mtg_forge.py --base "Grizzly Bears" --pt "3/3" --name "Super Bears"
+
+  # Apply a preset (for example commanderify or pauperize)
+  python3 scripts/mtg_forge.py --base "Grizzly Bears" --preset commanderify --add-keyword "Flying, Trample"
 
   # Create a card and save it to a JSON file
   python3 scripts/mtg_forge.py --name "Test" --type "Instant" --cost "{U}" --text "Counter target spell." --outfile card.json
@@ -705,7 +841,13 @@ Usage Examples:
 
     # Group: Transformational Modifiers
     trans_group = parser.add_argument_group('Transformational Modifiers')
-    trans_group.add_argument('--color-shift', help='Shift card colors to target color or colors (e.g. "U,B" or "blue").')
+    trans_group.add_argument('--preset', choices=['pauperize', 'commanderify', 'french-vanilla', 'invert-pt', 'token-creator'],
+                        help='Apply a preset transformation rule (pauperize: set common rarity, commanderify: make legendary, french-vanilla: keep keywords only, invert-pt: swap power/toughness, token-creator: append token text).')
+    trans_group.add_argument('--add-type', action='append',
+                        help='Add a supertype, type, or subtype to the type line (for example "Legendary" or "Dragon"). Supports multiple uses.')
+    trans_group.add_argument('--add-keyword', action='append',
+                        help='Add keyword ability or abilities to rules text (for example "Flying, Haste"). Supports multiple uses.')
+    trans_group.add_argument('--color-shift', help='Shift card colors to target color or colors (for example "U,B" or "blue").')
     trans_group.add_argument('--buff', type=int, nargs='?', const=1, help='Increment power, toughness, loyalty, or defense by an amount.')
     trans_group.add_argument('--nerf', type=int, nargs='?', const=1, help='Decrement power, toughness, loyalty, or defense by an amount.')
     trans_group.add_argument('--scale-up', type=float, nargs='?', const=2.0, help='Scale up stats and generic mana costs proportionally by a factor.')
