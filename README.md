@@ -1433,12 +1433,16 @@ python3 scripts/sanity.py data/output.txt -vocab
 
 # Extract unique characters and save the vocabulary to a JSON file
 python3 scripts/sanity.py data/output.txt -chars --vocab_name vocab.json
+
+# Preview active sanity check parameters without executing checks or saving vocabulary JSON
+python3 scripts/sanity.py data/output.txt -chars --vocab_name vocab.json -p
 ```
 *   **Options:**
     *   `-lines`: Inspect and print line separation categories for card rules text.
     *   `-vocab`: Count word frequencies in card text and display rare words.
     *   `-chars`: Extract and display all unique characters used in card encodings.
     *   `--vocab_name FILE`: Save the character vocabulary to a JSON file.
+    *   `-p`, `--preview`, `--dry-run`: Print a summary of active sanity checks, target files, and card dataset statistics without running calculations or writing files.
 
 ### `autosample.py`
 Scans a directory tree for model checkpoints (`.t7` files), identifies the lowest validation-loss checkpoint in each subdirectory, and automatically samples generated text output using Torch's `sample.lua`.
