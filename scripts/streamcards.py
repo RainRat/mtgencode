@@ -107,15 +107,39 @@ def main(args):
 if __name__ == '__main__':
     import argparse
     
-    parser = argparse.ArgumentParser()
-    parser.add_argument('fds', type=int, nargs='+',
-                        help='file descriptors to write streams to')
-    parser.add_argument('-f', '--fname', default=os.path.join(libdir, '../data/output.txt'),
-                        help='file to read cards from')
-    parser.add_argument('-n', '--block_size', type=int, default=10000,
-                        help='number of characters each stream should read/write at a time')
-    parser.add_argument('-s', '--seed', type=int, default=0,
-                        help='random seed')
+    parser = argparse.ArgumentParser(
+        prog='streamcards.py',
+        description='Stream encoded card data to one or more file descriptors for concurrent IPC or sub-process pipelines.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  # Stream cards to file descriptor 3
+  python3 scripts/streamcards.py 3 -f data/output.txt
+
+  # Stream cards to multiple file descriptors with a fixed random seed
+  python3 scripts/streamcards.py 3 4 5 -s 12345
+"""
+    )
+
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('fds', type=int, nargs='*',
+                        help='File descriptors (integers) to write streams to.')
+    io_group.add_argument('-f', '--fname', default=os.path.join(libdir, '../data/output.txt'),
+                        help='Input card dataset file to stream from (default: data/output.txt).')
+
+    settings_group = parser.add_argument_group('Stream Settings')
+    settings_group.add_argument('-n', '--block_size', type=int, default=10000,
+                        help='Number of characters each stream buffer reads or writes at a time (default: 10000).')
+    settings_group.add_argument('-s', '--seed', type=int, default=0,
+                        help='Random seed for shuffling cards (default: 0).')
+
+    if len(sys.argv) == 1 and sys.stdin.isatty():
+        parser.print_help()
+        sys.exit(0)
+
     args = parser.parse_args()
+
+    if not args.fds:
+        parser.error('the following arguments are required: fds')
 
     main(args)
