@@ -181,6 +181,43 @@ def generate_text(model, char_to_idx, idx_to_char, vocab_size, device, args, len
 
 def train(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if getattr(args, 'dry_run', False):
+        exists = os.path.exists(args.infile)
+        file_size = os.path.getsize(args.infile) if exists else 0
+        vocab_size = 0
+        card_count = 0
+        if exists:
+            try:
+                with open(args.infile, 'r', encoding='utf-8') as f:
+                    raw_data = f.read()
+                vocab_size = len(set(raw_data))
+                card_count = len([c for c in raw_data.split('\n\n') if c.strip()])
+            except Exception:
+                pass
+
+        print(f"Dry Run Summary: Neural network training configuration ({args.mode} mode).")
+        print(f"Device: {device}")
+        print(f"Training Dataset: {args.infile} ({'Exists' if exists else 'Not Found'}, {file_size} bytes, {card_count} card(s), vocab size {vocab_size})")
+        print(f"Checkpoint Output: {args.checkpoint}")
+        print("Training Parameters:")
+        print(f"  Epochs: {args.epochs}")
+        print(f"  Batch Size: {args.batch_size}")
+        print(f"  Sequence Length: {args.seq_len}")
+        print(f"  Hidden Size: {args.hidden_size}")
+        print(f"  Layers: {args.n_layers}")
+        print(f"  Learning Rate: {args.lr}")
+        print(f"  Dropout: {args.dropout}")
+        if args.max_hours > 0:
+            print(f"  Max Hours: {args.max_hours}")
+        if args.randomize_fields:
+            print("  Randomize Fields: Enabled")
+        if args.randomize_mana:
+            print("  Randomize Mana: Enabled")
+        if args.resume:
+            print("  Resume Training: Enabled")
+        return
+
     print(f"Using device: {device}")
 
     with open(args.infile, 'r', encoding='utf-8') as f:
@@ -298,6 +335,37 @@ def train(args):
 
 def sample(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if getattr(args, 'dry_run', False):
+        exists = os.path.exists(args.checkpoint)
+        cp_size = os.path.getsize(args.checkpoint) if exists else 0
+        print(f"Dry Run Summary: Neural network card generation configuration ({args.mode} mode).")
+        print(f"Device: {device}")
+        print(f"Checkpoint Model: {args.checkpoint} ({'Exists' if exists else 'Not Found'}, {cp_size} bytes)")
+        print("Sampling Parameters:")
+        print(f"  Generation Length: {args.length} characters")
+        print(f"  Temperature: {args.temp}")
+        print(f"  Start Text Prompt: '{args.start_text}'")
+
+        whisper_map = {
+            'Name': getattr(args, 'name', None),
+            'Supertypes': getattr(args, 'supertypes', None),
+            'Types': getattr(args, 'types', None),
+            'Loyalty': getattr(args, 'loyalty', None),
+            'Subtypes': getattr(args, 'subtypes', None),
+            'Rarity': getattr(args, 'rarity', None),
+            'Power/Toughness': getattr(args, 'powertoughness', None),
+            'Mana Cost': getattr(args, 'manacost', None),
+            'Bodytext Prepend': getattr(args, 'bodytext_prepend', None),
+            'Bodytext Append': getattr(args, 'bodytext_append', None)
+        }
+        forced = {k: v for k, v in whisper_map.items() if v is not None}
+        if forced:
+            print("Forced Card Attributes:")
+            for k, v in forced.items():
+                print(f"  {k}: {v}")
+        return
+
     checkpoint = torch.load(args.checkpoint, map_location=device, weights_only=False)
     
     chars = checkpoint['vocab']
@@ -312,7 +380,7 @@ def sample(args):
     generated = generate_text(model, char_to_idx, idx_to_char, vocab_size, device, args)
     print(generated)
 
-if __name__ == "__main__":
+def get_parser():
     parser = argparse.ArgumentParser(
         description="Train a neural network to design Magic: The Gathering cards.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -321,10 +389,13 @@ Usage Examples:
   # 1. Prepare your training data (Encode JSON to text)
   python3 encode.py data/AllPrintings.json data/training_data.txt
 
-  # 2. Train the model (Requires PyTorch)
+  # 2. Preview training parameters without training (dry-run mode)
+  python3 train.py --mode train --infile data/training_data.txt --dry-run
+
+  # 3. Train the model (Requires PyTorch)
   python3 train.py --mode train --infile data/training_data.txt --epochs 20 --randomize_fields
 
-  # 3. Generate new cards from a checkpoint
+  # 4. Generate new cards from a checkpoint
   python3 train.py --mode sample --checkpoint checkpoint.pt --length 2000 > generated.txt
 
   # 4. Force specific attributes during generation (Uses legacy field order)
@@ -344,6 +415,8 @@ Usage Examples:
                         help="Path to the encoded card file for training. Default: data/output.txt")
     gen_group.add_argument("--checkpoint", type=str, default="checkpoint.pt",
                         help="File path to save or load the model. Default: checkpoint.pt")
+    gen_group.add_argument("-p", "--preview", "--dry-run", dest="dry_run", action="store_true",
+                        help="Print a dry run summary of training or sampling configuration without executing PyTorch model training, inference, or writing checkpoint files.")
 
     # Group: Training Parameters
     train_group = parser.add_argument_group('Training Parameters')
@@ -401,6 +474,10 @@ Usage Examples:
     prime_group.add_argument("--bodytext_prepend", type=str, help="Force the beginning of the rules text (Field 9).")
     prime_group.add_argument("--bodytext_append", type=str, help="Force text to appear at the end of the rules text (Field 10).")
 
+    return parser
+
+if __name__ == "__main__":
+    parser = get_parser()
     args = parser.parse_args()
     
     if args.mode == "train":

@@ -183,6 +183,9 @@ The tool detects the format automatically based on the file extension of your ou
 Train a character-level RNN neural network to generate new Magic: The Gathering cards from encoded card text, or sample new cards from a trained model checkpoint.
 
 ```bash
+# Preview training configuration without running model training (dry-run mode)
+python3 train.py --mode train --infile data/output.txt --dry-run
+
 # Train a model on encoded cards
 python3 train.py --mode train --infile data/output.txt --epochs 10 --randomize_fields
 
@@ -196,6 +199,7 @@ python3 train.py --mode sample --checkpoint checkpoint.pt --name "uthros" --supe
     *   `--mode {train,sample}`: Choose `train` to teach the model using your dataset, or `sample` to generate new card text (Default: `train`).
     *   `--infile FILE`: Path to the encoded card file for training (Default: `data/output.txt`).
     *   `--checkpoint FILE`: File path to save or load model checkpoints (Default: `checkpoint.pt`).
+    *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of model training or generation configuration without running PyTorch model training, inference, or writing checkpoint files.
     *   `--epochs N`: How many times the model processes the entire dataset (Default: 10).
     *   `--max_hours N`: Maximum number of hours to train before saving and stopping (Default: 0 / no limit).
     *   `--batch_size N`: Number of card fragments processed at once (Default: 64).
