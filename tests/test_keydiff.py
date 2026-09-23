@@ -236,6 +236,29 @@ class TestKeyDiff(unittest.TestCase):
                 content = f.read()
             self.assertIn("Category,Key,Count1,Count2,Ratio", content)
 
+    def test_main_outfile_plain_text(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            file2 = os.path.join(tmpdir, "f2.txt")
+            outfile = os.path.join(tmpdir, "out.txt")
+
+            with open(file1, "w") as f:
+                f.write("apple: 10\nbanana: 20\n")
+            with open(file2, "w") as f:
+                f.write("apple: 15\ncherry: 5\n")
+
+            code, out = self.run_main([file1, file2, "-o", outfile])
+            self.assertEqual(code, 0)
+            self.assertTrue(os.path.exists(outfile))
+            with open(outfile, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn("shared: 1", content)
+            self.assertIn("apple: 15/10 (2.25)", content)
+            self.assertIn("1 only: 1", content)
+            self.assertIn("banana: 20", content)
+            self.assertIn("2 only: 1", content)
+            self.assertIn("cherry: 5", content)
+
     def test_main_dry_run(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             file1 = os.path.join(tmpdir, "f1.txt")
