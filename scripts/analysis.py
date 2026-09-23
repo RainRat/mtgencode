@@ -230,7 +230,7 @@ def main(infile = None, outfile = None, json_fmt = False, csv_fmt = False, dry_r
     baseline_file = str(os.path.join(datadir, 'output.txt'))
     try:
         baseline_cards = jdecode.mtg_open_file(baseline_file, verbose=verbose)
-    except Exception:
+    except (OSError, ValueError):
         baseline_cards = []
 
     lm = ngrams.build_ngram_model(baseline_cards, 3, separate_lines=True, verbose=verbose)

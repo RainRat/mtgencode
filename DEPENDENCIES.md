@@ -81,7 +81,7 @@ MSE requires specific fonts to render card text and symbols correctly. Without t
 ### Usage
 To generate an MSE set file:
 ```bash
-python3 decode.py encoded_output.txt my_set --mse
+python3 decode.py encoded_output.txt my_set.mse-set
 ```
 This creates a file named `my_set.mse-set`. Double-click it (or open it via Wine) to view your cards.
 

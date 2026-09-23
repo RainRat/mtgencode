@@ -238,5 +238,59 @@ class TestMtgLlmValidateGaps(unittest.TestCase):
         self.assertIn("Invalid Card", written)
         self.assertIn("Unknown Card", written)
 
+    @patch('urllib.request.Request')
+    @patch('urllib.request.urlopen')
+    def test_validate_cards_llm_api_with_key(self, mock_urlopen, mock_request_cls):
+        mock_card = MagicMock(spec=cardlib.Card)
+        mock_card.name = "Auth Card"
+        mock_card.format.return_value = "Rules"
+
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({
+            "choices": [{"message": {"content": "JUDGMENT: VALID\nREASON: OK"}}]
+        }).encode('utf-8')
+        mock_response.__enter__.return_value = mock_response
+        mock_urlopen.return_value = mock_response
+
+        mtg_llm_validate.validate_cards_llm(
+            [mock_card], "model", "cpu", provider='api',
+            api_url="http://test.api", api_key="secret-token"
+        )
+
+        mock_request_cls.assert_called_once()
+        headers = mock_request_cls.call_args[1]['headers']
+        self.assertEqual(headers["Authorization"], "Bearer secret-token")
+
+    @patch('mtg_llm_validate.pipeline')
+    def test_validate_cards_llm_device_selection(self, mock_pipeline):
+        mock_card = MagicMock(spec=cardlib.Card)
+        mock_card.format.return_value = "Rules"
+
+        mock_pipe = MagicMock()
+        mock_pipe.tokenizer.eos_token_id = 2
+        mock_pipe.return_value = [[{'generated_text': "<|assistant|>\nJUDGMENT: VALID\nREASON: OK"}]]
+        mock_pipeline.return_value = mock_pipe
+
+        mtg_llm_validate.validate_cards_llm([mock_card], "model", device="cpu", provider='transformers')
+        self.assertEqual(mock_pipeline.call_args[1]['device'], -1)
+
+        mtg_llm_validate.validate_cards_llm([mock_card], "model", device="mps", provider='transformers')
+        self.assertEqual(mock_pipeline.call_args[1]['device'], "mps")
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('os.path.exists', return_value=True)
+    @patch('mtg_llm_validate.validate_cards_llm', return_value=[])
+    def test_main_interactive_stdin_default_dataset(self, mock_validate, mock_exists, mock_isatty, mock_open_file):
+        mock_open_file.return_value = []
+        stderr = io.StringIO()
+
+        with patch('sys.stdout', io.StringIO()), patch('sys.stderr', stderr):
+            with patch('sys.argv', ['mtg_llm_validate.py']):
+                mtg_llm_validate.main()
+
+        self.assertIn("Notice: Using default dataset: data/AllPrintings.json", stderr.getvalue())
+        mock_open_file.assert_called_with('data/AllPrintings.json', verbose=False, grep=None, sets=None, rarities=None, produces=None)
+
 if __name__ == '__main__':
     unittest.main()
