@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import sys
 import os
+import json
+import csv
 from collections import OrderedDict
 
 # scipy is kinda necessary
@@ -11,13 +13,13 @@ import math
 
 def mean_nonan(l):
     filtered = [x for x in l if not math.isnan(x)]
-    return  np.mean(filtered)
+    return np.mean(filtered) if filtered else 0.0
 
 def gmean_nonzero(l):
     filtered = [x for x in l if x != 0 and not math.isnan(x)]
     if not filtered:
         return 0.0
-    return  scipy.stats.gmean(filtered)
+    return scipy.stats.gmean(filtered)
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
@@ -29,19 +31,64 @@ import jdecode
 import mtg_validate
 import ngrams
 
-def print_statistics(stats, ident = 0):
+def print_statistics(stats, ident = 0, file = None):
+    if file is None:
+        file = sys.stdout
     for k in stats:
         if isinstance(stats[k], OrderedDict):
-            print((' ' * ident + str(k) + ':'))
-            print_statistics(stats[k], ident=ident + 2)
+            print((' ' * ident + str(k) + ':'), file=file)
+            print_statistics(stats[k], ident=ident + 2, file=file)
         elif isinstance(stats[k], dict):
             print((' ' * ident + str(k) + ': <dict with ' +
-                   str(len(stats[k])) + ' entries>'))
+                   str(len(stats[k])) + ' entries>'), file=file)
         elif isinstance(stats[k], list):
             print((' ' * ident + str(k) + ': <list with ' +
-                   str(len(stats[k])) + ' entries>'))
+                   str(len(stats[k])) + ' entries>'), file=file)
         else:
-            print((' ' * ident + str(k) + ': ' + str(stats[k])))
+            print((' ' * ident + str(k) + ': ' + str(stats[k])), file=file)
+
+def sanitize_value(val):
+    if isinstance(val, (float, np.floating)):
+        if math.isnan(val) or math.isinf(val):
+            return None
+        return float(val)
+    if isinstance(val, (int, np.integer)):
+        return int(val)
+    if isinstance(val, (list, tuple)):
+        return [sanitize_value(v) for v in val]
+    if isinstance(val, (dict, OrderedDict)):
+        return {k: sanitize_value(v) for k, v in val.items()}
+    return val
+
+def stats_to_dict(stats):
+    res = {}
+    for k, v in stats.items():
+        if k == 'cards':
+            res['card_count'] = len(v) if isinstance(v, list) else 0
+        else:
+            res[k] = sanitize_value(v)
+    return res
+
+def export_csv_stats(stats, file):
+    writer = csv.writer(file)
+    writer.writerow(['Category', 'Metric', 'Value'])
+
+    if 'cards' in stats:
+        writer.writerow(['summary', 'card_count', len(stats['cards'])])
+
+    for cat_key in ['cp', 'props', 'dists', 'ngram']:
+        if cat_key not in stats or not stats[cat_key]:
+            continue
+        cat_data = stats[cat_key]
+        if isinstance(cat_data, (dict, OrderedDict)):
+            for metric, val in cat_data.items():
+                if isinstance(val, (dict, OrderedDict)):
+                    for sub_m, sub_v in val.items():
+                        writer.writerow([f"{cat_key}.{metric}", sub_m, sanitize_value(sub_v)])
+                elif isinstance(val, list):
+                    continue
+                else:
+                    writer.writerow([cat_key, metric, sanitize_value(val)])
 
 def get_statistics(fname, lm = None, sep = False, verbose=False):
     stats = OrderedDict()
@@ -147,17 +194,73 @@ def get_statistics(fname, lm = None, sep = False, verbose=False):
         stats['ngram'] = ngram
 
     return stats
-    
 
-def main(infile, verbose = False):
-    lm = ngrams.build_ngram_model(jdecode.mtg_open_file(str(os.path.join(datadir, 'output.txt'))),
-                            3, separate_lines=True, verbose=True)
-    stats = get_statistics(infile, lm=lm, sep=True, verbose=verbose)
-    print_statistics(stats)
+
+def main(infile = None, outfile = None, json_fmt = False, csv_fmt = False, dry_run = False, verbose = False):
+    if isinstance(outfile, bool) and verbose is False:
+        verbose = outfile
+        outfile = None
+
+    default_infile = os.path.join(datadir, 'output.txt')
+    if not infile:
+        if os.path.exists(default_infile):
+            infile = default_infile
+        else:
+            infile = os.path.join(datadir, 'AllPrintings.json')
+
+    if outfile:
+        if outfile.endswith('.json'):
+            json_fmt = True
+        elif outfile.endswith('.csv'):
+            csv_fmt = True
+
+    if dry_run:
+        file_exists = os.path.exists(infile)
+        dest_str = outfile if outfile else 'Console (sys.stdout)'
+        fmt_str = 'JSON' if json_fmt else ('CSV' if csv_fmt else 'Standard Text')
+        print(f"Dry Run Summary: Card analysis parameters configured.")
+        print(f"  Input File: {infile} (Exists: {file_exists})")
+        print(f"  Output Destination: {dest_str}")
+        print(f"  Export Format: {fmt_str}")
+        print(f"  Baseline Reference: {os.path.join(datadir, 'output.txt')}")
+        print(f"  Verbose Logging: {'Enabled' if verbose else 'Disabled'}")
+        print("Dry run complete. No calculations were run or files written.")
+        return
+
+    baseline_file = str(os.path.join(datadir, 'output.txt'))
+    try:
+        baseline_cards = jdecode.mtg_open_file(baseline_file, verbose=verbose)
+    except Exception:
+        baseline_cards = []
+
+    lm = ngrams.build_ngram_model(baseline_cards, 3, separate_lines=True, verbose=verbose)
+
+    try:
+        stats = get_statistics(infile, lm=lm, sep=True, verbose=verbose)
+    except FileNotFoundError:
+        print(f"Error: Input file not found: {infile}", file=sys.stderr)
+        sys.exit(1)
+
+    out_file = sys.stdout
+    if outfile:
+        out_file = open(outfile, 'w', encoding='utf-8')
+
+    try:
+        if json_fmt:
+            dict_stats = stats_to_dict(stats)
+            out_file.write(json.dumps(dict_stats, indent=2) + '\n')
+        elif csv_fmt:
+            export_csv_stats(stats, out_file)
+        else:
+            print_statistics(stats, file=out_file)
+    finally:
+        if outfile and out_file != sys.stdout:
+            out_file.close()
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(
+        prog="analysis.py",
         description="Analyze card validation properties, dataset distances, and n-gram perplexity for card data.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -165,14 +268,32 @@ Usage Examples:
   # Analyze card validation properties and n-gram perplexity for a card dataset
   python3 scripts/analysis.py data/output.txt
 
-  # Enable verbose progress output
-  python3 scripts/analysis.py data/output.txt -v
+  # Save statistical analysis report in structured JSON or CSV format
+  python3 scripts/analysis.py data/output.txt -o summary.json
+  python3 scripts/analysis.py data/output.txt --csv -o summary.csv
+
+  # Preview analysis parameters without building language models or running calculations
+  python3 scripts/analysis.py data/output.txt --dry-run
 """
     )
-    parser.add_argument('infile',
-                        help='Encoded card file or JSON card dataset to analyze.')
-    parser.add_argument('-v', '--verbose', action='store_true',
+
+    io_group = parser.add_argument_group('Input / Output Options')
+    io_group.add_argument('infile', nargs='?', default=None,
+                        help='Encoded card file or JSON card dataset to analyze (defaults to data/output.txt).')
+    io_group.add_argument('-o', '--outfile', default=None,
+                        help='Path to save the analysis results (auto-detects .json or .csv from file extension).')
+
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run summary of analysis settings without building language models or writing output files.')
+    proc_group.add_argument('-v', '--verbose', action='store_true',
                         help='Enable detailed status messages during processing.')
 
+    fmt_group = parser.add_argument_group('Output Format Options')
+    fmt_group.add_argument('-j', '--json', action='store_true',
+                        help='Output statistical analysis report in structured JSON format.')
+    fmt_group.add_argument('--csv', action='store_true',
+                        help='Output statistical analysis report in CSV format.')
+
     args = parser.parse_args()
-    main(args.infile, verbose=args.verbose)
+    main(args.infile, outfile=args.outfile, json_fmt=args.json, csv_fmt=args.csv, dry_run=args.dry_run, verbose=args.verbose)
