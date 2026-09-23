@@ -154,5 +154,31 @@ class TestStreamCards(unittest.TestCase):
             runpy.run_path(script_path, run_name='__main__')
         self.assertIn('should not return from streaming', str(ctx.exception))
 
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('sys.argv', ['streamcards.py'])
+    def test_cli_interactive_no_args_prints_help(self, mock_isatty):
+        script_path = os.path.join(os.path.dirname(__file__), '../scripts/streamcards.py')
+        with patch('sys.stdout') as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                runpy.run_path(script_path, run_name='__main__')
+            self.assertEqual(ctx.exception.code, 0)
+
+    @patch('sys.stdin.isatty', return_value=False)
+    @patch('sys.argv', ['streamcards.py'])
+    def test_cli_missing_fds_error(self, mock_isatty):
+        script_path = os.path.join(os.path.dirname(__file__), '../scripts/streamcards.py')
+        with patch('sys.stderr'):
+            with self.assertRaises(SystemExit) as ctx:
+                runpy.run_path(script_path, run_name='__main__')
+            self.assertNotEqual(ctx.exception.code, 0)
+
+    @patch('sys.argv', ['streamcards.py', '--help'])
+    def test_cli_help_groups(self):
+        script_path = os.path.join(os.path.dirname(__file__), '../scripts/streamcards.py')
+        with patch('sys.stdout') as mock_stdout:
+            with self.assertRaises(SystemExit) as ctx:
+                runpy.run_path(script_path, run_name='__main__')
+            self.assertEqual(ctx.exception.code, 0)
+
 if __name__ == '__main__':
     unittest.main()
