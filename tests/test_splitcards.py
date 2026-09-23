@@ -394,7 +394,27 @@ def test_splitcards_presets_and_defaults(tmp_path):
         os.remove("custom1.txt")
         os.remove("custom2.txt")
 
-        # Ratios without outputs (2 ratios -> train/val, 3 ratios -> train/val/test, 4 ratios -> split_1..4)
+        # Ratios without outputs (2 ratios -> train/val)
+        args_ratios_2 = ["splitcards.py", str(infile), "--ratios", "0.8", "0.2", "-s"]
+        with patch("sys.argv", args_ratios_2):
+            main()
+        assert os.path.exists("train.txt")
+        assert os.path.exists("val.txt")
+        os.remove("train.txt")
+        os.remove("val.txt")
+
+        # Ratios without outputs (3 ratios -> train/val/test)
+        args_ratios_3 = ["splitcards.py", str(infile), "--ratios", "0.7", "0.2", "0.1", "-s"]
+        with patch("sys.argv", args_ratios_3):
+            main()
+        assert os.path.exists("train.txt")
+        assert os.path.exists("val.txt")
+        assert os.path.exists("test.txt")
+        os.remove("train.txt")
+        os.remove("val.txt")
+        os.remove("test.txt")
+
+        # Ratios without outputs (4 ratios -> split_1..4)
         args_ratios_4 = ["splitcards.py", str(infile), "--ratios", "0.25", "0.25", "0.25", "0.25", "-s"]
         with patch("sys.argv", args_ratios_4):
             main()
