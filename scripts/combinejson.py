@@ -1,18 +1,19 @@
 """
-Merge two Magic: The Gathering card data files in JSON format.
+Merge Magic: The Gathering card data files in JSON format.
 
 This utility is primarily used to combine custom card data with the official
-MTGJSON dataset. By merging your own designs with official data, you can
+MTGJSON dataset or batch merge multiple custom card JSON sets into a single
+unified corpus. By merging your own designs with official data, you can
 create comprehensive datasets for AI training, validation, or mechanical
 analysis.
 
 Conflict Resolution:
-If the same key (for example, a set code or card identifier) exists in both files,
-the value from the second file (custom_file) will overwrite the value from
-the first file (base_file).
+If the same key (for example, a set code or card identifier) exists across multiple
+files, the value from subsequent files will overwrite values from preceding files.
 """
 import json
 import argparse
+import sys
 from collections import defaultdict
 
 
@@ -82,32 +83,41 @@ def _summarize_dataset(merged_data):
 def main():
     parser = argparse.ArgumentParser(
         prog="combinejson.py",
-        description="Merge two Magic: The Gathering card data files in JSON format.",
+        description="Merge Magic: The Gathering card data files in JSON format.",
         epilog='''
 Custom Card Workflow:
-  1. Create a CSV file containing your custom cards (see CUSTOM.md).
-  2. Convert the CSV to JSON format:
+  1. Create CSV files containing your custom cards (see CUSTOM.md).
+  2. Convert the CSVs to JSON format:
      python3 scripts/csv2json.py custom.csv custom.json
-  3. Merge your custom JSON with the official dataset:
-     python3 scripts/combinejson.py data/AllPrintings.json custom.json AllCustom.json
+  3. Merge your custom JSON file(s) with the official dataset:
+     python3 scripts/combinejson.py data/AllPrintings.json set1.json set2.json -o AllCustom.json
+
+Batch Merging:
+  Merge multiple custom JSON sets into a single dataset in one command:
+  python3 scripts/combinejson.py data/AllPrintings.json set1.json set2.json set3.json -o merged.json
 
 Dry Run / Preview:
   Preview merged dataset statistics without writing output to disk:
   python3 scripts/combinejson.py data/AllPrintings.json my_custom_set.json --dry-run
 
 Notes:
-  - If keys conflict, data from the second file (custom_file) overwrites the first.
+  - If keys conflict, data from subsequent files overwrites preceding files.
   - This script supports recursive dictionary merging for nested metadata.
 
 Example:
-  python3 scripts/combinejson.py data/AllPrintings.json my_custom_set.json AllCards.json
+  python3 scripts/combinejson.py data/AllPrintings.json my_custom_set.json -o AllCards.json
 ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('base_file', help='Path to the primary JSON file (for example, data/AllPrintings.json).')
-    parser.add_argument('custom_file', help='Path to the second JSON file containing your custom cards.')
-    parser.add_argument('output_file', nargs='?', default=None,
-                        help='Path where the merged JSON file will be saved (optional if --dry-run is specified).')
+
+    io_group = parser.add_argument_group('Input / Output Options')
+    io_group.add_argument('base_file', help='Path to the primary JSON file (for example, data/AllPrintings.json).')
+    io_group.add_argument('custom_files', nargs='+',
+                          help='Path to one or more second/custom JSON files to merge into the base file.')
+    io_group.add_argument('output_positional', nargs='?', default=None, metavar='output_file',
+                          help='Path where the merged JSON file will be saved (positional fallback for backward compatibility).')
+    io_group.add_argument('-o', '--outfile', default=None,
+                          help='Path where the merged JSON file will be saved.')
 
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
@@ -115,17 +125,33 @@ Example:
 
     args = parser.parse_args()
 
-    if not args.dry_run and not args.output_file:
-        parser.error("the following arguments are required: output_file (unless --dry-run is specified)")
+    # Determine target output file and refine custom_files list
+    if args.outfile:
+        output_file = args.outfile
+        if args.output_positional:
+            args.custom_files.append(args.output_positional)
+            args.output_positional = None
+    elif args.dry_run:
+        output_file = None
+        if args.output_positional:
+            args.custom_files.append(args.output_positional)
+            args.output_positional = None
+    else:
+        if args.output_positional:
+            output_file = args.output_positional
+        elif len(args.custom_files) >= 2:
+            output_file = args.custom_files.pop()
+        else:
+            parser.error("the following arguments are required: output_file or -o/--outfile (unless --dry-run is specified)")
 
     try:
         with open(args.base_file, encoding='utf8') as fo:
-            data1 = json.load(fo)
+            merged_data = json.load(fo)
 
-        with open(args.custom_file, encoding='utf8') as fo:
-            data2 = json.load(fo)
-
-        merged_data = merge_dicts(data1, data2)
+        for c_file in args.custom_files:
+            with open(c_file, encoding='utf8') as fo:
+                custom_data = json.load(fo)
+            merged_data = merge_dicts(merged_data, custom_data)
 
         if args.dry_run:
             total_cards, set_breakdown, sample_names = _summarize_dataset(merged_data)
@@ -138,13 +164,13 @@ Example:
                 print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
             return
 
-        with open(args.output_file, "w", encoding='utf8') as fo:
+        with open(output_file, "w", encoding='utf8') as fo:
             json.dump(merged_data, fo)
 
     except FileNotFoundError as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}", file=sys.stderr)
     except json.JSONDecodeError as e:
-        print(f"Invalid JSON file: {e}")
+        print(f"Invalid JSON file: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":
