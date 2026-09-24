@@ -282,6 +282,20 @@ class TestMTGSubset(unittest.TestCase):
         self.assertEqual(mock_open_file.call_args[0][0], 'data/AllPrintings.json')
         mock_file.assert_called_once_with('output.json', 'w', encoding='utf-8')
 
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('os.path.exists')
+    def test_single_dash_arg_not_treated_as_outfile(self, mock_exists, mock_file, mock_open_file):
+        mock_exists.side_effect = lambda path: path == 'data/AllPrintings.json'
+        mock_open_file.return_value = self.mock_cards
+
+        test_args = ['mtg_subset.py', '-', '--dry-run', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        mock_open_file.assert_called_once()
+        self.assertEqual(mock_open_file.call_args[0][0], '-')
+
     @patch('sys.stdin.isatty', return_value=True)
     @patch('os.path.exists', return_value=False)
     @patch('sys.stderr', new_callable=io.StringIO)

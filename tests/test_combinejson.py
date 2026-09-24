@@ -163,6 +163,29 @@ class TestCombineJson(unittest.TestCase):
             self.assertIn("Sample Preview", output)
             self.assertFalse(os.path.exists(output_file))
 
+    def test_dry_run_with_positional_outfile(self):
+        base_data = {"data": {"MOM": {"code": "MOM", "cards": [{"name": "Grizzly Bears"}]}}}
+        custom_data = {"data": {"CUS": {"code": "CUS", "cards": [{"name": "Custom Bear"}]}}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_file = os.path.join(tmpdir, "base.json")
+            custom_file = os.path.join(tmpdir, "custom.json")
+            output_file = os.path.join(tmpdir, "nonexistent_output.json")
+
+            with open(base_file, "w", encoding="utf-8") as f:
+                json.dump(base_data, f)
+            with open(custom_file, "w", encoding="utf-8") as f:
+                json.dump(custom_data, f)
+
+            with patch("sys.argv", ["combinejson.py", base_file, custom_file, output_file, "--dry-run"]):
+                with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                    main()
+                    output = mock_stdout.getvalue()
+
+            self.assertIn("Dry Run Summary: 2 card(s) in merged dataset.", output)
+            self.assertIn("CUS: 1 card(s)", output)
+            self.assertFalse(os.path.exists(output_file))
+
     def test_missing_output_file_without_dry_run_raises_system_exit(self):
         with patch("sys.argv", ["combinejson.py", "base.json"]):
             with self.assertRaises(SystemExit):

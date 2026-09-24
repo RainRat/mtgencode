@@ -95,7 +95,7 @@ def main(fname=None, oname=None, gmin=2, gmax=8, nltk=False, sep=False, verbose=
         else:
             fname = '-'
     elif oname is None:
-        if not os.path.exists(fname) and os.path.exists(default_base):
+        if fname != '-' and not os.path.exists(fname) and os.path.exists(default_base):
             oname = fname
             fname = default_base
 

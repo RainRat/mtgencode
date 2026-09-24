@@ -14,6 +14,7 @@ files, the value from subsequent files will overwrite values from preceding file
 import json
 import argparse
 import sys
+import os
 from collections import defaultdict
 
 
@@ -133,8 +134,11 @@ Example:
             args.output_positional = None
     elif args.dry_run:
         output_file = None
-        if args.output_positional:
-            args.custom_files.append(args.output_positional)
+        if len(args.custom_files) >= 2 and not os.path.exists(args.custom_files[-1]):
+            output_file = args.custom_files.pop()
+        elif args.output_positional:
+            if os.path.exists(args.output_positional):
+                args.custom_files.append(args.output_positional)
             args.output_positional = None
     else:
         if args.output_positional:

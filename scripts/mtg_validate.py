@@ -443,7 +443,7 @@ def main(fname, oname = None, verbose = False, dump = False,
         if 'color_pie' in props:
             del props['color_pie']
 
-    # Use the robust mtg_open_file for all loading and filtering.
+    # Use mtg_open_file for all loading and filtering.
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
                                   fmt_labeled=None if nolabel else cardlib.fmt_labeled_default,
                                   grep=grep, vgrep=vgrep,

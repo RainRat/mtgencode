@@ -147,7 +147,7 @@ Example Usage:
         # If user provided 1 positional argument, check if it's an output file (and use default_base as infile)
         # or an input file.
         # If infile does not exist on disk and default_base exists, treat infile as outfile.
-        if not os.path.exists(args.infile) and os.path.exists(default_base):
+        if args.infile != '-' and not os.path.exists(args.infile) and os.path.exists(default_base):
             args.outfile = args.infile
             args.infile = default_base
 

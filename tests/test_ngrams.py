@@ -88,6 +88,12 @@ class TestNgrams(unittest.TestCase):
                 ngrams.main(fname=out_prefix, oname=None, dry_run=True)
                 mock_open.assert_called_once_with('data/AllPrintings.json', verbose=False)
 
+    def test_stdin_dash_not_resolved_as_outfile(self):
+        with patch('os.path.exists', side_effect=lambda p: p == 'data/AllPrintings.json'), \
+             patch.object(ngrams.jdecode, 'mtg_open_file', return_value=[]) as mock_open:
+            ngrams.main(fname='-', oname=None, dry_run=True)
+            mock_open.assert_called_once_with('-', verbose=False)
+
     def test_ngram_wrapper_empty_perplexity(self):
         wrapper = ngrams.NgramModelWrapper(2, [["a", "b"]])
         self.assertEqual(wrapper.perplexity([]), 0.0)

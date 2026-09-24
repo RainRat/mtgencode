@@ -461,7 +461,7 @@ def fields_from_json(src_json, linetrans = True):
         fields[field_subtypes] = [(-1, src_subtypes)]
 
     if 'rarity' in src_json:
-        # Use lowercase for robust rarity lookup
+        # Use lowercase for rarity lookup
         rarity_val = src_json['rarity']
         rarity_key = rarity_val.lower() if hasattr(rarity_val, 'lower') else rarity_val
 

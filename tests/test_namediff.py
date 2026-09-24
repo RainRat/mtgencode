@@ -119,7 +119,7 @@ class TestNamediff(unittest.TestCase):
             }
         }
 
-        # Use tempfile.mkstemp for robust temp file creation
+        # Use tempfile.mkstemp for temp file creation
         fd, tmp_path = tempfile.mkstemp(suffix='.json', text=True)
         try:
             with os.fdopen(fd, 'w') as f:

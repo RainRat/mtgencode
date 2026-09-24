@@ -25,7 +25,7 @@ def test_chained_token_creation():
     assert rhino['abilities'] == "trample"
 
 def test_chained_token_creation_case_variation():
-    """Verify robust handling of 'and' with different casing."""
+    """Verify handling of 'and' with different casing."""
     card_json = {
         "name": "Another Generator",
         "types": ["Sorcery"],

@@ -282,9 +282,9 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         elif oname.endswith('.csv'):
             use_csv = True
 
-    # Use the robust jdecode.mtg_open_file for loading and filtering.
+    # Use jdecode.mtg_open_file for loading and filtering.
     # We disable default exclusions (sets, types, layouts) to match the original sortcards.py behavior.
-    # verbose=True enables jdecode diagnostic output (e.g. invalid cards).
+    # verbose=True enables jdecode diagnostic output (for example, invalid cards).
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
                                   fmt_ordered=fmt_ordered, fmt_labeled=None if nolabel else cardlib.fmt_labeled_default,
                                   grep=grep, vgrep=vgrep,
