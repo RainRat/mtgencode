@@ -66,8 +66,27 @@ class TestNgrams(unittest.TestCase):
             ngrams.main(fname=self.sample_json, gmin=5, gmax=2, dry_run=True)
 
     def test_missing_outfile_raises_error(self):
-        with self.assertRaises(SystemExit):
+        with patch('sys.stdin.isatty', return_value=False), patch('sys.stdout.isatty', return_value=False):
+            with self.assertRaises(SystemExit):
+                ngrams.main(fname=self.sample_json, oname=None, dry_run=False)
+
+    def test_missing_outfile_interactive_preview(self):
+        with patch('sys.stdin.isatty', return_value=True), \
+             patch('sys.stderr') as mock_stderr, \
+             patch('sys.stdout') as mock_stdout:
             ngrams.main(fname=self.sample_json, oname=None, dry_run=False)
+            stderr_text = "".join(call.args[0] for call in mock_stderr.write.call_args_list)
+            stdout_text = "".join(call.args[0] for call in mock_stdout.write.call_args_list)
+            self.assertIn("Notice: No output file specified. Running in dry-run preview mode.", stderr_text)
+            self.assertIn("Dry Run Summary", stdout_text)
+
+    def test_single_nonexistent_arg_as_outfile(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_prefix = os.path.join(tmpdir, 'custom_output')
+            with patch('os.path.exists', side_effect=lambda p: p == 'data/AllPrintings.json'), \
+                 patch.object(ngrams.jdecode, 'mtg_open_file', return_value=[]) as mock_open:
+                ngrams.main(fname=out_prefix, oname=None, dry_run=True)
+                mock_open.assert_called_once_with('data/AllPrintings.json', verbose=False)
 
     def test_ngram_wrapper_empty_perplexity(self):
         wrapper = ngrams.NgramModelWrapper(2, [["a", "b"]])

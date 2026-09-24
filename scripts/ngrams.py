@@ -94,10 +94,19 @@ def main(fname=None, oname=None, gmin=2, gmax=8, nltk=False, sep=False, verbose=
             sys.exit(1)
         else:
             fname = '-'
+    elif oname is None:
+        if not os.path.exists(fname) and os.path.exists(default_base):
+            oname = fname
+            fname = default_base
 
     if not dry_run and not oname:
-        print("Error: Output file required unless --dry-run is specified.", file=sys.stderr)
-        sys.exit(1)
+        if sys.stdin.isatty() or sys.stdout.isatty():
+            dry_run = True
+            print("Notice: No output file specified. Running in dry-run preview mode.", file=sys.stderr)
+            sys.stderr.flush()
+        else:
+            print("Error: Output file required unless --dry-run is specified.", file=sys.stderr)
+            sys.exit(1)
 
     cards = jdecode.mtg_open_file(fname, verbose=verbose)
 
