@@ -213,7 +213,7 @@ Usage Examples:
   # Preview LLM validation parameters and matched cards without running inference
   python3 scripts/mtg_llm_validate.py generated_cards.txt --dry-run
 
-  # Use an external API (e.g. OpenRouter)
+  # Use an external API (for example, OpenRouter)
   python3 scripts/mtg_llm_validate.py generated.txt --provider api --api-url "https://openrouter.ai/api/v1/chat/completions" --model "meta-llama/llama-3-8b-instruct" --api-key "YOUR_KEY"
 
   # Use a local Ollama API
@@ -240,9 +240,9 @@ Usage Examples:
     model_group.add_argument('--provider', choices=['transformers', 'api'], default='transformers',
                         help='The backend provider to use. (Default: transformers).')
     model_group.add_argument('--api-url', default=None,
-                        help='The URL for the API endpoint (e.g., http://localhost:11434/v1/chat/completions for Ollama). Required if --provider is api.')
+                        help='The URL for the API endpoint (for example, http://localhost:11434/v1/chat/completions for Ollama). Required if --provider is api.')
     model_group.add_argument('--api-key', default=None,
-                        help='Optional Bearer token for API authentication (e.g., for OpenRouter or OpenAI).')
+                        help='Optional Bearer token for API authentication (for example, for OpenRouter or OpenAI).')
     model_group.add_argument('--device', default=default_device,
                         help='Device to run the model on (cuda, cpu, mps). Default: cuda if available.')
     model_group.add_argument('--batch-size', type=int, default=1,
