@@ -92,13 +92,8 @@ class CharRNN(nn.Module):
         self.rnn = nn.LSTM(hidden_size, hidden_size, n_layers, dropout=dropout, batch_first=True)
         self.decoder = nn.Linear(hidden_size, vocab_size)
         
-        self._apply_forget_gate_bias()
-
-    def _apply_forget_gate_bias(self):
-        """
-        Adds 1.0 to the forget gate bias (Jozefowicz et al., 2015).
-        In PyTorch LSTM, bias is [b_ig | b_fg | b_gg | b_og].
-        """
+        # Add 1.0 to the forget gate bias (Jozefowicz et al., 2015).
+        # In PyTorch LSTM, bias is [b_ig | b_fg | b_gg | b_og].
         for name, param in self.rnn.named_parameters():
             if 'bias' in name:
                 n = param.size(0)
