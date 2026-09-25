@@ -460,5 +460,137 @@ class TestMtgDeckgen(unittest.TestCase):
             if os.path.exists(json_out): os.remove(json_out)
             if os.path.exists(csv_out): os.remove(csv_out)
 
+    def test_pick_cards_with_curve_pool_smaller_than_target(self):
+        pool = [MagicMock() for _ in range(3)]
+        picked = mtg_deckgen.pick_cards_with_curve(pool, 10, curve=None)
+        self.assertEqual(len(picked), 3)
+        self.assertEqual(picked, pool)
+
+    def test_pick_cards_with_curve_backfills_remaining_target(self):
+        c1 = cardlib.Card({'name': 'C1', 'manaCost': '{G}', 'types': ['Creature'], 'rarity': 'common'})
+        c2 = cardlib.Card({'name': 'C2', 'manaCost': '{1}{G}', 'types': ['Creature'], 'rarity': 'common'})
+        c3 = cardlib.Card({'name': 'C3', 'manaCost': '{2}{G}', 'types': ['Creature'], 'rarity': 'common'})
+        pool = [c1, c2, c3]
+        curve = {1: 1}
+        picked = mtg_deckgen.pick_cards_with_curve(pool, 3, curve=curve)
+        self.assertEqual(len(picked), 3)
+        self.assertIn(c1, picked)
+        self.assertIn(c2, picked)
+        self.assertIn(c3, picked)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_brawl_planeswalker_commander(self, mock_stderr, mock_stdout, mock_open):
+        pw_commander = cardlib.Card({
+            'name': 'Ashiok, Wicked Manipulator',
+            'supertypes': ['Legendary'],
+            'types': ['Planeswalker'],
+            'manaCost': '{3}{B}{B}',
+            'rarity': 'mythic',
+            'text': ''
+        })
+        spell = cardlib.Card({
+            'name': 'Doom Blade',
+            'types': ['Instant'],
+            'manaCost': '{1}{B}',
+            'rarity': 'common',
+            'text': ''
+        })
+        mock_open.return_value = [pw_commander, spell]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'brawl', '--commander', 'Ashiok, Wicked Manipulator']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Ashiok, Wicked Manipulator *CMDR*", output)
+        self.assertIn("Doom Blade", output)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_commander_sideboard_generation(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        cards = [commander]
+        for i in range(25):
+            cards.append(cardlib.Card({'name': f'Card_{i}', 'types': ['Creature'], 'manaCost': '{1}{R}', 'rarity': 'common', 'text': ''}))
+
+        mock_open.return_value = cards
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia', '--sideboard']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Sideboard", output)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_commander_sideboard_small_pool_fallback(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        card1 = cardlib.Card({
+            'name': 'Goblin',
+            'types': ['Creature'],
+            'manaCost': '{1}{R}',
+            'rarity': 'common',
+            'text': ''
+        })
+        mock_open.return_value = [commander, card1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia', '--sideboard-size', '5']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Sideboard", output)
+        self.assertIn("Goblin", output)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_standard_sideboard_generation(self, mock_stderr, mock_stdout, mock_open):
+        c1 = cardlib.Card({'name': 'Soldier', 'types': ['Creature'], 'manaCost': '{W}', 'rarity': 'common', 'text': ''})
+        s1 = cardlib.Card({'name': 'Shock', 'types': ['Instant'], 'manaCost': '{R}', 'rarity': 'common', 'text': ''})
+        mock_open.return_value = [c1, s1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--sideboard']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Sideboard", output)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_dry_run_commander_preview(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        mock_open.return_value = [commander]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia', '--dry-run']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Commander: Galia", output)
+
 if __name__ == '__main__':
     unittest.main()
