@@ -176,17 +176,25 @@ Usage Examples:
 '''
     )
 
-    parser.add_argument('basedir',
+    # Group: Input / Output
+    io_group = parser.add_argument_group('Input / Output')
+    io_group.add_argument('basedir',
                         help='base rnn directory containing checkpoints and sample output files')
-    parser.add_argument('targetdir', nargs='?', default=None,
+    io_group.add_argument('targetdir', nargs='?', default=None,
                         help='checkpoint output directory (optional if --dry-run is specified)')
-    parser.add_argument('-c', '--copy_cp', action='store_true', 
+
+    # Group: Processing Options
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-c', '--copy_cp', action='store_true',
                         help='copy checkpoints (.t7) and command files used to generate output files')
-    parser.add_argument('-i', '--ident', action='store', default='output',
+    proc_group.add_argument('-i', '--ident', action='store', default='output',
                         help='identifier string to look for in dump filenames (default: output)')
-    parser.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
                         help='print a summary of identified checkpoints and target paths without copying or writing files')
-    parser.add_argument('-v', '--verbose', action='store_true', 
+
+    # Group: Logging & Debugging
+    debug_group = parser.add_argument_group('Logging & Debugging')
+    debug_group.add_argument('-v', '--verbose', action='store_true',
                         help='verbose output')
 
     args = parser.parse_args()
