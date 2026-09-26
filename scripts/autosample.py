@@ -133,22 +133,27 @@ Usage Examples:
 '''
     )
 
-    parser.add_argument('rnndir',
-                        help='base rnn directory, must contain sample.lua')
-    parser.add_argument('cpdir',
-                        help='checkpoint directory, all subdirectories will be processed')
-    parser.add_argument('-t', '--temperature', action='store', default='1.0',
-                        help='sampling temperature')
-    parser.add_argument('-c', '--count', action='store', default='1000000',
-                        help='number of characters to sample each time')
-    parser.add_argument('-s', '--seed', action='store', default=None,
-                        help='fixed seed; if not present, a random seed will be used')
-    parser.add_argument('-i', '--ident', action='store', default='output',
-                        help='identifier to include in the output filenames')
-    parser.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+    io_group = parser.add_argument_group('Input / Output Options')
+    io_group.add_argument('rnndir',
+                        help='Base directory of the neural network code, which must contain sample.lua.')
+    io_group.add_argument('cpdir',
+                        help='Checkpoint directory containing model subdirectories to process.')
+    io_group.add_argument('-i', '--ident', action='store', default='output',
+                        help='Custom identifier label to include in generated output filenames.')
+
+    sampling_group = parser.add_argument_group('Sampling Options')
+    sampling_group.add_argument('-t', '--temperature', action='store', default='1.0',
+                        help='Sampling temperature controlling creativity (higher values produce more unusual text).')
+    sampling_group.add_argument('-c', '--count', action='store', default='1000000',
+                        help='Number of characters to generate for each checkpoint.')
+    sampling_group.add_argument('-s', '--seed', action='store', default=None,
+                        help='Random seed for reproducible text generation.')
+
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
                         help='Print a dry run summary preview of identified checkpoints and sampling commands without running sample.lua or writing output files.')
-    parser.add_argument('-v', '--verbose', action='store_true', 
-                        help='verbose output')
+    proc_group.add_argument('-v', '--verbose', action='store_true',
+                        help='Print detailed progress messages during directory scanning.')
 
     args = parser.parse_args()
     if args.seed is None:
