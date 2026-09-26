@@ -215,6 +215,37 @@ def test_main_dry_run(tmp_path, capsys):
     assert not os.path.exists(out_file + ".mse-set")
 
 
+def test_main_stats_formatting(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+
+    card_fake = DummyCard(name="Fake Card", types=["Creature"], colors=["U"])
+    card_real = DummyCard(name="Real Card", types=["Creature"], colors=["U"])
+
+    mock_cbow = MagicMock()
+    mock_cbow.nearest_par.return_value = [[(0.1234, "Real Card")]]
+
+    stats = {
+        'dists': {'cbow': [0.5]},
+        'ngram': {'perp': [1.0], 'perp_per': [1.5678], 'perp_max': [8.4321]}
+    }
+
+    out_file = str(tmp_path / "output_stats.txt")
+
+    with patch('scripts.pairing.CBOW', return_value=mock_cbow), \
+         patch('scripts.pairing.jdecode.mtg_open_file', side_effect=[[card_real], [card_fake]]), \
+         patch('scripts.pairing.ngrams.build_ngram_model', return_value=MagicMock()), \
+         patch('scripts.pairing.analysis.get_statistics', return_value=stats), \
+         patch('scripts.pairing.mtg_validate.process_props', return_value=((None, 1, None, None), None)):
+
+        pairing.main("fake_input.txt", out_file, verbose=False)
+
+    captured = capsys.readouterr()
+    assert "-- stats --" in captured.out
+    assert "CBOW Distance: 0.1234" in captured.out
+    assert "Per-Word Perplexity: 1.57" in captured.out
+    assert "Max Perplexity: 8.43" in captured.out
+
+
 def test_main_cli_dry_run(tmp_path, capsys):
     test_args = ['scripts/pairing.py', 'fake_input.txt', '-p']
     script_path = os.path.abspath('scripts/pairing.py')
