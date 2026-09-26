@@ -141,5 +141,42 @@ class TestSortCards(unittest.TestCase):
         stderr_val = captured_stderr.getvalue()
         self.assertIn("Error: No input file specified and default dataset", stderr_val)
 
+    def test_cli_outfile_flag(self):
+        import os
+        import tempfile
+        from unittest.mock import patch
+
+        rare_data = {
+            "name": "Test Outfile Card",
+            "manaCost": "{1}{R}",
+            "types": ["Creature"],
+            "rarity": "Rare",
+            "power": "2",
+            "toughness": "2"
+        }
+        card = Card(rare_data)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_txt = os.path.join(tmpdir, "out.txt")
+            out_json = os.path.join(tmpdir, "out.json")
+
+            # Test text output file via -o flag
+            with patch("sys.argv", ["sortcards.py", "dummy.json", "-o", out_txt, "-q"]):
+                with patch("jdecode.mtg_open_file", return_value=[card]):
+                    sortcards.cli()
+            self.assertTrue(os.path.exists(out_txt))
+            with open(out_txt, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("Exclusive classes:", content)
+
+            # Test JSON output file via --outfile flag auto-detection
+            with patch("sys.argv", ["sortcards.py", "dummy.json", "--outfile", out_json, "-q"]):
+                with patch("jdecode.mtg_open_file", return_value=[card]):
+                    sortcards.cli()
+            self.assertTrue(os.path.exists(out_json))
+            with open(out_json, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("creatures", content)
+
 if __name__ == '__main__':
     unittest.main()
