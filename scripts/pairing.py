@@ -127,9 +127,9 @@ def main(fname, oname=None, n=20, verbose=False, dry_run=False):
         print('-- stats --')
         perp_per = stats['ngram']['perp_per'][i]
         perp_max = stats['ngram']['perp_max'][i]
-        print(dist)
-        print(perp_per)
-        print(perp_max)
+        print(f'CBOW Distance: {dist:.4f}')
+        print(f'Per-Word Perplexity: {perp_per:.2f}')
+        print(f'Max Perplexity: {perp_max:.2f}')
         print('----')
 
     if oname is not None:
