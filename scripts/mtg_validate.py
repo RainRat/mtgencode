@@ -2,6 +2,9 @@
 import sys
 import os
 import re
+import json
+import csv
+import io
 import argparse
 from collections import OrderedDict
 from contextlib import redirect_stdout
@@ -437,11 +440,17 @@ def main(fname, oname = None, verbose = False, dump = False,
          identities=None, id_counts=None,
          shuffle = False, seed = None, quiet = False, decklist_file = None,
          booster = 0, sort = None, reverse_sort = False, limit = 0, use_color = None, box = 0,
-         color_pie = False, dry_run = False):
+         color_pie = False, dry_run = False, json_out = False, csv_out = False):
 
     if not color_pie:
         if 'color_pie' in props:
             del props['color_pie']
+
+    if oname and not json_out and not csv_out:
+        if oname.lower().endswith('.json'):
+            json_out = True
+        elif oname.lower().endswith('.csv'):
+            csv_out = True
 
     # Use mtg_open_file for all loading and filtering.
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
@@ -544,6 +553,48 @@ def main(fname, oname = None, verbose = False, dump = False,
             with redirect_stdout(output_f):
                 ((total_all, total_good, total_bad, total_uncovered),
                  values) = process_props(cards, dump=dump, quiet=quiet)
+
+                if json_out:
+                    good_pct = (total_good / total_all * 100.0) if total_all > 0 else 0.0
+                    res = {
+                        "summary": {
+                            "total_cards": total_all,
+                            "valid_cards": total_good,
+                            "invalid_cards": total_bad,
+                            "uncovered_cards": total_uncovered,
+                            "success_rate": round(good_pct, 2)
+                        },
+                        "properties": {}
+                    }
+                    for prop in props:
+                        (total, good, bad) = values[prop]
+                        if total > 0:
+                            success_pct = (good / total * 100.0) if total > 0 else 0.0
+                            res["properties"][prop] = {
+                                "total": total,
+                                "good": good,
+                                "bad": bad,
+                                "success_rate": round(success_pct, 2)
+                            }
+                    print(json.dumps(res, indent=2))
+                    return
+
+                if csv_out:
+                    output_buffer = io.StringIO()
+                    writer = csv.writer(output_buffer)
+                    writer.writerow(["Category", "Property", "Total", "Good", "Bad", "Success %"])
+
+                    good_pct = (total_good / total_all * 100.0) if total_all > 0 else 0.0
+                    writer.writerow(["Summary", "Valid Cards", total_all, total_good, total_bad, f"{good_pct:.2f}"])
+
+                    for prop in props:
+                        (total, good, bad) = values[prop]
+                        if total > 0:
+                            success_pct = (good / total * 100.0) if total > 0 else 0.0
+                            writer.writerow(["Property", prop, total, good, bad, f"{success_pct:.2f}"])
+
+                    sys.stdout.write(output_buffer.getvalue())
+                    return
 
                 # summary
                 header = 'VALIDATION SUMMARY'
@@ -648,6 +699,12 @@ Usage Examples:
 
   # Print details for invalid cards
   python3 scripts/mtg_validate.py data/AllPrintings.json --dump
+
+  # Export validation statistics to a structured JSON file
+  python3 scripts/mtg_validate.py data/AllPrintings.json -j -o validation_report.json
+
+  # Export validation statistics to CSV format
+  python3 scripts/mtg_validate.py encoded_output.txt --csv
 """
     )
     
@@ -657,6 +714,14 @@ Usage Examples:
                         help='Input card data (JSON, CSV, XML, encoded text, or directory) to validate. Defaults to stdin (-) or data/AllPrintings.json if available.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Optional path to save the validation report. If not provided, the report prints to the console.')
+
+    # Group: Output Format
+    fmt_group_title = parser.add_argument_group('Output Format')
+    fmt_group = fmt_group_title.add_mutually_exclusive_group()
+    fmt_group.add_argument('-j', '--json', dest='json_out', action='store_true',
+                           help='Output validation statistics in structured JSON format.')
+    fmt_group.add_argument('--csv', dest='csv_out', action='store_true',
+                           help='Output validation statistics in CSV format.')
 
     # Group: Encoding Options
     enc_group = parser.add_argument_group('Encoding Options')
@@ -761,6 +826,13 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    # Auto-detect format from extension if outfile is provided
+    if args.outfile:
+        if args.outfile.lower().endswith('.json') and not args.csv_out:
+            args.json_out = True
+        elif args.outfile.lower().endswith('.csv') and not args.json_out:
+            args.csv_out = True
+
     # UX Improvement: Default Dataset
     # If we are reading from stdin but it's an interactive terminal, use AllPrintings.json if it exists.
     if (args.infile == '-' or args.infile is None) and sys.stdin.isatty():
@@ -796,5 +868,5 @@ Usage Examples:
          identities=args.identity, id_counts=args.id_count,
          shuffle = args.shuffle, seed = args.seed, quiet = args.quiet, decklist_file = args.deck,
          booster = args.booster, sort = args.sort, reverse_sort = args.reverse, limit = args.limit, use_color = args.color, box = args.box,
-         color_pie = args.color_pie, dry_run = args.dry_run)
+         color_pie = args.color_pie, dry_run = args.dry_run, json_out = args.json_out, csv_out = args.csv_out)
     sys.exit(0)
