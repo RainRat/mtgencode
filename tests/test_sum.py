@@ -297,5 +297,24 @@ class TestSumCLI(unittest.TestCase):
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
+    def test_cli_stdin_dry_run(self):
+        stdin_data = "0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n"
+        with patch('sys.stdin', io.StringIO(stdin_data)):
+            with patch('sys.stdin.isatty', return_value=False):
+                code, out, err = self.run_sum_main(['--dry-run'])
+                self.assertEqual(code, 0)
+                self.assertIn("Dry Run Summary:", out)
+                self.assertIn("Distance data loaded from stdin", out)
+                self.assertIn("2 valid entries", out)
+
+    def test_cli_stdin_read_error(self):
+        bad_stdin = MagicMock()
+        bad_stdin.__iter__.side_effect = OSError("Pipe error")
+        with patch('sys.stdin', bad_stdin):
+            with patch('sys.stdin.isatty', return_value=False):
+                code, out, err = self.run_sum_main([])
+                self.assertEqual(code, 1)
+                self.assertIn("Error reading stdin", err)
+
 if __name__ == '__main__':
     unittest.main()
