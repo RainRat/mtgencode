@@ -883,8 +883,8 @@ class NumericFilter:
             return
 
         raise ValueError(
-            f"Invalid numerical filter: '{s}'. Expected an exact value (e.g., '5'), "
-            "an inequality (e.g., '>=3'), or a range (e.g., '2-4')."
+            f"Invalid numerical filter: '{s}'. Expected an exact value (for example, '5'), "
+            "an inequality (for example, '>=3'), or a range (for example, '2-4')."
         )
 
     def evaluate(self, value):

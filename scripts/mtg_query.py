@@ -962,7 +962,7 @@ def handle_shell(args):
     print(welcome)
     print("Type a card name for official rules text, or /search for bulk queries.")
     print("Type '/help' for commands, or 'exit' to leave.")
-    print("Tip: You can use numeric indices from the last search result (e.g. typing '1').\n")
+    print("Tip: You can use numeric indices from the last search result (for example, typing '1').\n")
 
     prompt = "mtg> "
     if use_color:
@@ -1297,10 +1297,10 @@ def handle_shell(args):
                             else:
                                 print(f"{left_part}{' ' * max(0, pad_len)}- {desc}")
 
-                    print("\n  Note: You can use numeric indices (e.g. '1', '2') in place of card names")
+                    print("\n  Note: You can use numeric indices (for example, '1', '2') in place of card names")
                     print("        for any command, referring to the results of the last search.")
                     print("        The compare command (/c) also supports ranges and comma-separated")
-                    print("        indices (e.g., '/compare 1-3, 5').")
+                    print("        indices (for example, '/compare 1-3, 5').")
                     print()
                 else:
                     valid_commands = [
@@ -2743,7 +2743,7 @@ Usage Examples:
   python3 scripts/mtg_query.py oracle "Giant Growth" --similar
 """
     )
-    p_oracle.add_argument('query', nargs='?', help='The card name to look up. Supports partial names and fuzzy matching (e.g., "Grizly Bears").')
+    p_oracle.add_argument('query', nargs='?', help='The card name to look up. Supports partial names and fuzzy matching (for example, "Grizly Bears").')
     p_oracle.add_argument('infile', nargs='?', default='-',
                         help='Input card data file. Defaults to the official dataset (data/AllPrintings.json).')
     p_oracle.add_argument('-f', '--fields', default='name,cost,type,stats,rarity,text',
@@ -2805,7 +2805,7 @@ Usage Examples:
 """
     )
     p_extract.add_argument('infile', help='Input MTGJSON file (must be a full database).')
-    p_extract.add_argument('set_code', help='Set code to search in (e.g., MOM, MRD, or ANY).')
+    p_extract.add_argument('set_code', help='Set code to search in (for example, MOM, MRD, or ANY).')
     p_extract.add_argument('card_name', help='Full or partial card name to extract.')
     p_extract.add_argument('-o', '--outfile', help='Output file.')
     cli_utils.add_standard_output_args(p_extract)
@@ -3047,7 +3047,7 @@ Usage Examples:
         epilog="""
 Finds functional substitutes by identifying cards with shared types,
 compatible color identities (subset), similar mana costs (+/- 1),
-and overlapping functional actions (e.g., Removal, Card Advantage).
+and overlapping functional actions (for example, Removal, Card Advantage).
 
 Usage Examples:
   # Find substitutes for Lightning Bolt
@@ -3082,7 +3082,7 @@ Finds cards with identical CMC, types, stats, and mechanics/text
 as the reference card, but with a different color identity.
 
 Usage Examples:
-  # Find color-shifted versions of Concentrate (e.g. Harmonize)
+  # Find color-shifted versions of Concentrate (for example, Harmonize)
   python3 scripts/mtg_query.py counterparts "Concentrate"
 
   # Find color-shifted counterparts for Prodigal Sorcerer

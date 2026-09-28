@@ -56,20 +56,31 @@ To add a card with two faces (like a Split card or a Transforming double-faced c
 Run the conversion script to turn your CSV into a format the encoder understands.
 
 ```bash
+# Preview conversion statistics without creating files (dry-run mode)
+python3 scripts/csv2json.py custom.csv --dry-run
+
+# Convert CSV spreadsheet to JSON
 python3 scripts/csv2json.py custom.csv custom.json
 ```
 *   **Input:** `custom.csv` (Your spreadsheet)
 *   **Output:** `custom.json` (The converted data)
 
 ### Step 3: Merge with Official Data
-Combine your custom cards with the official Magic data (`AllPrintings.json`).
+Combine your custom cards with the official Magic data (`AllPrintings.json`). You can merge a single custom file or batch merge multiple custom sets into a single dataset.
 
 ```bash
-python3 scripts/combinejson.py data/AllPrintings.json custom.json AllCustom.json
+# Preview merged dataset statistics without writing files (dry-run mode)
+python3 scripts/combinejson.py data/AllPrintings.json custom.json --dry-run
+
+# Merge a single custom JSON file
+python3 scripts/combinejson.py data/AllPrintings.json custom.json -o AllCustom.json
+
+# Batch merge multiple custom JSON files
+python3 scripts/combinejson.py data/AllPrintings.json custom1.json custom2.json -o AllCustom.json
 ```
 *   **Input 1:** `data/AllPrintings.json` (The official data, usually in the `data/` folder)
-*   **Input 2:** `custom.json` (Your custom cards)
-*   **Output:** `AllCustom.json` (The combined file)
+*   **Input 2:** `custom.json` or multiple custom JSON files
+*   **Output:** `AllCustom.json` (The combined dataset file specified by `-o` or `--outfile`)
 
 ### Step 4: Encode
 Now you can use `encode.py` with your new combined file.
