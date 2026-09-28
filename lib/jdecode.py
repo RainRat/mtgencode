@@ -535,70 +535,63 @@ def parse_markdown_card_block(block):
     if rarity_match:
         card_dict['rarity'] = rarity_match.group(1).strip()
 
-    if len(lines) < 2:
-        return _split_markdown_block_dict(card_dict)
+    if len(lines) >= 2:
+        # 2. Parse Type and Stats/Loyalty from second line
+        second_line = lines[1]
+        rar_match_2 = re.search(r'\(([^)]+)\)', second_line)
+        if rar_match_2 and not card_dict['rarity']:
+            card_dict['rarity'] = rar_match_2.group(1).strip()
+            second_line = re.sub(r'\([^)]+\)', '', second_line).strip()
 
-    # 2. Parse Type and Stats/Loyalty from second line
-    second_line = lines[1]
-    rar_match_2 = re.search(r'\(([^)]+)\)', second_line)
-    if rar_match_2 and not card_dict['rarity']:
-        card_dict['rarity'] = rar_match_2.group(1).strip()
-        second_line = re.sub(r'\([^)]+\)', '', second_line).strip()
-
-    stats_match = re.search(r'\(?\d+/\d+\)?|\[\d+\]', second_line)
-    if stats_match:
-        pt_val = stats_match.group(0).strip('()[] ')
-        if '/' in pt_val:
-            p, t = pt_val.split('/', 1)
-            card_dict['power'] = p.strip()
-            card_dict['toughness'] = t.strip()
-        else:
-            card_dict['loyalty'] = pt_val
-        second_line = second_line.replace(stats_match.group(0), '').strip(' \u2014-')
-
-    card_dict['type'] = second_line.strip(' \u2014-')
-
-    # 3. Parse stats from third line if not found in second line
-    text_start_idx = 2
-    if len(lines) > 2 and not card_dict.get('power') and not card_dict.get('loyalty'):
-        third_line = lines[2]
-        pt_match_3 = re.match(r'^(\d+/\d+|\d+|\[\d+\])$', third_line)
-        if pt_match_3:
-            pt_val = pt_match_3.group(1).strip('[]')
+        stats_match = re.search(r'\(?\d+/\d+\)?|\[\d+\]', second_line)
+        if stats_match:
+            pt_val = stats_match.group(0).strip('()[] ')
             if '/' in pt_val:
                 p, t = pt_val.split('/', 1)
                 card_dict['power'] = p.strip()
                 card_dict['toughness'] = t.strip()
             else:
                 card_dict['loyalty'] = pt_val
-            text_start_idx = 3
+            second_line = second_line.replace(stats_match.group(0), '').strip(' \u2014-')
 
-    # 4. Rules text
-    if len(lines) > text_start_idx:
-        card_dict['text'] = "\n".join(lines[text_start_idx:])
+        card_dict['type'] = second_line.strip(' \u2014-')
 
-    return _split_markdown_block_dict(card_dict)
+        # 3. Parse stats from third line if not found in second line
+        text_start_idx = 2
+        if len(lines) > 2 and not card_dict.get('power') and not card_dict.get('loyalty'):
+            third_line = lines[2]
+            pt_match_3 = re.match(r'^(\d+/\d+|\d+|\[\d+\])$', third_line)
+            if pt_match_3:
+                pt_val = pt_match_3.group(1).strip('[]')
+                if '/' in pt_val:
+                    p, t = pt_val.split('/', 1)
+                    card_dict['power'] = p.strip()
+                    card_dict['toughness'] = t.strip()
+                else:
+                    card_dict['loyalty'] = pt_val
+                text_start_idx = 3
 
-def _split_markdown_block_dict(card_dict):
-    is_multi = any(' // ' in str(card_dict.get(f, '')) for f in ['name', 'manaCost', 'type'])
-    if not is_multi:
-        return card_dict
+        # 4. Rules text
+        if len(lines) > text_start_idx:
+            card_dict['text'] = "\n".join(lines[text_start_idx:])
 
-    front_dict = {}
-    bside_dict = {}
+    # 5. Split multi-faced card fields if ' // ' is present
+    if any(' // ' in str(card_dict.get(f, '')) for f in ['name', 'manaCost', 'type']):
+        front_dict = {}
+        bside_dict = {}
+        for field, val in card_dict.items():
+            val_str = str(val) if val is not None else ""
+            if ' // ' in val_str:
+                parts = val_str.split(' // ', 1)
+                front_dict[field] = parts[0].strip()
+                bside_dict[field] = parts[1].strip()
+            else:
+                front_dict[field] = val
+                bside_dict[field] = val
+        front_dict[utils.json_field_bside] = bside_dict
+        return front_dict
 
-    for field, val in card_dict.items():
-        val_str = str(val) if val is not None else ""
-        if ' // ' in val_str:
-            parts = val_str.split(' // ', 1)
-            front_dict[field] = parts[0].strip()
-            bside_dict[field] = parts[1].strip()
-        else:
-            front_dict[field] = val
-            bside_dict[field] = val
-
-    front_dict[utils.json_field_bside] = bside_dict
-    return front_dict
+    return card_dict
 
 def mtg_open_markdown_content(text, verbose = False):
     """
