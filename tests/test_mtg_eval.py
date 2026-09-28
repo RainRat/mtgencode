@@ -393,5 +393,72 @@ class TestMTGEval(unittest.TestCase):
         result = json.loads(output)
         self.assertEqual(result['checkpoint'], 'runpy_model.pt')
 
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_outfile_plain_text(self, mock_stderr, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        import tempfile
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 5
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = ((1, 1, 0, 0), {'types': (1, 1, 0)})
+
+        with tempfile.NamedTemporaryFile(suffix='.txt', mode='w+', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            with patch('sys.argv', ['mtg_eval.py', '-c', 'model.pt', '-o', tmp_path, '-v', '--no-color']):
+                mtg_eval.main()
+
+            with open(tmp_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            self.assertIn("MODEL EVALUATION REPORT", content)
+            self.assertIn("Checkpoint: model.pt", content)
+            self.assertIn(f"Writing results to: {tmp_path}", mock_stderr.getvalue())
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    def test_outfile_autodetect_json(self, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        import tempfile
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 12
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = ((1, 1, 0, 0), {'types': (1, 1, 0)})
+
+        with tempfile.NamedTemporaryFile(suffix='.json', mode='w+', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            with patch('sys.argv', ['mtg_eval.py', '-c', 'model.pt', '-o', tmp_path]):
+                mtg_eval.main()
+
+            with open(tmp_path, 'r', encoding='utf-8') as f:
+                result = json.load(f)
+
+            self.assertEqual(result['checkpoint'], 'model.pt')
+            self.assertEqual(result['epoch'], 12)
+            self.assertEqual(result['summary']['accuracy'], 100.0)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
 if __name__ == '__main__':
     unittest.main()

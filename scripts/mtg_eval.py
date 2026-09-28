@@ -5,6 +5,7 @@ import argparse
 import json
 import torch
 from collections import OrderedDict
+from contextlib import redirect_stdout
 
 # Add lib and root directories to path
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -38,6 +39,9 @@ Usage Examples:
 
   # Save details for cards that failed validation
   python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --dump
+
+  # Save evaluation report to a JSON file
+  python3 scripts/mtg_eval.py checkpoint.pt -o eval_report.json
 """
     )
 
@@ -66,6 +70,8 @@ Usage Examples:
 
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
+    out_group.add_argument('-o', '--outfile', default=None,
+                        help='Save evaluation report to a file. Auto-enables JSON output format if the filename ends with .json.')
     out_group.add_argument('-j', '--json', action='store_true', help='Output results as structured JSON.')
     out_group.add_argument('-d', '--dump', action='store_true', help='Dump full text of failed cards.')
     out_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
@@ -81,6 +87,10 @@ Usage Examples:
     # Resolve checkpoint: prioritize explicit -c/--checkpoint, then positional, then default 'checkpoint.pt'
     if not args.checkpoint:
         args.checkpoint = args.checkpoint_pos or 'checkpoint.pt'
+
+    # Auto-detect JSON format when outfile ends with .json
+    if args.outfile and args.outfile.endswith('.json'):
+        args.json = True
 
     # Determine if we should use color
     use_color = args.color if args.color is not None else sys.stdout.isatty()
@@ -183,62 +193,70 @@ Usage Examples:
     accuracy = (total_good / total_all * 100) if total_all > 0 else 0
 
     # Output
-    if args.json:
-        result = {
-            'checkpoint': args.checkpoint,
-            'epoch': checkpoint.get('epoch', 'unknown'),
-            'summary': {
-                'total': total_all,
-                'valid': total_good,
-                'invalid': total_bad,
-                'accuracy': accuracy
-            },
-            'properties': {p: {'total': v[0], 'good': v[1], 'bad': v[2], 'success_pct': (v[1]/v[0]*100 if v[0]>0 else 0)} for p, v in values.items()}
-        }
-        print(json.dumps(result, indent=2))
-        return
+    if args.outfile and args.verbose:
+        print(f"Writing results to: {args.outfile}", file=sys.stderr)
 
-    # Terminal Report
-    utils.print_header("MODEL EVALUATION REPORT", use_color=use_color)
-    print(f"  Checkpoint: {args.checkpoint}")
-    print(f"  Epoch:      {checkpoint.get('epoch', 'unknown')}")
-    print()
+    output_f = open(args.outfile, 'w', encoding='utf-8') if args.outfile else sys.stdout
+    try:
+        if args.json:
+            result = {
+                'checkpoint': args.checkpoint,
+                'epoch': checkpoint.get('epoch', 'unknown'),
+                'summary': {
+                    'total': total_all,
+                    'valid': total_good,
+                    'invalid': total_bad,
+                    'accuracy': accuracy
+                },
+                'properties': {p: {'total': v[0], 'good': v[1], 'bad': v[2], 'success_pct': (v[1]/v[0]*100 if v[0]>0 else 0)} for p, v in values.items()}
+            }
+            output_f.write(json.dumps(result, indent=2) + '\n')
+        else:
+            with redirect_stdout(output_f):
+                # Terminal Report
+                utils.print_header("MODEL EVALUATION REPORT", use_color=use_color)
+                print(f"  Checkpoint: {args.checkpoint}")
+                print(f"  Epoch:      {checkpoint.get('epoch', 'unknown')}")
+                print()
 
-    # Accuracy Highlight
-    acc_label = "Accuracy Score:"
-    acc_val = f"{accuracy:.1f}%"
-    if use_color:
-        acc_label = utils.colorize(acc_label, utils.Ansi.BOLD + utils.Ansi.CYAN)
-        color = utils.Ansi.BOLD + (utils.Ansi.GREEN if accuracy >= 90 else (utils.Ansi.YELLOW if accuracy >= 70 else utils.Ansi.RED))
-        acc_val = utils.colorize(acc_val, color)
+                # Accuracy Highlight
+                acc_label = "Accuracy Score:"
+                acc_val = f"{accuracy:.1f}%"
+                if use_color:
+                    acc_label = utils.colorize(acc_label, utils.Ansi.BOLD + utils.Ansi.CYAN)
+                    color = utils.Ansi.BOLD + (utils.Ansi.GREEN if accuracy >= 90 else (utils.Ansi.YELLOW if accuracy >= 70 else utils.Ansi.RED))
+                    acc_val = utils.colorize(acc_val, color)
 
-    print(f"  {acc_label} {acc_val}")
-    print(f"  ({total_good} valid out of {total_all} generated cards)")
-    print()
+                print(f"  {acc_label} {acc_val}")
+                print(f"  ({total_good} valid out of {total_all} generated cards)")
+                print()
 
-    # Breakdown Table
-    header = ["Rule Check", "Checked", "Passed", "Failed", "Success %", "Chart"]
-    if use_color:
-        header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) for h in header]
+                # Breakdown Table
+                header = ["Rule Check", "Checked", "Passed", "Failed", "Success %", "Chart"]
+                if use_color:
+                    header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in header]
 
-    rows = [header]
-    for prop, (total, good, bad) in values.items():
-        if total > 0:
-            pct = (good / total * 100)
-            bar = datalib.get_bar_chart(pct, use_color, color=utils.Ansi.BOLD + (utils.Ansi.GREEN if pct==100 else utils.Ansi.YELLOW))
+                rows = [header]
+                for prop, (total, good, bad) in values.items():
+                    if total > 0:
+                        pct = (good / total * 100)
+                        bar = datalib.get_bar_chart(pct, use_color, color=utils.Ansi.BOLD + (utils.Ansi.GREEN if pct==100 else utils.Ansi.YELLOW))
 
-            p_label = prop
-            g_val = datalib.color_count(good, use_color)
-            b_val = datalib.color_count(bad, use_color, utils.Ansi.BOLD + utils.Ansi.RED if bad > 0 else utils.Ansi.BOLD)
+                        p_label = prop
+                        g_val = datalib.color_count(good, use_color)
+                        b_val = datalib.color_count(bad, use_color, utils.Ansi.BOLD + utils.Ansi.RED if bad > 0 else utils.Ansi.BOLD)
 
-            if use_color:
-                p_label = utils.colorize(prop, utils.Ansi.CYAN)
+                        if use_color:
+                            p_label = utils.colorize(prop, utils.Ansi.CYAN)
 
-            rows.append([p_label, str(total), g_val, b_val, f"{pct:5.1f}%", bar])
+                        rows.append([p_label, str(total), g_val, b_val, f"{pct:5.1f}%", bar])
 
-    datalib.add_separator_row(rows)
-    datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'r', 'r', 'l']), indent=2)
-    print()
+                datalib.add_separator_row(rows)
+                datalib.printrows(datalib.padrows(rows, aligns=['l', 'r', 'r', 'r', 'r', 'l']), indent=2)
+                print()
+    finally:
+        if args.outfile:
+            output_f.close()
 
 if __name__ == "__main__":
     main()
