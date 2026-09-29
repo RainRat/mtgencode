@@ -115,6 +115,9 @@ Usage Examples:
   # Use the default dataset to calculate a mana base for a specific set (40-card Limited deck, 17 lands)
   python3 scripts/mtg_manabase.py data/AllPrintings.json --set MOM --format limited
 
+  # Export recommended mana base report to a JSON file using -o/--outfile
+  python3 scripts/mtg_manabase.py my_deck.txt -o manabase.json
+
   # Include activation costs in the pip analysis
   python3 scripts/mtg_manabase.py my_deck.txt --include-text
 
@@ -130,6 +133,8 @@ Usage Examples:
                              'Defaults to stdin (-). If stdin is a TTY, AllPrintings.json is used if available.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save results. If not provided, results print to the console.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_flag', default=None,
+                        help='Path to save results. Overrides positional outfile argument.')
 
     # Group: Deck Configuration
     deck_group = parser.add_argument_group('Deck Configuration')
@@ -175,6 +180,10 @@ Usage Examples:
     color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # Consolidate -o/--outfile flag vs positional argument
+    if args.outfile_flag:
+        args.outfile = args.outfile_flag
 
     # Format land preset defaults
     format_land_defaults = {

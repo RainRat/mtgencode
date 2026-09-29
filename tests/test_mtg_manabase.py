@@ -209,5 +209,61 @@ class TestMtgManabase(unittest.TestCase):
                     output = fake_out.getvalue()
                     self.assertIn("Target Lands: 35", output)
 
+    def test_main_outfile_option_flag(self):
+        card_w = MagicMock(spec=cardlib.Card)
+        card_w.is_land = False
+        card_w.cost = MagicMock(spec=Manacost)
+        card_w.cost.allsymbols = {'W': 1, 'U': 1}
+        card_w.text = MagicMock(spec=Manatext)
+        card_w.text.costs = []
+        card_w.bside = None
+        card_w.name = "Spell"
+        card_w.set_code = "TST"
+        card_w.number = "1"
+
+        out_json = "test_manabase_out_flag.json"
+        out_csv = "test_manabase_out_flag.csv"
+        out_deck = "test_manabase_out_flag.deck"
+
+        for filepath in (out_json, out_csv, out_deck):
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
+        try:
+            # Test -o with .json auto-detection
+            with patch('jdecode.mtg_open_file', return_value=[card_w]):
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '-o', out_json, '--lands', '20']):
+                    main()
+                    self.assertTrue(os.path.exists(out_json))
+                    with open(out_json, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        self.assertEqual(data['target_lands'], 20)
+                        self.assertEqual(data['recommendation']['Plains'], 10)
+                        self.assertEqual(data['recommendation']['Island'], 10)
+
+            # Test --outfile with .csv auto-detection
+            with patch('jdecode.mtg_open_file', return_value=[card_w]):
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '--outfile', out_csv, '--lands', '20']):
+                    main()
+                    self.assertTrue(os.path.exists(out_csv))
+                    with open(out_csv, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        self.assertIn("Pip Requirement", content)
+                        self.assertIn("Recommended Land", content)
+
+            # Test -o with .deck auto-detection
+            with patch('jdecode.mtg_open_file', return_value=[card_w]):
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '-o', out_deck, '--lands', '20']):
+                    main()
+                    self.assertTrue(os.path.exists(out_deck))
+                    with open(out_deck, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        self.assertIn("Plains", content)
+                        self.assertIn("Island", content)
+        finally:
+            for filepath in (out_json, out_csv, out_deck):
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+
 if __name__ == '__main__':
     unittest.main()
