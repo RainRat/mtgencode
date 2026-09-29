@@ -108,6 +108,14 @@ def add_standard_output_args(parser):
     else:
         output_group = parser
 
+    option_strings = set()
+    if isinstance(parser, argparse.ArgumentParser):
+        for action in parser._actions:
+            option_strings.update(action.option_strings)
+
+    if '-o' not in option_strings and '--outfile' not in option_strings:
+        output_group.add_argument('-o', '--outfile', dest='outfile_flag', help='Save output to a specified file destination (for example, output.json or output.csv).')
+
     fmt_group = output_group.add_mutually_exclusive_group()
     fmt_group.add_argument('-j', '--json', action='store_true', help='Generate JSON output.')
     fmt_group.add_argument('--jsonl', action='store_true', help='Output results in JSON Lines format (one card per line).')
@@ -133,9 +141,12 @@ def add_standard_output_args(parser):
 
 def load_and_filter_cards(args):
     """Loads and filters cards based on standard arguments."""
-    # Resolve smart defaults for infile
+    # Resolve smart defaults for infile and outfile
     infile = getattr(args, 'infile', '-')
     outfile = getattr(args, 'outfile', None)
+    if not outfile and getattr(args, 'outfile_flag', None):
+        outfile = getattr(args, 'outfile_flag')
+        setattr(args, 'outfile', outfile)
     
     # Logic from mtg_search.py for smart infile handling
     if infile and infile != '-' and not os.path.exists(infile):
