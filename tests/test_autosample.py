@@ -6,7 +6,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 # Add scripts directory to sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts')))
+scripts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts'))
+sys.path.insert(0, scripts_dir)
 
 import autosample
 
@@ -51,6 +52,13 @@ class TestAutosample:
         assert "th sample.lua" in res['cmd']
         assert res['exec_cmd'] == ['th', 'sample.lua', cp_path, '-temperature', '0.8', '-length', '1000', '-seed', '123']
 
+    def test_sample_default_seed_generation(self):
+        cp_path = "/tmp/fake_cp/lm_lstm_epoch10.00_0.2000.t7"
+        res = autosample.sample(cp_path, temp=0.8, count=1000, seed=None, ident="test", dry_run=True)
+        assert res['exec_cmd'][7] == '-seed'
+        seed_val = int(res['exec_cmd'][8])
+        assert isinstance(seed_val, int)
+
     @patch('subprocess.run')
     def test_sample_execution(self, mock_subproc):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -94,6 +102,21 @@ class TestAutosample:
             assert "Target output files: 2" in captured.out
             assert len(res['samples']) == 2
 
+    @patch('subprocess.run')
+    def test_process_dir_execution_verbose(self, mock_subproc, capsys):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sub = os.path.join(tmpdir, "sub")
+            os.makedirs(sub)
+            cp = os.path.join(sub, "lm_lstm_epoch10.00_0.2000.t7")
+            with open(cp, 'w') as f:
+                f.write("data")
+
+            res = autosample.process_dir(tmpdir, temp=1.0, count=100, seed=7, ident="out", verbose=True, dry_run=False)
+            captured = capsys.readouterr()
+
+            assert "processing " in captured.out
+            assert res is None
+
     def test_main_validation_errors(self):
         with pytest.raises(ValueError, match="bad rnndir"):
             autosample.main("/nonexistent_rnn_dir_12345", "/tmp", 1.0, 1000)
@@ -117,7 +140,14 @@ class TestAutosample:
             assert "Checkpoints identified: 1" in captured.out
             assert len(res['samples']) == 1
 
+    @patch('os.chdir')
+    def test_main_non_dry_run_chdir(self, mock_chdir):
+        with tempfile.TemporaryDirectory() as rnndir, tempfile.TemporaryDirectory() as cpdir:
+            autosample.main(rnndir, cpdir, temp=1.0, count=100, seed=1, dry_run=False)
+            mock_chdir.assert_called_once_with(rnndir)
+
     def test_cli_dry_run_flags(self, capsys):
+        script_path = os.path.join(scripts_dir, 'autosample.py')
         with tempfile.TemporaryDirectory() as rnndir, tempfile.TemporaryDirectory() as cpdir:
             sub = os.path.join(cpdir, "run1")
             os.makedirs(sub)
@@ -126,10 +156,10 @@ class TestAutosample:
                 f.write("model")
 
             for flag in ['-p', '--preview', '--dry-run']:
-                test_args = ['scripts/autosample.py', rnndir, cpdir, flag, '-t', '0.7', '-c', '100', '-s', '42', '-i', 'testrun']
+                test_args = ['autosample.py', rnndir, cpdir, flag, '-t', '0.7', '-c', '100', '-s', '42', '-i', 'testrun']
                 with patch('sys.argv', test_args):
                     with pytest.raises(SystemExit) as exc_info:
-                        runpy.run_path('scripts/autosample.py', run_name='__main__')
+                        runpy.run_path(script_path, run_name='__main__')
                     assert exc_info.value.code == 0
 
                 captured = capsys.readouterr()
