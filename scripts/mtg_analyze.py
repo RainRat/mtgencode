@@ -2001,6 +2001,18 @@ def main():
 
     args = parser.parse_args()
     if not args.command: parser.print_help(); return
+
+    # Resolve outfile flag or positional outfile
+    outfile_flag = getattr(args, 'outfile_flag', None)
+    if outfile_flag:
+        setattr(args, 'outfile', outfile_flag)
+    outfile = getattr(args, 'outfile', None)
+
+    if outfile:
+        if outfile.endswith('.json') and not getattr(args, 'csv', False):
+            setattr(args, 'json', True)
+        elif outfile.endswith('.csv') and not getattr(args, 'json', False):
+            setattr(args, 'csv', True)
     
     # Smart Positional Argument Handling
     if hasattr(args, 'query') and args.query == '-':
@@ -2069,6 +2081,11 @@ def main():
         print(f"Sample Preview (up to 10): {', '.join(sample_names)}")
         return
 
-    args.func(args)
+    if outfile and args.command not in ['summary', 'skeleton', 'pips', 'stats']:
+        with open(outfile, 'w', encoding='utf-8') as out_f:
+            with redirect_stdout(out_f):
+                args.func(args)
+    else:
+        args.func(args)
 
 if __name__ == "__main__": main()
