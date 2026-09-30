@@ -87,6 +87,37 @@ def pick_cards_with_curve(pool, target_count, curve=None):
             
     return picked
 
+ARCHETYPE_PRESETS = {
+    'aggro': {
+        'commander': {'creatures': 38, 'spells': 24, 'lands': 37, 'curve': {1: 10, 2: 18, 3: 6, 4: 4}},
+        'brawl': {'creatures': 24, 'spells': 12, 'lands': 23, 'curve': {1: 6, 2: 11, 3: 5, 4: 2}},
+        'limited': {'creatures': 17, 'spells': 6, 'lands': 17, 'curve': {1: 4, 2: 8, 3: 4, 4: 1}},
+        'standard': {'creatures': 26, 'spells': 11, 'lands': 23, 'curve': {1: 8, 2: 12, 3: 4, 4: 2}},
+        'pauper': {'creatures': 26, 'spells': 11, 'lands': 23, 'curve': {1: 8, 2: 12, 3: 4, 4: 2}},
+    },
+    'control': {
+        'commander': {'creatures': 15, 'spells': 44, 'lands': 40, 'curve': {2: 4, 3: 5, 4: 4, 5: 2}},
+        'brawl': {'creatures': 8, 'spells': 26, 'lands': 25, 'curve': {2: 2, 3: 3, 4: 2, 5: 1}},
+        'limited': {'creatures': 10, 'spells': 12, 'lands': 18, 'curve': {2: 3, 3: 3, 4: 2, 5: 2}},
+        'standard': {'creatures': 8, 'spells': 26, 'lands': 26, 'curve': {2: 2, 3: 3, 4: 2, 5: 1}},
+        'pauper': {'creatures': 8, 'spells': 26, 'lands': 26, 'curve': {2: 2, 3: 3, 4: 2, 5: 1}},
+    },
+    'midrange': {
+        'commander': {'creatures': 30, 'spells': 31, 'lands': 38, 'curve': {1: 5, 2: 15, 3: 15, 4: 10, 5: 8, 6: 8}},
+        'brawl': {'creatures': 18, 'spells': 18, 'lands': 24, 'curve': {1: 3, 2: 8, 3: 8, 4: 5, 5: 3, 6: 3}},
+        'limited': {'creatures': 15, 'spells': 8, 'lands': 17, 'curve': {1: 2, 2: 5, 3: 5, 4: 2, 5: 1}},
+        'standard': {'creatures': 20, 'spells': 16, 'lands': 24, 'curve': {1: 4, 2: 8, 3: 5, 4: 2, 5: 1}},
+        'pauper': {'creatures': 20, 'spells': 16, 'lands': 24, 'curve': {1: 4, 2: 8, 3: 5, 4: 2, 5: 1}},
+    },
+    'ramp': {
+        'commander': {'creatures': 25, 'spells': 35, 'lands': 39, 'curve': {1: 4, 2: 6, 3: 5, 4: 4, 5: 3, 6: 3}},
+        'brawl': {'creatures': 14, 'spells': 21, 'lands': 24, 'curve': {1: 2, 2: 4, 3: 3, 4: 2, 5: 2, 6: 1}},
+        'limited': {'creatures': 13, 'spells': 9, 'lands': 18, 'curve': {1: 1, 2: 3, 3: 3, 4: 3, 5: 2, 6: 1}},
+        'standard': {'creatures': 14, 'spells': 21, 'lands': 25, 'curve': {1: 2, 2: 4, 3: 3, 4: 2, 5: 2, 6: 1}},
+        'pauper': {'creatures': 14, 'spells': 21, 'lands': 25, 'curve': {1: 2, 2: 4, 3: 3, 4: 2, 5: 2, 6: 1}},
+    },
+}
+
 def main():
     parser = argparse.ArgumentParser(
         description="Generate a complete Magic: The Gathering deck from a card pool. "
@@ -96,6 +127,10 @@ def main():
 Usage Examples:
   # Generate a Commander deck with a random commander from a pool
   python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander
+
+  # Generate an Aggro or Control deck preset
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard --preset aggro
+  python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander --preset control
 
   # Quickly generate a deck using the default dataset and a specific commander
   python3 scripts/mtg_deckgen.py "Atraxa, Praetors' Voice"
@@ -142,6 +177,8 @@ Usage Examples:
     deck_group = parser.add_argument_group('Deck Configuration')
     deck_group.add_argument('--format', choices=['commander', 'standard', 'brawl', 'pauper', 'limited'], default='commander',
                             help='Deck format (Default: commander).')
+    deck_group.add_argument('--preset', choices=['aggro', 'control', 'midrange', 'ramp'],
+                            help='Apply strategic deck archetype composition preset (aggro, control, midrange, ramp) adjusting creature/spell/land counts and mana curve targets.')
     deck_group.add_argument('--commander', help='Specific legendary creature to use as commander (case-insensitive).')
     deck_group.add_argument('--creatures', type=int, help='Override target number of creatures.')
     deck_group.add_argument('--spells', type=int, help='Override target number of non-creature spells.')
@@ -243,18 +280,28 @@ Usage Examples:
     structured_records = []
     actual_composition = Counter()
 
+    # Resolve preset targets if specified
+    preset_targets = None
+    if args.preset and args.preset.lower() in ARCHETYPE_PRESETS:
+        preset_targets = ARCHETYPE_PRESETS[args.preset.lower()].get(args.format.lower())
+
     if args.format in ('commander', 'brawl'):
-        if args.format == 'commander':
-            creatures_target = args.creatures if args.creatures is not None else 30
-            spells_target = args.spells if args.spells is not None else 31
-            lands_target = args.lands if args.lands is not None else 38
+        if preset_targets:
+            default_creatures = preset_targets['creatures']
+            default_spells = preset_targets['spells']
+            default_lands = preset_targets['lands']
+            default_curve = preset_targets['curve']
+        elif args.format == 'commander':
+            default_creatures, default_spells, default_lands = 30, 31, 38
             default_curve = {1: 5, 2: 15, 3: 15, 4: 10, 5: 8, 6: 8}
         else: # brawl
-            creatures_target = args.creatures if args.creatures is not None else 18
-            spells_target = args.spells if args.spells is not None else 18
-            lands_target = args.lands if args.lands is not None else 24
+            default_creatures, default_spells, default_lands = 18, 18, 24
             default_curve = {1: 3, 2: 8, 3: 8, 4: 5, 5: 3, 6: 3}
-        
+
+        creatures_target = args.creatures if args.creatures is not None else default_creatures
+        spells_target = args.spells if args.spells is not None else default_spells
+        lands_target = args.lands if args.lands is not None else default_lands
+
         curve = None
         if args.curve:
             curve = {}
@@ -442,15 +489,38 @@ Usage Examples:
                 actual_composition['Sideboard'] = len(side_cards)
 
     elif args.format in ('standard', 'pauper', 'limited'):
-        if args.format == 'limited':
-            creatures_target = args.creatures if args.creatures is not None else 15
-            spells_target = args.spells if args.spells is not None else 8
-            lands_target = args.lands if args.lands is not None else 17
+        if preset_targets:
+            default_creatures = preset_targets['creatures']
+            default_spells = preset_targets['spells']
+            default_lands = preset_targets['lands']
+            default_curve = preset_targets['curve']
+        elif args.format == 'limited':
+            default_creatures, default_spells, default_lands = 15, 8, 17
+            default_curve = {1: 2, 2: 5, 3: 5, 4: 2, 5: 1}
         else: # standard / pauper
-            creatures_target = args.creatures if args.creatures is not None else 20
-            spells_target = args.spells if args.spells is not None else 16
-            lands_target = args.lands if args.lands is not None else 24
-        
+            default_creatures, default_spells, default_lands = 20, 16, 24
+            default_curve = {1: 4, 2: 8, 3: 5, 4: 2, 5: 1}
+
+        creatures_target = args.creatures if args.creatures is not None else default_creatures
+        spells_target = args.spells if args.spells is not None else default_spells
+        lands_target = args.lands if args.lands is not None else default_lands
+
+        curve = None
+        if args.curve:
+            curve = {}
+            for p in args.curve.split(','):
+                try:
+                    k, v = p.split(':')
+                    if k.endswith('+'):
+                        curve[int(k[:-1])] = int(v)
+                    else:
+                        curve[int(k)] = int(v)
+                except ValueError:
+                    if not args.quiet:
+                        print(f"Warning: Invalid curve segment '{p}', skipping.", file=sys.stderr)
+        else:
+            curve = default_curve
+
         creatures_pool = [c for c in pool if c.is_creature]
         spells_pool = [c for c in pool if not c.is_creature and not c.is_land]
         
@@ -470,7 +540,7 @@ Usage Examples:
             # In standard, we allow multiple copies, so we sample a smaller unique pool and then repeat
             # Heuristic: about 4-of each unique card (or 2-of for limited)
             divisor = 2 if args.format == 'limited' else 4
-            c_sample = pick_cards_with_curve(creatures_pool, max(1, creatures_target // divisor))
+            c_sample = pick_cards_with_curve(creatures_pool, max(1, creatures_target // divisor), curve=curve)
             if c_sample:
                 for _ in range(creatures_target):
                     chosen_cards.append(random.choice(c_sample))
