@@ -54,8 +54,7 @@ def test_diff_basic_addition():
     data2 = [{"name": "New Card", "types": ["Creature"], "pt": "1/1", "rarity": "common"}]
     stdout, stderr = run_diff([], data1, data2)
     assert "ADDED CARDS (1 match)" in stdout
-    # The script output names in lowercase for additions/removals
-    assert "new card" in stdout
+    assert "New Card" in stdout
     assert "Added" in stdout
     assert "1" in stdout
 
@@ -64,7 +63,7 @@ def test_diff_basic_removal():
     data2 = []
     stdout, stderr = run_diff([], data1, data2)
     assert "REMOVED CARDS (1 match)" in stdout
-    assert "old card" in stdout
+    assert "Old Card" in stdout
     assert "Removed" in stdout
 
 def test_diff_basic_modification():
@@ -72,7 +71,7 @@ def test_diff_basic_modification():
     data2 = [{"name": "Mod Card", "manaCost": "{U}", "types": ["Instant"], "rarity": "rare", "text": "New text."}]
     stdout, stderr = run_diff([], data1, data2)
     assert "MODIFIED CARDS (1 match)" in stdout
-    assert "mod card" in stdout
+    assert "Mod Card" in stdout
     assert "Cost:" in stdout
     assert "Type:" in stdout
     assert "Rarity:" in stdout
@@ -133,7 +132,7 @@ def test_diff_filtering():
     data2 = [{"name": "A", "types": ["Land"], "rarity": "rare"}]
     stdout, stderr = run_diff(["--rarity", "rare"], data1, data2)
     assert "ADDED CARDS (1 match)" in stdout
-    assert "a" in stdout
+    assert "A" in stdout
 
 def test_diff_no_changes():
     data = [{"name": "A", "types": ["Land"]}]
@@ -159,7 +158,7 @@ def test_diff_color_modification():
     data2 = [{"name": "Mod", "types": ["Land"], "manaCost": "{2}"}]
     stdout, stderr = run_diff(["--color"], data1, data2)
     assert "\033[" in stdout
-    assert "mod" in stdout
+    assert "Mod" in stdout
     assert "Cost:" in stdout
 
 def test_diff_verbose():

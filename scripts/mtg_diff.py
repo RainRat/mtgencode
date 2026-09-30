@@ -390,7 +390,7 @@ Usage Examples:
             if removed:
                 utils.print_header("REMOVED CARDS", count=len(removed), use_color=use_color)
                 for c in removed:
-                    name = c.name
+                    name = c.display_name
                     if use_color:
                         name = utils.colorize(name, removed_color)
                     print(f"  - {name}")
@@ -399,7 +399,7 @@ Usage Examples:
             if added:
                 utils.print_header("ADDED CARDS", count=len(added), use_color=use_color)
                 for c in added:
-                    name = c.name
+                    name = c.display_name
                     if use_color:
                         name = utils.colorize(name, added_color)
                     print(f"  - {name}")
@@ -408,7 +408,7 @@ Usage Examples:
             if modified:
                 utils.print_header("MODIFIED CARDS", count=len(modified), use_color=use_color)
                 for c, diffs in modified:
-                    name = c.name
+                    name = c.display_name
                     if use_color:
                         name = utils.colorize(name, mod_color)
                     print(f"  * {name}")
