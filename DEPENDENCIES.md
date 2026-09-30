@@ -98,6 +98,9 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
 
 **Note:** This is an advanced feature. It requires you to compile the `word2vec` tool from its source code.
 
+### Prerequisites
+*   **C Compiler & Build Tools:** A C compiler (such as `gcc` or `clang`) and `make` utility are required to compile the `word2vec` source code.
+
 ### Setup Steps
 
 1.  **Install word2vec:**
@@ -116,6 +119,7 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
         ```bash
         cp word2vec ..
         cd ..
+        chmod +x word2vec
         ```
 
 2.  **Generate Reference Data and Vectors:**
