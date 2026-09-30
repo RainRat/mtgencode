@@ -73,7 +73,7 @@ class Manacost:
                             else:
                                 self.symbols[sym] += 1
                             if sym == utils.mana_X:
-                                self.cmc += 0
+                                pass
                             elif utils.mana_2 in sym:
                                 self.cmc += 2
                             else:
