@@ -200,7 +200,7 @@ Example Usage:
     io_group.add_argument('infile', nargs='?', default=None,
                         help='Encoded card file or JSON corpus to process. Defaults to data/AllPrintings.json if omitted.')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Base name of output file (e.g. outputs ending in .2g, .3g etc. will be produced). Optional if --dry-run is specified.')
+                        help='Base name of output file (for example, outputs ending in .2g, .3g etc. will be produced). Optional if --dry-run is specified.')
     
     # Processing & Debugging
     proc_group = parser.add_argument_group('Processing Options')

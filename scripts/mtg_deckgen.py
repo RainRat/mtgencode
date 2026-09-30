@@ -103,13 +103,13 @@ Usage Examples:
   # Generate a Standard deck from a pool
   python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard
 
-  # Override deck composition (e.g., more lands, fewer creatures)
+  # Override deck composition (for example, more lands, fewer creatures)
   python3 scripts/mtg_deckgen.py data/AllPrintings.json --creatures 20 --spells 30 --lands 40
 
   # Override mana curve for creatures (Format: "CMC:Count,CMC:Count,...")
   python3 scripts/mtg_deckgen.py data/AllPrintings.json --curve "1:5,2:10,3:10,4:8,5:5,6+:5"
 
-  # Filter the card pool (e.g., only Goblins)
+  # Filter the card pool (for example, only Goblins)
   python3 scripts/mtg_deckgen.py data/AllPrintings.json --grep "Goblin"
 
   # Generate a Standard deck with a 15-card sideboard

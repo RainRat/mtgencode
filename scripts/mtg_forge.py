@@ -804,13 +804,13 @@ Usage Examples:
     # Group: Card Fields
     field_group = parser.add_argument_group('Card Fields')
     field_group.add_argument('-n', '--name', help='Card name.')
-    field_group.add_argument('-c', '--cost', help='Mana cost (e.g. "{1}{W}{B}").')
-    field_group.add_argument('-t', '--type', help='Full type line (e.g. "Legendary Creature - Human").')
+    field_group.add_argument('-c', '--cost', help='Mana cost (for example, "{1}{W}{B}").')
+    field_group.add_argument('-t', '--type', help='Full type line (for example, "Legendary Creature - Human").')
     field_group.add_argument('-x', '--text', help='Rules text (use \\n for newlines).')
-    field_group.add_argument('--pt', help='Power/Toughness (e.g. "2/2").')
+    field_group.add_argument('--pt', help='Power/Toughness (for example, "2/2").')
     field_group.add_argument('--loy', '--loyalty', dest='loy', help='Loyalty or Defense value.')
     field_group.add_argument('-r', '--rarity', help='Rarity (common, uncommon, rare, mythic).')
-    field_group.add_argument('--set', help='Set code (e.g. "MOM").')
+    field_group.add_argument('--set', help='Set code (for example, "MOM").')
 
     # Group: Filtering Options (for batch mode)
     filter_group = parser.add_argument_group('Filtering Options (Batch Mode Only)')
@@ -821,17 +821,17 @@ Usage Examples:
     filter_group.add_argument('--set-filter', '--set-code', action='append', dest='set_filter',
                         help='Only include cards from specific sets.')
     filter_group.add_argument('--rarity-filter', action='append', dest='rarity_filter',
-                        help="Only include cards of specific rarities (e.g. common, rare, mythic, O, N, A, Y).")
+                        help="Only include cards of specific rarities (for example, common, rare, mythic, O, N, A, Y).")
     filter_group.add_argument('--colors', action='append',
                         help="Only include cards of specific colors (W, U, B, R, G, C, A).")
     filter_group.add_argument('--cmc', action='append',
-                        help='Only include cards with specific CMC (Converted Mana Cost) values (e.g., ">3", "1-4").')
+                        help='Only include cards with specific CMC (Converted Mana Cost) values (for example, ">3", "1-4").')
     filter_group.add_argument('--pow', '--power', action='append', dest='pow',
                         help='Only include cards with specific Power values.')
     filter_group.add_argument('--tou', '--toughness', action='append', dest='tou',
                         help='Only include cards with specific Toughness values.')
     filter_group.add_argument('--mechanic', action='append',
-                        help='Only include cards with specific mechanics (e.g., Flying, Trample).')
+                        help='Only include cards with specific mechanics (for example, Flying, Trample).')
     filter_group.add_argument('-l', '--limit', type=int, default=0,
                         help='Only process the first N cards (useful for batch mode).')
     filter_group.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],

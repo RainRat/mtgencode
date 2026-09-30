@@ -56,7 +56,7 @@ def run_csv2json(argv=None):
         description='Convert a CSV file of custom Magic cards into MTGJSON format.',
         epilog='''
 Custom Card Workflow:
-  1. Create a CSV file (e.g., custom.csv) following the format below.
+  1. Create a CSV file (for example, custom.csv) following the format below.
   2. Convert to JSON:
      python3 scripts/csv2json.py custom.csv custom.json
      (or: python3 scripts/mtg_csv_json.py csv2json custom.csv custom.json)
@@ -68,16 +68,16 @@ Dry Run Mode:
      python3 scripts/csv2json.py custom.csv --dry-run
 
 CSV Format (7 columns in this order):
-  1. Name: The name of the card (e.g., "Giant Growth").
-  2. Mana Cost: The mana symbols in braces (e.g., "{G}" or "{1}{W}{B}").
-  3. Types: Supertypes and card types (e.g., "Legendary Creature").
-  4. Subtypes: Subtypes separated by spaces (e.g., "Elf Warrior").
+  1. Name: The name of the card (for example, "Giant Growth").
+  2. Mana Cost: The mana symbols in braces (for example, "{G}" or "{1}{W}{B}").
+  3. Types: Supertypes and card types (for example, "Legendary Creature").
+  4. Subtypes: Subtypes separated by spaces (for example, "Elf Warrior").
   5. Text: Rules text. Use "\\n" or literal newlines for new lines.
   6. Stats: Power/Toughness (3/3), Loyalty (5), or Defense (3).
   7. Rarity: Short marker (C, U, R, M, L, I) or full name (common, rare, etc.).
 
 Multi-Faced Cards:
-  To represent cards with multiple faces (e.g., Splits or Transforms), use the
+  To represent cards with multiple faces (for example, Splits or Transforms), use the
   " // " separator in the relevant columns.
   Example: Name: "Front // Back", Cost: "{1}{W} // {U}", Type: "Creature // Instant"
 
@@ -242,7 +242,7 @@ Dry Run Mode:
     filter_group.add_argument('--exclude-loyalty', action='append',
                         help='Exclude cards whose loyalty/defense matches a search pattern.')
     filter_group.add_argument('--set', action='append',
-                        help='Only include cards from specific sets (e.g., MOM, MRD). Supports multiple sets (OR logic).')
+                        help='Only include cards from specific sets (for example, MOM, MRD). Supports multiple sets (OR logic).')
     filter_group.add_argument('--rarity', action='append',
                         help="Only include cards of specific rarities. Supports full names or shorthands (O, N, A, Y, I, L). Supports multiple rarities.")
     filter_group.add_argument('--colors', action='append',
