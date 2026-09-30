@@ -289,6 +289,89 @@ class TestMtgValidateGaps(unittest.TestCase):
             err = fake_err.getvalue()
             self.assertIn("Notice: Using default dataset:", err)
 
+    def test_main_json_output(self):
+        import json
+        cards = [
+            cardlib.Card({"name": "Opt", "types": ["Instant"], "manaCost": "{U}"}),
+            cardlib.Card({"name": "Bear", "types": ["Creature"], "power": "2", "toughness": "2", "manaCost": "{1}{G}"})
+        ]
+
+        with patch('mtg_validate.jdecode.mtg_open_file', return_value=cards):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                mtg_validate.main('dummy.json', json_out=True, quiet=True)
+                out = fake_out.getvalue()
+                parsed = json.loads(out)
+                self.assertIn("summary", parsed)
+                self.assertIn("properties", parsed)
+                self.assertEqual(parsed["summary"]["total_cards"], 2)
+                self.assertEqual(parsed["summary"]["valid_cards"], 2)
+                self.assertEqual(parsed["summary"]["success_rate"], 100.0)
+
+    def test_main_csv_output(self):
+        import csv
+        cards = [
+            cardlib.Card({"name": "Opt", "types": ["Instant"], "manaCost": "{U}"}),
+            cardlib.Card({"name": "Bear", "types": ["Creature"], "power": "2", "toughness": "2", "manaCost": "{1}{G}"})
+        ]
+
+        with patch('mtg_validate.jdecode.mtg_open_file', return_value=cards):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                mtg_validate.main('dummy.json', csv_out=True, quiet=True)
+                out = fake_out.getvalue()
+                lines = list(csv.reader(io.StringIO(out)))
+                self.assertEqual(lines[0], ["Category", "Property", "Total", "Good", "Bad", "Success %"])
+                self.assertEqual(lines[1][0], "Summary")
+                self.assertEqual(lines[1][1], "Valid Cards")
+                self.assertEqual(lines[1][2], "2")
+
+    def test_outfile_auto_detection_json_and_csv(self):
+        import json
+        import csv
+        cards = [cardlib.Card({"name": "Opt", "types": ["Instant"], "manaCost": "{U}"})]
+
+        with tempfile.NamedTemporaryFile('w+', suffix='.json', delete=False, encoding='utf8') as tmp_json:
+            json_file = tmp_json.name
+        with tempfile.NamedTemporaryFile('w+', suffix='.csv', delete=False, encoding='utf8') as tmp_csv:
+            csv_file = tmp_csv.name
+
+        try:
+            with patch('mtg_validate.jdecode.mtg_open_file', return_value=cards):
+                mtg_validate.main('dummy.json', oname=json_file, quiet=True)
+                with open(json_file, 'r', encoding='utf8') as f:
+                    parsed = json.load(f)
+                    self.assertIn("summary", parsed)
+
+            with patch('mtg_validate.jdecode.mtg_open_file', return_value=cards):
+                mtg_validate.main('dummy.json', oname=csv_file, quiet=True)
+                with open(csv_file, 'r', encoding='utf8') as f:
+                    lines = list(csv.reader(f))
+                    self.assertEqual(lines[0], ["Category", "Property", "Total", "Good", "Bad", "Success %"])
+        finally:
+            if os.path.exists(json_file):
+                os.remove(json_file)
+            if os.path.exists(csv_file):
+                os.remove(csv_file)
+
+    def test_cli_json_and_csv_flags(self):
+        script_path = os.path.join(scriptsdir, 'mtg_validate.py')
+        cards = [cardlib.Card({"name": "Opt", "types": ["Instant"], "manaCost": "{U}"})]
+
+        with patch('sys.argv', ['mtg_validate.py', 'dummy.json', '-j', '-q']), \
+             patch('mtg_validate.jdecode.mtg_open_file', return_value=cards), \
+             patch('sys.stdout', new=io.StringIO()) as fake_out:
+            with self.assertRaises(SystemExit) as cm:
+                runpy.run_path(script_path, run_name='__main__')
+            self.assertEqual(cm.exception.code, 0)
+            self.assertIn('"summary"', fake_out.getvalue())
+
+        with patch('sys.argv', ['mtg_validate.py', 'dummy.json', '--csv', '-q']), \
+             patch('mtg_validate.jdecode.mtg_open_file', return_value=cards), \
+             patch('sys.stdout', new=io.StringIO()) as fake_out:
+            with self.assertRaises(SystemExit) as cm:
+                runpy.run_path(script_path, run_name='__main__')
+            self.assertEqual(cm.exception.code, 0)
+            self.assertIn('Category,Property,Total,Good,Bad,Success %', fake_out.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
