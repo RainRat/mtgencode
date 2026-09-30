@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import runpy
@@ -163,6 +164,107 @@ class TestCombineJson(unittest.TestCase):
             self.assertIn("Sample Preview", output)
             self.assertFalse(os.path.exists(output_file))
 
+    def test_namespace_outfile_with_output_positional(self):
+        base_data = {"data": {"MOM": {"name": "March"}}}
+        custom1 = {"data": {"CUS1": {"name": "Custom 1"}}}
+        custom2 = {"data": {"CUS2": {"name": "Custom 2"}}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_file = os.path.join(tmpdir, "base.json")
+            c1_file = os.path.join(tmpdir, "custom1.json")
+            c2_file = os.path.join(tmpdir, "custom2.json")
+            output_file = os.path.join(tmpdir, "output.json")
+
+            with open(base_file, "w", encoding="utf-8") as f:
+                json.dump(base_data, f)
+            with open(c1_file, "w", encoding="utf-8") as f:
+                json.dump(custom1, f)
+            with open(c2_file, "w", encoding="utf-8") as f:
+                json.dump(custom2, f)
+
+            mock_args = argparse.Namespace(
+                base_file=base_file,
+                custom_files=[c1_file],
+                output_positional=c2_file,
+                outfile=output_file,
+                dry_run=False
+            )
+
+            with patch("argparse.ArgumentParser.parse_args", return_value=mock_args):
+                main()
+
+            with open(output_file, "r", encoding="utf-8") as f:
+                result = json.load(f)
+
+            self.assertIn("MOM", result["data"])
+            self.assertIn("CUS1", result["data"])
+            self.assertIn("CUS2", result["data"])
+
+    def test_namespace_dry_run_with_existing_output_positional(self):
+        base_data = {"data": {"MOM": {"code": "MOM", "cards": [{"name": "Grizzly Bears"}]}}}
+        custom1_data = {"data": {"CUS1": {"code": "CUS1", "cards": [{"name": "Custom Bear 1"}]}}}
+        custom2_data = {"data": {"CUS2": {"code": "CUS2", "cards": [{"name": "Custom Bear 2"}]}}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_file = os.path.join(tmpdir, "base.json")
+            c1_file = os.path.join(tmpdir, "custom1.json")
+            c2_file = os.path.join(tmpdir, "custom2.json")
+
+            with open(base_file, "w", encoding="utf-8") as f:
+                json.dump(base_data, f)
+            with open(c1_file, "w", encoding="utf-8") as f:
+                json.dump(custom1_data, f)
+            with open(c2_file, "w", encoding="utf-8") as f:
+                json.dump(custom2_data, f)
+
+            mock_args = argparse.Namespace(
+                base_file=base_file,
+                custom_files=[c1_file],
+                output_positional=c2_file,
+                outfile=None,
+                dry_run=True
+            )
+
+            with patch("argparse.ArgumentParser.parse_args", return_value=mock_args):
+                with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                    main()
+                    output = mock_stdout.getvalue()
+
+            self.assertIn("Dry Run Summary: 3 card(s) in merged dataset.", output)
+            self.assertIn("CUS1: 1 card(s)", output)
+            self.assertIn("CUS2: 1 card(s)", output)
+
+    def test_namespace_positional_output_fallback(self):
+        base_data = {"data": {"MOM": {"name": "March"}}}
+        custom_data = {"data": {"CUS": {"name": "Custom"}}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_file = os.path.join(tmpdir, "base.json")
+            custom_file = os.path.join(tmpdir, "custom.json")
+            output_file = os.path.join(tmpdir, "output.json")
+
+            with open(base_file, "w", encoding="utf-8") as f:
+                json.dump(base_data, f)
+            with open(custom_file, "w", encoding="utf-8") as f:
+                json.dump(custom_data, f)
+
+            mock_args = argparse.Namespace(
+                base_file=base_file,
+                custom_files=[custom_file],
+                output_positional=output_file,
+                outfile=None,
+                dry_run=False
+            )
+
+            with patch("argparse.ArgumentParser.parse_args", return_value=mock_args):
+                main()
+
+            with open(output_file, "r", encoding="utf-8") as f:
+                result = json.load(f)
+
+            self.assertIn("MOM", result["data"])
+            self.assertIn("CUS", result["data"])
+
     def test_dry_run_with_positional_outfile(self):
         base_data = {"data": {"MOM": {"code": "MOM", "cards": [{"name": "Grizzly Bears"}]}}}
         custom_data = {"data": {"CUS": {"code": "CUS", "cards": [{"name": "Custom Bear"}]}}}
@@ -190,6 +292,77 @@ class TestCombineJson(unittest.TestCase):
         with patch("sys.argv", ["combinejson.py", "base.json"]):
             with self.assertRaises(SystemExit):
                 main()
+
+    def test_single_custom_file_missing_output_raises_system_exit(self):
+        base_data = {"key": "base"}
+        custom_data = {"key": "custom"}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_file = os.path.join(tmpdir, "base.json")
+            custom_file = os.path.join(tmpdir, "custom.json")
+
+            with open(base_file, "w", encoding="utf-8") as f:
+                json.dump(base_data, f)
+            with open(custom_file, "w", encoding="utf-8") as f:
+                json.dump(custom_data, f)
+
+            with patch("sys.argv", ["combinejson.py", base_file, custom_file]):
+                with self.assertRaises(SystemExit):
+                    main()
+
+    def test_outfile_with_positional_output_appends_to_custom_files(self):
+        base_data = {"data": {"MOM": {"name": "March"}}}
+        custom1 = {"data": {"CUS1": {"name": "Custom 1"}}}
+        custom2 = {"data": {"CUS2": {"name": "Custom 2"}}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_file = os.path.join(tmpdir, "base.json")
+            c1_file = os.path.join(tmpdir, "custom1.json")
+            c2_file = os.path.join(tmpdir, "custom2.json")
+            output_file = os.path.join(tmpdir, "output.json")
+
+            with open(base_file, "w", encoding="utf-8") as f:
+                json.dump(base_data, f)
+            with open(c1_file, "w", encoding="utf-8") as f:
+                json.dump(custom1, f)
+            with open(c2_file, "w", encoding="utf-8") as f:
+                json.dump(custom2, f)
+
+            with patch("sys.argv", ["combinejson.py", base_file, c1_file, c2_file, "-o", output_file]):
+                main()
+
+            with open(output_file, "r", encoding="utf-8") as f:
+                result = json.load(f)
+
+            self.assertIn("MOM", result["data"])
+            self.assertIn("CUS1", result["data"])
+            self.assertIn("CUS2", result["data"])
+
+    def test_dry_run_with_existing_positional_file(self):
+        base_data = {"data": {"MOM": {"code": "MOM", "cards": [{"name": "Grizzly Bears"}]}}}
+        custom1_data = {"data": {"CUS1": {"code": "CUS1", "cards": [{"name": "Custom Bear 1"}]}}}
+        custom2_data = {"data": {"CUS2": {"code": "CUS2", "cards": [{"name": "Custom Bear 2"}]}}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_file = os.path.join(tmpdir, "base.json")
+            c1_file = os.path.join(tmpdir, "custom1.json")
+            c2_file = os.path.join(tmpdir, "custom2.json")
+
+            with open(base_file, "w", encoding="utf-8") as f:
+                json.dump(base_data, f)
+            with open(c1_file, "w", encoding="utf-8") as f:
+                json.dump(custom1_data, f)
+            with open(c2_file, "w", encoding="utf-8") as f:
+                json.dump(custom2_data, f)
+
+            with patch("sys.argv", ["combinejson.py", base_file, c1_file, c2_file, "--dry-run"]):
+                with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                    main()
+                    output = mock_stdout.getvalue()
+
+            self.assertIn("Dry Run Summary: 3 card(s) in merged dataset.", output)
+            self.assertIn("CUS1: 1 card(s)", output)
+            self.assertIn("CUS2: 1 card(s)", output)
 
     def test_file_not_found(self):
         with patch("sys.argv", ["combinejson.py", "nonexistent.json", "custom.json", "output.json"]):
