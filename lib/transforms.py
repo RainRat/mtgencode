@@ -74,9 +74,7 @@ def text_pass_2_cardname(s, name):
     nameparts = name.split(',')
     if len(nameparts) > 1:
         mininame = nameparts[0]
-        new_s = s.replace(mininame, this_marker)
-        if not new_s == s:
-            s = new_s
+        s = s.replace(mininame, this_marker)
         
     # A few others don't have a convenient comma to detect their nicknames,
     # so we override them here.
