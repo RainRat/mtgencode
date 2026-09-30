@@ -904,12 +904,16 @@ python3 scripts/mtg_manabase.py my_deck.txt --format commander
 # Calculate a mana base for a specific set (40-card Limited deck, 17 lands)
 python3 scripts/mtg_manabase.py data/AllPrintings.json --set MOM --format limited
 
+# Save recommended mana base report to a JSON file (format auto-detected from extension)
+python3 scripts/mtg_manabase.py my_deck.txt -o manabase.json
+
 # Include activation costs in the pip analysis
 python3 scripts/mtg_manabase.py my_deck.txt --include-text
 ```
 *   **Options:**
     *   `-f FORMAT`, `--format FORMAT`: Deck format preset to auto-set default target land count (`commander`: 38, `limited`: 17, `standard`/`brawl`/`pauper`: 24).
     *   `--lands N`: Target number of basic lands to recommend (Default: 24, or format preset default).
+    *   `-o FILE`, `--outfile FILE`: Save results to a file instead of stdout (automatically detects `.json`, `.csv`, `.deck`, or `.dek` from file extension).
     *   `--include-text`: Include mana symbols found in rules text (for example, activation costs).
     *   Supports all **Advanced Filtering** flags.
 
