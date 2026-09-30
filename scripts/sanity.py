@@ -172,7 +172,7 @@ Usage Examples:
     io_group.add_argument('--vocab_name', default=None,
                         help='Path to save the character vocabulary as a JSON file.')
 
-    check_group = parser.add_argument_group('Sanity Check Options')
+    check_group = parser.add_argument_group('Verification Check Options')
     check_group.add_argument('-lines', action='store_true',
                         help='Inspect and print line separation categories for card rules text.')
     check_group.add_argument('-vocab', action='store_true',
@@ -182,7 +182,7 @@ Usage Examples:
 
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
-                        help='Print a summary of active sanity checks, target files, and card dataset statistics without running calculations or writing files.')
+                        help='Print a summary of active verification checks, target files, and card dataset statistics without running calculations or writing files.')
 
     args = parser.parse_args()
 
