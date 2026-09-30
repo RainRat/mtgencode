@@ -469,6 +469,9 @@ Usage Examples:
   # Basic sorting
   python3 sortcards.py data/AllPrintings.json sorted_output.txt
 
+  # Save sorted output using -o / --outfile flag
+  python3 sortcards.py data/AllPrintings.json -o sorted_output.txt
+
   # Sort encoded cards with filters and sampling
   python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "Elf"
 
@@ -476,7 +479,7 @@ Usage Examples:
   python3 sortcards.py data/AllPrintings.json --grep "Elf" --dry-run
 
   # Encode, sort, and save to a file
-  python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - sorted_cards.txt
+  python3 encode.py data/AllPrintings.json --limit 100 | python3 sortcards.py - -o sorted_cards.txt
 """
     )
 
@@ -486,6 +489,8 @@ Usage Examples:
                         help='Input card data (MTGJSON or Scryfall JSON, JSONL, CSV, MSE, ZIP, or MTG Decklist), an encoded file, or a directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', default=None,
+                        help='Path to save the output file. Overrides positional output argument if specified.')
 
     # Group: Encoding Options
     enc_group = parser.add_argument_group('Encoding Options')
@@ -616,7 +621,9 @@ Usage Examples:
         args.shuffle = True
         args.limit = args.sample
 
-    main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
+    outfile = args.outfile_opt if args.outfile_opt is not None else args.outfile
+
+    main(args.infile, outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, nolabel = args.nolabel,
          use_summary = args.summary, use_markdown = args.md, use_color = args.color, quiet = args.quiet,
          limit = args.limit, grep = args.grep, sort = args.sort, reverse_sort = args.reverse, vgrep = args.vgrep,
