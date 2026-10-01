@@ -116,12 +116,14 @@ Customization options for formatting data:
 *   `-r`, `--randomize`: Randomizes mana symbol order (for example, `{U}{W}` versus `{W}{U}`) to help the AI learn better.
 *   `-s`, `--stable`: Preserve the original order of cards from the input (the tool shuffles cards by default).
 *   `--sort`: Sorts cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, `box`, `complexity`, `score`, `rating`, or `power_rating` before encoding. Automatically enables `--stable`.
+*   `--reverse`: Reverse the sort order when using `--sort`.
 *   `--seed N`: Seed for the random number generator (Default: 1371367).
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Shorthand for `--limit N`. The tool shuffles cards by default unless you use `--stable`.
 *   `--booster N`: Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land.
 *   `--box N`: Simulate opening N booster boxes (36 packs each).
 *   `-p`, `--preview`, `--dry-run`: Print a summary of matching card statistics and sample preview without writing output files.
+*   `-v`, `--verbose`: Enable detailed status messages during encoding.
 *   `-q`, `--quiet`: Suppress the progress bar and status messages.
 *   `--report-unparsed FILE`: Save the raw JSON of cards that failed to parse into a separate file.
 
@@ -147,10 +149,12 @@ Options for formatting the output. While primarily used for AI output, this tool
 *   `--color` / `--no-color`: Manually enable or disable ANSI color output in your terminal.
 *   `--shuffle`: Randomizes the order of cards (the tool does not shuffle cards by default for decoding).
 *   `--sort`: Sorts cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, `box`, `complexity`, `score`, `rating`, or `power_rating`.
+*   `--reverse`: Reverse the sort order when using `--sort`.
 *   `--seed N`: Seed for the random number generator.
 *   `--limit N`: Only process the first N cards.
 *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
 *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of matching card stats, target output format, and sample preview without creating or writing output files.
+*   `-v`, `--verbose`: Enable detailed status messages during decoding.
 *   `-q`, `--quiet`: Suppress the progress bar and status messages.
 *   `--booster N`: Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land.
 *   `--box N`: Simulate opening N booster boxes (36 packs each).
@@ -341,6 +345,8 @@ Filter cards using search patterns, set codes, rarities, or decklist files. Thes
     *   `--colors SYMBOLS`: Include cards with specific colors (for example, `W`, `U`, `B`, `R`, `G`). Use `C` or `A` for colorless.
     *   `--identity SYMBOLS`: Include cards with specific colors in their color identity.
     *   `--produces COLORS`: Include cards that can produce specific colors of mana (W, U, B, R, G, C, or Any).
+    *   `--legal FORMAT`: Include cards that are legal in a specific format (for example, `standard`, `commander`, `legacy`).
+    *   `--color-pie-break`: Include cards that violate color pie mechanics (for example, Green cards with Haste).
     *   **Numerical Filters:** These flags support exact values (`5`), inequalities (`>3`, `<=2`, `!=0`), and ranges (`1-4`).
         *   `--id-count VALUE`: Filter by the number of colors in a card's color identity.
         *   `--cmc VALUE`: Filter by mana value (Converted Mana Cost).
@@ -384,6 +390,9 @@ python3 scripts/mtg_query.py search --produces G
 
 # Find all cards that can produce any color of mana
 python3 scripts/mtg_query.py search --produces Any
+
+# Find standard-legal rare cards in the MOM set
+python3 scripts/mtg_query.py search --set MOM --rarity rare --legal standard
 ```
 
 ---
