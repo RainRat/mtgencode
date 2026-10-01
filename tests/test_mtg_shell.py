@@ -301,7 +301,7 @@ class TestMtgShell(unittest.TestCase):
                 with patch('sys.stdout', new=io.StringIO()) as fake_out:
                     handle_shell(self.args)
                     output = fake_out.getvalue()
-                    self.assertIn("Error: /search requires a search query.", output)
+                    self.assertIn("Error: /search requires a search query or active search results.", output)
 
     def test_shell_diff_empty(self):
         """Test executing /diff or /d without arguments in the shell displays an error message."""
@@ -395,6 +395,14 @@ class TestMtgShell(unittest.TestCase):
                 handle_shell(self.args)
                 err = fake_err.getvalue()
                 self.assertIn("No cards with the same mechanics found.", err)
+
+        # 11. /search and /s fallback
+        for search_cmd in ['/search', '/s']:
+            with patch('builtins.input', side_effect=['/search tarkir', search_cmd, 'exit']):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    handle_shell(self.args)
+                    output = fake_out.getvalue()
+                    self.assertEqual(output.count("Invasion of Tarkir"), 2)
 
     def test_shell_help_ux_improvement(self):
         """Test the UX improvement in the help command output (logical groupings and alignment)."""
