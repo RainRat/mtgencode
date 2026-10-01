@@ -73,6 +73,9 @@ Convert card data from various formats into a simple text format for AI training
 # Basic encoding from JSON
 python3 encode.py data/AllPrintings.json encoded_output.txt --verbose
 
+# Specify output destination using -o / --outfile flag
+python3 encode.py data/AllPrintings.json -o encoded_output.txt --verbose
+
 # Convert a Cockatrice XML database to encoded text
 python3 encode.py my_database.xml encoded_output.txt
 ```
@@ -88,6 +91,9 @@ python3 decode.py encoded_output.txt
 
 # Save to a file (the format is detected from the file extension)
 python3 decode.py encoded_output.txt my_cards.html
+
+# Specify output file with -o / --outfile flag
+python3 decode.py encoded_output.txt -o my_cards.json
 ```
 
 **Want to see card images?**

@@ -776,6 +776,9 @@ Usage Examples:
   # Save to a file (the format is detected from the file extension)
   python3 decode.py encoded_output.txt my_cards.html
 
+  # Specify output file with -o / --outfile flag
+  python3 decode.py encoded_output.txt -o my_cards.json
+
   # Generate a file for Magic Set Editor
   python3 decode.py encoded_output.txt my_set.mse-set
 
@@ -791,6 +794,8 @@ Usage Examples:
                         help='Input card data (MTGJSON or Scryfall JSON, JSONL, CSV, MSE, XML, ZIP, or MTG Decklist), an encoded file, or a directory. Defaults to stdin (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the decoded output. If not provided, output prints to the console. The format is automatically detected from the file extension (.html, .json, .jsonl, .csv, .md, .mdt, .sum, .summary, .tbl, .table, .deck, .dek, .xml, .mse-set).')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', default=None,
+                        help='Path to save the decoded output file. Overrides positional output argument if specified.')
 
     # Group: Output Format (Mutually Exclusive)
     # We use a mutually exclusive group to enforce one output format.
@@ -953,8 +958,10 @@ Usage Examples:
         print("\nError: No input file specified. Please provide an encoded card file or pipe input into standard input.", file=sys.stderr)
         sys.exit(1)
 
+    outfile = args.outfile_opt if args.outfile_opt is not None else args.outfile
+
     # If --mse is used, we must have an output filename.
-    if args.mse and not args.outfile:
+    if args.mse and not outfile:
         parser.error("--mse requires an output filename.")
 
     # Handle --sample
@@ -962,7 +969,7 @@ Usage Examples:
         args.shuffle = True
         args.limit = args.sample
 
-    main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
+    main(args.infile, outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, nolabel = args.nolabel,
          gatherer = args.gatherer, for_forum = args.forum, for_mse = args.mse,
          creativity = args.creativity, vdump = args.dump, html = args.html, text = args.text, table_out = args.table,
