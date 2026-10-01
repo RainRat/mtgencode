@@ -1001,9 +1001,16 @@ def handle_shell(args):
                 if cmd in ['/search', '/s']:
                     resolved_args = _resolve_args(cmd_args)
                     if not resolved_args:
-                        err_msg = "Error: /search requires a search query."
-                        if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
-                        print(err_msg)
+                        if last_results:
+                            s_args = copy.copy(args)
+                            s_args.fields = getattr(args, 'fields', 'name,cost,type,stats,rarity')
+                            s_args.table = True
+                            if not hasattr(s_args, 'limit'): s_args.limit = 0
+                            last_results = _execute_search(last_results, s_args, include_indices=True)
+                        else:
+                            err_msg = "Error: /search requires a search query or active search results."
+                            if use_color: err_msg = utils.colorize(err_msg, utils.Ansi.BOLD + utils.Ansi.RED)
+                            print(err_msg)
                         continue
                     query = " ".join(resolved_args)
                     query_pat = re.compile(re.escape(query.replace('-', utils.dash_marker)), re.IGNORECASE)
