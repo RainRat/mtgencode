@@ -31,7 +31,8 @@ This project helps you turn Magic: The Gathering card data into a format that AI
 2.  **Create a virtual environment (Recommended):**
     ```bash
     python3 -m venv venv
-    source venv/bin/activate  # On Windows, run: venv\Scripts\activate
+    source venv/bin/activate  # On Windows (PowerShell): venv\Scripts\Activate.ps1
+                              # On Windows (Command Prompt): venv\Scripts\activate.bat
     ```
 
 3.  **Install required libraries:**
