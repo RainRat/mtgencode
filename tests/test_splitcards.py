@@ -318,6 +318,18 @@ def test_encoding_options(tmp_path):
         main()
     assert out1.exists()
 
+def test_interactive_tty_help_output():
+    args = ["splitcards.py"]
+    with patch("sys.argv", args):
+        with patch("sys.stdin.isatty", return_value=True):
+            with patch("sys.stdout", new_callable=io.StringIO) as mock_stdout:
+                with pytest.raises(SystemExit) as exc_info:
+                    main()
+    assert exc_info.value.code == 0
+    stdout = mock_stdout.getvalue()
+    assert "usage: splitcards.py" in stdout
+    assert "Splits a card dataset into multiple files" in stdout
+
 def test_main_cli_execution(tmp_path):
     infile = tmp_path / "input.txt"
     cards = ["|1Card Alpha|7common|5Creature\n\n"]

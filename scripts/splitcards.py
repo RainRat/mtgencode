@@ -122,6 +122,10 @@ def main():
     parser.add_argument('--shuffle', action='store_true', default=True, help=argparse.SUPPRESS)
     parser.add_argument('--no-shuffle', dest='shuffle', action='store_false', help=argparse.SUPPRESS)
 
+    if len(sys.argv) == 1 and sys.stdin.isatty():
+        parser.print_help()
+        sys.exit(0)
+
     args = parser.parse_args()
 
     # Handle --sample
