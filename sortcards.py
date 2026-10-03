@@ -314,11 +314,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         cards = cards[:limit]
 
     # Determine if we should use color for the summary
-    actual_use_color = False
-    if use_color is True:
-        actual_use_color = True
-    elif use_color is None and sys.stderr.isatty():
-        actual_use_color = True
+    actual_use_color = use_color if use_color is not None else sys.stderr.isatty()
 
     # Progress bar is shown unless --quiet is specified
     classes = sortcards(cards, verbose=not quiet, use_summary=use_summary, use_markdown=use_markdown, use_color=actual_use_color, fmt_ordered=fmt_ordered)
