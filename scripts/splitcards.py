@@ -18,7 +18,7 @@ def main():
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infile', help='Input card data (JSON, JSONL, CSV, MSE, ZIP, or encoded text).')
+    io_group.add_argument('infile', nargs='?', help='Input card dataset (JSON, JSONL, CSV, MSE, ZIP, or encoded text). Defaults to data/AllPrintings.json or data/cards.json if omitted.')
     io_group.add_argument('--outputs', nargs='+',
                         help='Output filenames for each split (for example, train.txt val.txt). Auto-derived if omitted.')
     io_group.add_argument('--ratios', type=float, nargs='+',
@@ -123,6 +123,31 @@ def main():
     parser.add_argument('--no-shuffle', dest='shuffle', action='store_false', help=argparse.SUPPRESS)
 
     args = parser.parse_args()
+
+    # Resolve default input dataset if positional argument is omitted
+    if args.infile is None:
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        candidates = [
+            'data/AllPrintings.json',
+            'data/cards.json',
+            os.path.join(script_dir, '../data/AllPrintings.json'),
+            os.path.join(script_dir, '../data/cards.json'),
+        ]
+        default_file = None
+        for cand in candidates:
+            if os.path.exists(cand):
+                default_file = cand
+                break
+
+        if default_file:
+            args.infile = default_file
+            if not args.quiet:
+                print(f"Notice: No input dataset specified. Using default dataset: {default_file}", file=sys.stderr)
+        elif sys.stdin.isatty():
+            parser.print_help(sys.stderr)
+            sys.exit(0)
+        else:
+            args.infile = '-'
 
     # Handle --sample
     if args.sample > 0:
