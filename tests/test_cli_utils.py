@@ -177,3 +177,29 @@ def test_load_and_filter_cards_missing_default_dataset_warning(mock_exists, mock
     captured = capsys.readouterr()
     assert "Notice: No input file specified and default dataset" in captured.err
     assert "Please specify a file path" in captured.err
+
+@patch('lib.cli_utils.jdecode.mtg_open_file')
+@patch('sys.stdin.isatty')
+@patch('os.path.exists')
+def test_load_and_filter_cards_default_dataset_notice(mock_exists, mock_isatty, mock_open, capsys):
+    mock_isatty.return_value = True
+    mock_exists.side_effect = lambda x: 'AllPrintings.json' in x
+    mock_open.return_value = ['card']
+
+    args = argparse.Namespace(infile='-', quiet=False)
+    cli_utils.load_and_filter_cards(args)
+
+    captured = capsys.readouterr()
+    assert "Notice: Using default dataset:" in captured.err
+
+@patch('lib.cli_utils.jdecode.mtg_open_file')
+@patch('os.path.exists')
+def test_load_and_filter_cards_outfile_flag(mock_exists, mock_open):
+    mock_exists.return_value = True
+    mock_open.return_value = ['card1']
+
+    args = argparse.Namespace(infile='data.json', outfile=None, outfile_flag='out.json')
+    cards = cli_utils.load_and_filter_cards(args)
+
+    assert cards == ['card1']
+    assert args.outfile == 'out.json'
