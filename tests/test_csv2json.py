@@ -204,3 +204,89 @@ def test_csv2json_and_json2csv_cli_entrypoints():
             runpy.run_path('scripts/json2csv.py', run_name='__main__')
 
         assert os.path.exists(csv_out_path)
+
+def test_csv2json_custom_set_code_and_name():
+    csv_content = 'name,manaCost,types,subtypes,text,pt,rarity\n"Custom Dragon","{4}{R}{R}","Creature","Dragon","Flying","5/5","R"\n'
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, 'set.csv')
+        json_path = os.path.join(tmpdir, 'set.json')
+
+        with open(csv_path, 'w', encoding='utf-8') as f:
+            f.write(csv_content)
+
+        # Test explicit set code and set name
+        with patch('sys.argv', ['csv2json.py', csv_path, json_path, '-s', 'DRG', '-n', 'Dragons of Custom']):
+            main()
+
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        assert 'DRG' in data['data']
+        set_info = data['data']['DRG']
+        assert set_info['code'] == 'DRG'
+        assert set_info['name'] == 'Dragons of Custom'
+        assert set_info['cards'][0]['name'] == 'Custom Dragon'
+        assert set_info['cards'][0]['setCode'] == 'DRG'
+
+def test_csv2json_stdin_stdout_piping():
+    import io
+    csv_content = 'name,manaCost,types,subtypes,text,pt,rarity\n"Piped Artifact","{1}","Artifact","","Draw a card.","","U"\n'
+    stdin_mock = io.StringIO(csv_content)
+    stdout_mock = io.StringIO()
+
+    with patch('sys.stdin', stdin_mock), patch('sys.stdout', stdout_mock), patch('sys.argv', ['csv2json.py', '-', '-', '-s', 'PIPE']):
+        main()
+
+    res_json = json.loads(stdout_mock.getvalue())
+    assert 'PIPE' in res_json['data']
+    card = res_json['data']['PIPE']['cards'][0]
+    assert card['name'] == 'Piped Artifact'
+    assert card['setCode'] == 'PIPE'
+
+def test_csv2json_batch_merge_no_collision():
+    from scripts.combinejson import merge_dicts
+    csv_content_1 = 'name,manaCost,types,subtypes,text,pt,rarity\n"Set 1 Card","{1}","Artifact","","","","C"\n'
+    csv_content_2 = 'name,manaCost,types,subtypes,text,pt,rarity\n"Set 2 Card","{2}","Artifact","","","","U"\n'
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv1 = os.path.join(tmpdir, 'set1.csv')
+        json1 = os.path.join(tmpdir, 'set1.json')
+        csv2 = os.path.join(tmpdir, 'set2.csv')
+        json2 = os.path.join(tmpdir, 'set2.json')
+
+        with open(csv1, 'w', encoding='utf-8') as f:
+            f.write(csv_content_1)
+        with open(csv2, 'w', encoding='utf-8') as f:
+            f.write(csv_content_2)
+
+        with patch('sys.argv', ['csv2json.py', csv1, json1, '-s', 'CUS1']):
+            main()
+        with patch('sys.argv', ['csv2json.py', csv2, json2, '-s', 'CUS2']):
+            main()
+
+        with open(json1, 'r', encoding='utf-8') as f1, open(json2, 'r', encoding='utf-8') as f2:
+            data1 = json.load(f1)
+            data2 = json.load(f2)
+
+        merged = merge_dicts(data1, data2)
+        assert 'CUS1' in merged['data']
+        assert 'CUS2' in merged['data']
+        assert merged['data']['CUS1']['cards'][0]['name'] == 'Set 1 Card'
+        assert merged['data']['CUS2']['cards'][0]['name'] == 'Set 2 Card'
+
+def test_csv2json_dry_run_set_info():
+    import io
+    csv_content = 'name,manaCost,types,subtypes,text,pt,rarity\n"Preview Card","{0}","Artifact","","","","C"\n'
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, 'test.csv')
+        with open(csv_path, 'w', encoding='utf-8') as f:
+            f.write(csv_content)
+
+        stdout_mock = io.StringIO()
+        with patch('sys.stdout', stdout_mock), patch('sys.argv', ['csv2json.py', csv_path, '--dry-run', '-s', 'MY1', '-n', 'My First Set']):
+            main()
+
+        output = stdout_mock.getvalue()
+        assert "=== CSV to JSON Conversion Summary (Dry Run) ===" in output
+        assert "Target set code: MY1 (My First Set)" in output
+        assert "Preview Card" in output

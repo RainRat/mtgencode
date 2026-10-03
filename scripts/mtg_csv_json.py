@@ -4,6 +4,7 @@ import os
 import argparse
 import csv
 import json
+from contextlib import nullcontext
 
 # Ensure lib is in path
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
@@ -87,11 +88,15 @@ Note: The first row is ignored if the first column is exactly "name".
     )
 
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('csv_file', nargs='?', help='Path to the input CSV file.')
-    io_group.add_argument('json_output', nargs='?', help='Path to the output JSON file.')
-    io_group.add_argument('-o', '--outfile', dest='outfile_opt', help='Path to the output JSON file.')
+    io_group.add_argument('csv_file', nargs='?', help='Path to the input CSV file. Use - to read from standard input.')
+    io_group.add_argument('json_output', nargs='?', help='Path to the output JSON file. Use - to write to standard output.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', help='Path to the output JSON file. Use - to write to standard output.')
 
     proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-s', '--set-code', '--code', dest='set_code', default='CUS',
+                            help='Set code for the generated MTGJSON dataset (default: CUS).')
+    proc_group.add_argument('-n', '--set-name', '--name', dest='set_name', default=None,
+                            help='Set name for the generated MTGJSON dataset (defaults to "custom" or set code).')
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
                             help='Print a summary of converted card statistics and sample preview without writing output file.')
 
@@ -105,16 +110,32 @@ Note: The first row is ignored if the first column is exactly "name".
 
     json_output = args.json_output or args.outfile_opt
     if not args.dry_run and not json_output:
-        base, _ = os.path.splitext(args.csv_file)
-        json_output = base + ".json"
+        if args.csv_file == '-':
+            json_output = '-'
+        else:
+            base, _ = os.path.splitext(args.csv_file)
+            json_output = base + ".json"
 
     args.json_output = json_output
 
-    json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
+    set_code_key = (args.set_code or 'CUS').strip().upper()
+    if not set_code_key:
+        set_code_key = 'CUS'
 
-    with open(args.csv_file, encoding='utf-8') as csvfile:
+    if args.set_name and args.set_name.strip():
+        set_name_val = args.set_name.strip()
+    else:
+        set_name_val = "custom" if set_code_key == "CUS" else set_code_key.lower()
+
+    json_data = {"data": {set_code_key: {"type": "custom", "cards": [], "name": set_name_val, "code": set_code_key}}}
+
+    if args.csv_file == '-':
+        f_ctx = nullcontext(sys.stdin)
+    else:
+        f_ctx = open(args.csv_file, encoding='utf-8')
+
+    with f_ctx as csvfile:
         reader = csv.reader(csvfile)
-        json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
 
         for row in reader:
             if not row or row[0] == "name":
@@ -153,10 +174,10 @@ Note: The first row is ignored if the first column is exactly "name".
                 card = process_face(*args_list)
                 card["layout"] = "normal"
 
-            card["setCode"] = "CUS"
-            json_data["data"]["CUS"]["cards"].append(card)
+            card["setCode"] = set_code_key
+            json_data["data"][set_code_key]["cards"].append(card)
 
-    cards = json_data["data"]["CUS"]["cards"]
+    cards = json_data["data"][set_code_key]["cards"]
 
     if args.dry_run:
         multi_count = sum(1 for c in cards if "bside" in c)
@@ -167,7 +188,8 @@ Note: The first row is ignored if the first column is exactly "name".
             rarity_counts[r] = rarity_counts.get(r, 0) + 1
 
         print("=== CSV to JSON Conversion Summary (Dry Run) ===")
-        print(f"Source file: {args.csv_file}")
+        print(f"Source file: {args.csv_file if args.csv_file != '-' else '<stdin>'}")
+        print(f"Target set code: {set_code_key} ({set_name_val})")
         print(f"Total cards evaluated: {len(cards)}")
         print(f"Single-faced cards: {single_count}")
         print(f"Multi-faced cards: {multi_count}")
@@ -182,8 +204,12 @@ Note: The first row is ignored if the first column is exactly "name".
                 print(f"  - {name}")
         return
 
-    with open(args.json_output, 'w', encoding='utf-8') as jsonfile:
-        json.dump(json_data, jsonfile)
+    if args.json_output == '-':
+        json.dump(json_data, sys.stdout)
+        sys.stdout.write('\n')
+    else:
+        with open(args.json_output, 'w', encoding='utf-8') as jsonfile:
+            json.dump(json_data, jsonfile)
 
 def run_json2csv(argv=None):
     parser = argparse.ArgumentParser(

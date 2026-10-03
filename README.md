@@ -1018,12 +1018,17 @@ python3 scripts/json2csv.py data/AllPrintings.json my_cards.csv --set MOM
 # Convert a spreadsheet to JSON
 python3 scripts/csv2json.py my_cards.csv my_cards.json
 
+# Convert with custom set code and set name
+python3 scripts/csv2json.py my_cards.csv my_cards.json -s MY1 -n "My Custom Set"
+
 # Preview conversion statistics without writing output files (dry-run mode)
 python3 scripts/csv2json.py my_cards.csv --dry-run
 
 # Merge custom cards with official data
 python3 scripts/combinejson.py data/AllPrintings.json my_cards.json AllCards.json
 ```
+*   `-s CODE`, `--set-code CODE`: Set code for the generated MTGJSON dataset (Default: `CUS`).
+*   `-n NAME`, `--set-name NAME`: Set name for the generated MTGJSON dataset (Default: `custom` or lowercase set code).
 *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of conversion/export statistics without creating or writing output files.
 
 ### `mtg_forge.py`
