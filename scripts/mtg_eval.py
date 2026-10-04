@@ -176,7 +176,7 @@ Usage Examples:
     for src in card_sources:
         try:
             cards.append(cardlib.Card(src))
-        except Exception:
+        except (ValueError, KeyError, AttributeError, TypeError):
             pass
 
     if not cards:
