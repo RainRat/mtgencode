@@ -429,3 +429,81 @@ def test_splitcards_presets_and_defaults(tmp_path):
 
     finally:
         os.chdir(old_cwd)
+
+
+def test_splitcards_auto_format_detection(tmp_path):
+    infile = tmp_path / "input.txt"
+    cards = ["|1Card Alpha|7common|5Creature\n\n", "|1Card Beta|7common|5Creature\n\n"]
+    infile.write_text("".join(cards))
+
+    # 1. Test .json extension auto-detection
+    out_json1 = tmp_path / "split1.json"
+    out_json2 = tmp_path / "split2.json"
+    args_json = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_json1), str(out_json2),
+        "--ratios", "0.5", "0.5",
+        "-s"
+    ]
+    with patch("sys.argv", args_json):
+        main()
+
+    with open(out_json1, encoding="utf-8") as f:
+        data1 = json.load(f)
+        assert isinstance(data1, list)
+        assert data1[0]['name'] == "Card Alpha"
+
+    # 2. Test .csv extension auto-detection
+    out_csv1 = tmp_path / "split1.csv"
+    out_csv2 = tmp_path / "split2.csv"
+    args_csv = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_csv1), str(out_csv2),
+        "--ratios", "0.5", "0.5",
+        "-s"
+    ]
+    with patch("sys.argv", args_csv):
+        main()
+
+    with open(out_csv1, newline='', encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+        assert len(rows) == 1
+        assert rows[0]['name'] == "Card Alpha"
+
+    # 3. Test .jsonl extension auto-detection
+    out_jsonl1 = tmp_path / "split1.jsonl"
+    out_jsonl2 = tmp_path / "split2.jsonl"
+    args_jsonl = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_jsonl1), str(out_jsonl2),
+        "--ratios", "0.5", "0.5",
+        "-s"
+    ]
+    with patch("sys.argv", args_jsonl):
+        main()
+
+    line = out_jsonl1.read_text().strip()
+    data_jsonl = json.loads(line)
+    assert data_jsonl['name'] == "Card Alpha"
+
+    # 4. Test explicit -f/--format overriding output file extension
+    out_override1 = tmp_path / "override1.json"
+    out_override2 = tmp_path / "override2.json"
+    args_override = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_override1), str(out_override2),
+        "--ratios", "0.5", "0.5",
+        "-f", "text",
+        "-s"
+    ]
+    with patch("sys.argv", args_override):
+        main()
+
+    # Content should be encoded text format even though file ends in .json
+    content = out_override1.read_text()
+    assert "|1Card Alpha" in content
