@@ -138,8 +138,9 @@ def main(fname1, fname2=None, verbose=True, outfile=None, output_json=False, out
     output_lines = []
     output_lines.append('shared: ' + str(len(ratios)))
     for k in sorted(ratios, key=lambda x: d2[x], reverse=True):
+        ratio_val = round(ratios[k], 4)
         output_lines.append('  ' + k + ': ' + str(d2[k]) + '/' +
-                             str(d1[k]) + ' (' + str(ratios[k]) + ')')
+                             str(d1[k]) + ' (' + str(ratio_val) + ')')
     output_lines.append('')
 
     output_lines.append('1 only: ' + str(len(only_1)))
@@ -205,6 +206,10 @@ Usage Examples:
                         help='Print a dry run summary of key statistics and ratio preview to standard output without creating or modifying target output files.')
     proc_group.add_argument('-v', '--verbose', action='store_true',
                         help='Enable detailed status messages.')
+
+    if len(sys.argv) == 1 and sys.stdin.isatty():
+        parser.print_help()
+        sys.exit(0)
 
     args = parser.parse_args()
 

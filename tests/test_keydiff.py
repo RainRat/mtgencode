@@ -124,6 +124,12 @@ class TestKeyDiff(unittest.TestCase):
                 self.assertIn("shared: 1", out)
                 self.assertIn("2 only: 1", out)
 
+    def test_interactive_no_args(self):
+        with patch('sys.stdin.isatty', return_value=True):
+            code, out = self.run_main([])
+            self.assertEqual(code, 0)
+            self.assertIn("usage: keydiff.py", out)
+
     def test_main_omitted_file2_interactive(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             file1 = os.path.join(tmpdir, "f1.txt")
