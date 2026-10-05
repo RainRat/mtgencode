@@ -107,3 +107,86 @@ def test_activate_printing_with_valid_printing_mapped_rarity():
     assert card.set_code == "M10"
     assert card.rarity == "A"
     assert card.number == "42"
+
+
+def test_fields_from_json_partial_power_or_toughness():
+    src_power = {
+        "name": "Power Only",
+        "types": ["Creature"],
+        "rarity": "Common",
+        "power": "3"
+    }
+    parsed, valid, fields = fields_from_json(src_power)
+    assert not parsed
+    assert fields['pt'] == [(-1, '&^^^/')]
+
+    src_toughness = {
+        "name": "Toughness Only",
+        "types": ["Creature"],
+        "rarity": "Common",
+        "toughness": "4"
+    }
+    parsed2, valid2, fields2 = fields_from_json(src_toughness)
+    assert not parsed2
+    assert fields2['pt'] == [(-1, '/&^^^^')]
+
+
+def test_card_set_loyalty_and_pt_verbose_warnings(capsys):
+    card = Card({
+        "name": "Verbose Test",
+        "types": ["Creature"],
+        "rarity": "Common",
+        "pt": "2/2"
+    }, verbose=True)
+
+    card._set_loyalty([(0, "^&"), (1, "^&&")])
+    captured = capsys.readouterr()
+    assert "Multiple loyalty values for card 'verbose test': ^&&" in captured.err
+    assert not card.valid
+
+    card.valid = True
+    card._set_pt([(0, "invalid_pt_string")])
+    captured = capsys.readouterr()
+    assert "Invalid P/T value for card 'verbose test': invalid_pt_string" in captured.err
+    assert not card.valid
+
+    card.valid = True
+    card._set_pt([(0, "^&/^&"), (1, "^&&/^&&")])
+    captured = capsys.readouterr()
+    assert "Multiple P/T values for card 'verbose test': ^&&/^&&" in captured.err
+    assert not card.valid
+
+    card.valid = True
+    from manalib import Manatext
+    card._set_text([(0, Manatext("Text 1")), (1, Manatext("Text 2"))])
+    assert not card.valid
+
+
+def test_card_to_markdown_row_escaping():
+    card = Card({
+        "name": "Pipe | Card",
+        "types": ["Instant | Sorcery"],
+        "text": "Choose one |\nDraw a card.",
+        "rarity": "Common"
+    })
+    row = card.to_markdown_row()
+    assert r"Pipe \| Card" in row
+    assert r"Instant \| Sorcery" in row
+    assert r"Choose one \|<br>Draw a card." in row
+    assert "\n" not in row
+
+
+def test_card_get_ansi_color_colorless_land_vs_nonland():
+    nonland = Card({
+        "name": "Colorless Artifact",
+        "types": ["Artifact"],
+        "rarity": "Common"
+    })
+    assert nonland._get_ansi_color() == utils.Ansi.get_color_color('A')
+
+    land = Card({
+        "name": "Colorless Land",
+        "types": ["Land"],
+        "rarity": "Common"
+    })
+    assert land._get_ansi_color() == utils.Ansi.BOLD
