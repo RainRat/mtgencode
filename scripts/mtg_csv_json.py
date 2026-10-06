@@ -87,9 +87,11 @@ Note: The first row is ignored if the first column is exactly "name".
     )
 
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('csv_file', nargs='?', help='Path to the input CSV file.')
-    io_group.add_argument('json_output', nargs='?', help='Path to the output JSON file.')
-    io_group.add_argument('-o', '--outfile', dest='outfile_opt', help='Path to the output JSON file.')
+    io_group.add_argument('csv_file', nargs='?', help='Path to the input CSV file or "-" for standard input.')
+    io_group.add_argument('json_output', nargs='?', help='Path to the output JSON file or "-" for standard output.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', help='Path to the output JSON file or "-" for standard output.')
+    io_group.add_argument('-s', '--set-code', '--code', dest='set_code', default='CUS', help='Set code for custom cards (default: CUS).')
+    io_group.add_argument('-n', '--set-name', '--name', dest='set_name', default='custom', help='Set name for custom cards (default: custom).')
 
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
@@ -105,16 +107,22 @@ Note: The first row is ignored if the first column is exactly "name".
 
     json_output = args.json_output or args.outfile_opt
     if not args.dry_run and not json_output:
-        base, _ = os.path.splitext(args.csv_file)
-        json_output = base + ".json"
+        if args.csv_file == "-":
+            json_output = "-"
+        else:
+            base, _ = os.path.splitext(args.csv_file)
+            json_output = base + ".json"
 
     args.json_output = json_output
 
-    json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
+    set_code = args.set_code
+    set_name = args.set_name
 
-    with open(args.csv_file, encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile)
-        json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
+    json_data = {"data": {set_code: {"type": "custom", "cards": [], "name": set_name, "code": set_code}}}
+
+    f_in = sys.stdin if args.csv_file == "-" else open(args.csv_file, encoding='utf-8')
+    try:
+        reader = csv.reader(f_in)
 
         for row in reader:
             if not row or row[0] == "name":
@@ -153,10 +161,13 @@ Note: The first row is ignored if the first column is exactly "name".
                 card = process_face(*args_list)
                 card["layout"] = "normal"
 
-            card["setCode"] = "CUS"
-            json_data["data"]["CUS"]["cards"].append(card)
+            card["setCode"] = set_code
+            json_data["data"][set_code]["cards"].append(card)
+    finally:
+        if args.csv_file != "-":
+            f_in.close()
 
-    cards = json_data["data"]["CUS"]["cards"]
+    cards = json_data["data"][set_code]["cards"]
 
     if args.dry_run:
         multi_count = sum(1 for c in cards if "bside" in c)
@@ -182,8 +193,12 @@ Note: The first row is ignored if the first column is exactly "name".
                 print(f"  - {name}")
         return
 
-    with open(args.json_output, 'w', encoding='utf-8') as jsonfile:
-        json.dump(json_data, jsonfile)
+    if args.json_output == "-":
+        json.dump(json_data, sys.stdout)
+        sys.stdout.write("\n")
+    else:
+        with open(args.json_output, 'w', encoding='utf-8') as jsonfile:
+            json.dump(json_data, jsonfile)
 
 def run_json2csv(argv=None):
     parser = argparse.ArgumentParser(

@@ -204,3 +204,39 @@ def test_csv2json_and_json2csv_cli_entrypoints():
             runpy.run_path('scripts/json2csv.py', run_name='__main__')
 
         assert os.path.exists(csv_out_path)
+
+def test_csv2json_custom_set_code_and_name():
+    csv_content = 'name,manaCost,types,subtypes,text,pt,rarity\n"Custom Hero","{2}{W}","Creature","Hero","Heroic","2/2","R"\n'
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, 'hero.csv')
+        json_path = os.path.join(tmpdir, 'hero.json')
+
+        with open(csv_path, 'w', encoding='utf-8') as f:
+            f.write(csv_content)
+
+        with patch('sys.argv', ['csv2json.py', csv_path, json_path, '-s', 'MYSET', '-n', 'My Custom Set']):
+            main()
+
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        assert 'MYSET' in data['data']
+        set_info = data['data']['MYSET']
+        assert set_info['code'] == 'MYSET'
+        assert set_info['name'] == 'My Custom Set'
+        assert set_info['cards'][0]['setCode'] == 'MYSET'
+
+def test_csv2json_stdin_stdout():
+    import io
+    csv_content = 'name,manaCost,types,subtypes,text,pt,rarity\n"Pipe Card","{1}","Artifact","","Pipe text","","C"\n'
+
+    with patch('sys.stdin', io.StringIO(csv_content)), patch('sys.stdout', new_callable=io.StringIO) as fake_out:
+        with patch('sys.argv', ['csv2json.py', '-', '-']):
+            main()
+
+        output_str = fake_out.getvalue()
+        data = json.loads(output_str)
+
+        assert 'CUS' in data['data']
+        card = data['data']['CUS']['cards'][0]
+        assert card['name'] == 'Pipe Card'
