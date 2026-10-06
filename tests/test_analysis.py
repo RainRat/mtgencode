@@ -258,5 +258,29 @@ class TestAnalysis(unittest.TestCase):
         output = captured_output.getvalue()
         self.assertIn("Dry Run Summary:", output)
 
+    @patch('sys.stderr', new_callable=StringIO)
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_interactive_tty_dry_run_notice(self, mock_stdout, mock_stderr):
+        mock_stdout.isatty = lambda: True
+        analysis_main(self.json_path, outfile=None)
+        self.assertIn("Notice: No output file specified. Running in dry-run preview mode.", mock_stderr.getvalue())
+        self.assertIn("Dry Run Summary:", mock_stdout.getvalue())
+
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('os.path.exists', return_value=False)
+    def test_interactive_tty_no_args_help(self, mock_exists, mock_isatty):
+        import runpy
+        captured_stdout = StringIO()
+        sys.stdout = captured_stdout
+        try:
+            with patch('sys.argv', ['scripts/analysis.py']):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_path('scripts/analysis.py', run_name='__main__')
+                self.assertEqual(cm.exception.code, 0)
+        finally:
+            sys.stdout = sys.__stdout__
+
+        self.assertIn("Usage Examples:", captured_stdout.getvalue())
+
 if __name__ == '__main__':
     unittest.main()
