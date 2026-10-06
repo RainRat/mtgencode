@@ -12,26 +12,17 @@ import time
 from datetime import datetime
 from tqdm import tqdm
 
-def augment_mana(text):
-    """
-    Finds mana costs in { } and shuffles symbols separated by ^.
-    Example: {3^W^U} -> {W^3^U}
-    """
-    def shuffle_mana(match):
-        content = match.group(1)
-        symbols = content.split('^')
-        random.shuffle(symbols)
-        return '{' + '^'.join(symbols) + '}'
-    
-    return re.sub(r'\{([^{}]+)\}', shuffle_mana, text)
-
 def augment_card(card_text, randomize_fields, randomize_mana):
     """
     Splits card by | and shuffles fields (except the last terminal field).
     Also shuffles mana symbols within brackets if enabled.
     """
     if randomize_mana:
-        card_text = augment_mana(card_text)
+        def shuffle_mana(match):
+            symbols = match.group(1).split('^')
+            random.shuffle(symbols)
+            return '{' + '^'.join(symbols) + '}'
+        card_text = re.sub(r'\{([^{}]+)\}', shuffle_mana, card_text)
     
     if randomize_fields:
         fields = card_text.split('|')
