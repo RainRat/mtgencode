@@ -177,3 +177,14 @@ def test_load_and_filter_cards_missing_default_dataset_warning(mock_exists, mock
     captured = capsys.readouterr()
     assert "Notice: No input file specified and default dataset" in captured.err
     assert "Please specify a file path" in captured.err
+
+@patch('lib.cli_utils.jdecode.mtg_open_file')
+@patch('os.path.exists')
+def test_load_and_filter_cards_outfile_flag(mock_exists, mock_open):
+    mock_exists.return_value = True
+    mock_open.return_value = ['card1']
+
+    args = argparse.Namespace(infile='data.json', outfile=None, outfile_flag='output.json')
+    cli_utils.load_and_filter_cards(args)
+
+    assert args.outfile == 'output.json'
