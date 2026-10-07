@@ -306,3 +306,54 @@ def test_json2csv_via_mtg_csv_json():
 
         assert len(rows) == 1
         assert rows[0]['name'] == 'grizzly bears'
+
+def test_json2csv_stdin_stdout_streaming():
+    import io
+    card_data = {
+        "data": {
+            "TEST": {
+                "name": "Test Set",
+                "code": "TEST",
+                "type": "expansion",
+                "cards": [
+                    {
+                        "name": "Stream Bear",
+                        "manaCost": "{1}{G}",
+                        "types": ["Creature"],
+                        "subtypes": ["Bear"],
+                        "rarity": "Common",
+                        "power": "2",
+                        "toughness": "2",
+                        "text": "Vanilla stream creature"
+                    }
+                ]
+            }
+        }
+    }
+    json_str = json.dumps(card_data)
+    stdout_capture = io.StringIO()
+
+    with patch('sys.argv', ['json2csv.py', '-', '-']), \
+         patch('sys.stdin', io.StringIO(json_str)), \
+         patch('sys.stdout', stdout_capture):
+        from scripts.json2csv import main as json2csv_main
+        json2csv_main()
+
+    output = stdout_capture.getvalue()
+    reader = csv.DictReader(io.StringIO(output))
+    rows = list(reader)
+
+    assert len(rows) == 1
+    assert rows[0]['name'] == 'stream bear'
+    assert rows[0]['pt'] == '2/2'
+
+import pytest
+
+def test_json2csv_no_args_tty_help():
+    from scripts.json2csv import main as json2csv_main
+    with patch('sys.argv', ['json2csv.py']), \
+         patch('sys.stdin.isatty', return_value=True), \
+         patch('os.path.exists', return_value=False), \
+         pytest.raises(SystemExit) as exc_info:
+        json2csv_main()
+    assert exc_info.value.code == 0
