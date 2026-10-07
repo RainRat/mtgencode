@@ -89,6 +89,18 @@ def main(args):
 
     cards = jdecode.mtg_open_file(fname, verbose=True, linetrans=True)
 
+    if getattr(args, 'dry_run', False) is True:
+        total_cards = len(cards)
+        print(f"Dry Run Summary: {total_cards} card(s) loaded from {fname}.")
+        print("Stream Configuration:")
+        print(f"  Target File Descriptors: {', '.join(map(str, fds)) if fds else 'None specified'}")
+        print(f"  Block Size: {block_size}")
+        print(f"  Random Seed: {args.seed if args.seed != 0 else 'None (Random)'}")
+        sample_names = [str(getattr(c, 'name', c)) for c in cards[:5]]
+        preview_str = ", ".join(sample_names) if sample_names else "None"
+        print(f"Sample Card Preview (up to 5): {preview_str}")
+        return
+
     def write_stream(i, fd):
         if main_seed is not None:
             local_random = random.Random(main_seed + i)
@@ -118,6 +130,9 @@ Usage Examples:
 
   # Stream cards to multiple file descriptors with a fixed random seed
   python3 scripts/streamcards.py 3 4 5 -s 12345
+
+  # Preview streaming configuration and dataset sample without initiating streams (dry-run mode)
+  python3 scripts/streamcards.py 3 4 -f data/output.txt --dry-run
 """
     )
 
@@ -133,13 +148,17 @@ Usage Examples:
     settings_group.add_argument('-s', '--seed', type=int, default=0,
                         help='Random seed for shuffling cards (default: 0).')
 
+    proc_group = parser.add_argument_group('Processing Options')
+    proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
+                        help='Print a dry run summary of streaming configuration (target stream descriptors, source dataset card count, block size, and sample card preview) without opening file descriptors or initiating long-running stream threads.')
+
     if len(sys.argv) == 1 and sys.stdin.isatty():
         parser.print_help()
         sys.exit(0)
 
     args = parser.parse_args()
 
-    if not args.fds:
+    if not args.fds and not args.dry_run:
         parser.error('the following arguments are required: fds')
 
     main(args)
