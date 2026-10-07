@@ -83,29 +83,21 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         # MSE generation logically uses text generation internally.
         pass
 
-    fmt_ordered = cardlib.fmt_ordered_default
+    encoding_config = {
+        'std': cardlib.fmt_ordered_default,
+        'named': cardlib.fmt_ordered_named,
+        'noname': cardlib.fmt_ordered_noname,
+        'rfields': cardlib.fmt_ordered_default,
+        'old': cardlib.fmt_ordered_old,
+        'norarity': cardlib.fmt_ordered_norarity,
+        'vec': cardlib.fmt_ordered_default,
+        'custom': cardlib.fmt_ordered_default,
+    }
 
-    if encoding in ['std']:
-        pass
-    elif encoding in ['named']:
-        fmt_ordered = cardlib.fmt_ordered_named
-    elif encoding in ['noname']:
-        fmt_ordered = cardlib.fmt_ordered_noname
-    elif encoding in ['rfields']:
-        pass
-    elif encoding in ['old']:
-        fmt_ordered = cardlib.fmt_ordered_old
-    elif encoding in ['norarity']:
-        fmt_ordered = cardlib.fmt_ordered_norarity
-    elif encoding in ['vec']:
-        pass
-    elif encoding in ['custom']:
-        ## put custom format decisions here ##########################
-        
-        ## end of custom format ######################################
-        pass
-    else:
+    if encoding not in encoding_config:
         raise ValueError('decode.py: unknown encoding: ' + encoding)
+
+    fmt_ordered = encoding_config[encoding]
 
     cards = jdecode.mtg_open_file(fname, verbose=verbose, linetrans=not nolinetrans,
                                   fmt_ordered=fmt_ordered, fmt_labeled=None if nolabel else cardlib.fmt_labeled_default,
