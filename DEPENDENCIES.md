@@ -102,6 +102,7 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
 
 1.  **Install word2vec:**
     You need the original C implementation of `word2vec`. Since the original repository is archived, we recommend using this reliable mirror:
+    *   **Prerequisites:** A C compiler (such as `gcc` or `clang`) and `make` installed on your system.
     *   **Get the code:**
         ```bash
         git clone https://github.com/tmikolov/word2vec.git
@@ -112,10 +113,11 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
         make
         ```
     *   **Copy the binary:**
-        Move the `word2vec` file into your `mtgencode` root folder so the scripts can find it:
+        Move the `word2vec` file into your `mtgencode` root folder and grant execution permissions so the scripts can find and run it:
         ```bash
         cp word2vec ..
         cd ..
+        chmod +x word2vec
         ```
 
 2.  **Generate Reference Data and Vectors:**
