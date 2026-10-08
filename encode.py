@@ -155,6 +155,9 @@ Usage Examples:
   # Basic encoding from JSON
   python3 encode.py data/AllPrintings.json encoded_output.txt --verbose
 
+  # Specify output file with -o / --outfile flag
+  python3 encode.py data/AllPrintings.json -o encoded_output.txt --verbose
+
   # Preview matching cards and encoding stats without writing output (dry run mode)
   python3 encode.py data/AllPrintings.json --dry-run
 
@@ -179,6 +182,8 @@ Usage Examples:
                         help='Input card data (MTGJSON or Scryfall JSON, JSONL, CSV, MSE, XML, ZIP, or MTG Decklist), an encoded file, or a directory. Defaults to standard input (-).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Path to save the output. If not provided, output prints to the console.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', default=None,
+                        help='Path to save the output file. Overrides positional output argument if specified.')
 
     # Group: Content Formatting
     enc_group = parser.add_argument_group('Content Formatting')
@@ -299,7 +304,9 @@ Usage Examples:
     if args.sample > 0:
         args.limit = args.sample
 
-    main(args.infile, args.outfile, verbose = args.verbose, encoding = args.encoding,
+    outfile = args.outfile_opt if args.outfile_opt is not None else args.outfile
+
+    main(args.infile, outfile, verbose = args.verbose, encoding = args.encoding,
          nolinetrans = args.nolinetrans, randomize = args.randomize, nolabel = args.nolabel,
          stable = args.stable, report_file = args.report_unparsed, quiet=args.quiet,
          limit=args.limit, grep=args.grep, sort=args.sort, reverse_sort=args.reverse, vgrep=args.vgrep,
