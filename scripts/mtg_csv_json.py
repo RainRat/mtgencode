@@ -87,9 +87,15 @@ Note: The first row is ignored if the first column is exactly "name".
     )
 
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('csv_file', nargs='?', help='Path to the input CSV file.')
-    io_group.add_argument('json_output', nargs='?', help='Path to the output JSON file.')
-    io_group.add_argument('-o', '--outfile', dest='outfile_opt', help='Path to the output JSON file.')
+    io_group.add_argument('csv_file', nargs='?', help='Path to the input CSV file or "-" for standard input.')
+    io_group.add_argument('json_output', nargs='?', help='Path to the output JSON file or "-" for standard output.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', help='Path to the output JSON file or "-" for standard output.')
+
+    set_group = parser.add_argument_group('Set Configuration')
+    set_group.add_argument('-s', '--set-code', '--code', default='CUS',
+                           help='Set code identifier in the target MTGJSON dataset (default: CUS).')
+    set_group.add_argument('-n', '--set-name', '--name', default='custom',
+                           help='Set name description in the target MTGJSON dataset (default: custom).')
 
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
@@ -98,23 +104,37 @@ Note: The first row is ignored if the first column is exactly "name".
     args = parser.parse_args(argv)
 
     if not args.csv_file:
-        if sys.stdin.isatty() and os.path.exists("custom.csv"):
-            args.csv_file = "custom.csv"
+        if sys.stdin.isatty():
+            if os.path.exists("custom.csv"):
+                args.csv_file = "custom.csv"
+            else:
+                parser.print_help()
+                sys.exit(0)
         else:
             parser.error("the following arguments are required: csv_file")
 
     json_output = args.json_output or args.outfile_opt
     if not args.dry_run and not json_output:
-        base, _ = os.path.splitext(args.csv_file)
-        json_output = base + ".json"
+        if args.csv_file == '-':
+            json_output = '-'
+        else:
+            base, _ = os.path.splitext(args.csv_file)
+            json_output = base + ".json"
 
     args.json_output = json_output
 
-    json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
+    set_code = (args.set_code or "CUS").upper()
+    set_name = args.set_name or "custom"
 
-    with open(args.csv_file, encoding='utf-8') as csvfile:
+    json_data = {"data": {set_code: {"type": "custom", "cards": [], "name": set_name, "code": set_code}}}
+
+    if args.csv_file == '-':
+        csvfile = sys.stdin
+    else:
+        csvfile = open(args.csv_file, encoding='utf-8')
+
+    try:
         reader = csv.reader(csvfile)
-        json_data = {"data": {"CUS": {"type": "custom", "cards": [], "name": "custom", "code": "CUS"}}}
 
         for row in reader:
             if not row or row[0] == "name":
@@ -153,10 +173,13 @@ Note: The first row is ignored if the first column is exactly "name".
                 card = process_face(*args_list)
                 card["layout"] = "normal"
 
-            card["setCode"] = "CUS"
-            json_data["data"]["CUS"]["cards"].append(card)
+            card["setCode"] = set_code
+            json_data["data"][set_code]["cards"].append(card)
+    finally:
+        if args.csv_file != '-':
+            csvfile.close()
 
-    cards = json_data["data"]["CUS"]["cards"]
+    cards = json_data["data"][set_code]["cards"]
 
     if args.dry_run:
         multi_count = sum(1 for c in cards if "bside" in c)
@@ -182,8 +205,12 @@ Note: The first row is ignored if the first column is exactly "name".
                 print(f"  - {name}")
         return
 
-    with open(args.json_output, 'w', encoding='utf-8') as jsonfile:
-        json.dump(json_data, jsonfile)
+    if args.json_output == '-':
+        json.dump(json_data, sys.stdout, indent=2)
+        sys.stdout.write('\n')
+    else:
+        with open(args.json_output, 'w', encoding='utf-8') as jsonfile:
+            json.dump(json_data, jsonfile)
 
 def run_json2csv(argv=None):
     parser = argparse.ArgumentParser(
@@ -203,9 +230,9 @@ Dry Run Mode:
 
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
-    io_group.add_argument('infile', nargs='?', help='Input card data (JSON, JSONL, MSE, ZIP, or encoded text).')
-    io_group.add_argument('outfile', nargs='?', help='Output CSV file path.')
-    io_group.add_argument('-o', '--outfile', dest='outfile_opt', help='Output CSV file path.')
+    io_group.add_argument('infile', nargs='?', help='Input card data (JSON, JSONL, MSE, ZIP, or encoded text, or "-" for stdin).')
+    io_group.add_argument('outfile', nargs='?', help='Output CSV file path (or "-" for stdout).')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', help='Output CSV file path (or "-" for stdout).')
 
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
@@ -267,15 +294,22 @@ Dry Run Mode:
     args = parser.parse_args(argv)
 
     if not args.infile:
-        if sys.stdin.isatty() and os.path.exists("data/AllPrintings.json"):
-            args.infile = "data/AllPrintings.json"
+        if sys.stdin.isatty():
+            if os.path.exists("data/AllPrintings.json"):
+                args.infile = "data/AllPrintings.json"
+            else:
+                parser.print_help()
+                sys.exit(0)
         else:
             parser.error("the following arguments are required: infile")
 
     outfile = args.outfile or args.outfile_opt
     if not args.dry_run and not outfile:
-        base, _ = os.path.splitext(args.infile)
-        outfile = base + ".csv"
+        if args.infile == "-":
+            outfile = "-"
+        else:
+            base, _ = os.path.splitext(args.infile)
+            outfile = base + ".csv"
 
     args.outfile = outfile
 
@@ -323,14 +357,21 @@ Dry Run Mode:
                 print(f"  - {name}")
         return
 
-    with open(args.outfile, 'w', encoding='utf8', newline='') as f:
-        writer = csv.writer(f)
-        # Header row compatible with csv2json.py
+    if args.outfile == '-':
+        writer = csv.writer(sys.stdout)
         writer.writerow(['name', 'mana_cost', 'type', 'subtypes', 'text', 'pt', 'rarity'])
-
         for card in cards:
             row = card._get_csv_data()
             writer.writerow(row)
+    else:
+        with open(args.outfile, 'w', encoding='utf8', newline='') as f:
+            writer = csv.writer(f)
+            # Header row compatible with csv2json.py
+            writer.writerow(['name', 'mana_cost', 'type', 'subtypes', 'text', 'pt', 'rarity'])
+
+            for card in cards:
+                row = card._get_csv_data()
+                writer.writerow(row)
 
     if args.verbose:
         print(f"Successfully exported {len(cards)} cards to {args.outfile}")
