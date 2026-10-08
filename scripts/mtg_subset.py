@@ -16,7 +16,7 @@ import jdecode
 def main():
     parser = argparse.ArgumentParser(
         prog='mtg_subset.py',
-        description="Create a filtered subset of MTG card data in JSON, JSON Lines, CSV, or encoded text format.",
+        description="Create a filtered subset of MTG card data in JSON, JSON Lines, CSV, Cockatrice XML, or encoded text format.",
         epilog='''
 Example Usage:
   # Create a subset of only Legendary cards from a specific set
@@ -27,6 +27,9 @@ Example Usage:
 
   # Export subset in JSON Lines format (one card per line) for streaming tools
   python3 scripts/mtg_subset.py data/AllPrintings.json output.jsonl --rarity rare
+
+  # Export subset in Cockatrice XML format for deck builders and game clients
+  python3 scripts/mtg_subset.py data/AllPrintings.json subset.xml --rarity rare
 
   # Create a tiny dataset of just 100 random rare creatures in CSV format
   python3 scripts/mtg_subset.py data/AllPrintings.json tiny.csv --rarity rare --grep-type "Creature" --sample 100
@@ -42,7 +45,7 @@ Example Usage:
     io_group.add_argument('infile', nargs='?', default=None,
                         help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to data/AllPrintings.json if omitted.')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save the filtered card subset (optional if --dry-run or -o is specified). Auto-detects format from extension (.csv, .jsonl, .txt/.encoded, .json).')
+                        help='Path to save the filtered card subset (optional if --dry-run or -o is specified). Auto-detects format from extension (.csv, .jsonl, .txt/.encoded, .xml, .json).')
     io_group.add_argument('-o', '--outfile', dest='outfile_opt', default=None,
                         help='Path to save the output file. Overrides positional output argument if specified.')
     io_group.add_argument('-j', '--json', action='store_true',
@@ -53,6 +56,8 @@ Example Usage:
                         help='Output in CSV format.')
     io_group.add_argument('--encoded', action='store_true',
                         help='Output in encoded text format.')
+    io_group.add_argument('--xml', action='store_true',
+                        help='Output in Cockatrice XML card database format.')
 
     # Group: Processing Options
     proc_group = parser.add_argument_group('Processing Options')
@@ -233,13 +238,15 @@ Example Usage:
         }
 
     # Auto-detect format from outfile extension if no explicit format flag is specified
-    if args.outfile and not (args.json or args.jsonl or args.csv or args.encoded):
+    if args.outfile and not (args.json or args.jsonl or args.csv or args.encoded or args.xml):
         if args.outfile.endswith('.csv'):
             args.csv = True
         elif args.outfile.endswith('.jsonl'):
             args.jsonl = True
         elif args.outfile.endswith('.txt') or args.outfile.endswith('.encoded'):
             args.encoded = True
+        elif args.outfile.endswith('.xml'):
+            args.xml = True
 
     # Save to file
     try:
@@ -257,6 +264,27 @@ Example Usage:
             elif args.encoded:
                 for c in cards:
                     f.write(c.encode() + utils.cardsep)
+            elif args.xml:
+                from xml.sax.saxutils import escape
+                f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+                f.write('<cockatrice_carddatabase version="4">\n')
+                f.write('  <sets>\n')
+                found_sets = {}
+                for card in cards:
+                    if card.set_code:
+                        code = card.set_code.upper()
+                        if code not in found_sets:
+                            found_sets[code] = getattr(card, 'set_name', code)
+                if not found_sets:
+                    found_sets['CUS'] = 'Custom Set'
+                for code, name in sorted(found_sets.items()):
+                    f.write(f'    <set>\n      <name>{escape(code)}</name>\n      <longname>{escape(name)}</longname>\n      <settype>Custom</settype>\n    </set>\n')
+                f.write('  </sets>\n')
+                f.write('  <cards>\n')
+                for c in cards:
+                    f.write(c.to_cockatrice_xml() + '\n')
+                f.write('  </cards>\n')
+                f.write('</cockatrice_carddatabase>\n')
             else:
                 json.dump(subset_data, f, indent=2)
 

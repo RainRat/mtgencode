@@ -418,5 +418,37 @@ class TestMTGSubset(unittest.TestCase):
         parsed_line_1 = json.loads(written_lines[0].strip())
         self.assertEqual(parsed_line_1['name'], 'Card 1')
 
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_xml_export_flag_and_autodetect(self, mock_file, mock_open_file):
+        self.mock_card1.to_cockatrice_xml.return_value = '<card><name>Card 1</name></card>'
+        self.mock_card2.to_cockatrice_xml.return_value = '<card><name>Card 2</name></card>'
+        mock_open_file.return_value = self.mock_cards
+
+        # 1. Test explicit --xml flag
+        test_args = ['mtg_subset.py', 'input.json', 'output.dat', '--xml', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        handle = mock_file()
+        written_data = "".join(call.args[0] for call in handle.write.call_args_list)
+        self.assertIn('<cockatrice_carddatabase version="4">', written_data)
+        self.assertIn('<name>MOM</name>', written_data)
+        self.assertIn('<name>ELD</name>', written_data)
+        self.assertIn('<card><name>Card 1</name></card>', written_data)
+        self.assertIn('<card><name>Card 2</name></card>', written_data)
+
+        mock_file.reset_mock()
+
+        # 2. Test auto-detection via .xml extension
+        test_args = ['mtg_subset.py', 'input.json', 'output.xml', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        handle = mock_file()
+        written_data = "".join(call.args[0] for call in handle.write.call_args_list)
+        self.assertIn('<cockatrice_carddatabase version="4">', written_data)
+        self.assertIn('<card><name>Card 1</name></card>', written_data)
+
 if __name__ == '__main__':
     unittest.main()
