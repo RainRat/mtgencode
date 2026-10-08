@@ -127,6 +127,18 @@ class TestMtgComplexity(unittest.TestCase):
                 err_out = fake_err.getvalue()
                 self.assertIn("Notice: Using default dataset:", err_out)
 
+    def test_complexity_cli_interactive_missing_default_dataset_help(self):
+        with patch('sys.stdout', new=io.StringIO()) as fake_out, \
+             patch('sys.stdin.isatty', return_value=True), \
+             patch('os.path.exists', return_value=False):
+            with patch('sys.argv', ['mtg_complexity.py']):
+                with self.assertRaises(SystemExit) as cm:
+                    complexity_main()
+                self.assertEqual(cm.exception.code, 0)
+                output = fake_out.getvalue()
+                self.assertIn("usage: mtg_complexity.py", output)
+                self.assertIn("Analyze how complex cards are in a dataset.", output)
+
     def test_complexity_cli_outfile(self):
         import tempfile
         with tempfile.NamedTemporaryFile(suffix='.txt', delete=False) as tf:

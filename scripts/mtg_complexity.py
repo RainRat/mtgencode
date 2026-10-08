@@ -177,6 +177,9 @@ Usage Examples:
             args.infile = 'data/AllPrintings.json'
             if not args.quiet:
                 print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
+        elif len(sys.argv) == 1:
+            parser.print_help()
+            sys.exit(0)
 
     # Handle --sample
     if args.sample > 0:
