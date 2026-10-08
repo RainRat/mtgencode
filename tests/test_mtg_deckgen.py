@@ -592,5 +592,60 @@ class TestMtgDeckgen(unittest.TestCase):
         output = mock_stdout.getvalue()
         self.assertIn("Commander: Galia", output)
 
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_presets_all_archetypes(self, mock_stderr, mock_stdout, mock_open):
+        c1 = cardlib.Card({'name': 'Goblin Guide', 'types': ['Creature'], 'manaCost': '{R}', 'rarity': 'rare', 'text': ''})
+        s1 = cardlib.Card({'name': 'Lightning Bolt', 'types': ['Instant'], 'manaCost': '{R}', 'rarity': 'common', 'text': ''})
+        mock_open.return_value = [c1, s1]
+
+        for preset in ['aggro', 'control', 'midrange', 'ramp']:
+            with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--preset', preset, '--dry-run']):
+                mtg_deckgen.main()
+
+            output = mock_stdout.getvalue()
+            self.assertIn("Dry Run Summary:", output)
+            self.assertIn("Standard format", output)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_preset_override_targets(self, mock_stderr, mock_stdout, mock_open):
+        c1 = cardlib.Card({'name': 'Soldier', 'types': ['Creature'], 'manaCost': '{W}', 'rarity': 'common', 'text': ''})
+        s1 = cardlib.Card({'name': 'Shock', 'types': ['Instant'], 'manaCost': '{R}', 'rarity': 'common', 'text': ''})
+        mock_open.return_value = [c1, s1]
+
+        # Apply aggro preset but explicitly override creature target to 30
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--preset', 'aggro', '--creatures', '30', '--json']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        data = json.loads(output)
+        self.assertEqual(data['composition']['Creatures'], 30)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_preset_commander_format(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        card1 = cardlib.Card({'name': 'Goblin', 'types': ['Creature'], 'manaCost': '{1}{R}', 'rarity': 'common', 'text': ''})
+        mock_open.return_value = [commander, card1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--preset', 'control', '--json']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        data = json.loads(output)
+        self.assertEqual(data['format'], 'commander')
+        self.assertIn('Commander', data['composition'])
+
 if __name__ == '__main__':
     unittest.main()
