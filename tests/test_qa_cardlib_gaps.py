@@ -107,3 +107,41 @@ def test_activate_printing_with_valid_printing_mapped_rarity():
     assert card.set_code == "M10"
     assert card.rarity == "A"
     assert card.number == "42"
+
+
+def test_produced_colors_any_combination_and_bside():
+    face1 = {
+        "name": "Side A",
+        "types": ["Land"],
+        "text": "{T}: Add one mana of any color."
+    }
+    face2 = {
+        "name": "Side B",
+        "types": ["Land"],
+        "text": "{T}: Add {G} or {W}."
+    }
+    face1['bside'] = face2
+    card = Card(face1)
+    assert card.produced_colors == {"Any"}
+
+
+def test_produced_colors_symbols_and_land_types():
+    card_data = {
+        "name": "Multi Land",
+        "types": ["Land", "Plains", "Island"],
+        "text": "{T}: Add {B} or {R}."
+    }
+    card = Card(card_data)
+    colors = card.produced_colors
+    assert colors == {"W", "U", "B", "R"}
+
+
+def test_produced_colors_color_names_spelled_out():
+    card_data = {
+        "name": "Spell Land",
+        "types": ["Land"],
+        "text": "Add one green mana or add three white mana."
+    }
+    card = Card(card_data)
+    colors = card.produced_colors
+    assert colors == {"G", "W"}
