@@ -429,3 +429,51 @@ def test_splitcards_presets_and_defaults(tmp_path):
 
     finally:
         os.chdir(old_cwd)
+
+def test_splitcards_default_infile_and_interactive(tmp_path):
+    old_cwd = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        # Create a mock default dataset data/AllPrintings.json
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        default_file = data_dir / "AllPrintings.json"
+        data = {
+            "data": {
+                "TEST": {
+                    "name": "Test Set",
+                    "code": "TEST",
+                    "type": "expansion",
+                    "cards": [
+                        {"name": "Card 1", "types": ["Creature"], "rarity": "common"},
+                        {"name": "Card 2", "types": ["Instant"], "rarity": "uncommon"}
+                    ]
+                }
+            }
+        }
+        default_file.write_text(json.dumps(data))
+
+        # Omitted infile with default dataset existing
+        args_no_infile = ["splitcards.py", "-s"]
+        with patch("sys.argv", args_no_infile):
+            with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+                main()
+        assert "Notice: No input dataset specified. Using default dataset:" in mock_stderr.getvalue()
+        assert os.path.exists("train.txt")
+        assert os.path.exists("val.txt")
+        os.remove("train.txt")
+        os.remove("val.txt")
+
+        # Remove default dataset and test interactive TTY execution
+        default_file.unlink()
+        args_interactive = ["splitcards.py"]
+        with patch("sys.argv", args_interactive):
+            with patch("sys.stdin.isatty", return_value=True):
+                with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+                    with pytest.raises(SystemExit) as exc_info:
+                        main()
+
+        assert exc_info.value.code == 0
+        assert "usage: splitcards.py" in mock_stderr.getvalue() or "Splits a card dataset" in mock_stderr.getvalue()
+    finally:
+        os.chdir(old_cwd)
