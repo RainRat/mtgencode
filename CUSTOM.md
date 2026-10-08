@@ -53,7 +53,7 @@ To add a card with two faces (like a Split card or a Transforming double-faced c
 4.  Save it as `custom.csv`.
 
 ### Step 2: Convert to JSON
-Run the conversion script to turn your CSV into a format the encoder understands.
+Run the conversion script to turn your CSV into a format the encoder understands. You can also specify custom set codes and names using `-s`/`--set-code` and `-n`/`--set-name`.
 
 ```bash
 # Preview conversion statistics without creating files (dry-run mode)
@@ -61,9 +61,14 @@ python3 scripts/csv2json.py custom.csv --dry-run
 
 # Convert CSV spreadsheet to JSON
 python3 scripts/csv2json.py custom.csv custom.json
+
+# Convert with a custom set code and set name (useful for batch merging distinct sets)
+python3 scripts/csv2json.py set1.csv set1.json -s SET1 -n "My Custom Set 1"
+python3 scripts/csv2json.py set2.csv set2.json -s SET2 -n "My Custom Set 2"
 ```
-*   **Input:** `custom.csv` (Your spreadsheet)
-*   **Output:** `custom.json` (The converted data)
+*   **Input:** `custom.csv` (Your spreadsheet, or `-` for standard input)
+*   **Output:** `custom.json` (The converted data, or `-` for standard output)
+*   **Options:** `-s`, `--set-code` (Set code, default: `CUS`); `-n`, `--set-name` (Set name, default: `custom` or lowercase set code)
 
 ### Step 3: Merge with Official Data
 Combine your custom cards with the official Magic data (`AllPrintings.json`). You can merge a single custom file or batch merge multiple custom sets into a single dataset.
