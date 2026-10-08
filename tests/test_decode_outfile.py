@@ -71,5 +71,22 @@ class TestDecodeOutfile(unittest.TestCase):
             if os.path.exists(override_outfile.name):
                 os.remove(override_outfile.name)
 
+    def test_decode_short_sample_flag(self):
+        target_outfile = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False)
+        target_outfile.close()
+        os.remove(target_outfile.name)
+
+        try:
+            test_args = ['decode.py', self.temp_encoded.name, '-o', target_outfile.name, '-N', '1', '-q']
+            with patch('sys.argv', test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_path('decode.py', run_name='__main__')
+                self.assertEqual(cm.exception.code, 0)
+
+            self.assertTrue(os.path.exists(target_outfile.name))
+        finally:
+            if os.path.exists(target_outfile.name):
+                os.remove(target_outfile.name)
+
 if __name__ == '__main__':
     unittest.main()
