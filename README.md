@@ -54,22 +54,30 @@ This project helps you turn Magic: The Gathering card data into a format that AI
 ## Quick Start Guide
 
 ### 0. Verify Installation
-Verify your installation by running this quick test. This command encodes a sample card and then decodes it back into readable text:
+Verify your installation by running this quick test command. It encodes a sample card included with this repository (`testdata/uthros.json`) and decodes it back into human-readable text. You do not need to download external card datasets to run this test.
 
 ```bash
 python3 encode.py testdata/uthros.json | python3 decode.py
 ```
 
+When successful, the output displays the decoded card details in your terminal:
+
+```text
+Uthros Research Craft {2}{U} (rare)
+Artifact — Spacecraft (0/8)
+...
+```
+
 ### 1. Get the Card Data
-Download the latest card data from one of these reliable sources:
-*   **[MTGJSON](https://mtgjson.com/downloads/all-files/):** We recommend **AllPrintings.json**, but you can use smaller files (like **Standard.json**) for faster testing.
-*   **[Scryfall](https://scryfall.com/docs/api/bulk-data):** Download the **Oracle Cards** bulk data file for the most up-to-date card text and rulings.
+Download card data from one of these official sources:
+*   **[MTGJSON](https://mtgjson.com/downloads/all-files/):** Download **AllPrintings.json** for the complete card database, or a smaller file (such as **Standard.json**) for quick testing.
+*   **[Scryfall](https://scryfall.com/docs/api/bulk-data):** Download the **Oracle Cards** file for modern card text and official rulings.
 
-After downloading, set up your data folder:
-1.  Create a folder named `data` in this project.
-2.  Place your downloaded file inside the `data` folder.
+Set up your local dataset:
+1.  Create a `data` folder in the root directory: `mkdir -p data`
+2.  Move your downloaded file into the `data` folder.
 
-> **Tip for ZIP Files:** MTGJSON downloads often come as `.zip` archives (such as `AllPrintings.json.zip`). You can extract the `.json` file into `data/` or leave the `.zip` file intact. The tools support both `.json` and `.zip` files.
+> **Tip for ZIP Files:** MTGJSON files often download as `.zip` archives (such as `AllPrintings.json.zip`). You can extract the `.json` file into `data/` or keep the `.zip` file intact. All scripts automatically read both `.json` and `.zip` files.
 
 ### 2. Encode Cards (Data to Text)
 Convert card data from various formats into a simple text format for AI training.
