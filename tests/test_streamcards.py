@@ -180,5 +180,50 @@ class TestStreamCards(unittest.TestCase):
                 runpy.run_path(script_path, run_name='__main__')
             self.assertEqual(ctx.exception.code, 0)
 
+    @patch('jdecode.mtg_open_file')
+    @patch('streamcards.streaming_noreturn')
+    def test_main_dry_run(self, mock_streaming, mock_mtg_open):
+        card_mock = MagicMock()
+        card_mock.name = "Test Card"
+        mock_mtg_open.return_value = [card_mock]
+
+        args = MagicMock()
+        args.fds = [3, 4]
+        args.fname = 'fake_file.json'
+        args.block_size = 10000
+        args.seed = 123
+        args.dry_run = True
+
+        with patch('sys.stdout') as mock_stdout:
+            streamcards.main(args)
+
+        mock_streaming.assert_not_called()
+        mock_mtg_open.assert_called_once_with('fake_file.json', verbose=True, linetrans=True)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('streamcards.streaming_noreturn')
+    @patch('sys.argv', ['streamcards.py', '3', '4', '--dry-run', '-f', 'testdata/uthros.json'])
+    def test_cli_dry_run(self, mock_streaming, mock_mtg_open):
+        card_mock = MagicMock()
+        card_mock.name = "Uthros"
+        mock_mtg_open.return_value = [card_mock]
+
+        script_path = os.path.join(os.path.dirname(__file__), '../scripts/streamcards.py')
+        runpy.run_path(script_path, run_name='__main__')
+
+        mock_streaming.assert_not_called()
+        mock_mtg_open.assert_called_once_with('testdata/uthros.json', verbose=True, linetrans=True)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('streamcards.streaming_noreturn')
+    @patch('sys.argv', ['streamcards.py', '-p'])
+    def test_cli_preview_shorthand_no_fds(self, mock_streaming, mock_mtg_open):
+        mock_mtg_open.return_value = []
+
+        script_path = os.path.join(os.path.dirname(__file__), '../scripts/streamcards.py')
+        runpy.run_path(script_path, run_name='__main__')
+
+        mock_streaming.assert_not_called()
+
 if __name__ == '__main__':
     unittest.main()
