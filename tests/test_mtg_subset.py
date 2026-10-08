@@ -378,5 +378,45 @@ class TestMTGSubset(unittest.TestCase):
         self.assertIn('data', parsed_data)
         self.assertIn('MOM', parsed_data['data'])
 
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_outfile_option_flag(self, mock_file, mock_open_file):
+        mock_open_file.return_value = self.mock_cards
+
+        test_args = ['mtg_subset.py', 'input.json', '-o', 'custom_output.json', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        mock_file.assert_called_once_with('custom_output.json', 'w', encoding='utf-8')
+
+    @patch('jdecode.mtg_open_file')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_jsonl_export_flag_and_autodetect(self, mock_file, mock_open_file):
+        mock_open_file.return_value = self.mock_cards
+
+        # 1. Test explicit --jsonl flag
+        test_args = ['mtg_subset.py', 'input.json', 'output.dat', '--jsonl', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        handle = mock_file()
+        written_lines = [call.args[0] for call in handle.write.call_args_list]
+        parsed_line_1 = json.loads(written_lines[0].strip())
+        parsed_line_2 = json.loads(written_lines[1].strip())
+        self.assertEqual(parsed_line_1['name'], 'Card 1')
+        self.assertEqual(parsed_line_2['name'], 'Card 2')
+
+        mock_file.reset_mock()
+
+        # 2. Test auto-detection via .jsonl extension
+        test_args = ['mtg_subset.py', 'input.json', 'output.jsonl', '--quiet']
+        with patch('sys.argv', test_args):
+            mtg_subset.main()
+
+        handle = mock_file()
+        written_lines = [call.args[0] for call in handle.write.call_args_list]
+        parsed_line_1 = json.loads(written_lines[0].strip())
+        self.assertEqual(parsed_line_1['name'], 'Card 1')
+
 if __name__ == '__main__':
     unittest.main()

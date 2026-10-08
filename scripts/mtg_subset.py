@@ -16,11 +16,17 @@ import jdecode
 def main():
     parser = argparse.ArgumentParser(
         prog='mtg_subset.py',
-        description="Create a filtered subset of MTG card data in JSON, CSV, or encoded text format.",
+        description="Create a filtered subset of MTG card data in JSON, JSON Lines, CSV, or encoded text format.",
         epilog='''
 Example Usage:
   # Create a subset of only Legendary cards from a specific set
   python3 scripts/mtg_subset.py data/AllPrintings.json output.json --set MOM --grep "Legendary"
+
+  # Save subset using -o / --outfile flag
+  python3 scripts/mtg_subset.py data/AllPrintings.json -o output.json --set MOM
+
+  # Export subset in JSON Lines format (one card per line) for streaming tools
+  python3 scripts/mtg_subset.py data/AllPrintings.json output.jsonl --rarity rare
 
   # Create a tiny dataset of just 100 random rare creatures in CSV format
   python3 scripts/mtg_subset.py data/AllPrintings.json tiny.csv --rarity rare --grep-type "Creature" --sample 100
@@ -36,9 +42,13 @@ Example Usage:
     io_group.add_argument('infile', nargs='?', default=None,
                         help='Input card data (JSON, CSV, XML, encoded text, or directory). Defaults to data/AllPrintings.json if omitted.')
     io_group.add_argument('outfile', nargs='?', default=None,
-                        help='Path to save the filtered card subset (optional if --dry-run is specified). Auto-detects format from extension (.csv, .txt/.encoded, .json).')
+                        help='Path to save the filtered card subset (optional if --dry-run or -o is specified). Auto-detects format from extension (.csv, .jsonl, .txt/.encoded, .json).')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', default=None,
+                        help='Path to save the output file. Overrides positional output argument if specified.')
     io_group.add_argument('-j', '--json', action='store_true',
                         help='Output in MTGJSON format (Default).')
+    io_group.add_argument('--jsonl', action='store_true',
+                        help='Output in JSON Lines format (one card JSON object per line).')
     io_group.add_argument('--csv', action='store_true',
                         help='Output in CSV format.')
     io_group.add_argument('--encoded', action='store_true',
@@ -133,6 +143,10 @@ Example Usage:
         if os.path.exists(rel_data):
             default_base = rel_data
 
+    # Handle option flag -o / --outfile overriding positional outfile argument
+    if args.outfile_opt:
+        args.outfile = args.outfile_opt
+
     # Handle omitted positional arguments intelligently:
     # If infile is missing, check if default dataset exists or if run interactively.
     if args.infile is None:
@@ -219,9 +233,11 @@ Example Usage:
         }
 
     # Auto-detect format from outfile extension if no explicit format flag is specified
-    if args.outfile and not (args.json or args.csv or args.encoded):
+    if args.outfile and not (args.json or args.jsonl or args.csv or args.encoded):
         if args.outfile.endswith('.csv'):
             args.csv = True
+        elif args.outfile.endswith('.jsonl'):
+            args.jsonl = True
         elif args.outfile.endswith('.txt') or args.outfile.endswith('.encoded'):
             args.encoded = True
 
@@ -235,6 +251,9 @@ Example Usage:
                 for c in cards:
                     if hasattr(c, '_get_csv_data'):
                         writer.writerow(c._get_csv_data())
+            elif args.jsonl:
+                for c in cards:
+                    f.write(json.dumps(c.to_dict()) + '\n')
             elif args.encoded:
                 for c in cards:
                     f.write(c.encode() + utils.cardsep)
