@@ -195,10 +195,7 @@ Usage Examples:
     }
 
     if args.lands is None:
-        if args.format and args.format in format_land_defaults:
-            args.lands = format_land_defaults[args.format]
-        else:
-            args.lands = 24
+        args.lands = format_land_defaults.get(args.format, 24)
 
     # UX Improvement: Smart positional argument handling
     if args.infile and args.infile != '-' and not os.path.exists(args.infile):
