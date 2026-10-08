@@ -28,8 +28,8 @@ def main():
 
     # Group: Output Format
     fmt_group = parser.add_argument_group('Output Format')
-    fmt_group.add_argument('-f', '--format', choices=['text', 'json', 'jsonl', 'csv'], default='text',
-                        help='Output format for the splits (default: text).')
+    fmt_group.add_argument('-f', '--format', choices=['text', 'json', 'jsonl', 'csv'], default=None,
+                        help="Output format for the splits (text, json, jsonl, csv). Auto-detected from output file extensions if omitted.")
     fmt_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
                         help="The encoding format to use if output is text: 'std' (default), 'named', 'noname', 'rfields', 'old', 'norarity', 'vec', or 'custom'.")
     fmt_group.add_argument('--nolabel', action='store_true',
@@ -155,6 +155,23 @@ def main():
 
     if args.sort:
         args.stable = True
+
+    # Auto-detect format from output file extension if --format is not explicitly set
+    if args.format is None:
+        if args.outputs:
+            first_ext = os.path.splitext(args.outputs[0])[1].lower()
+            if first_ext == '.json':
+                args.format = 'json'
+            elif first_ext == '.jsonl':
+                args.format = 'jsonl'
+            elif first_ext == '.csv':
+                args.format = 'csv'
+            elif first_ext in ['.txt', '.text', '.encoded']:
+                args.format = 'text'
+            else:
+                args.format = 'text'
+        else:
+            args.format = 'text'
 
     PRESETS = {
         'train-val-test': {'ratios': [0.8, 0.1, 0.1], 'names': ['train', 'val', 'test']},
