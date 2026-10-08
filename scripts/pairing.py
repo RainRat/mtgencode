@@ -188,5 +188,13 @@ Usage Examples:
                         help='Verbose output.')
 
     args = parser.parse_args()
+
+    if not args.dry_run and args.outfile is None:
+        if sys.stdin.isatty() or sys.stdout.isatty():
+            args.dry_run = True
+            print("Notice: No output file specified. Running in dry-run preview mode.", file=sys.stderr)
+        else:
+            parser.error("the following arguments are required: outfile (unless --dry-run is specified)")
+
     main(args.infile, args.outfile, n=args.n, verbose=args.verbose, dry_run=args.dry_run)
     sys.exit(0)
