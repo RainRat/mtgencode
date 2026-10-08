@@ -235,5 +235,122 @@ class TestDecodeGaps(unittest.TestCase):
             if os.path.exists(out_file.name):
                 os.remove(out_file.name)
 
+    def test_creativity_mode_text_md_html_forum(self):
+        mock_nd = unittest.mock.MagicMock()
+        mock_nd.nearest_par.side_effect = lambda names, n=3, quiet=False: [[(0.123, names[0])]] * len(names)
+        mock_nd.names = {
+            "lightning bolt": "Lightning Bolt",
+            "counterspell": "Counterspell",
+            "Lightning Bolt": "Lightning Bolt",
+            "Counterspell": "Counterspell"
+        }
+        mock_nd.codes = {
+            "lightning bolt": "TST/1.jpg",
+            "counterspell": "TST/2.jpg",
+            "Lightning Bolt": "TST/1.jpg",
+            "Counterspell": "TST/2.jpg"
+        }
+
+        mock_cbow = unittest.mock.MagicMock()
+        mock_cbow.nearest_par.side_effect = lambda cards, quiet=False: [[(0.456, cards[0].name)]] * len(cards)
+
+        with patch('decode.Namediff', return_value=mock_nd), \
+             patch('decode.CBOW', return_value=mock_cbow):
+
+            # Plain text creativity mode
+            stdout_cap = io.StringIO()
+            with patch('sys.stdout', stdout_cap):
+                decode.main(self.temp_file.name, creativity=True, verbose=False, quiet=True)
+            txt_out = stdout_cap.getvalue()
+            self.assertIn("~~ closest cards ~~", txt_out)
+            self.assertIn("~~ closest names ~~", txt_out)
+
+            # Markdown creativity mode
+            stdout_cap = io.StringIO()
+            with patch('sys.stdout', stdout_cap):
+                decode.main(self.temp_file.name, creativity=True, md_out=True, verbose=False, quiet=True)
+            md_out = stdout_cap.getvalue()
+            self.assertIn("### ~~ closest cards ~~", md_out)
+
+            # Forum creativity mode
+            stdout_cap = io.StringIO()
+            with patch('sys.stdout', stdout_cap):
+                decode.main(self.temp_file.name, creativity=True, for_forum=True, verbose=False, quiet=True)
+            forum_out = stdout_cap.getvalue()
+            self.assertIn("[card]", forum_out)
+
+            # HTML creativity mode
+            stdout_cap = io.StringIO()
+            with patch('sys.stdout', stdout_cap):
+                decode.main(self.temp_file.name, creativity=True, html=True, verbose=False, quiet=True)
+            html_out = stdout_cap.getvalue()
+            self.assertIn("hover_img", html_out)
+
+    def test_html_booster_output_nav_bar(self):
+        mock_c1 = unittest.mock.MagicMock()
+        mock_c1.pack_id = 1
+        mock_c1.format.return_value = "<div>Card 1</div>"
+
+        mock_c2 = unittest.mock.MagicMock()
+        mock_c2.pack_id = 2
+        mock_c2.format.return_value = "<div>Card 2</div>"
+
+        with patch('decode.jdecode.mtg_open_file', return_value=[mock_c1, mock_c2]):
+            stdout_cap = io.StringIO()
+            with patch('sys.stdout', stdout_cap):
+                decode.main('dummy.json', html=True, booster=2, verbose=False, quiet=True)
+            out = stdout_cap.getvalue()
+            self.assertIn('<ul id="nav-bar">', out)
+            self.assertIn('<h2 id="pack_1"', out)
+            self.assertIn('<h2 id="pack_2"', out)
+
+    def test_html_color_segments_nav_bar(self):
+        stdout_cap = io.StringIO()
+        with patch('sys.stdout', stdout_cap):
+            decode.main(self.temp_file.name, html=True, verbose=False, quiet=True)
+        out = stdout_cap.getvalue()
+        self.assertIn('<ul id="nav-bar">', out)
+        self.assertIn('<h2 id=', out)
+
+    def test_vdump_error_handling(self):
+        mock_card_err = unittest.mock.MagicMock()
+        mock_card_err.format.side_effect = Exception("Dump formatting error")
+
+        with patch('decode.jdecode.mtg_open_file', return_value=[mock_card_err]):
+            stdout_cap = io.StringIO()
+            with patch('sys.stdout', stdout_cap):
+                decode.main('dummy.json', vdump=True, verbose=False, quiet=True)
+            out = stdout_cap.getvalue()
+            self.assertIn("ERROR processing card: Dump formatting error", out)
+
+    def test_mse_existing_set_file_safety(self):
+        stderr_cap = io.StringIO()
+        with patch('os.path.isfile', side_effect=lambda f: f == 'set'), \
+             patch('sys.stderr', stderr_cap):
+            decode.main(self.temp_file.name, oname='output.mse-set', for_mse=True, verbose=False, quiet=True)
+        stderr_out = stderr_cap.getvalue()
+        self.assertIn('ERROR: A file named "set" already exists', stderr_out)
+
+    def test_export_card_exceptions_handling(self):
+        mock_card_bad = unittest.mock.MagicMock()
+        mock_card_bad.to_dict.side_effect = Exception("dict error")
+        mock_card_bad.to_table_row.side_effect = Exception("table error")
+
+        with patch('decode.jdecode.mtg_open_file', return_value=[mock_card_bad]):
+            stdout_cap = io.StringIO()
+            with patch('sys.stdout', stdout_cap):
+                decode.main('dummy.json', json_out=True, verbose=False, quiet=True)
+            self.assertEqual(stdout_cap.getvalue().strip(), "[]")
+
+            stdout_cap = io.StringIO()
+            with patch('sys.stdout', stdout_cap):
+                decode.main('dummy.json', jsonl_out=True, verbose=False, quiet=True)
+            self.assertEqual(stdout_cap.getvalue().strip(), "")
+
+            stdout_cap = io.StringIO()
+            with patch('sys.stdout', stdout_cap):
+                decode.main('dummy.json', table_out=True, verbose=False, quiet=True)
+            self.assertIn("DECODED CARDS", stdout_cap.getvalue())
+
 if __name__ == '__main__':
     unittest.main()
