@@ -213,6 +213,9 @@ def main(infile = None, outfile = None, json_fmt = False, csv_fmt = False, dry_r
             json_fmt = True
         elif outfile.endswith('.csv'):
             csv_fmt = True
+    elif not dry_run and (sys.stdin.isatty() or sys.stdout.isatty()):
+        dry_run = True
+        print("Notice: No output file specified. Running in dry-run preview mode.", file=sys.stderr)
 
     if dry_run:
         file_exists = os.path.exists(infile)
@@ -294,6 +297,13 @@ Usage Examples:
                         help='Output statistical analysis report in structured JSON format.')
     fmt_group.add_argument('--csv', action='store_true',
                         help='Output statistical analysis report in CSV format.')
+
+    if len(sys.argv) == 1 and sys.stdin.isatty():
+        default_infile = os.path.join(datadir, 'output.txt')
+        default_all = os.path.join(datadir, 'AllPrintings.json')
+        if not os.path.exists(default_infile) and not os.path.exists(default_all):
+            parser.print_help()
+            sys.exit(0)
 
     args = parser.parse_args()
     main(args.infile, outfile=args.outfile, json_fmt=args.json, csv_fmt=args.csv, dry_run=args.dry_run, verbose=args.verbose)
