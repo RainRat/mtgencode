@@ -142,7 +142,7 @@ Customization options for formatting data:
 *   `-o`, `--outfile`: Specify the destination output file path (overriding positional argument).
 *   `--seed N`: Seed for the random number generator (Default: 1371367).
 *   `--limit N`: Only process the first N cards.
-*   `--sample N`: Shorthand for `--limit N`. The tool shuffles cards by default unless you use `--stable`.
+*   `-N`, `--sample N`: Shorthand for `--limit N`. The tool shuffles cards by default unless you use `--stable`.
 *   `--booster N`: Simulate opening N booster packs. Distribution: 10 Common, 3 Uncommon, 1 Rare/Mythic, 1 Basic Land.
 *   `--box N`: Simulate opening N booster boxes (36 packs each).
 *   `-p`, `--preview`, `--dry-run`: Print a summary of matching card statistics and sample preview without writing output files.
@@ -176,7 +176,7 @@ Options for formatting the output. While primarily used for AI output, this tool
 *   `-o`, `--outfile`: Specify the destination output file path (overriding positional argument).
 *   `--seed N`: Seed for the random number generator.
 *   `--limit N`: Only process the first N cards.
-*   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+*   `-N`, `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
 *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of matching card stats, target output format, and sample preview without creating or writing output files.
 *   `-v`, `--verbose`: Enable detailed status messages.
 *   `-q`, `--quiet`: Suppress the progress bar and status messages.
@@ -482,10 +482,13 @@ Organizes cards into categories (like Color or Card Type) and wraps them in `[sp
 # Basic sorting
 python3 sortcards.py data/AllPrintings.json sorted_output.txt
 
+# Specify output destination using -o / --outfile flag
+python3 sortcards.py data/AllPrintings.json -o sorted_output.txt
+
 # Sort encoded cards with filters and sampling
 python3 sortcards.py encoded_output.txt sorted_sample.txt --sample 50 --grep "Elf"
 ```
-*   **Options:** Supports `--encoding`, `--limit`, `--shuffle`, `--sample`, `--booster`, `--box`, and all **Advanced Filtering** flags.
+*   **Options:** Supports `-o`, `--outfile`, `--encoding`, `--limit`, `--shuffle`, `-N`, `--sample`, `--booster`, `--box`, and all **Advanced Filtering** flags.
 *   `-S`, `--summary`: Output compact card summaries instead of full text.
 *   `--md`, `--markdown`: Output in Markdown format with collapsible sections.
 *   `-j`, `--json`: Output categorized cards in structured JSON format (Auto-detected for `.json`).
@@ -1106,10 +1109,11 @@ python3 scripts/mtg_subset.py data/AllPrintings.json --set MOM --dry-run
     *   `-j`, `--json`: Output in MTGJSON format (default).
     *   `--csv`: Output in CSV format. Auto-detected when `--outfile` ends in `.csv`.
     *   `--encoded`: Output in encoded text format. Auto-detected when `--outfile` ends in `.txt` or `.encoded`.
+    *   `-o`, `--outfile`: Specify destination output file path (overriding positional argument).
     *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of matching card statistics and sample preview without creating or modifying the target output file.
     *   `-n LIMIT`, `--limit LIMIT`: Only process the first N cards.
     *   `--shuffle`: Randomize the order of cards.
-    *   `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
+    *   `-N`, `--sample N`: Pick N random cards (shorthand for `--shuffle --limit N`).
     *   `--sort CRITERIA`: Sort cards by `name`, `color`, `identity`, `type`, `cmc`, `rarity`, `power`, `toughness`, `loyalty`, `set`, `pack`, `box`, `complexity`, `score`, `rating`, or `power_rating` before subsetting.
     *   `--reverse`: Reverse the sort order.
     *   Supports **Smart Dataset Detection** (defaults to `data/AllPrintings.json` if omitted) and all **Advanced Filtering** flags.
