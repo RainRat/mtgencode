@@ -856,7 +856,7 @@ def mtg_open_mse_content(content, verbose=False):
 
 # filters to ignore some undesirable cards, only used when opening json
 def default_exclude_sets(cardset):
-    return cardset == 'Unglued' or cardset == 'Unhinged' or cardset == 'Celebration'
+    return cardset in ('Unglued', 'Unhinged', 'Celebration')
 
 def default_exclude_types(cardtype):
     return cardtype in ['conspiracy', 'contraption']
