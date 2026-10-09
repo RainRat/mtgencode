@@ -260,5 +260,26 @@ class TestDistances(unittest.TestCase):
             self.assertEqual(cm.exception.code, 0)
         self.assertTrue(os.path.exists(outfile_csv))
 
+    @patch('cbow.CBOW')
+    @patch('namediff.Namediff')
+    def test_cli_outfile_option_flag(self, mock_namediff_cls, mock_cbow_cls):
+        infile = os.path.join('testdata', 'tarkir.json')
+        outfile_flag = os.path.join(self.temp_dir.name, 'flag_out.txt')
+
+        mock_nd = MagicMock()
+        mock_nd.nearest_par.side_effect = lambda names, n=1: [[(0.3, 'Target')] for _ in names]
+        mock_namediff_cls.return_value = mock_nd
+
+        mock_cb = MagicMock()
+        mock_cb.nearest_par.side_effect = lambda cards, n=1: [[(0.6, 'Target')] for _ in cards]
+        mock_cbow_cls.return_value = mock_cb
+
+        test_args = ['distances.py', infile, '-o', outfile_flag, '-p']
+        with patch.object(sys, 'argv', test_args):
+            with self.assertRaises(SystemExit) as cm:
+                runpy.run_module('scripts.distances', run_name='__main__')
+            self.assertEqual(cm.exception.code, 0)
+        self.assertTrue(os.path.exists(outfile_flag))
+
 if __name__ == '__main__':
     unittest.main()
