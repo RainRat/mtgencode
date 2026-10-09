@@ -153,5 +153,27 @@ class TestNgrams(unittest.TestCase):
                 runpy.run_path(script_path, run_name='__main__')
             self.assertEqual(cm.exception.code, 0)
 
+    def test_cli_outfile_flag_support(self):
+        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts/ngrams.py'))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_flag = os.path.join(tmpdir, 'flag_output')
+            with patch('sys.argv', ['ngrams.py', self.sample_json, '-o', out_flag, '-min', '2', '-max', '2']):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_path(script_path, run_name='__main__')
+                self.assertEqual(cm.exception.code, 0)
+            self.assertTrue(os.path.exists(out_flag + '.2g'))
+
+    def test_cli_outfile_flag_overrides_positional(self):
+        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts/ngrams.py'))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pos_out = os.path.join(tmpdir, 'pos_out')
+            flag_out = os.path.join(tmpdir, 'flag_out')
+            with patch('sys.argv', ['ngrams.py', self.sample_json, pos_out, '-o', flag_out, '-min', '2', '-max', '2']):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_path(script_path, run_name='__main__')
+                self.assertEqual(cm.exception.code, 0)
+            self.assertTrue(os.path.exists(flag_out + '.2g'))
+            self.assertFalse(os.path.exists(pos_out + '.2g'))
+
 if __name__ == '__main__':
     unittest.main()

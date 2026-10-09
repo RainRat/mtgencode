@@ -201,6 +201,8 @@ Example Usage:
                         help='Encoded card file or JSON corpus to process. Defaults to data/AllPrintings.json if omitted.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Base name of output file (for example, outputs ending in .2g, .3g etc. will be produced). Optional if --dry-run is specified.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_flag', default=None,
+                        help='Base name of output file destination. Overrides positional output path if specified.')
     
     # Processing & Debugging
     proc_group = parser.add_argument_group('Processing Options')
@@ -218,6 +220,7 @@ Example Usage:
                         help='Verbose output.')
 
     args = parser.parse_args()
-    main(args.infile, args.outfile, gmin=args.min, gmax=args.max, nltk=args.nltk,
+    outfile = args.outfile_flag if args.outfile_flag is not None else args.outfile
+    main(args.infile, outfile, gmin=args.min, gmax=args.max, nltk=args.nltk,
          sep=args.separate, verbose=args.verbose, dry_run=args.dry_run)
     sys.exit(0)
