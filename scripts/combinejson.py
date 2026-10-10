@@ -111,6 +111,8 @@ Example:
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
+    parser.add_argument('-V', '--version', action='version', version='mtgencode 1.0.0')
+
     io_group = parser.add_argument_group('Input / Output Options')
     io_group.add_argument('base_file', help='Path to the primary JSON file (for example, data/AllPrintings.json).')
     io_group.add_argument('custom_files', nargs='+',

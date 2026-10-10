@@ -176,6 +176,8 @@ Usage Examples:
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
+    parser.add_argument('-V', '--version', action='version', version='mtgencode 1.0.0')
+
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('infile', nargs='?', default='-',
