@@ -860,7 +860,7 @@ python3 scripts/mtg_query.py shell my_cards.json --fields "name,cost,type,pt,rar
 ```
 *   **In-Shell Commands:**
     *   `<card name>`: Type any card name to see its official rules text.
-    *   `/search <query>`: Perform a bulk search and display results in a table.
+    *   `/search <query>` (or `/s`): Perform a bulk search and display results in a table. Running commands like `/search`, `/reprints`, `/substitutes`, or `/compare` without arguments automatically reuses active results from your previous search.
     *   `/help`: Show available commands.
     *   `exit` or `quit`: Leave the shell.
 
