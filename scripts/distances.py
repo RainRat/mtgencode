@@ -141,6 +141,10 @@ Usage Examples:
   # Run calculations using default output file (distances.txt)
   python3 scripts/distances.py data/output.txt
 
+  # Specify output destination using -o / --outfile flag
+  python3 scripts/distances.py data/output.txt -o distances.txt
+  python3 scripts/distances.py data/output.txt -o distances.json
+
   # Export distance calculations to JSON or CSV format
   python3 scripts/distances.py data/output.txt distances.json
   python3 scripts/distances.py data/output.txt distances.csv --csv
@@ -159,6 +163,8 @@ Usage Examples:
                         help='The card dataset to analyze (JSON, CSV, or encoded text). Defaults to data/output.txt.')
     io_group.add_argument('outfile', nargs='?', default='distances.txt',
                         help='Path to save the distance data (default: distances.txt). Used as input for scripts/sum.py.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_flag', default=None,
+                        help='Path to save the distance data. Overrides positional output file path.')
 
     # Group: Output Format
     fmt_group = parser.add_argument_group('Output Format')
@@ -182,5 +188,6 @@ Usage Examples:
         parser.print_help()
         sys.exit(1)
 
-    main(args.infile, args.outfile, verbose=args.verbose, parallel=args.parallel, dry_run=args.dry_run, use_json=args.json, use_csv=args.csv)
+    outfile = args.outfile_flag if args.outfile_flag else args.outfile
+    main(args.infile, outfile, verbose=args.verbose, parallel=args.parallel, dry_run=args.dry_run, use_json=args.json, use_csv=args.csv)
     sys.exit(0)

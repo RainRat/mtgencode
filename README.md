@@ -1364,6 +1364,9 @@ These tools allow for bulk creativity analysis of your generated cards. `distanc
 # Calculate distances for a generated dataset
 python3 scripts/distances.py generated_cards.txt distances.txt --parallel
 
+# Specify destination output file with -o / --outfile option flag
+python3 scripts/distances.py generated_cards.txt -o distances.txt --parallel
+
 # Summarize the results
 python3 scripts/sum.py distances.txt
 
