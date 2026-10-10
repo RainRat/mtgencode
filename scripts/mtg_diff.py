@@ -103,6 +103,8 @@ Usage Examples:
 """,
     )
 
+    parser.add_argument('-V', '--version', action='version', version='mtgencode 1.0.0')
+
     # Group: Input / Output
     io_group = parser.add_argument_group('Input / Output')
     io_group.add_argument('file1', nargs='?', help='Base card dataset (JSON, CSV, XML, or encoded text) to compare from. Defaults to data/AllPrintings.json if only target file is specified.')
