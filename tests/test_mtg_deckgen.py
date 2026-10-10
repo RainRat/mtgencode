@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, PropertyMock
 import sys
 import os
 import io
@@ -646,6 +646,154 @@ class TestMtgDeckgen(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(data['format'], 'commander')
         self.assertIn('Commander', data['composition'])
+
+    def test_pick_cards_with_curve_invalid_cmc_exception(self):
+        card_bad_cmc = MagicMock()
+        cost_mock = MagicMock()
+        type(cost_mock).cmc = PropertyMock(side_effect=ValueError("Invalid CMC"))
+        card_bad_cmc.cost = cost_mock
+
+        picked = mtg_deckgen.pick_cards_with_curve([card_bad_cmc], 1, curve={0: 1})
+        self.assertEqual(len(picked), 1)
+        self.assertEqual(picked[0], card_bad_cmc)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_color_output_formatting(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        card1 = cardlib.Card({'name': 'Goblin', 'types': ['Creature'], 'manaCost': '{1}{R}', 'rarity': 'common', 'text': ''})
+        mock_open.return_value = [commander, card1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia', '--color']):
+            mtg_deckgen.main()
+
+        stderr = mock_stderr.getvalue()
+        self.assertIn('\033[', stderr)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_standard_empty_creature_pool_warning(self, mock_stderr, mock_stdout, mock_open):
+        spell = cardlib.Card({
+            'name': 'Lightning Bolt',
+            'types': ['Instant'],
+            'manaCost': '{R}',
+            'rarity': 'common',
+            'text': ''
+        })
+        mock_open.return_value = [spell]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard']):
+            mtg_deckgen.main()
+
+        stderr = mock_stderr.getvalue()
+        self.assertIn("Warning: No creatures found in pool for standard deck.", stderr)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_standard_sideboard_fallback_when_all_cards_used(self, mock_stderr, mock_stdout, mock_open):
+        spell = cardlib.Card({
+            'name': 'Shock',
+            'types': ['Instant'],
+            'manaCost': '{R}',
+            'rarity': 'common',
+            'text': ''
+        })
+        mock_open.return_value = [spell]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--sideboard', '--sideboard-size', '4']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Sideboard", output)
+        self.assertIn("Shock", output)
+
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('os.path.exists')
+    @patch('cli_utils.load_and_filter_cards')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_default_dataset_notice_interactive(self, mock_stderr, mock_stdout, mock_load, mock_exists, mock_isatty):
+        def exists_logic(path):
+            if 'AllPrintings.json' in path:
+                return path == 'data/AllPrintings.json'
+            return False
+
+        mock_exists.side_effect = exists_logic
+        c1 = cardlib.Card({'name': 'Galia', 'supertypes': ['Legendary'], 'types': ['Creature'], 'manaCost': '{R}{G}', 'rarity': 'rare', 'text': ''})
+        s1 = cardlib.Card({'name': 'Shock', 'types': ['Instant'], 'manaCost': '{R}', 'rarity': 'common', 'text': ''})
+        mock_load.return_value = [c1, s1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', '-']):
+            mtg_deckgen.main()
+
+        stderr = mock_stderr.getvalue()
+        self.assertIn("Notice: Using default dataset:", stderr)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_limit_flag_and_empty_pool_error(self, mock_stderr, mock_stdout, mock_open):
+        c1 = cardlib.Card({'name': 'Soldier', 'types': ['Creature'], 'manaCost': '{W}', 'rarity': 'common', 'text': ''})
+        mock_open.return_value = [c1]
+
+        # Test limit truncates cards
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--limit', '1']):
+            mtg_deckgen.main()
+        self.assertIn("Soldier", mock_stdout.getvalue())
+
+        # Test empty cards after filter causes exit
+        mock_open.return_value = []
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard']), self.assertRaises(SystemExit):
+            mtg_deckgen.main()
+        self.assertIn("Error: No cards found in the card pool matching criteria.", mock_stderr.getvalue())
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_standard_invalid_curve_segment(self, mock_stderr, mock_stdout, mock_open):
+        c1 = cardlib.Card({'name': 'Soldier', 'types': ['Creature'], 'manaCost': '{W}', 'rarity': 'common', 'text': ''})
+        s1 = cardlib.Card({'name': 'Shock', 'types': ['Instant'], 'manaCost': '{R}', 'rarity': 'common', 'text': ''})
+        mock_open.return_value = [c1, s1]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'standard', '--curve', '1:2,invalid,3+:1']):
+            mtg_deckgen.main()
+
+        stderr = mock_stderr.getvalue()
+        self.assertIn("Warning: Invalid curve segment 'invalid', skipping.", stderr)
+
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_commander_sideboard_sufficient_candidates(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        cards = [commander]
+        for i in range(150):
+            cards.append(cardlib.Card({'name': f'Card_{i}', 'types': ['Creature'], 'manaCost': '{1}{R}', 'rarity': 'common', 'text': ''}))
+
+        mock_open.return_value = cards
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '--format', 'commander', '--commander', 'Galia', '--sideboard-size', '10']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Sideboard", output)
 
 if __name__ == '__main__':
     unittest.main()
