@@ -514,7 +514,7 @@ Usage Examples:
                         help='Seed for the random number generator.')
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
                         help='Print a dry run summary of category breakdown and sample preview without creating or writing to the target output file.')
-    proc_group.add_argument('--sample', type=int, default=0,
+    proc_group.add_argument('-N', '--sample', type=int, default=0,
                         help='Pick N random cards from the input (shorthand for --shuffle --limit N).')
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')

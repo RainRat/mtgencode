@@ -8,9 +8,10 @@ from lib import cli_utils
 def test_add_standard_filters_parser():
     parser = argparse.ArgumentParser()
     cli_utils.add_standard_filters(parser)
-    args = parser.parse_args(['--grep', 'pattern', '--cmc', '3'])
+    args = parser.parse_args(['--grep', 'pattern', '--cmc', '3', '-N', '5'])
     assert args.grep == ['pattern']
     assert args.cmc == ['3']
+    assert args.sample == 5
 
 def test_add_standard_filters_group():
     parser = argparse.ArgumentParser()

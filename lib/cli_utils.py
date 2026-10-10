@@ -96,7 +96,7 @@ def add_standard_filters(parser):
                         help='Only process the first N cards.')
     filter_group.add_argument('--shuffle', action='store_true',
                         help='Shuffle the cards before processing.')
-    filter_group.add_argument('--sample', type=int, default=0,
+    filter_group.add_argument('-N', '--sample', type=int, default=0,
                         help='Pick N random cards (shorthand for --shuffle --limit N).')
     filter_group.add_argument('--seed', type=int,
                         help='Seed for the random number generator.')

@@ -86,5 +86,22 @@ class TestEncodeOutfile(unittest.TestCase):
             if os.path.exists(override_outfile.name):
                 os.remove(override_outfile.name)
 
+    def test_encode_short_sample_flag(self):
+        target_outfile = tempfile.NamedTemporaryFile('w', suffix='.txt', delete=False)
+        target_outfile.close()
+        os.remove(target_outfile.name)
+
+        try:
+            test_args = ['encode.py', self.temp_json.name, '-o', target_outfile.name, '-N', '1', '-q', '-s']
+            with patch('sys.argv', test_args):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_path('encode.py', run_name='__main__')
+                self.assertEqual(cm.exception.code, 0)
+
+            self.assertTrue(os.path.exists(target_outfile.name))
+        finally:
+            if os.path.exists(target_outfile.name):
+                os.remove(target_outfile.name)
+
 if __name__ == '__main__':
     unittest.main()
