@@ -180,8 +180,9 @@ class TestAnalysis(unittest.TestCase):
         mock_get_stats.return_value = OrderedDict()
 
         import runpy
+        script_path = os.path.abspath('scripts/analysis.py')
         with patch('sys.argv', ['scripts/analysis.py', self.json_path, '-v']):
-            runpy.run_path('scripts/analysis.py', run_name='__main__')
+            runpy.run_path(script_path, run_name='__main__')
 
     def test_dry_run_preview_mode(self):
         captured_output = StringIO()
@@ -198,11 +199,12 @@ class TestAnalysis(unittest.TestCase):
 
     def test_dry_run_cli_execution(self):
         import runpy
+        script_path = os.path.abspath('scripts/analysis.py')
         captured_output = StringIO()
         sys.stdout = captured_output
         try:
             with patch('sys.argv', ['scripts/analysis.py', self.json_path, '-p', '-o', 'report.json']):
-                runpy.run_path('scripts/analysis.py', run_name='__main__')
+                runpy.run_path(script_path, run_name='__main__')
         finally:
             sys.stdout = sys.__stdout__
 
@@ -212,10 +214,15 @@ class TestAnalysis(unittest.TestCase):
         self.assertIn("report.json", output)
 
     def test_sanitize_value_and_stats_to_dict(self):
+        import numpy as np
         self.assertIsNone(sanitize_value(float('nan')))
         self.assertIsNone(sanitize_value(float('inf')))
         self.assertEqual(sanitize_value(12.34), 12.34)
+        self.assertEqual(sanitize_value(10), 10)
+        self.assertEqual(sanitize_value(np.int64(42)), 42)
         self.assertEqual(sanitize_value([float('nan'), 1]), [None, 1])
+        self.assertEqual(sanitize_value((float('nan'), 2)), [None, 2])
+        self.assertEqual(sanitize_value({'a': np.float64(3.14)}), {'a': 3.14})
 
         raw_stats = OrderedDict([
             ('cards', [1, 2, 3]),
@@ -224,6 +231,26 @@ class TestAnalysis(unittest.TestCase):
         s_dict = stats_to_dict(raw_stats)
         self.assertEqual(s_dict['card_count'], 3)
         self.assertIsNone(s_dict['prop'])
+
+    def test_export_csv_stats_comprehensive(self):
+        import numpy as np
+        stats = OrderedDict([
+            ('cards', [1, 2, 3]),
+            ('cp', OrderedDict([('name', 'model'), ('epoch', 10.0)])),
+            ('props', OrderedDict([('overall', OrderedDict([('total', 10), ('good', 8)]))])),
+            ('dists', OrderedDict([('name_list', [1.0, 2.0]), ('name_mean', 1.5)])),
+            ('ngram', OrderedDict([('perp_list', [0.1, 0.2]), ('perp_mean', 0.15)]))
+        ])
+
+        out_stream = StringIO()
+        export_csv_stats(stats, out_stream)
+        csv_text = out_stream.getvalue()
+        self.assertIn("summary,card_count,3", csv_text)
+        self.assertIn("cp,name,model", csv_text)
+        self.assertIn("props.overall,total,10", csv_text)
+        self.assertIn("dists,name_mean,1.5", csv_text)
+        self.assertIn("ngram,perp_mean,0.15", csv_text)
+        self.assertNotIn("name_list", csv_text)
 
     def test_json_and_csv_export(self):
         json_out = os.path.join(self.temp_dir.name, "out.json")
@@ -241,6 +268,23 @@ class TestAnalysis(unittest.TestCase):
             lines = f.readlines()
             self.assertTrue(len(lines) > 0)
             self.assertIn("Category,Metric,Value", lines[0])
+
+    def test_main_stdout_csv_and_json_formatting(self):
+        captured_csv = StringIO()
+        sys.stdout = captured_csv
+        try:
+            analysis_main(self.json_path, csv_fmt=True)
+        finally:
+            sys.stdout = sys.__stdout__
+        self.assertIn("Category,Metric,Value", captured_csv.getvalue())
+
+        captured_json = StringIO()
+        sys.stdout = captured_json
+        try:
+            analysis_main(self.json_path, json_fmt=True)
+        finally:
+            sys.stdout = sys.__stdout__
+        self.assertIn('"card_count": 3', captured_json.getvalue())
 
     def test_nonexistent_file_exit(self):
         nonexistent = os.path.join(self.temp_dir.name, "does_not_exist.txt")
@@ -270,17 +314,65 @@ class TestAnalysis(unittest.TestCase):
     @patch('os.path.exists', return_value=False)
     def test_interactive_tty_no_args_help(self, mock_exists, mock_isatty):
         import runpy
+        script_path = os.path.abspath('scripts/analysis.py')
         captured_stdout = StringIO()
         sys.stdout = captured_stdout
         try:
             with patch('sys.argv', ['scripts/analysis.py']):
                 with self.assertRaises(SystemExit) as cm:
-                    runpy.run_path('scripts/analysis.py', run_name='__main__')
+                    runpy.run_path(script_path, run_name='__main__')
                 self.assertEqual(cm.exception.code, 0)
         finally:
             sys.stdout = sys.__stdout__
 
         self.assertIn("Usage Examples:", captured_stdout.getvalue())
+
+    def test_main_outfile_boolean_legacy_signature(self):
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        try:
+            analysis_main(self.json_path, True, dry_run=True)
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_output.getvalue()
+        self.assertIn("Dry Run Summary:", output)
+        self.assertIn("Verbose Logging: Enabled", output)
+
+    @patch('os.path.exists')
+    def test_main_default_infile_existing_file(self, mock_exists):
+        def exists_side_effect(path):
+            if 'output.txt' in path:
+                return True
+            return False
+        mock_exists.side_effect = exists_side_effect
+
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        try:
+            analysis_main(infile=None, dry_run=True)
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_output.getvalue()
+        self.assertIn("Dry Run Summary:", output)
+        self.assertIn("output.txt", output)
+
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('os.path.exists', return_value=True)
+    def test_cli_no_args_with_default_data_exists(self, mock_exists, mock_isatty):
+        import runpy
+        script_path = os.path.abspath('scripts/analysis.py')
+        captured_stdout = StringIO()
+        sys.stdout = captured_stdout
+        try:
+            with patch('sys.argv', ['scripts/analysis.py']):
+                runpy.run_path(script_path, run_name='__main__')
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_stdout.getvalue()
+        self.assertIn("Dry Run Summary:", output)
 
 if __name__ == '__main__':
     unittest.main()
