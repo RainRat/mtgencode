@@ -15,6 +15,7 @@ import json
 import argparse
 import sys
 import os
+import glob
 from collections import defaultdict
 
 
@@ -97,6 +98,11 @@ Batch Merging:
   Merge multiple custom JSON sets into a single dataset in one command:
   python3 scripts/combinejson.py data/AllPrintings.json set1.json set2.json set3.json -o merged.json
 
+Directory & Wildcard Merging:
+  Merge all JSON set files from a directory or matching a wildcard pattern:
+  python3 scripts/combinejson.py data/AllPrintings.json custom_sets/ -o merged.json
+  python3 scripts/combinejson.py data/AllPrintings.json "custom_sets/*.json" -o merged.json
+
 Dry Run / Preview:
   Preview merged dataset statistics without writing output to disk:
   python3 scripts/combinejson.py data/AllPrintings.json my_custom_set.json --dry-run
@@ -114,7 +120,7 @@ Example:
     io_group = parser.add_argument_group('Input / Output Options')
     io_group.add_argument('base_file', help='Path to the primary JSON file (for example, data/AllPrintings.json).')
     io_group.add_argument('custom_files', nargs='+',
-                          help='Path to one or more second/custom JSON files to merge into the base file.')
+                          help='Path to one or more custom JSON files, directories, or wildcard glob patterns to merge into the base file.')
     io_group.add_argument('output_positional', nargs='?', default=None, metavar='output_file',
                           help='Path where the merged JSON file will be saved (positional fallback for backward compatibility).')
     io_group.add_argument('-o', '--outfile', default=None,
@@ -148,11 +154,31 @@ Example:
         else:
             parser.error("the following arguments are required: output_file or -o/--outfile (unless --dry-run is specified)")
 
+    expanded_custom_files = []
+    for c_file in args.custom_files:
+        if os.path.isdir(c_file):
+            dir_json_files = sorted([
+                os.path.join(c_file, f) for f in os.listdir(c_file)
+                if f.lower().endswith('.json') and os.path.isfile(os.path.join(c_file, f))
+            ])
+            if not dir_json_files:
+                print(f"Error: No JSON files found in directory: {c_file}", file=sys.stderr)
+                return
+            expanded_custom_files.extend(dir_json_files)
+        elif '*' in c_file or '?' in c_file:
+            glob_files = sorted(glob.glob(c_file))
+            if not glob_files:
+                print(f"Error: No files matched glob pattern: {c_file}", file=sys.stderr)
+                return
+            expanded_custom_files.extend(glob_files)
+        else:
+            expanded_custom_files.append(c_file)
+
     try:
         with open(args.base_file, encoding='utf8') as fo:
             merged_data = json.load(fo)
 
-        for c_file in args.custom_files:
+        for c_file in expanded_custom_files:
             with open(c_file, encoding='utf8') as fo:
                 custom_data = json.load(fo)
             merged_data = merge_dicts(merged_data, custom_data)
