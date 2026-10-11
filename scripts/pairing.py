@@ -178,6 +178,8 @@ Usage Examples:
                         help='Encoded card file or JSON corpus to process (defaults to data/output.txt).')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Output MSE card file path (optional if --dry-run is specified).')
+    io_group.add_argument('-o', '--outfile', dest='outfile_flag', default=None,
+                        help='Output MSE card file path. Overrides positional output file path.')
 
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-n', '--n', action='store', type=int, default=20,
@@ -189,12 +191,19 @@ Usage Examples:
 
     args = parser.parse_args()
 
-    if not args.dry_run and args.outfile is None:
+    default_infile = os.path.join(datadir, 'output.txt')
+    if len(sys.argv) == 1 and not os.path.exists(default_infile) and sys.stdin.isatty():
+        parser.print_help()
+        sys.exit(0)
+
+    outfile = args.outfile_flag if args.outfile_flag else args.outfile
+
+    if not args.dry_run and outfile is None:
         if sys.stdin.isatty() or sys.stdout.isatty():
             args.dry_run = True
             print("Notice: No output file specified. Running in dry-run preview mode.", file=sys.stderr)
         else:
             parser.error("the following arguments are required: outfile (unless --dry-run is specified)")
 
-    main(args.infile, args.outfile, n=args.n, verbose=args.verbose, dry_run=args.dry_run)
+    main(args.infile, outfile, n=args.n, verbose=args.verbose, dry_run=args.dry_run)
     sys.exit(0)

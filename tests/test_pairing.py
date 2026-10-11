@@ -215,6 +215,50 @@ def test_main_dry_run(tmp_path, capsys):
     assert not os.path.exists(out_file + ".mse-set")
 
 
+def test_cli_outfile_flag_override(tmp_path):
+    out_file = str(tmp_path / "flag_outfile.txt")
+    test_args = ['scripts/pairing.py', 'fake_input.txt', '-o', out_file]
+    script_path = os.path.abspath('scripts/pairing.py')
+
+    card_fake = DummyCard(name="Fake Card", types=["Creature"], colors=["U"])
+    card_real = DummyCard(name="Real Card", types=["Creature"], colors=["U"])
+    mock_cbow = MagicMock()
+    mock_cbow.nearest_par.return_value = [[(0.1, "Real Card")]]
+    stats = {
+        'dists': {'cbow': [0.5]},
+        'ngram': {'perp': [1.0], 'perp_per': [1.0], 'perp_max': [5.0]}
+    }
+
+    with patch.object(sys, 'argv', test_args), \
+         patch('scripts.pairing.CBOW', return_value=mock_cbow), \
+         patch('scripts.pairing.jdecode.mtg_open_file', side_effect=[[card_real], [card_fake]]), \
+         patch('scripts.pairing.ngrams.build_ngram_model', return_value=MagicMock()), \
+         patch('scripts.pairing.analysis.get_statistics', return_value=stats), \
+         patch('scripts.pairing.mtg_validate.process_props', return_value=((None, 1, None, None), None)):
+
+        with pytest.raises(SystemExit) as exc_info:
+            runpy.run_path(script_path, run_name='__main__')
+        assert exc_info.value.code == 0
+
+    assert os.path.exists(out_file)
+
+
+def test_cli_interactive_no_args_missing_default_file_prints_help(capsys):
+    test_args = ['scripts/pairing.py']
+    script_path = os.path.abspath('scripts/pairing.py')
+
+    with patch.object(sys, 'argv', test_args), \
+         patch('sys.stdin.isatty', return_value=True), \
+         patch('os.path.exists', return_value=False):
+
+        with pytest.raises(SystemExit) as exc_info:
+            runpy.run_path(script_path, run_name='__main__')
+        assert exc_info.value.code == 0
+
+    captured = capsys.readouterr()
+    assert "Pair generated cards with nearest real MTG cards" in captured.out
+
+
 def test_cli_interactive_no_outfile_defaults_dryrun(capsys):
     test_args = ['scripts/pairing.py', 'fake_input.txt']
     script_path = os.path.abspath('scripts/pairing.py')
