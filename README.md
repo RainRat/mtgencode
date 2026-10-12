@@ -881,7 +881,7 @@ python3 scripts/mtg_diff.py data/OldSet.json data/NewSet.json --dry-run
 ```
 *   **Options:**
     *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of comparison statistics without creating or writing to the target output file.
-    *   `--summary-only`: Only show count summary, not detailed card diffs.
+    *   `-s`, `--summary-only`: Only show count summary, not detailed card diffs.
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
     *   Supports all **Advanced Filtering** flags (for example, `--grep`, `--set`, `--rarity`).
 

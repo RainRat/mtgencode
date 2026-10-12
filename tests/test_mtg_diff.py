@@ -122,10 +122,11 @@ def test_diff_bside_presence():
 def test_diff_summary_only():
     data1 = [{"name": "A", "types": ["Land"]}]
     data2 = [{"name": "B", "types": ["Land"]}]
-    stdout, stderr = run_diff(["--summary-only"], data1, data2)
-    assert "SUMMARY" in stdout
-    assert "ADDED CARDS" not in stdout
-    assert "REMOVED CARDS" not in stdout
+    for flag in ["--summary-only", "-s"]:
+        stdout, stderr = run_diff([flag], data1, data2)
+        assert "SUMMARY" in stdout
+        assert "ADDED CARDS" not in stdout
+        assert "REMOVED CARDS" not in stdout
 
 def test_diff_filtering():
     data1 = [{"name": "A", "types": ["Land"], "rarity": "common"}]
@@ -299,7 +300,7 @@ def test_diff_single_file_defaulting():
     assert opened_files[1] == "my_custom_set.json"
 
 def test_diff_zero_files_interactive():
-    """Test that running mtg_diff.py with no args in interactive session prints help and exits."""
+    """Test that running mtg_diff.py with no args in interactive session prints help and exits cleanly with status 0."""
     mock_stderr = MagicMock(spec=io.StringIO)
     real_stderr = io.StringIO()
     mock_stderr.write.side_effect = real_stderr.write
@@ -315,7 +316,7 @@ def test_diff_zero_files_interactive():
         try:
             mtg_diff.main()
         except SystemExit as e:
-            assert e.code == 1
+            assert e.code == 0
 
     assert "usage: mtg_diff.py" in real_stderr.getvalue()
 

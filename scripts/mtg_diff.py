@@ -93,7 +93,7 @@ Usage Examples:
   python3 scripts/mtg_diff.py data/AllPrintings.json generated_cards.txt
 
   # Only show a count summary, not detailed card diffs
-  python3 scripts/mtg_diff.py data/AllPrintings.json generated.txt --summary-only
+  python3 scripts/mtg_diff.py data/AllPrintings.json generated.txt -s
 
   # Preview comparison statistics without writing output files (dry-run mode)
   python3 scripts/mtg_diff.py data/OldSet.json data/NewSet.json --dry-run
@@ -120,7 +120,7 @@ Usage Examples:
                         help='Print a dry run summary of comparison statistics (total cards compared, additions, removals, modifications, and unchanged counts) to standard output without creating or writing to the target output file.')
     proc_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
     proc_group.add_argument('-q', '--quiet', action='store_true', help='Suppress the progress bar.')
-    proc_group.add_argument('--summary-only', action='store_true',
+    proc_group.add_argument('-s', '--summary-only', action='store_true',
                         help='Only show a count summary of additions, removals, and modifications.')
 
     # Group: Filtering Options (Standard across tools)
@@ -194,7 +194,7 @@ Usage Examples:
     if args.file1 is None and args.file2 is None:
         if sys.stdin.isatty():
             parser.print_help(sys.stderr)
-            sys.exit(1)
+            sys.exit(0)
         else:
             args.file1 = default_base
             args.file2 = '-'
