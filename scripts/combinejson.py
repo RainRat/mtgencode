@@ -15,6 +15,7 @@ import json
 import argparse
 import sys
 import os
+import glob
 from collections import defaultdict
 
 
@@ -94,14 +95,18 @@ Custom Card Workflow:
      python3 scripts/combinejson.py data/AllPrintings.json set1.json set2.json -o AllCustom.json
 
 Batch Merging:
-  Merge multiple custom JSON sets into a single dataset in one command:
-  python3 scripts/combinejson.py data/AllPrintings.json set1.json set2.json set3.json -o merged.json
+  Merge multiple custom JSON sets, directory folders, or glob patterns in one command:
+  python3 scripts/combinejson.py data/AllPrintings.json set1.json set2.json -o merged.json
+  python3 scripts/combinejson.py data/AllPrintings.json custom_sets/ -o merged.json
+  python3 scripts/combinejson.py data/AllPrintings.json "custom_sets/*.json" -o merged.json
 
 Dry Run / Preview:
   Preview merged dataset statistics without writing output to disk:
   python3 scripts/combinejson.py data/AllPrintings.json my_custom_set.json --dry-run
 
 Notes:
+  - Supports directory inputs (automatically discovers all .json files in target directory)
+    and wildcard glob patterns (e.g. "sets/*.json").
   - If keys conflict, data from subsequent files overwrites preceding files.
   - This script supports recursive dictionary merging for nested metadata.
 
@@ -114,7 +119,7 @@ Example:
     io_group = parser.add_argument_group('Input / Output Options')
     io_group.add_argument('base_file', help='Path to the primary JSON file (for example, data/AllPrintings.json).')
     io_group.add_argument('custom_files', nargs='+',
-                          help='Path to one or more second/custom JSON files to merge into the base file.')
+                          help='Path to one or more custom JSON files, directories, or wildcard glob patterns (e.g. "sets/*.json") to merge into the base file.')
     io_group.add_argument('output_positional', nargs='?', default=None, metavar='output_file',
                           help='Path where the merged JSON file will be saved (positional fallback for backward compatibility).')
     io_group.add_argument('-o', '--outfile', default=None,
@@ -134,10 +139,10 @@ Example:
             args.output_positional = None
     elif args.dry_run:
         output_file = None
-        if len(args.custom_files) >= 2 and not os.path.exists(args.custom_files[-1]):
+        if len(args.custom_files) >= 2 and not os.path.exists(args.custom_files[-1]) and not glob.has_magic(args.custom_files[-1]):
             output_file = args.custom_files.pop()
         elif args.output_positional:
-            if os.path.exists(args.output_positional):
+            if os.path.exists(args.output_positional) or glob.has_magic(args.output_positional):
                 args.custom_files.append(args.output_positional)
             args.output_positional = None
     else:
@@ -148,11 +153,40 @@ Example:
         else:
             parser.error("the following arguments are required: output_file or -o/--outfile (unless --dry-run is specified)")
 
+    # Expand custom_files: handle directory paths and wildcard glob patterns
+    expanded_files = []
+    for item in args.custom_files:
+        if os.path.isdir(item):
+            discovered = []
+            for root, _, files in os.walk(item):
+                for f in files:
+                    if f.lower().endswith('.json'):
+                        discovered.append(os.path.join(root, f))
+            discovered.sort()
+            expanded_files.extend(discovered)
+        elif glob.has_magic(item):
+            globbed = sorted(glob.glob(item, recursive=True))
+            expanded_files.extend(globbed)
+        else:
+            expanded_files.append(item)
+
+    # Filter out output_file if it got included in expansion and remove duplicates while preserving order
+    output_file_abs = os.path.abspath(output_file) if output_file else None
+    final_custom_files = []
+    seen = set()
+    for f_path in expanded_files:
+        abs_p = os.path.abspath(f_path)
+        if output_file_abs and abs_p == output_file_abs:
+            continue
+        if abs_p not in seen:
+            seen.add(abs_p)
+            final_custom_files.append(f_path)
+
     try:
         with open(args.base_file, encoding='utf8') as fo:
             merged_data = json.load(fo)
 
-        for c_file in args.custom_files:
+        for c_file in final_custom_files:
             with open(c_file, encoding='utf8') as fo:
                 custom_data = json.load(fo)
             merged_data = merge_dicts(merged_data, custom_data)
