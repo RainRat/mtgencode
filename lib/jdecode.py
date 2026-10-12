@@ -859,10 +859,10 @@ def default_exclude_sets(cardset):
     return cardset in ('Unglued', 'Unhinged', 'Celebration')
 
 def default_exclude_types(cardtype):
-    return cardtype in ['conspiracy', 'contraption']
+    return cardtype in ('conspiracy', 'contraption')
 
 def default_exclude_layouts(layout):
-    return layout in ['token', 'planar', 'scheme', 'phenomenon', 'vanguard']
+    return layout in ('token', 'planar', 'scheme', 'phenomenon', 'vanguard')
 
 # centralized logic for opening files of cards, either encoded or json
 def _check_parsing_quality(cards, report_fobj):
