@@ -108,5 +108,16 @@ class TestTrainDryRun(unittest.TestCase):
         out = buf.getvalue()
         self.assertIn("Dry Run Summary: Neural network training configuration (train mode).", out)
 
+    def test_parser_epilog_help_text(self):
+        parser = train.get_parser()
+        help_text = parser.format_help()
+        self.assertIn("# 1. Prepare your training data", help_text)
+        self.assertIn("# 2. Preview training parameters", help_text)
+        self.assertIn("# 3. Train the model", help_text)
+        self.assertIn("# 4. Generate new cards from a checkpoint", help_text)
+        self.assertIn("# 5. Force specific attributes during generation", help_text)
+        self.assertIn("# 6. Decode results back to readable cards", help_text)
+        self.assertIn("--checkpoint checkpoint.pt --name \"uthros\"", help_text)
+
 if __name__ == '__main__':
     unittest.main()
