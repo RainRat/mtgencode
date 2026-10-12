@@ -204,5 +204,73 @@ class TestMtgManabaseGaps(unittest.TestCase):
                     self.assertEqual(cm.exception.code, 1)
                     self.assertIn("Error: Mana base calculation requires an input dataset", fake_err.getvalue())
 
+    def test_calculate_manabase_bside_include_text(self):
+        card = MagicMock(spec=cardlib.Card)
+        card.is_land = False
+        card.cost = MagicMock(spec=Manacost)
+        card.cost.allsymbols = {}
+        card.text = MagicMock(spec=Manatext)
+        card.text.costs = []
+
+        bside = MagicMock()
+        bside.cost = MagicMock(spec=Manacost)
+        bside.cost.allsymbols = {}
+        bside.text = MagicMock(spec=Manatext)
+
+        act_cost = MagicMock(spec=Manacost)
+        act_cost.allsymbols = {'B': 2}
+        bside.text.costs = [act_cost]
+
+        card.bside = bside
+
+        rec, pips, total = calculate_manabase([card], 10, include_text=True)
+        self.assertEqual(total, 2)
+        self.assertEqual(pips['B'], 2)
+        self.assertEqual(rec['Swamp'], 10)
+
+    def test_main_empty_cards_result(self):
+        with patch('jdecode.mtg_open_file', return_value=[]):
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '-q']):
+                    main()
+                    self.assertEqual(fake_err.getvalue(), '')
+
+    def test_main_table_output_island_color(self):
+        card = MagicMock(spec=cardlib.Card)
+        card.is_land = False
+        card.cost = MagicMock(spec=Manacost)
+        card.cost.allsymbols = {'U': 1}
+        card.text = MagicMock(spec=Manatext)
+        card.text.costs = []
+        card.bside = None
+
+        with patch('jdecode.mtg_open_file', return_value=[card]):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '--color']):
+                    main()
+                    output = fake_out.getvalue()
+                    self.assertIn("MANA BASE ADVISOR", output)
+                    self.assertIn("Island", output)
+
+    def test_main_deck_output_format(self):
+        card = MagicMock(spec=cardlib.Card)
+        card.is_land = False
+        card.name = "Counterspell"
+        card.set_code = "EMA"
+        card.number = "45"
+        card.cost = MagicMock(spec=Manacost)
+        card.cost.allsymbols = {'U': 2}
+        card.text = MagicMock(spec=Manatext)
+        card.text.costs = []
+        card.bside = None
+
+        with patch('jdecode.mtg_open_file', return_value=[card]):
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '--deck']):
+                    main()
+                    output = fake_out.getvalue()
+                    self.assertIn("1 Counterspell (EMA) 45", output)
+                    self.assertIn("24 Island", output)
+
 if __name__ == '__main__':
     unittest.main()
