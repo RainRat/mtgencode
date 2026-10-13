@@ -290,7 +290,7 @@ Example Usage:
 
         if not args.quiet:
             utils.print_operation_summary("Subsetting", len(cards), 0, quiet=args.quiet)
-    except Exception as e:
+    except OSError as e:
         print(f"Error writing subset to {args.outfile}: {e}", file=sys.stderr)
         sys.exit(1)
 
