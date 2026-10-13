@@ -112,6 +112,9 @@ Usage Examples:
         return
 
     if not os.path.exists(args.checkpoint):
+        if len(sys.argv) == 1 and sys.stdin.isatty():
+            parser.print_help()
+            sys.exit(0)
         print(f"Error: Checkpoint file not found: {args.checkpoint}", file=sys.stderr)
         sys.exit(1)
 
