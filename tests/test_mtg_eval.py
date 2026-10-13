@@ -237,6 +237,16 @@ class TestMTGEval(unittest.TestCase):
         self.assertFalse(mock_tqdm.call_args[1]['disable'])
 
     @patch('os.path.exists', return_value=False)
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_zero_args_interactive_missing_checkpoint_help(self, mock_stdout, mock_isatty, mock_exists):
+        with patch('sys.argv', ['mtg_eval.py']):
+            with self.assertRaises(SystemExit) as cm:
+                mtg_eval.main()
+            self.assertEqual(cm.exception.code, 0)
+            self.assertIn("Check how well an AI model works by creating and checking cards.", mock_stdout.getvalue())
+
+    @patch('os.path.exists', return_value=False)
     @patch('sys.stderr', new_callable=io.StringIO)
     def test_missing_checkpoint_file(self, mock_stderr, mock_exists):
         with patch('sys.argv', ['mtg_eval.py', '--checkpoint', 'missing_model.pt']):
