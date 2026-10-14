@@ -2157,7 +2157,7 @@ def handle_compare_cards(args):
         search_names = {c.name.lower(): c for c in expanded_pool}
         close = difflib.get_close_matches(name.lower().replace('-', ' '), list(search_names.keys()), n=1, cutoff=0.5)
         if close:
-            if not args.quiet:
+            if not getattr(args, 'quiet', False) and not getattr(args, 'outfile', None):
                 print(f"Notice: Card '{name}' not found. Using best match: {cardlib.titlecase(close[0].replace(utils.dash_marker, '-'))}", file=sys.stderr)
                 sys.stderr.flush()
             return search_names[close[0]]
@@ -2169,7 +2169,7 @@ def handle_compare_cards(args):
         c = resolve_card(name, all_cards)
         if c:
             comparison_cards.append(c)
-        elif not args.quiet:
+        elif not getattr(args, 'quiet', False):
             print(f"Error: Could not find card '{name}'", file=sys.stderr)
 
     # Auto-similarity: compare against closest mechanical match if only one card provided
@@ -2185,7 +2185,7 @@ def handle_compare_cards(args):
                     comparison_cards.append(match)
                     matched_card = match
                     break
-        if not args.quiet:
+        if not getattr(args, 'quiet', False) and not getattr(args, 'outfile', None):
             if matched_card:
                 print(f"Notice: Only one card provided. Comparing {target.display_name} with most mechanically similar match: {matched_card.display_name}", file=sys.stderr)
             else:
@@ -2197,11 +2197,11 @@ def handle_compare_cards(args):
         limit = args.limit if args.limit > 0 else 5
         comparison_cards = all_cards[:limit]
         if not comparison_cards:
-            if not args.quiet:
+            if not getattr(args, 'quiet', False):
                 print("Error: No cards matching criteria for comparison.", file=sys.stderr)
                 sys.stderr.flush()
             return
-        if not args.quiet:
+        if not getattr(args, 'quiet', False) and not getattr(args, 'outfile', None):
             print(f"Notice: Comparing pool of {len(comparison_cards)} cards.", file=sys.stderr)
             sys.stderr.flush()
 

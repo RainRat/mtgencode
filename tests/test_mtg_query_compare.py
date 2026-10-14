@@ -105,3 +105,26 @@ def test_query_compare_single_card_notice():
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 0
     assert "Notice: Only one card provided. Comparing Invasion of Tarkir with most mechanically similar match: Defiant Thundermaw" in result.stderr
+
+def test_query_compare_single_card_notice_suppression():
+    """Test notice suppression when -o / --outfile or -q / --quiet is specified."""
+    # With -o / --outfile
+    out_file = "/tmp/test_query_compare_out.txt"
+    if os.path.exists(out_file):
+        os.remove(out_file)
+    cmd = ["python3", SCRIPT_PATH, "compare", "Invasion of Tarkir", "testdata/tarkir.json", "-o", out_file]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "Notice:" not in result.stderr
+    assert os.path.exists(out_file)
+    with open(out_file, "r") as f:
+        content = f.read()
+    assert "CARD COMPARISON" in content
+    if os.path.exists(out_file):
+        os.remove(out_file)
+
+    # With -q / --quiet
+    cmd_quiet = ["python3", SCRIPT_PATH, "compare", "Invasion of Tarkir", "testdata/tarkir.json", "-q", "--no-color"]
+    result_quiet = subprocess.run(cmd_quiet, capture_output=True, text=True)
+    assert result_quiet.returncode == 0
+    assert "Notice:" not in result_quiet.stderr
