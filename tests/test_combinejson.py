@@ -424,6 +424,65 @@ class TestCombineJson(unittest.TestCase):
         self.assertEqual(breakdown["UNKNOWN"], 2)
         self.assertEqual(samples, ["Card A", "NonDictCard"])
 
+    def test_main_cli_directory_input(self):
+        base_data = {"data": {"MOM": {"name": "March of the Machine"}}}
+        custom1 = {"data": {"CUS1": {"name": "Custom Set 1"}}}
+        custom2 = {"data": {"CUS2": {"name": "Custom Set 2"}}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_file = os.path.join(tmpdir, "base.json")
+            custom_dir = os.path.join(tmpdir, "custom_sets")
+            os.makedirs(custom_dir)
+            c1_file = os.path.join(custom_dir, "custom1.json")
+            c2_file = os.path.join(custom_dir, "custom2.json")
+            output_file = os.path.join(tmpdir, "output.json")
+
+            with open(base_file, "w", encoding="utf-8") as f:
+                json.dump(base_data, f)
+            with open(c1_file, "w", encoding="utf-8") as f:
+                json.dump(custom1, f)
+            with open(c2_file, "w", encoding="utf-8") as f:
+                json.dump(custom2, f)
+
+            with patch("sys.argv", ["combinejson.py", base_file, custom_dir, "-o", output_file]):
+                main()
+
+            with open(output_file, "r", encoding="utf-8") as f:
+                result = json.load(f)
+
+            self.assertIn("MOM", result["data"])
+            self.assertIn("CUS1", result["data"])
+            self.assertIn("CUS2", result["data"])
+
+    def test_main_cli_wildcard_glob_input(self):
+        base_data = {"data": {"MOM": {"name": "March of the Machine"}}}
+        custom1 = {"data": {"CUS1": {"name": "Custom Set 1"}}}
+        custom2 = {"data": {"CUS2": {"name": "Custom Set 2"}}}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_file = os.path.join(tmpdir, "base.json")
+            c1_file = os.path.join(tmpdir, "set_1.json")
+            c2_file = os.path.join(tmpdir, "set_2.json")
+            output_file = os.path.join(tmpdir, "output.json")
+
+            with open(base_file, "w", encoding="utf-8") as f:
+                json.dump(base_data, f)
+            with open(c1_file, "w", encoding="utf-8") as f:
+                json.dump(custom1, f)
+            with open(c2_file, "w", encoding="utf-8") as f:
+                json.dump(custom2, f)
+
+            glob_pattern = os.path.join(tmpdir, "set_*.json")
+            with patch("sys.argv", ["combinejson.py", base_file, glob_pattern, "-o", output_file]):
+                main()
+
+            with open(output_file, "r", encoding="utf-8") as f:
+                result = json.load(f)
+
+            self.assertIn("MOM", result["data"])
+            self.assertIn("CUS1", result["data"])
+            self.assertIn("CUS2", result["data"])
+
     def test_main_execution(self):
         base_data = {"key": "base"}
         custom_data = {"key": "custom"}

@@ -15,6 +15,7 @@ import json
 import argparse
 import sys
 import os
+import glob
 from collections import defaultdict
 
 
@@ -93,9 +94,11 @@ Custom Card Workflow:
   3. Merge your custom JSON file(s) with the official dataset:
      python3 scripts/combinejson.py data/AllPrintings.json set1.json set2.json -o AllCustom.json
 
-Batch Merging:
-  Merge multiple custom JSON sets into a single dataset in one command:
+Batch Merging & Directory Support:
+  Merge multiple custom JSON sets, directory folders, or wildcard globs into a single dataset:
   python3 scripts/combinejson.py data/AllPrintings.json set1.json set2.json set3.json -o merged.json
+  python3 scripts/combinejson.py data/AllPrintings.json custom_sets/ -o merged.json
+  python3 scripts/combinejson.py data/AllPrintings.json "custom_sets/*.json" -o merged.json
 
 Dry Run / Preview:
   Preview merged dataset statistics without writing output to disk:
@@ -114,7 +117,7 @@ Example:
     io_group = parser.add_argument_group('Input / Output Options')
     io_group.add_argument('base_file', help='Path to the primary JSON file (for example, data/AllPrintings.json).')
     io_group.add_argument('custom_files', nargs='+',
-                          help='Path to one or more second/custom JSON files to merge into the base file.')
+                          help='Path to one or more second/custom JSON files, directories, or wildcard glob patterns to merge into the base file.')
     io_group.add_argument('output_positional', nargs='?', default=None, metavar='output_file',
                           help='Path where the merged JSON file will be saved (positional fallback for backward compatibility).')
     io_group.add_argument('-o', '--outfile', default=None,
@@ -152,7 +155,23 @@ Example:
         with open(args.base_file, encoding='utf8') as fo:
             merged_data = json.load(fo)
 
+        expanded_custom_files = []
         for c_file in args.custom_files:
+            if os.path.isdir(c_file):
+                dir_files = []
+                for root, _, filenames in os.walk(c_file):
+                    for fn in filenames:
+                        if fn.lower().endswith('.json'):
+                            dir_files.append(os.path.join(root, fn))
+                expanded_custom_files.extend(sorted(dir_files))
+            elif glob.has_magic(c_file) or '*' in c_file or '?' in c_file:
+                matches = sorted(glob.glob(c_file, recursive=True))
+                json_matches = [f for f in matches if os.path.isfile(f) and f.lower().endswith('.json')]
+                expanded_custom_files.extend(json_matches)
+            else:
+                expanded_custom_files.append(c_file)
+
+        for c_file in expanded_custom_files:
             with open(c_file, encoding='utf8') as fo:
                 custom_data = json.load(fo)
             merged_data = merge_dicts(merged_data, custom_data)
