@@ -201,6 +201,17 @@ class TestSumCLI(unittest.TestCase):
                 self.assertIn("Names,0.8000,1", out)
                 self.assertIn("Cards,0.6000,0", out)
 
+    def test_cli_markdown_export(self):
+        stdin_data = "0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n"
+        with patch('sys.stdin', io.StringIO(stdin_data)):
+            with patch('sys.stdin.isatty', return_value=False):
+                code, out, err = self.run_sum_main(['--md'])
+                self.assertEqual(code, 0)
+                self.assertIn("# Distance Summary", out)
+                self.assertIn("| Category | Avg Similarity | Duplicates |", out)
+                self.assertIn("| Names | 0.8000 | 1 |", out)
+                self.assertIn("| Cards | 0.6000 | 0 |", out)
+
     def test_cli_outfile_json_auto_detect(self):
         with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp_in:
             tmp_in.write("0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n")
@@ -215,6 +226,27 @@ class TestSumCLI(unittest.TestCase):
                 data = json.load(f)
             self.assertEqual(data['total_records'], 2)
             self.assertEqual(data['name_similarity']['average'], 0.8)
+        finally:
+            if os.path.exists(in_path):
+                os.remove(in_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
+
+    def test_cli_outfile_markdown_auto_detect(self):
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as tmp_in:
+            tmp_in.write("0|Card A|1.0|0.8\n1|Card B|0.6|0.4\n")
+            in_path = tmp_in.name
+
+        out_path = tempfile.mktemp(suffix='.md')
+        try:
+            code, out, err = self.run_sum_main([in_path, '-o', out_path])
+            self.assertEqual(code, 0)
+            self.assertTrue(os.path.exists(out_path))
+            with open(out_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn("# Distance Summary", content)
+            self.assertIn("| Category | Avg Similarity | Duplicates |", content)
+            self.assertIn("| Names | 0.8000 | 1 |", content)
         finally:
             if os.path.exists(in_path):
                 os.remove(in_path)
