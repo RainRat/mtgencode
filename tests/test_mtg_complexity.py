@@ -64,6 +64,13 @@ class TestMtgComplexity(unittest.TestCase):
                 complexity_main()
                 output = fake_out.getvalue()
                 self.assertIn("COMPLEXITY ANALYSIS", output)
+
+    def test_complexity_cli_sample_short_flag(self):
+        with patch('sys.stdout', new=io.StringIO()) as fake_out:
+            with patch('sys.argv', ['mtg_complexity.py', 'testdata/uthros.json', '-N', '1', '--seed', '42', '--no-color']):
+                complexity_main()
+                output = fake_out.getvalue()
+                self.assertIn("COMPLEXITY ANALYSIS", output)
                 self.assertIn("Average Complexity Score: 107.00", output)
                 self.assertIn("Uthros Research Craft", output)
 
