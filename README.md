@@ -1370,15 +1370,17 @@ python3 scripts/distances.py generated_cards.txt -o distances.txt --parallel
 # Summarize the results
 python3 scripts/sum.py distances.txt
 
-# Export distance summary to JSON or CSV format
+# Export distance summary to JSON, CSV, or Markdown table format
 python3 scripts/sum.py distances.txt -o summary.json
 python3 scripts/sum.py distances.txt --csv -o summary.csv
+python3 scripts/sum.py distances.txt --md -o summary.md
 
 # Preview distance summary statistics without writing output files (dry-run mode)
 python3 scripts/sum.py distances.txt --dry-run
 ```
 *   **`sum.py` Options:**
-    *   `-o FILE`, `--outfile FILE`: Save summary results to a file (automatically detects `.json` or `.csv` format from extension).
+    *   `-o FILE`, `--outfile FILE`: Save summary results to a file (automatically detects `.json`, `.csv`, `.md`, or `.markdown` format from extension).
+    *   `-m`, `--md`, `--markdown`: Output summary in Markdown table format.
     *   `-j`, `--json`: Output summary in structured JSON format.
     *   `--csv`: Output summary in CSV format.
     *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of distance statistics without writing output files.
