@@ -61,6 +61,15 @@ class TestMtgSubtypes(unittest.TestCase):
         c.color_identity = "UB"
         self.assertEqual(get_color_group(c), 'M')
 
+    def test_analyze_subtypes_no_subtypes(self):
+        c = MagicMock(spec=cardlib.Card)
+        c.color_identity = "W"
+        c.subtypes = []
+        cards = [c]
+
+        stats = analyze_subtypes(cards)
+        self.assertEqual(stats['total_cards'], 1)
+
     def test_analyze_subtypes(self):
         stats = analyze_subtypes(self.cards)
 
