@@ -128,7 +128,7 @@ Usage Examples:
                         help='Print a summary of complexity statistics (total evaluated card count, average complexity score, and sample preview of up to 10 top complex cards) to standard output without creating or modifying the target output file.')
     proc_group.add_argument('--shuffle', action='store_true',
                         help='Shuffle the cards before processing.')
-    proc_group.add_argument('--sample', type=int, default=0,
+    proc_group.add_argument('-N', '--sample', type=int, default=0,
                         help='Pick N random cards (shorthand for --shuffle --limit N).')
     proc_group.add_argument('--seed', type=int,
                         help='Seed for the random number generator.')
