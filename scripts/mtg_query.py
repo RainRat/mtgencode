@@ -835,24 +835,27 @@ def handle_shell(args):
 
     last_results = []
 
+    def _parse_index_range(p):
+        range_match = re.match(r'^(\d+)-(\d+)$', p)
+        if range_match:
+            start, end = int(range_match.group(1)), int(range_match.group(2))
+            step = 1 if start <= end else -1
+            return list(range(start, end + step, step))
+        if re.match(r'^\d+$', p):
+            return [int(p)]
+        return None
+
     def _resolve_indices_to_cards(index_str):
         if not last_results or not re.match(r'^[0-9,\-\s]+$', index_str):
             return []
         parts = [p.strip() for p in re.split(r',', index_str) if p.strip()]
         resolved_cards = []
         for p in parts:
-            range_match = re.match(r'^(\d+)-(\d+)$', p)
-            if range_match:
-                start, end = int(range_match.group(1)), int(range_match.group(2))
-                step = 1 if start <= end else -1
-                indices = list(range(start, end + step, step))
+            indices = _parse_index_range(p)
+            if indices:
                 for idx in indices:
                     if 1 <= idx <= len(last_results):
                         resolved_cards.append(last_results[idx-1])
-            elif re.match(r'^\d+$', p):
-                idx = int(p)
-                if 1 <= idx <= len(last_results):
-                    resolved_cards.append(last_results[idx-1])
         return resolved_cards
 
     def _resolve_args(cmd_args):
@@ -862,22 +865,13 @@ def handle_shell(args):
             resolved = []
             valid_parse = True
             for p in parts:
-                range_match = re.match(r'^(\d+)-(\d+)$', p)
-                if range_match:
-                    start, end = int(range_match.group(1)), int(range_match.group(2))
-                    step = 1 if start <= end else -1
-                    indices = list(range(start, end + step, step))
+                indices = _parse_index_range(p)
+                if indices:
                     for idx in indices:
                         if 1 <= idx <= len(last_results):
                             resolved.append(last_results[idx-1].name)
                         else:
                             resolved.append(str(idx))
-                elif re.match(r'^\d+$', p):
-                    idx = int(p)
-                    if 1 <= idx <= len(last_results):
-                        resolved.append(last_results[idx-1].name)
-                    else:
-                        resolved.append(str(idx))
                 else:
                     valid_parse = False
                     break
