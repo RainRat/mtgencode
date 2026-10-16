@@ -2388,6 +2388,7 @@ def handle_compare_cards(args):
             f.write(res_text)
     else:
         sys.stdout.write(res_text)
+        sys.stdout.flush()
     return
 
 # --- Diff Logic ---

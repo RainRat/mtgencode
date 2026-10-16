@@ -105,3 +105,12 @@ def test_query_compare_single_card_notice():
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 0
     assert "Notice: Only one card provided. Comparing Invasion of Tarkir with most mechanically similar match: Defiant Thundermaw" in result.stderr
+
+def test_query_compare_two_cards_notice_suppression():
+    """Test that comparing two explicit cards suppresses single-card/pool comparison notices."""
+    cmd = ["python3", SCRIPT_PATH, "compare", "Uthros", "Invasion of Alara", "testdata/", "--no-color"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "CARD COMPARISON" in result.stdout
+    assert "Notice: Only one card provided" not in result.stderr
+    assert "Notice: Comparing pool" not in result.stderr
