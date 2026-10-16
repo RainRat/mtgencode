@@ -45,9 +45,10 @@ Usage Examples:
   # Summarize results from a distance analysis
   python3 scripts/sum.py distances.txt
 
-  # Export distance summary to JSON or CSV
+  # Export distance summary to JSON, CSV, or Markdown
   python3 scripts/sum.py distances.txt -o summary.json
   python3 scripts/sum.py distances.txt --csv -o summary.csv
+  python3 scripts/sum.py distances.txt -m -o summary.md
 
   # Preview distance summary statistics without writing output files (dry-run mode)
   python3 scripts/sum.py distances.txt --dry-run
@@ -70,6 +71,7 @@ Usage Examples:
     fmt_group_title = parser.add_argument_group('Output Format')
     fmt_group = fmt_group_title.add_mutually_exclusive_group()
     fmt_group.add_argument('-t', '--table', action='store_true', help='Generate a formatted table (Default).')
+    fmt_group.add_argument('-m', '-M', '--md', '--markdown', dest='markdown', action='store_true', help='Generate a Markdown table.')
     fmt_group.add_argument('-j', '--json', action='store_true', help='Generate a structured JSON summary.')
     fmt_group.add_argument('--csv', action='store_true', help='Generate a CSV summary.')
 
@@ -94,12 +96,14 @@ Usage Examples:
                 sys.exit(1)
 
     # Auto-detect format from outfile extension
-    if not (args.json or args.csv or args.table):
+    if not (args.json or args.csv or args.table or args.markdown):
         if args.outfile:
             if args.outfile.endswith('.json'):
                 args.json = True
             elif args.outfile.endswith('.csv'):
                 args.csv = True
+            elif args.outfile.endswith('.md') or args.outfile.endswith('.markdown'):
+                args.markdown = True
             else:
                 args.table = True
         else:
@@ -164,6 +168,11 @@ Usage Examples:
             writer.writerow(['Category', 'Avg Similarity', 'Duplicates'])
             writer.writerow(['Names', f"{name_avg:.4f}", name_dupes])
             writer.writerow(['Cards', f"{card_avg:.4f}", card_dupes])
+        elif args.markdown:
+            output_f.write("| Category | Avg Similarity | Duplicates |\n")
+            output_f.write("| :--- | ---: | ---: |\n")
+            output_f.write(f"| Names | {name_avg:.4f} | {name_dupes} |\n")
+            output_f.write(f"| Cards | {card_avg:.4f} | {card_dupes} |\n")
         else:
             # Unified UI Header
             utils.print_header("DISTANCE SUMMARY", count=nonempty, use_color=use_color, file=output_f)
