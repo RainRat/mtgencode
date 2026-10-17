@@ -125,5 +125,14 @@ class TestMtgSubtypes(unittest.TestCase):
         self.assertIn("Subtype,Count,Percent,Group,Distinctiveness", output)
         self.assertIn("Human,5,50.00,W,1.80", output)
 
+    def test_analyze_subtypes_no_subtypes(self):
+        c = MagicMock(spec=cardlib.Card)
+        c.color_identity = "W"
+        c.subtypes = []
+        cards = [c]
+
+        stats = analyze_subtypes(cards)
+        self.assertEqual(stats['total_cards'], 1)
+
 if __name__ == '__main__':
     unittest.main()
