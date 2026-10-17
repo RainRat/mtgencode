@@ -699,15 +699,15 @@ def _execute_oracle(cards, args, include_indices=False):
             if id_parts:
                 footer_lines.append(utils.wrap_ansi(" \u2022 ".join(id_parts), term_width, indent=2))
 
-            # 2. Mechanical Identity Block (Identity, Produced)
-            mech_id_parts = []
+            # 2. Mana & Color Properties (Identity, Produced)
+            color_parts = []
             identity = c.color_identity
             if not identity: identity = "C"
             if use_color:
                 colored_id = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in identity])
-                mech_id_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
+                color_parts.append(f"{fmt_label('IDENTITY:')} {colored_id}")
             else:
-                mech_id_parts.append(f"IDENTITY: {identity}")
+                color_parts.append(f"IDENTITY: {identity}")
 
             produced = c.produced_colors
             if produced:
@@ -722,12 +722,12 @@ def _execute_oracle(cards, args, include_indices=False):
                     p_str = "".join([utils.colorize(char, utils.Ansi.get_color_color(char)) for char in p_list])
                 else:
                     p_str = "".join(p_list)
-                mech_id_parts.append(f"{fmt_label('PRODUCED:')} {p_str}")
+                color_parts.append(f"{fmt_label('PRODUCED:')} {p_str}")
 
-            if mech_id_parts:
-                footer_lines.append(utils.wrap_ansi(" \u2022 ".join(mech_id_parts), term_width, indent=2))
+            if color_parts:
+                footer_lines.append(utils.wrap_ansi(" \u2022 ".join(color_parts), term_width, indent=2))
 
-            # Mechanics, Actions, Tokens (separate lines for readability in detailed view if block is dense)
+            # 3. Mechanical Attributes Block (Mechanics, Actions, Tokens)
             all_mechanics = sorted(list(c.mechanics))
             if all_mechanics:
                 mech_val = ', '.join(all_mechanics)
@@ -750,7 +750,7 @@ def _execute_oracle(cards, args, include_indices=False):
                     tok_val = utils.colorize(tok_val, utils.Ansi.CYAN)
                 footer_lines.append(utils.wrap_ansi(f"{fmt_label('TOKENS:')} {tok_val}", term_width, indent=2))
 
-            # 3. Design Analytics Block (Complexity, Rating, Fair MV, Color Pie)
+            # 4. Design Analytics Block (Complexity, Rating, Fair MV, Color Pie)
             analytics_parts = []
             comp_val = str(c.complexity_score)
             if use_color:
@@ -800,7 +800,6 @@ def _execute_oracle(cards, args, include_indices=False):
                         leg_val = utils.colorize(leg_val, utils.Ansi.CYAN)
                     footer_lines.append(utils.wrap_ansi(f"{fmt_label('LEGALITIES:')} {leg_val}", term_width, indent=2))
 
-            print() # Spacer before footer
             for line in footer_lines:
                 print(line)
 
@@ -918,7 +917,7 @@ def handle_shell(args):
                     '/substitutes ', '/sub ',
                     '/counterparts ', '/cp ',
                     '/tribal ', '/tr ',
-                    '/similar ',
+                    '/similar ', '/sim ',
                     '/extract ', '/e ',
                     '/list', '/l', '/results',
                     '/help', '/h', '/?',
@@ -1201,7 +1200,7 @@ def handle_shell(args):
                     cp_args = copy.copy(args)
                     cp_args.query = " ".join(resolved_args)
                     last_results = handle_counterparts(cp_args, include_indices=True)
-                elif cmd in ['/similar']:
+                elif cmd in ['/similar', '/sim']:
                     resolved_args = _resolve_args(cmd_args)
                     if not resolved_args:
                         if last_results:
@@ -1260,7 +1259,7 @@ def handle_shell(args):
                             ("/tribal <n>", "/tr", "Find cards related to the named card's subtypes."),
                             ("/superior <n>", "/sup", "Find cards generally better than the named card."),
                             ("/inferior <n>", "/inf", "Find cards generally worse than the named card."),
-                            ("/similar <n>", "", "Find cards mechanically similar to the named card."),
+                            ("/similar <n>", "/sim", "Find cards mechanically similar to the named card."),
                         ]),
                         ("UTILITIES & SYSTEM", [
                             ("/extract [s] <n>", "/e", "Extract raw card JSON by set code and name (defaults to any set)."),
@@ -1323,7 +1322,7 @@ def handle_shell(args):
                         '/substitutes', '/sub',
                         '/counterparts', '/cp',
                         '/tribal', '/tr',
-                        '/similar',
+                        '/similar', '/sim',
                         '/extract', '/e',
                         '/list', '/l', '/results',
                         '/help', '/h', '/?',
@@ -2729,7 +2728,7 @@ Note: If no input file is provided, data/AllPrintings.json is used if available.
     p_search.add_argument('--sort', choices=['name', 'color', 'identity', 'type', 'cmc', 'rarity', 'power', 'toughness', 'loyalty', 'set', 'pack', 'box', 'complexity', 'score', 'rating', 'power_rating'],
                         help="Sort cards by a specific field. Use 'complexity' for design complexity score.")
     p_search.add_argument('--reverse', action='store_true', help='Reverse the sort order.')
-    p_search.add_argument('--similar-to', help='Only include cards mechanically similar to the specified card name.')
+    p_search.add_argument('-s', '--similar-to', help='Only include cards mechanically similar to the specified card name.')
     p_search.set_defaults(func=handle_search)
 
     # Oracle Subparser
