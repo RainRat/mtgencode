@@ -347,12 +347,13 @@ class TestMtgShell(unittest.TestCase):
                 err = fake_err.getvalue()
                 self.assertIn("No functional reprints found for Invasion of Tarkir.", err)
 
-        # 4. /similar
-        with patch('builtins.input', side_effect=['/search tarkir', '/similar', 'exit']):
-            with patch('sys.stdout', new=io.StringIO()) as fake_out:
-                handle_shell(self.args)
-                output = fake_out.getvalue()
-                self.assertIn("No similar cards found.", output)
+        # 4. /similar and /sim
+        for sim_cmd in ['/similar', '/sim']:
+            with patch('builtins.input', side_effect=['/search tarkir', sim_cmd, 'exit']):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    handle_shell(self.args)
+                    output = fake_out.getvalue()
+                    self.assertIn("No similar cards found.", output)
 
         # 5. /superior
         with patch('builtins.input', side_effect=['/search tarkir', '/superior', 'exit']):

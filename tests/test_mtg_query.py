@@ -17,6 +17,13 @@ def test_query_search_basic():
     assert "Artifact" in result.stdout
     assert "Spacecraft" in result.stdout
 
+def test_query_search_similar_short_flag():
+    """Test searching mechanically similar cards using the -s short option flag."""
+    cmd = ["python3", SCRIPT_PATH, "search", "testdata/uthros.json", "-s", "Uthros Research Craft", "--no-color"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "Uthros Research Craft" in result.stdout
+
 def test_query_search_fuzzy_grep_suggestions():
     """Test fuzzy suggestions on stderr when positional or grep queries match no cards."""
     cmd = ["python3", SCRIPT_PATH, "search", "testdata/uthros.json", "--grep", "Uthros Crft", "--no-color"]
