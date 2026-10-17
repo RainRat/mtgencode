@@ -260,6 +260,67 @@ class TestMTGEval(unittest.TestCase):
     @patch('mtg_eval.CharRNN')
     @patch('mtg_eval.generate_text')
     @patch('mtg_validate.process_props')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_mtg_eval_csv_output(self, mock_stdout, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        mock_exists.return_value = True
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 10
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = (
+            (1, 1, 0, 0),
+            {'types': (1, 1, 0)}
+        )
+
+        with patch('sys.argv', ['mtg_eval.py', '--checkpoint', 'fake.pt', '--csv']):
+            mtg_eval.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Category,Property,Total,Good,Bad,Success %", output)
+        self.assertIn("Summary,Overall Accuracy,1,1,0,100.00", output)
+        self.assertIn("Rule Check,types,1,1,0,100.00", output)
+
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
+    def test_outfile_autodetect_csv(self, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
+        import tempfile
+        mock_torch_load.return_value = {
+            'vocab': ['a'], 'char_to_idx': {'a': 0}, 'idx_to_char': {0: 'a'},
+            'args': argparse.Namespace(hidden_size=256, n_layers=2),
+            'model_state_dict': {},
+            'epoch': 8
+        }
+        mock_generate.return_value = "|types|supertypes|subtypes|loyalty|pt|text|cost|rarity|name|\n\n"
+        mock_process_props.return_value = ((1, 1, 0, 0), {'types': (1, 1, 0)})
+
+        with tempfile.NamedTemporaryFile(suffix='.csv', mode='w+', delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            with patch('sys.argv', ['mtg_eval.py', '-c', 'model.pt', '-o', tmp_path]):
+                mtg_eval.main()
+
+            with open(tmp_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            self.assertIn("Category,Property,Total,Good,Bad,Success %", content)
+            self.assertIn("Summary,Overall Accuracy,1,1,0,100.00", content)
+            self.assertIn("Rule Check,types,1,1,0,100.00", content)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    @patch('os.path.exists', return_value=True)
+    @patch('torch.load')
+    @patch('mtg_eval.CharRNN')
+    @patch('mtg_eval.generate_text')
+    @patch('mtg_validate.process_props')
     @patch('sys.stderr', new_callable=io.StringIO)
     def test_excess_generated_cards_truncated(self, mock_stderr, mock_process_props, mock_generate, mock_rnn, mock_torch_load, mock_exists):
         mock_torch_load.return_value = {

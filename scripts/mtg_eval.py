@@ -3,6 +3,8 @@ import sys
 import os
 import argparse
 import json
+import csv
+import io
 import torch
 from collections import OrderedDict
 from contextlib import redirect_stdout
@@ -40,8 +42,9 @@ Usage Examples:
   # Save details for cards that failed validation
   python3 scripts/mtg_eval.py --checkpoint checkpoint.pt --dump
 
-  # Save evaluation report to a JSON file
+  # Save evaluation report to a JSON or CSV file
   python3 scripts/mtg_eval.py checkpoint.pt -o eval_report.json
+  python3 scripts/mtg_eval.py checkpoint.pt --csv -o eval_report.csv
 """
     )
 
@@ -71,8 +74,9 @@ Usage Examples:
     # Group: Output Options
     out_group = parser.add_argument_group('Output Options')
     out_group.add_argument('-o', '--outfile', default=None,
-                        help='Save evaluation report to a file. Auto-enables JSON output format if the filename ends with .json.')
+                        help='Save evaluation report to a file. Auto-detects JSON or CSV format if the filename ends with .json or .csv.')
     out_group.add_argument('-j', '--json', action='store_true', help='Output results as structured JSON.')
+    out_group.add_argument('--csv', action='store_true', help='Output results in CSV format.')
     out_group.add_argument('-d', '--dump', action='store_true', help='Dump full text of failed cards.')
     out_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
     out_group.add_argument('-q', '--quiet', action='store_true', help='Suppress progress bars.')
@@ -88,9 +92,12 @@ Usage Examples:
     if not args.checkpoint:
         args.checkpoint = args.checkpoint_pos or 'checkpoint.pt'
 
-    # Auto-detect JSON format when outfile ends with .json
-    if args.outfile and args.outfile.endswith('.json'):
-        args.json = True
+    # Auto-detect JSON or CSV format from outfile extension
+    if args.outfile and not (args.json or args.csv):
+        if args.outfile.lower().endswith('.json'):
+            args.json = True
+        elif args.outfile.lower().endswith('.csv'):
+            args.csv = True
 
     # Determine if we should use color
     use_color = args.color if args.color is not None else sys.stdout.isatty()
@@ -211,6 +218,14 @@ Usage Examples:
                 'properties': {p: {'total': v[0], 'good': v[1], 'bad': v[2], 'success_pct': (v[1]/v[0]*100 if v[0]>0 else 0)} for p, v in values.items()}
             }
             output_f.write(json.dumps(result, indent=2) + '\n')
+        elif args.csv:
+            writer = csv.writer(output_f)
+            writer.writerow(['Category', 'Property', 'Total', 'Good', 'Bad', 'Success %'])
+            writer.writerow(['Summary', 'Overall Accuracy', total_all, total_good, total_bad, f"{accuracy:.2f}"])
+            for prop, (total, good, bad) in values.items():
+                if total > 0:
+                    pct = (good / total * 100) if total > 0 else 0.0
+                    writer.writerow(['Rule Check', prop, total, good, bad, f"{pct:.2f}"])
         else:
             with redirect_stdout(output_f):
                 # Terminal Report
