@@ -121,11 +121,12 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
         ```
 
 2.  **Generate Reference Data and Vectors:**
-    The creativity analyzer compares your custom cards against a reference dataset of real cards. This requires two files in your `data/` folder:
+    The creativity analyzer compares your custom cards against a reference dataset of real cards. This requires three files in your `data/` folder:
+    *   `data/AllPrintings.json` (or `data/AllSets.json`): The official card dataset used for name lookups.
     *   `data/output.txt`: The reference card dataset in standard-encoded text format.
     *   `data/cbow.bin`: The compiled Word2Vec binary model.
 
-    **Important:** The cards in both files must be in the exact same order. Always use the stable ordering flag (`-s`) when generating them.
+    **Important:** The cards in `output.txt` and `cbow.bin` must be in the exact same order. Always use the stable ordering flag (`-s`) when generating them.
 
     Follow these steps to generate both files:
 
