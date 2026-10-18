@@ -44,7 +44,7 @@ def adjust_stat(val, amount):
             num = int(match.group(0))
             return str(max(0, num + amount))
         return re.sub(r'\d+', repl, str(val))
-    except Exception:
+    except (TypeError, ValueError, RuntimeError):
         return val
 
 def scale_stat(val, factor, multiply=True):
@@ -59,7 +59,7 @@ def scale_stat(val, factor, multiply=True):
                 new_num = int(round(num / factor))
             return str(max(1 if not multiply else 0, new_num))
         return re.sub(r'\d+', repl, str(val))
-    except Exception:
+    except (TypeError, ValueError, RuntimeError):
         return val
 
 def scale_mana_cost(mana_cost, factor, multiply=True):
