@@ -795,5 +795,44 @@ class TestMtgDeckgen(unittest.TestCase):
         output = mock_stdout.getvalue()
         self.assertIn("Sideboard", output)
 
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_main_short_option_flags(self, mock_stderr, mock_stdout, mock_open):
+        commander = cardlib.Card({
+            'name': 'Galia',
+            'supertypes': ['Legendary'],
+            'types': ['Creature'],
+            'manaCost': '{R}{G}',
+            'rarity': 'rare',
+            'text': ''
+        })
+        card1 = cardlib.Card({
+            'name': 'Goblin',
+            'types': ['Creature'],
+            'manaCost': '{1}{R}',
+            'rarity': 'common',
+            'text': ''
+        })
+        mock_open.return_value = [commander, card1]
+
+        outfile_path = 'test_short_flags_out.txt'
+        if os.path.exists(outfile_path):
+            os.remove(outfile_path)
+
+        try:
+            # Test -f (format), -P (preset), -C (commander), -S (sideboard), -o (outfile)
+            with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '-f', 'commander', '-P', 'aggro', '-C', 'Galia', '-S', '-o', outfile_path]):
+                mtg_deckgen.main()
+
+            self.assertTrue(os.path.exists(outfile_path))
+            with open(outfile_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn("1 Galia *CMDR*", content)
+            self.assertIn("Sideboard", content)
+        finally:
+            if os.path.exists(outfile_path):
+                os.remove(outfile_path)
+
 if __name__ == '__main__':
     unittest.main()
