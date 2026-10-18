@@ -252,3 +252,79 @@ def test_check_chosen_shuffle_quotes():
     assert check_quotes(c) is True
     c = cardlib.Card({"name": "Bad Quotes", "types": ["Instant"], "text": 'Named "Fireball.'})
     assert check_quotes(c) is False
+
+def test_cli_outfile_option_flag(tmp_path):
+    import json
+    import runpy
+    from unittest.mock import patch
+
+    # Sample input JSON file
+    input_data = {
+        "data": {
+            "TST": {
+                "code": "TST",
+                "name": "Test Set",
+                "type": "expansion",
+                "cards": [
+                    {
+                        "name": "Grizzly Bears",
+                        "manaCost": "{1}{G}",
+                        "types": ["Creature"],
+                        "power": "2",
+                        "toughness": "2"
+                    }
+                ]
+            }
+        }
+    }
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(input_data), encoding="utf-8")
+
+    out_json = tmp_path / "out.json"
+    out_csv = tmp_path / "out.csv"
+
+    # Test -o with .json auto-detection
+    test_args = ["scripts/mtg_validate.py", str(input_file), "-o", str(out_json)]
+    with patch("sys.argv", test_args):
+        try:
+            runpy.run_path("scripts/mtg_validate.py", run_name="__main__")
+        except SystemExit as e:
+            assert e.code == 0
+
+    assert out_json.exists()
+    json_content = json.loads(out_json.read_text(encoding="utf-8"))
+    assert "summary" in json_content
+    assert json_content["summary"]["valid_cards"] == 1
+
+    # Test --outfile with .csv auto-detection
+    test_args = ["scripts/mtg_validate.py", str(input_file), "--outfile", str(out_csv)]
+    with patch("sys.argv", test_args):
+        try:
+            runpy.run_path("scripts/mtg_validate.py", run_name="__main__")
+        except SystemExit as e:
+            assert e.code == 0
+
+    assert out_csv.exists()
+    csv_content = out_csv.read_text(encoding="utf-8")
+    assert "Category,Property,Total,Good,Bad,Success %" in csv_content
+
+def test_cli_interactive_missing_default_infile(tmp_path, monkeypatch):
+    import io
+    import runpy
+    from unittest.mock import patch
+
+    script_path = os.path.realpath(os.path.join(os.path.dirname(__file__), "../scripts/mtg_validate.py"))
+    monkeypatch.chdir(tmp_path)
+    test_args = ["scripts/mtg_validate.py"]
+    stdout_capture = io.StringIO()
+
+    with patch("sys.argv", test_args), \
+         patch("sys.stdin.isatty", return_value=True), \
+         patch("sys.stdout", stdout_capture):
+        try:
+            runpy.run_path(script_path, run_name="__main__")
+        except SystemExit as e:
+            assert e.code == 0
+
+    output = stdout_capture.getvalue()
+    assert "usage:" in output or "Check Magic: The Gathering card data" in output

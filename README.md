@@ -543,6 +543,9 @@ Validates card data for rule and formatting consistency (for example, checking c
 # Basic validation
 python3 scripts/mtg_validate.py encoded_output.txt
 
+# Specify output destination using -o / --outfile flag
+python3 scripts/mtg_validate.py data/AllPrintings.json -o validation_report.json
+
 # Check for color pie violations (for example, Blue cards with Deathtouch)
 python3 scripts/mtg_validate.py generated.txt --color-pie --dump
 
@@ -550,6 +553,7 @@ python3 scripts/mtg_validate.py generated.txt --color-pie --dump
 python3 scripts/mtg_validate.py data/AllPrintings.json --dump
 ```
 *   **Options:**
+    *   `-o`, `--outfile`: Specify destination output file path (overriding positional argument).
     *   `--color-pie`: Identify mechanics that don't match the card's color identity.
     *   `-d`, `--dump`: Print full details for cards that failed validation.
     *   `-n LIMIT`, `--limit LIMIT`: Only process the first N cards.

@@ -714,6 +714,8 @@ Usage Examples:
                         help='Input card data (JSON, CSV, XML, encoded text, or directory) to validate. Defaults to stdin (-) or data/AllPrintings.json if available.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Optional path to save the validation report. If not provided, the report prints to the console.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_flag', default=None,
+                        help='Specify destination output file path (overriding positional argument).')
 
     # Group: Output Format
     fmt_group_title = parser.add_argument_group('Output Format')
@@ -826,11 +828,13 @@ Usage Examples:
 
     args = parser.parse_args()
 
+    outfile = args.outfile_flag if args.outfile_flag else args.outfile
+
     # Auto-detect format from extension if outfile is provided
-    if args.outfile:
-        if args.outfile.lower().endswith('.json') and not args.csv_out:
+    if outfile:
+        if outfile.lower().endswith('.json') and not args.csv_out:
             args.json_out = True
-        elif args.outfile.lower().endswith('.csv') and not args.json_out:
+        elif outfile.lower().endswith('.csv') and not args.json_out:
             args.csv_out = True
 
     # UX Improvement: Default Dataset
@@ -846,13 +850,16 @@ Usage Examples:
             args.infile = 'data/AllPrintings.json'
             if not getattr(args, 'quiet', False):
                 print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
+        elif len(sys.argv) == 1:
+            parser.print_help()
+            sys.exit(0)
 
     # Handle --sample
     if args.sample > 0:
         args.shuffle = True
         args.limit = args.sample
 
-    main(args.infile, args.outfile, verbose = args.verbose, dump = args.dump,
+    main(args.infile, outfile, verbose = args.verbose, dump = args.dump,
          nolinetrans = args.nolinetrans, nolabel = args.nolabel,
          grep = args.grep, vgrep = args.vgrep,
          grep_name=args.grep_name, vgrep_name=args.exclude_name,
