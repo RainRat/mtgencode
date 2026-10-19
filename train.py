@@ -179,7 +179,7 @@ def train(args):
                     raw_data = f.read()
                 vocab_size = len(set(raw_data))
                 card_count = len([c for c in raw_data.split('\n\n') if c.strip()])
-            except Exception:
+            except (OSError, UnicodeDecodeError):
                 pass
 
         print(f"Dry Run Summary: Neural network training configuration ({args.mode} mode).")
