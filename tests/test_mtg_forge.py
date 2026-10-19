@@ -341,6 +341,24 @@ class TestMtgForge(unittest.TestCase):
                 main()
         self.assertIn("Invalid replacement format", str(cm.exception))
 
+    def test_forge_mutually_exclusive_output_formats(self):
+        conflicting_flag_pairs = [
+            ['--json', '--csv'],
+            ['--json', '--encoded'],
+            ['--csv', '-S'],
+            ['--encoded', '-V'],
+            ['-V', '-G'],
+        ]
+
+        for flags in conflicting_flag_pairs:
+            test_args = ['mtg_forge.py', '--name', 'TestCard'] + flags
+            with patch('sys.argv', test_args):
+                with patch('sys.stderr', new_callable=io.StringIO) as mock_err:
+                    with self.assertRaises(SystemExit) as cm:
+                        main()
+                    self.assertNotEqual(cm.exception.code, 0)
+                    self.assertIn('not allowed with argument', mock_err.getvalue())
+
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_forge_dry_run_single_card(self, mock_stdout):
         test_args = [
