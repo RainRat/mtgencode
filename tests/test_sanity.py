@@ -52,6 +52,26 @@ class TestSanity(unittest.TestCase):
                     check_lines("dummy.txt")
                     mock_print.assert_called()
 
+    def test_check_lines_empty_line_and_known_prefix_branches(self):
+        mock_card = MagicMock()
+        mock_card.name = "Known Card"
+        mock_card.text.text = "Known Text"
+        mock_card.text.encode.return_value = "known encoded"
+        mock_card.bside = None
+
+        with patch("jdecode.mtg_open_file", return_value=[mock_card]):
+            with patch("transforms.separate_lines") as mock_sep:
+                mock_sep.return_value = (
+                    ["enchant creature", ""],
+                    ["equip 2"],
+                    ["main text"],
+                    ["cost text"],
+                    ["flashback 3"]
+                )
+                with patch("builtins.print") as mock_print:
+                    check_lines("dummy.txt")
+                    mock_print.assert_called()
+
     def test_check_vocab_basic(self):
         with patch("builtins.print") as mock_print:
             check_vocab(self.infile)
