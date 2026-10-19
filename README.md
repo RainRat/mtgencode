@@ -167,7 +167,7 @@ Options for formatting the output. While primarily used for AI output, this tool
 *   `--md-table`: Creates a Markdown table.
 *   `-S`, `--summary`: Creates a compact one-line summary for each card.
 *   `-f`, `--forum`: Use pretty formatting for mana symbols (compatible with MTG Salvation forums).
-*   `-c`, `--creativity`: Calculate how unique these cards are compared to real Magic cards (requires Word2Vec).
+*   `-c`, `--creativity`: Calculate how unique these cards are compared to real Magic cards.
 *   `-d`, `--dump`: Show detailed debug information for cards that were not processed correctly.
 *   `--color` / `--no-color`: Manually enable or disable ANSI color output in your terminal.
 *   `--shuffle`: Randomizes the order of cards (the tool does not shuffle cards by default for decoding).
