@@ -861,13 +861,15 @@ Usage Examples:
     out_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
                            help='Print a summary preview of forged or modified cards without creating or modifying the target output file.')
     out_group.add_argument('-o', '--outfile', help='Save output to a file instead of printing.')
-    out_group.add_argument('--json', action='store_true', help='Output in JSON format (Default).')
-    out_group.add_argument('--csv', action='store_true', help='Output in CSV format.')
-    out_group.add_argument('--encoded', action='store_true', help='Output in encoded text format.')
-    out_group.add_argument('-S', '--summary', action='store_true', help='Output a one-line summary.')
-    out_group.add_argument('-V', '--view', action='store_true', help='Output a human-readable detailed card view.')
-    out_group.add_argument('-G', '--gatherer', action='store_true', help='Output in official card database (Gatherer) format.')
     out_group.add_argument('--validate', action='store_true', help='Validate the forged card(s) against design rules and color pie, printing warnings to stderr.')
+
+    fmt_group = out_group.add_mutually_exclusive_group()
+    fmt_group.add_argument('--json', action='store_true', help='Output in JSON format (Default).')
+    fmt_group.add_argument('--csv', action='store_true', help='Output in CSV format.')
+    fmt_group.add_argument('--encoded', action='store_true', help='Output in encoded text format.')
+    fmt_group.add_argument('-S', '--summary', action='store_true', help='Output a one-line summary.')
+    fmt_group.add_argument('-V', '--view', action='store_true', help='Output a human-readable detailed card view.')
+    fmt_group.add_argument('-G', '--gatherer', action='store_true', help='Output in official card database (Gatherer) format.')
 
     # Color options
     color_group = parser.add_mutually_exclusive_group()
