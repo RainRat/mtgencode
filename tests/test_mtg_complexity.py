@@ -92,6 +92,13 @@ class TestMtgComplexity(unittest.TestCase):
                 self.assertIn("Name,Complexity,Rarity,Type", output)
                 self.assertIn("Uthros Research Craft,107,rare,", output)
 
+    def test_complexity_cli_mutually_exclusive_formats(self):
+        with patch('sys.stderr', new=io.StringIO()):
+            with patch('sys.argv', ['mtg_complexity.py', 'testdata/uthros.json', '-j', '--csv']):
+                with self.assertRaises(SystemExit) as cm:
+                    complexity_main()
+                self.assertEqual(cm.exception.code, 2)
+
     def test_complexity_cli_sample_and_shuffle(self):
         with patch('sys.stdout', new=io.StringIO()) as fake_out:
             with patch('sys.argv', ['mtg_complexity.py', 'testdata/uthros.json', '--sample', '1', '--seed', '42', '--no-color']):
