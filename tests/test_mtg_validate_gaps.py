@@ -108,6 +108,50 @@ class TestMtgValidateGaps(unittest.TestCase):
         })
         self.assertFalse(mtg_validate.check_planeswalkers(c_bad))
 
+    def test_check_planeswalkers_variable_cost(self):
+        c_var = cardlib.Card({
+            "name": "Chandra",
+            "types": ["Planeswalker"],
+            "loyalty": "4",
+            "text": "+&^: Gain 1 life.\n-X: Deal X damage."
+        })
+        self.assertTrue(mtg_validate.check_planeswalkers(c_var))
+
+    def test_check_kicker_reserved_mana(self):
+        c_kicker = cardlib.Card({
+            "name": "Kicker Spell",
+            "types": ["Instant"],
+            "text": "Kicker $ kicker {1}. If kicked, deal 3 damage."
+        })
+        self.assertTrue(mtg_validate.check_kicker(c_kicker))
+
+    def test_check_shuffle_and_quotes_multiline_failures(self):
+        c_shuffle_fail = cardlib.Card({
+            "name": "Bad Searcher",
+            "types": ["Sorcery"],
+            "text": "Search your library for a card, then shuffle.\nSearch your library."
+        })
+        self.assertFalse(mtg_validate.check_shuffle(c_shuffle_fail))
+
+        c_quotes_fail = cardlib.Card({
+            "name": "Bad Quoter",
+            "types": ["Instant"],
+            "text": "Named \"Fireball\".\nNamed \"Lightning Bolt."
+        })
+        self.assertFalse(mtg_validate.check_quotes(c_quotes_fail))
+
+    def test_process_props_dump_exempted_cards(self):
+        c_exempt = cardlib.Card({
+            "name": "demonic pact",
+            "types": ["Enchantment"],
+            "text": "Invalid text that causes validation failure."
+        })
+
+        with patch('sys.stdout', new=io.StringIO()) as fake_out:
+            mtg_validate.process_props([c_exempt], dump=True, quiet=True)
+            output = fake_out.getvalue()
+            self.assertNotIn("---- types ----", output)
+
     def test_check_levelup_additional(self):
         c1 = cardlib.Card({"name": "L1", "types": ["Creature"], "text": "Level up {1}. countertype % level. level &^^+ 2/2."})
         self.assertTrue(mtg_validate.check_levelup(c1))
