@@ -60,8 +60,12 @@ Usage Examples:
                         help='Path to save the results. Overrides positional outfile argument.')
     io_group.add_argument('-n', '--limit', type=int, default=20,
                         help='Number of top complex cards to show in the table (Default: 20).')
-    io_group.add_argument('-j', '--json', action='store_true', help='Output results in structured JSON format.')
-    io_group.add_argument('--csv', action='store_true', help='Output results in CSV format.')
+
+    # Group: Output Format
+    fmt_group_title = parser.add_argument_group('Output Format')
+    fmt_group = fmt_group_title.add_mutually_exclusive_group()
+    fmt_group.add_argument('-j', '--json', action='store_true', help='Output results in structured JSON format.')
+    fmt_group.add_argument('--csv', action='store_true', help='Output results in CSV format.')
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
