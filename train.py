@@ -384,11 +384,11 @@ Usage Examples:
   # 4. Generate new cards from a checkpoint
   python3 train.py --mode sample --checkpoint checkpoint.pt --length 2000 > generated.txt
 
-  # 4. Force specific attributes during generation (Uses legacy field order)
+  # 5. Force specific attributes during generation (Uses legacy field order)
   # This example forces the AI to design a Legendary Creature named "Uthros":
-  python3 train.py --mode sample --name "uthros" --supertypes "legendary" --types "creature"
+  python3 train.py --mode sample --checkpoint checkpoint.pt --name "uthros" --supertypes "legendary" --types "creature"
 
-  # 5. Decode results back to readable cards
+  # 6. Decode results back to readable cards
   python3 decode.py generated.txt decoded_cards.txt
 """
     )
