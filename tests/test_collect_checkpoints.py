@@ -184,7 +184,7 @@ class TestCollectCheckpoints(unittest.TestCase):
         import runpy
         with tempfile.TemporaryDirectory() as src_dir:
             args = ["collect_checkpoints.py", src_dir]
-            with patch("sys.argv", args), patch("sys.stderr", new=io.StringIO()) as fake_err:
+            with patch("sys.argv", args), patch("sys.stdin.isatty", return_value=False), patch("sys.stderr", new=io.StringIO()) as fake_err:
                 try:
                     runpy.run_module("scripts.collect_checkpoints", run_name="__main__")
                     code = 0
@@ -193,6 +193,32 @@ class TestCollectCheckpoints(unittest.TestCase):
 
                 self.assertEqual(code, 2)
                 self.assertIn("the following arguments are required: targetdir", fake_err.getvalue())
+
+    def test_cli_interactive_no_args_prints_help(self):
+        import io
+        import runpy
+        args = ["collect_checkpoints.py"]
+        with patch("sys.argv", args), patch("sys.stdin.isatty", return_value=True), patch("sys.stdout", new=io.StringIO()) as fake_out:
+            with self.assertRaises(SystemExit) as cm:
+                runpy.run_module("scripts.collect_checkpoints", run_name="__main__")
+            self.assertEqual(cm.exception.code, 0)
+            self.assertIn("Collect and organize neural network checkpoint dumps", fake_out.getvalue())
+
+    def test_cli_interactive_missing_targetdir_defaults_to_dry_run(self):
+        import io
+        import runpy
+        with tempfile.TemporaryDirectory() as src_dir:
+            args = ["collect_checkpoints.py", src_dir]
+            with patch("sys.argv", args), patch("sys.stdin.isatty", return_value=True), patch("sys.stdout", new=io.StringIO()) as fake_out, patch("sys.stderr", new=io.StringIO()) as fake_err:
+                try:
+                    runpy.run_module("scripts.collect_checkpoints", run_name="__main__")
+                    code = 0
+                except SystemExit as e:
+                    code = e.code if isinstance(e.code, int) else 0
+
+                self.assertEqual(code, 0)
+                self.assertIn("Notice: No target directory specified. Running in dry-run preview mode.", fake_err.getvalue())
+                self.assertIn("Dry Run Summary:", fake_out.getvalue())
 
     def test_dry_run_trailing_slash_path_normalization(self):
         import io

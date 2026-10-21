@@ -197,10 +197,18 @@ Usage Examples:
     debug_group.add_argument('-v', '--verbose', action='store_true',
                         help='verbose output')
 
+    if len(sys.argv) == 1 and sys.stdin.isatty():
+        parser.print_help()
+        sys.exit(0)
+
     args = parser.parse_args()
 
     if not args.dry_run and args.targetdir is None:
-        parser.error('the following arguments are required: targetdir (unless --dry-run is specified)')
+        if sys.stdin.isatty():
+            print("Notice: No target directory specified. Running in dry-run preview mode.", file=sys.stderr)
+            args.dry_run = True
+        else:
+            parser.error('the following arguments are required: targetdir (unless --dry-run is specified)')
 
     try:
         main(args.basedir, args.targetdir, ident=args.ident, copy_cp=args.copy_cp, verbose=args.verbose, dry_run=args.dry_run)
