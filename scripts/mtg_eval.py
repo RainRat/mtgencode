@@ -233,8 +233,7 @@ Usage Examples:
 
                 # Breakdown Table
                 header = ["Rule Check", "Checked", "Passed", "Failed", "Success %", "Chart"]
-                if use_color:
-                    header = [utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in header]
+                header = datalib._colorize_header(header, use_color)
 
                 rows = [header]
                 for prop, (total, good, bad) in values.items():
