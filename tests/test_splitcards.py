@@ -555,3 +555,66 @@ def test_splitcards_auto_format_detection(tmp_path):
     # Content should be encoded text format even though file ends in .json
     content = out_override1.read_text()
     assert "|1Card Alpha" in content
+
+
+def test_splitcards_xml(tmp_path):
+    infile = tmp_path / "input.json"
+    data = {
+        "data": {
+            "TEST": {
+                "name": "Test Set",
+                "code": "TEST",
+                "type": "expansion",
+                "cards": [
+                    {"name": "Card 1", "types": ["Creature"], "rarity": "common", "manaCost": "{1}{W}", "power": "1", "toughness": "1"},
+                    {"name": "Card 2", "types": ["Instant"], "rarity": "uncommon", "manaCost": "{U}"}
+                ]
+            }
+        }
+    }
+    infile.write_text(json.dumps(data))
+
+    out1 = tmp_path / "out1.xml"
+    out2 = tmp_path / "out2.xml"
+
+    # Test auto-detection via .xml extension
+    args = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out1), str(out2),
+        "--ratios", "0.5", "0.5",
+        "-s"
+    ]
+    with patch("sys.argv", args):
+        main()
+
+    assert out1.exists()
+    assert out2.exists()
+
+    xml_content1 = out1.read_text()
+    assert '<?xml version="1.0" encoding="UTF-8"?>' in xml_content1
+    assert '<cockatrice_carddatabase version="4">' in xml_content1
+    assert '<name>TEST</name>' in xml_content1
+    assert '<card>' in xml_content1
+    assert '<name>Card 1</name>' in xml_content1
+
+    xml_content2 = out2.read_text()
+    assert '<card>' in xml_content2
+    assert '<name>Card 2</name>' in xml_content2
+
+    # Test explicit --format xml
+    out3 = tmp_path / "out3.txt"
+    out4 = tmp_path / "out4.txt"
+    args_explicit = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out3), str(out4),
+        "--ratios", "0.5", "0.5",
+        "--format", "xml",
+        "-s"
+    ]
+    with patch("sys.argv", args_explicit):
+        main()
+
+    assert out3.exists()
+    assert '<?xml version="1.0" encoding="UTF-8"?>' in out3.read_text()

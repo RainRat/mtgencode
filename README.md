@@ -1408,6 +1408,9 @@ python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --r
 # Split a JSON file into multiple parts
 python3 scripts/splitcards.py data/AllPrintings.json --outputs part1.json part2.json --ratios 0.5 0.5 -f json
 
+# Split a card dataset into Cockatrice XML databases (auto-detected from .xml extension)
+python3 scripts/splitcards.py data/AllPrintings.json --outputs train.xml val.xml --ratios 0.8 0.2
+
 # Create a filtered training set (Red and Black cards only)
 python3 scripts/splitcards.py data/AllPrintings.json --outputs rb_train.txt rb_val.txt --ratios 0.9 0.1 --colors RB
 
@@ -1416,7 +1419,7 @@ python3 scripts/splitcards.py encoded_output.txt --outputs train.txt val.txt --r
 ```
 *   **Options:**
     *   `-p`, `--preview`, `--dry-run`: Print a summary of dataset splits without creating or modifying output files.
-    *   `-f`, `--format`: Output format (`text`, `json`, `jsonl`, `csv`). Default is `text`.
+    *   `-f`, `--format`: Output format (`text`, `json`, `jsonl`, `csv`, `xml`). Auto-detected from file extensions (`.json`, `.jsonl`, `.csv`, `.xml`). Default is `text`.
     *   `-v`, `--verbose`: Enable detailed status messages.
     *   `-q`, `--quiet`: Suppress the progress bar.
     *   `--encoding`: Choose the text encoding format (for example, `std`, `named`, `vec`).
