@@ -35,8 +35,8 @@ def main(fname1, fname2=None, verbose=True, outfile=None, output_json=False, out
             output_csv = True
 
     if verbose:
-        print('opening ' + fname1 + ' as base key/value store')
-        print('opening ' + fname2 + ' as target key/value store')
+        print('opening ' + fname1 + ' as base key/value store', file=sys.stderr)
+        print('opening ' + fname2 + ' as target key/value store', file=sys.stderr)
 
     d1 = {}
     d2 = {}
@@ -49,8 +49,8 @@ def main(fname1, fname2=None, verbose=True, outfile=None, output_json=False, out
     tot2 = sum(d2.values())
 
     if verbose:
-        print('  ' + fname1 + ': ' + str(len(d1)) + ', total ' + str(tot1))
-        print('  ' + fname2 + ': ' + str(len(d2)) + ', total ' + str(tot2))
+        print('  ' + fname1 + ': ' + str(len(d1)) + ', total ' + str(tot1), file=sys.stderr)
+        print('  ' + fname2 + ': ' + str(len(d2)) + ', total ' + str(tot2), file=sys.stderr)
 
     d_merged = merge_dicts(d1, d2)
 
@@ -197,7 +197,7 @@ Usage Examples:
     fmt_group = parser.add_mutually_exclusive_group()
     fmt_group.add_argument('-j', '--json', action='store_true',
                         help='Output key comparison in structured JSON format.')
-    fmt_group.add_argument('--csv', action='store_true',
+    fmt_group.add_argument('-c', '--csv', action='store_true',
                         help='Output key comparison in CSV format.')
 
     # Group: Processing Options

@@ -68,10 +68,12 @@ class TestKeyDiff(unittest.TestCase):
             with open(file2, "w") as f:
                 f.write("b: 1\n")
 
-            code, out = self.run_main([file1, file2, "-v"])
-            self.assertEqual(code, 0)
-            self.assertIn("opening", out)
-            self.assertIn("total 1", out)
+            with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                code, out = self.run_main([file1, file2, "-v"])
+                self.assertEqual(code, 0)
+                err_text = fake_err.getvalue()
+                self.assertIn("opening", err_text)
+                self.assertIn("total 1", err_text)
 
     def test_main_zero_division_guard(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -199,6 +201,24 @@ class TestKeyDiff(unittest.TestCase):
                 f.write("apple: 15\ncherry: 5\n")
 
             code, out = self.run_main([file1, file2, "--csv"])
+            self.assertEqual(code, 0)
+            lines = out.strip().splitlines()
+            self.assertEqual(lines[0], "Category,Key,Count1,Count2,Ratio")
+            self.assertIn("Shared,apple,10,15,", out)
+            self.assertIn("File1_Only,banana,20,,", out)
+            self.assertIn("File2_Only,cherry,,5,", out)
+
+    def test_main_csv_short_flag(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = os.path.join(tmpdir, "f1.txt")
+            file2 = os.path.join(tmpdir, "f2.txt")
+
+            with open(file1, "w") as f:
+                f.write("apple: 10\nbanana: 20\n")
+            with open(file2, "w") as f:
+                f.write("apple: 15\ncherry: 5\n")
+
+            code, out = self.run_main([file1, file2, "-c"])
             self.assertEqual(code, 0)
             lines = out.strip().splitlines()
             self.assertEqual(lines[0], "Category,Key,Count1,Count2,Ratio")
