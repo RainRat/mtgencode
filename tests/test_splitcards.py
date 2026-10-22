@@ -538,7 +538,42 @@ def test_splitcards_auto_format_detection(tmp_path):
     data_jsonl = json.loads(line)
     assert data_jsonl['name'] == "Card Alpha"
 
-    # 4. Test explicit -f/--format overriding output file extension
+    # 4. Test .xml extension auto-detection
+    out_xml1 = tmp_path / "split1.xml"
+    out_xml2 = tmp_path / "split2.xml"
+    args_xml = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_xml1), str(out_xml2),
+        "--ratios", "0.5", "0.5",
+        "-s"
+    ]
+    with patch("sys.argv", args_xml):
+        main()
+
+    content_xml1 = out_xml1.read_text()
+    assert "<cockatrice_carddatabase" in content_xml1
+    assert "<name>Card Alpha</name>" in content_xml1
+
+    # 5. Test explicit -f xml format option
+    out_override_xml1 = tmp_path / "override1.txt"
+    out_override_xml2 = tmp_path / "override2.txt"
+    args_override_xml = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_override_xml1), str(out_override_xml2),
+        "--ratios", "0.5", "0.5",
+        "-f", "xml",
+        "-s"
+    ]
+    with patch("sys.argv", args_override_xml):
+        main()
+
+    content_override_xml = out_override_xml1.read_text()
+    assert "<cockatrice_carddatabase" in content_override_xml
+    assert "<name>Card Alpha</name>" in content_override_xml
+
+    # 6. Test explicit -f/--format overriding output file extension
     out_override1 = tmp_path / "override1.json"
     out_override2 = tmp_path / "override2.json"
     args_override = [
