@@ -369,7 +369,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
             try:
                 ofile = open(oname, 'w', encoding='utf-8', newline='')
                 outputter = ofile
-            except Exception as e:
+            except OSError as e:
                 print(f"Error opening output file {oname}: {e}", file=sys.stderr)
                 sys.exit(1)
 
@@ -394,7 +394,7 @@ def main(fname, oname = None, verbose = True, encoding = 'std',
         try:
             ofile = open(oname, 'w', encoding='utf-8')
             outputter = ofile
-        except Exception as e:
+        except OSError as e:
             print(f"Error opening output file {oname}: {e}", file=sys.stderr)
             sys.exit(1)
 
