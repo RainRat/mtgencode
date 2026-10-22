@@ -25,7 +25,6 @@ def check_lines(fname):
              'overload', 'prowl', 'recover', 'reinforce', 'replicate', 'scavenge',
              'splice', 'surge', 'unearth', 'transfigure', 'transmute',
     ]
-    known = []
 
     for card in cards:
         prel, keyl, mainl, costl, postl = transforms.separate_lines(card.text.encode(randomize=False))
