@@ -31,7 +31,6 @@ class TestSanity(unittest.TestCase):
             self.assertTrue(any("prel:" in s for s in printed_strings))
 
     def test_check_lines_bside_and_empty_line(self):
-        # Create mock cards including a card with bside and empty lines in separated parts
         mock_card = MagicMock()
         mock_card.name = "Mock Card"
         mock_card.text.text = "Mock Text"
@@ -43,7 +42,6 @@ class TestSanity(unittest.TestCase):
 
         with patch("jdecode.mtg_open_file", return_value=[mock_card]):
             with patch("transforms.separate_lines") as mock_sep:
-                # Return empty line in prel, postl, keyl, mainl, costl
                 mock_sep.side_effect = [
                     ([""], [" "], ["\n"], ["\t"], ["   "]),
                     (["prel2"], ["key2"], ["main2"], ["cost2"], ["post2"])
@@ -51,6 +49,28 @@ class TestSanity(unittest.TestCase):
                 with patch("builtins.print") as mock_print:
                     check_lines("dummy.txt")
                     mock_print.assert_called()
+
+    def test_check_lines_empty_line_and_known_prefix_branches(self):
+        mock_card = MagicMock()
+        mock_card.name = "Aura Card"
+        mock_card.text.text = "Enchant creature"
+        mock_card.text.encode.return_value = "enchant creature"
+        mock_card.bside = None
+
+        with patch("jdecode.mtg_open_file", return_value=[mock_card]):
+            with patch("transforms.separate_lines") as mock_sep:
+                mock_sep.return_value = (
+                    ["enchant creature", ""],
+                    ["kicker {1}"],
+                    ["sample main line", " "],
+                    ["sample cost line"],
+                    ["equip {2}", ""]
+                )
+                with patch("builtins.print") as mock_print:
+                    check_lines("dummy.txt")
+                    printed_outputs = [call[0][0] for call in mock_print.call_args_list if call[0]]
+                    self.assertIn("known", printed_outputs)
+                    self.assertIn(("Aura Card", "Enchant creature"), printed_outputs)
 
     def test_check_vocab_basic(self):
         with patch("builtins.print") as mock_print:
