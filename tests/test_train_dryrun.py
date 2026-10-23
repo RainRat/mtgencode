@@ -61,6 +61,30 @@ class TestTrainDryRun(unittest.TestCase):
         self.assertIn("Dry Run Summary: Neural network training configuration (train mode).", out)
         self.assertIn("Not Found", out)
 
+    def test_train_dryrun_unreadable_file_error_handling(self):
+        with tempfile.NamedTemporaryFile('wb', delete=False) as f:
+            f.write(b"\x80\x81\x82\xff\xfe")
+            tmp_dataset = f.name
+
+        try:
+            buf = io.StringIO()
+            test_args = [
+                'train.py',
+                '--mode', 'train',
+                '--infile', tmp_dataset,
+                '--dry-run'
+            ]
+            parser = train.get_parser()
+            with patch.object(sys, 'argv', test_args), patch('sys.stdout', buf):
+                train.train(parser.parse_args(test_args[1:]))
+
+            out = buf.getvalue()
+            self.assertIn("Dry Run Summary: Neural network training configuration (train mode).", out)
+            self.assertIn("0 card(s)", out)
+        finally:
+            if os.path.exists(tmp_dataset):
+                os.remove(tmp_dataset)
+
     def test_sample_dryrun(self):
         with tempfile.NamedTemporaryFile('w', delete=False) as f:
             f.write("mock_checkpoint_data")
