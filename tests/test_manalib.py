@@ -1,3 +1,5 @@
+from unittest.mock import patch
+import lib.manalib as manalib_mod
 from lib.manalib import Manacost, Manatext
 from lib import utils
 
@@ -66,10 +68,22 @@ class TestManacost:
         assert not m.valid
         assert not m.parsed
 
+    def test_initialization_unknown_symbol(self):
+        # Test parsing an unknown symbol inside valid cost brackets
+        m = Manacost("{WW?UU}")
+        assert not m.valid
+
+    def test_initialization_nonempty_mana_unary_marker(self):
+        # Test parsing when utils.mana_unary_marker is set to a non-empty string in manalib
+        with patch.object(manalib_mod.utils, 'mana_unary_marker', '~'):
+            m = Manacost("{~^WW}")
+            assert m.valid
+            assert '~' in m.sequence
+
     def test_cmc_calculation(self):
         # X is 0
         assert Manacost("{XX}").cmc == 0
-        # 2/W is 2
+        # 2/W (encoded as 2W) is 2
         assert Manacost("{2W}").cmc == 2
         # WP is 1
         assert Manacost("{WP}").cmc == 1
@@ -91,12 +105,17 @@ class TestManacost:
         assert Manacost("{2W}").colors == "W"
         assert Manacost("{WP}").colors == "W"
 
-    def test_format(self):
+    def test_str_and_format(self):
         m = Manacost("{WWUUBBRRGG}")
+        assert str(m) == "{W}{U}{B}{R}{G}"
         assert m.format() == "{W}{U}{B}{R}{G}"
 
         # Forum
         assert m.format(for_forum=True) == "[mana]WUBRG[/mana]"
+
+        # HTML
+        html_out = m.format(for_html=True)
+        assert "<img class='mana-W'>" in html_out
 
         # ANSI Color
         colored = m.format(ansi_color=True)
@@ -113,6 +132,7 @@ class TestManacost:
     def test_encode(self):
         m = Manacost("{WWUUBBRRGG}")
         assert m.encode() == "{WWUUBBRRGG}"
+        assert Manacost("").encode() == ""
 
         # Randomize
         encoded = m.encode(randomize=True)
@@ -122,6 +142,7 @@ class TestManacost:
         assert sorted(encoded[1:-1]) == sorted("WWUUBBRRGG")
 
     def test_vectorize(self):
+        assert Manacost("").vectorize() == ""
         m = Manacost("{WWUUBBRRGG}")
         # Sorted sequence of symbols
         # sequence: WW, UU, BB, RR, GG (order from initialization loop depends on string)
@@ -159,13 +180,26 @@ class TestManatext:
         assert utils.reserved_mana_marker in mt.text
         assert "{1}" not in mt.text
 
-    def test_format(self):
+    def test_manatext_raw_format(self):
+        mt = Manatext("Pay {WW}.\nDraw a card.")
+        assert mt.valid
+        assert len(mt.costs) == 1
+        assert str(mt) == "Pay {W}.\nDraw a card."
+
+    def test_str_and_format(self):
         src = "Pay {X}."
         mt = Manatext(src, fmt='json')
+        assert str(mt) == "Pay {X}."
         assert mt.format() == "Pay {X}."
 
         # Forum
         assert mt.format(for_forum=True) == "Pay [mana]X[/mana]."
+
+        # HTML
+        mt_html = Manatext("Pay {1}{W}.\nDraw a card.", fmt='json')
+        html_out = mt_html.format(for_html=True)
+        assert "<br>\n" in html_out
+        assert "<img class=" in html_out
 
         # ANSI Color
         # {X} -> {XX} -> format() -> {X}
@@ -179,6 +213,22 @@ class TestManatext:
         mt = Manatext(src, fmt='json')
         # 'X' is length 1, so it is encoded as 'XX'
         assert mt.encode() == "Pay {XX}."
+
+        mt_multi = Manatext("Pay {WWUU}.", fmt='')
+        randomized = mt_multi.encode(randomize=True)
+        assert randomized.startswith("Pay {")
+        assert randomized.endswith("}.")
+
+    def test_reserved_mana_marker_escaping(self):
+        marker_text = f"Text with {utils.reserved_mana_marker} and {{WW}}"
+        mt = Manatext(marker_text, fmt='')
+        assert mt.valid
+        formatted = mt.format()
+        assert formatted == f"Text with {utils.reserved_mana_marker} and {{W}}"
+        encoded = mt.encode()
+        assert encoded == f"Text with {utils.reserved_mana_marker} and {{WW}}"
+        vec = mt.vectorize()
+        assert utils.reserved_mana_marker in vec
 
     def test_vectorize(self):
         src = "Pay {W}."
@@ -199,3 +249,23 @@ class TestManatext:
         # Leftover delimiters make it invalid
         mt = Manatext("Open { brace", fmt='json')
         assert not mt.valid
+
+        # Matched cost containing invalid mana symbol sets valid to False
+        mt_invalid_cost = Manatext("Pay {WW?UU}.", fmt='')
+        assert not mt_invalid_cost.valid
+
+    def test_manatext_empty_cost_formatting_and_encoding(self):
+        # Test formatting and encoding when a cost in self.costs has none=True
+        mt = Manatext("Pay .", fmt='')
+        cost = Manacost("")
+        mt.costs = [cost]
+        mt.text = f"Pay {utils.reserved_mana_marker}."
+        assert mt.format() == "Pay ."
+        assert mt.encode() == "Pay ."
+
+    def test_manacost_unary_marker_loop_branch(self):
+        # Test loop branch when utils.mana_unary_marker is non-empty
+        with patch.object(manalib_mod.utils, 'mana_unary_marker', '~'):
+            m = Manacost("{~~}")
+            assert m.valid
+            assert m.sequence == ['~', '~']
