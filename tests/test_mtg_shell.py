@@ -195,6 +195,9 @@ class TestMtgShell(unittest.TestCase):
                 self.assertEqual(completer('/', 0), '/search ')
                 self.assertEqual(completer('/s', 0), '/search ')
                 self.assertEqual(completer('/s', 1), '/s ')
+                self.assertEqual(completer('/sim', 0), '/similar ')
+                self.assertEqual(completer('/sim', 1), '/sim ')
+                self.assertEqual(completer('/cls', 0), '/cls')
 
                 # Test card name completion
                 self.assertEqual(completer('inv', 0), 'Invasion of Tarkir')
@@ -420,6 +423,7 @@ class TestMtgShell(unittest.TestCase):
                 # Let's check that "<card name>" and other commands are padded correctly.
                 self.assertIn("  <card name>               - Show", output)
                 self.assertIn("  /search <q> (/s)          - Search", output)
+                self.assertIn("  /similar <n> (/sim)       - Find cards mechanically similar", output)
 
         # Test with color enabled
         color_args = argparse.Namespace(**vars(self.args))
