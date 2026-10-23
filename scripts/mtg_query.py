@@ -918,11 +918,11 @@ def handle_shell(args):
                     '/substitutes ', '/sub ',
                     '/counterparts ', '/cp ',
                     '/tribal ', '/tr ',
-                    '/similar ',
+                    '/similar ', '/sim ',
                     '/extract ', '/e ',
                     '/list', '/l', '/results',
                     '/help', '/h', '/?',
-                    '/clear',
+                    '/clear', '/cls',
                     '/exit', '/quit', '/q'
                 ]
                 options = [c for c in commands if c.startswith(text.lower())]
@@ -1260,7 +1260,7 @@ def handle_shell(args):
                             ("/tribal <n>", "/tr", "Find cards related to the named card's subtypes."),
                             ("/superior <n>", "/sup", "Find cards generally better than the named card."),
                             ("/inferior <n>", "/inf", "Find cards generally worse than the named card."),
-                            ("/similar <n>", "", "Find cards mechanically similar to the named card."),
+                            ("/similar <n>", "/sim", "Find cards mechanically similar to the named card."),
                         ]),
                         ("UTILITIES & SYSTEM", [
                             ("/extract [s] <n>", "/e", "Extract raw card JSON by set code and name (defaults to any set)."),
