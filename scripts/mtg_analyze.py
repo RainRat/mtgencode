@@ -359,6 +359,57 @@ def handle_curve(args):
         for color in (card.cost.colors or ['C']):
             color_sums[color] += card.cost.cmc
             color_counts[color] += 1
+
+    if getattr(args, 'json', False):
+        curve_data = []
+        for b in cmc_buckets:
+            cnt = cmc_counts[b]
+            p = cnt / total_cards * 100 if total_cards > 0 else 0
+            lbl = str(b) if b < 7 else "7+"
+            c_cnt = type_counts["Creature"][b]
+            nc_cnt = type_counts["Non-creature"][b]
+            curve_data.append({
+                "cmc": lbl,
+                "count": cnt,
+                "percent": p,
+                "creatures": c_cnt,
+                "non_creatures": nc_cnt
+            })
+        color_data = []
+        for c in 'WUBRGC':
+            if color_counts[c] == 0: continue
+            color_data.append({
+                "color": c,
+                "avg_cmc": color_sums[c] / color_counts[c],
+                "count": color_counts[c],
+                "percent": color_counts[c] / total_cards * 100 if total_cards > 0 else 0
+            })
+        out_dict = {
+            "total_cards": total_cards,
+            "avg_cmc": total_cmc / total_cards if total_cards > 0 else 0,
+            "curve": curve_data,
+            "color_breakdown": color_data
+        }
+        print(json.dumps(out_dict, indent=2))
+        return
+    elif getattr(args, 'csv', False):
+        writer = csv.writer(sys.stdout)
+        writer.writerow(['Section', 'Category', 'Count', 'Percent', 'Avg CMC', 'Creatures', 'Non-Creatures'])
+        for b in cmc_buckets:
+            cnt = cmc_counts[b]
+            p = cnt / total_cards * 100 if total_cards > 0 else 0
+            lbl = str(b) if b < 7 else "7+"
+            c_cnt = type_counts["Creature"][b]
+            nc_cnt = type_counts["Non-creature"][b]
+            writer.writerow(['Curve', lbl, cnt, f"{p:.1f}%", '', c_cnt, nc_cnt])
+        for c in 'WUBRGC':
+            if color_counts[c] == 0: continue
+            avg_c = color_sums[c] / color_counts[c]
+            cnt = color_counts[c]
+            p = cnt / total_cards * 100 if total_cards > 0 else 0
+            writer.writerow(['Color Breakdown', c, cnt, f"{p:.1f}%", f"{avg_c:.2f}", '', ''])
+        return
+
     utils.print_header("MANA CURVE ANALYSIS", count=total_cards, use_color=use_color)
     print(f"  {utils.colorize(f'Global Average CMC: {total_cmc/total_cards:.2f}', utils.Ansi.BOLD + utils.Ansi.GREEN) if use_color else f'Global Average CMC: {total_cmc/total_cards:.2f}'}\n")
     rows = [[utils.colorize(h, utils.Ansi.BOLD + utils.Ansi.UNDERLINE) if use_color else h for h in ["CMC", "Count", "Percent", "Distribution (Creature / Non-creature)"]]]

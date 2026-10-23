@@ -105,5 +105,52 @@ class TestMtgCurve(unittest.TestCase):
             code, out, err = self.run_main(['testdata/uthros.json', '--no-color'])
             self.assertIn("7+", out)
 
+    def test_curve_json_output(self):
+        import json
+        code, out, err = self.run_main(['testdata/uthros.json', '--json'])
+        self.assertEqual(code, 0)
+        data = json.loads(out)
+        self.assertIn("total_cards", data)
+        self.assertEqual(data["total_cards"], 1)
+        self.assertIn("curve", data)
+        self.assertIn("color_breakdown", data)
+
+    def test_curve_csv_output(self):
+        code, out, err = self.run_main(['testdata/uthros.json', '--csv'])
+        self.assertEqual(code, 0)
+        self.assertIn("Section,Category,Count,Percent,Avg CMC,Creatures,Non-Creatures", out)
+        self.assertIn("Curve,3,1,100.0%,,0,1", out)
+        self.assertIn("Color Breakdown,U,1,100.0%,3.00,,", out)
+
+    def test_curve_outfile_autodetect_json(self):
+        import tempfile
+        import json
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as tf:
+            tf_path = tf.name
+        try:
+            code, out, err = self.run_main(['testdata/uthros.json', '-o', tf_path])
+            self.assertEqual(code, 0)
+            with open(tf_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            data = json.loads(content)
+            self.assertEqual(data["total_cards"], 1)
+        finally:
+            if os.path.exists(tf_path):
+                os.remove(tf_path)
+
+    def test_curve_outfile_autodetect_csv(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.csv', delete=False) as tf:
+            tf_path = tf.name
+        try:
+            code, out, err = self.run_main(['testdata/uthros.json', '-o', tf_path])
+            self.assertEqual(code, 0)
+            with open(tf_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.assertIn("Section,Category,Count,Percent,Avg CMC,Creatures,Non-Creatures", content)
+        finally:
+            if os.path.exists(tf_path):
+                os.remove(tf_path)
+
 if __name__ == '__main__':
     unittest.main()
