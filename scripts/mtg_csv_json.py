@@ -101,6 +101,9 @@ Note: The first row is ignored if the first column is exactly "name".
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
                             help='Print a summary of converted card statistics and sample preview without writing output file.')
 
+    parser.add_argument('-V', '--version', action='version', version='mtgencode 1.0.0',
+                        help='Show program\'s version number and exit.')
+
     args = parser.parse_args(argv)
 
     if not args.csv_file:
@@ -290,6 +293,8 @@ Dry Run Mode:
     # Group: Logging & Debugging
     debug_group = parser.add_argument_group('Logging & Debugging')
     debug_group.add_argument('-v', '--verbose', action='store_true', help='Enable detailed status messages.')
+    debug_group.add_argument('-V', '--version', action='version', version='mtgencode 1.0.0',
+                             help='Show program\'s version number and exit.')
 
     args = parser.parse_args(argv)
 
@@ -403,6 +408,9 @@ Autodetect mode:
 """,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
+    parser.add_argument('-V', '--version', action='version', version='mtgencode 1.0.0',
+                        help='Show program\'s version number and exit.')
+
     # We define dummy positionals to capture the autodetect args
     parser.add_argument('infile', nargs='?', help='Input file (.csv or .json)')
     parser.add_argument('outfile', nargs='?', help='Output file (.json or .csv)')
