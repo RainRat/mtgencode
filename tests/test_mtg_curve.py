@@ -105,5 +105,29 @@ class TestMtgCurve(unittest.TestCase):
             code, out, err = self.run_main(['testdata/uthros.json', '--no-color'])
             self.assertIn("7+", out)
 
+    def test_curve_json_output(self):
+        card1 = Card({"name": "Bear", "manaCost": "{1}{G}", "types": ["Creature"], "power": "2", "toughness": "2"})
+        card2 = Card({"name": "Growth", "manaCost": "{G}", "types": ["Instant"]})
+        with patch('scripts.mtg_analyze.cli_utils.jdecode.mtg_open_file', return_value=[card1, card2]):
+            code, out, err = self.run_main(['testdata/uthros.json', '--json'])
+            self.assertEqual(code, 0)
+            import json
+            data = json.loads(out)
+            self.assertEqual(data['total_cards'], 2)
+            self.assertEqual(data['average_cmc'], 1.5)
+            self.assertIn('buckets', data)
+            self.assertIn('color_averages', data)
+            self.assertIn('G', data['color_averages'])
+
+    def test_curve_csv_output(self):
+        card1 = Card({"name": "Bear", "manaCost": "{1}{G}", "types": ["Creature"], "power": "2", "toughness": "2"})
+        card2 = Card({"name": "Growth", "manaCost": "{G}", "types": ["Instant"]})
+        with patch('scripts.mtg_analyze.cli_utils.jdecode.mtg_open_file', return_value=[card1, card2]):
+            code, out, err = self.run_main(['testdata/uthros.json', '--csv'])
+            self.assertEqual(code, 0)
+            self.assertIn("Category,Bucket_or_Color,Count,Percent,Avg_CMC,Creatures,Noncreatures", out)
+            self.assertIn("Global,All,2,100.0,1.50,1,1", out)
+            self.assertIn("Color,G,2,100.0,1.50,,", out)
+
 if __name__ == '__main__':
     unittest.main()
