@@ -946,7 +946,7 @@ def handle_shell(args):
             if os.path.exists(histfile):
                 readline.read_history_file(histfile)
             readline.set_history_length(1000)
-        except Exception:
+        except (OSError, PermissionError):
             pass
         atexit.register(readline.write_history_file, histfile)
     except ImportError:
