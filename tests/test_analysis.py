@@ -216,6 +216,8 @@ class TestAnalysis(unittest.TestCase):
         self.assertIsNone(sanitize_value(float('inf')))
         self.assertEqual(sanitize_value(12.34), 12.34)
         self.assertEqual(sanitize_value([float('nan'), 1]), [None, 1])
+        self.assertEqual(sanitize_value("text_string"), "text_string")
+        self.assertTrue(sanitize_value(True))
 
         raw_stats = OrderedDict([
             ('cards', [1, 2, 3]),
@@ -225,9 +227,34 @@ class TestAnalysis(unittest.TestCase):
         self.assertEqual(s_dict['card_count'], 3)
         self.assertIsNone(s_dict['prop'])
 
+    def test_main_legacy_boolean_outfile_positional(self):
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        try:
+            analysis_main(self.json_path, True, dry_run=True)
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_output.getvalue()
+        self.assertIn("Verbose Logging: Enabled", output)
+
+    @patch('os.path.exists')
+    def test_main_default_infile_when_output_txt_exists(self, mock_exists):
+        mock_exists.side_effect = lambda path: path.endswith('output.txt')
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        try:
+            analysis_main(infile=None, dry_run=True)
+        finally:
+            sys.stdout = sys.__stdout__
+
+        output = captured_output.getvalue()
+        self.assertIn("output.txt", output)
+
     def test_json_and_csv_export(self):
         json_out = os.path.join(self.temp_dir.name, "out.json")
         csv_out = os.path.join(self.temp_dir.name, "out.csv")
+        custom_csv_out = os.path.join(self.temp_dir.name, "out_custom.txt")
 
         analysis_main(self.json_path, outfile=json_out, json_fmt=True)
         self.assertTrue(os.path.exists(json_out))
@@ -241,6 +268,27 @@ class TestAnalysis(unittest.TestCase):
             lines = f.readlines()
             self.assertTrue(len(lines) > 0)
             self.assertIn("Category,Metric,Value", lines[0])
+
+        analysis_main(self.json_path, outfile=custom_csv_out, csv_fmt=True)
+        self.assertTrue(os.path.exists(custom_csv_out))
+        with open(custom_csv_out, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            self.assertTrue(len(lines) > 0)
+            self.assertIn("Category,Metric,Value", lines[0])
+
+    def test_export_csv_stats_list_values(self):
+        out = StringIO()
+        sample_stats = OrderedDict([
+            ('cards', [1, 2]),
+            ('dists', OrderedDict([
+                ('name', [0.1, 0.2]),
+                ('name_mean', 0.15)
+            ]))
+        ])
+        export_csv_stats(sample_stats, out)
+        content = out.getvalue()
+        self.assertIn("dists,name_mean,0.15", content)
+        self.assertNotIn("name,0.1", content)
 
     def test_nonexistent_file_exit(self):
         nonexistent = os.path.join(self.temp_dir.name, "does_not_exist.txt")
