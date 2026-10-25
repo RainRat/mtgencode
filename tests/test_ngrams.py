@@ -3,6 +3,8 @@ import os
 import runpy
 import tempfile
 import unittest
+import json
+import csv
 from unittest.mock import patch, MagicMock
 
 # Ensure repo root and lib/scripts are in path
@@ -174,6 +176,96 @@ class TestNgrams(unittest.TestCase):
                 self.assertEqual(cm.exception.code, 0)
             self.assertTrue(os.path.exists(flag_out + '.2g'))
             self.assertFalse(os.path.exists(pos_out + '.2g'))
+
+    def test_json_export_single_and_multi_gram(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Single gram size (.json file target)
+            json_target = os.path.join(tmpdir, 'output.json')
+            ngrams.main(fname=self.sample_json, oname=json_target, gmin=2, gmax=2, use_json=True, verbose=True)
+            self.assertTrue(os.path.exists(json_target))
+            with open(json_target, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                self.assertIsInstance(data, list)
+                self.assertTrue(any(item.get('ngram') == 'this spacecraft' for item in data))
+
+            # Multi gram range (.json file prefix)
+            json_multi = os.path.join(tmpdir, 'multi.json')
+            ngrams.main(fname=self.sample_json, oname=json_multi, gmin=2, gmax=3, use_json=True)
+            target_2g = os.path.join(tmpdir, 'multi.2g.json')
+            target_3g = os.path.join(tmpdir, 'multi.3g.json')
+            self.assertTrue(os.path.exists(target_2g))
+            self.assertTrue(os.path.exists(target_3g))
+
+    def test_csv_export_single_and_multi_gram(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Single gram size (.csv file target)
+            csv_target = os.path.join(tmpdir, 'output.csv')
+            ngrams.main(fname=self.sample_json, oname=csv_target, gmin=2, gmax=2, use_csv=True, verbose=True)
+            self.assertTrue(os.path.exists(csv_target))
+            with open(csv_target, 'r', encoding='utf-8') as f:
+                reader = list(csv.reader(f))
+                self.assertEqual(reader[0], ['ngram', 'count'])
+                self.assertTrue(any(row[0] == 'this spacecraft' and row[1] == '2' for row in reader[1:]))
+
+            # Multi gram range (.csv file prefix)
+            csv_multi = os.path.join(tmpdir, 'multi.csv')
+            ngrams.main(fname=self.sample_json, oname=csv_multi, gmin=2, gmax=3, use_csv=True)
+            target_2g = os.path.join(tmpdir, 'multi.2g.csv')
+            target_3g = os.path.join(tmpdir, 'multi.3g.csv')
+            self.assertTrue(os.path.exists(target_2g))
+            self.assertTrue(os.path.exists(target_3g))
+
+    def test_extension_auto_detection(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            json_path = os.path.join(tmpdir, 'auto.json')
+            ngrams.main(fname=self.sample_json, oname=json_path, gmin=2, gmax=2)
+            self.assertTrue(os.path.exists(json_path))
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                self.assertIsInstance(data, list)
+
+            csv_path = os.path.join(tmpdir, 'auto.csv')
+            ngrams.main(fname=self.sample_json, oname=csv_path, gmin=2, gmax=2)
+            self.assertTrue(os.path.exists(csv_path))
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = list(csv.reader(f))
+                self.assertEqual(reader[0], ['ngram', 'count'])
+
+    def test_json_and_csv_stdout(self):
+        with patch('sys.stdout') as mock_stdout:
+            ngrams.main(fname=self.sample_json, oname='-', gmin=2, gmax=2, use_json=True, dry_run=False)
+            output = "".join(call.args[0] for call in mock_stdout.write.call_args_list)
+            data = json.loads(output)
+            self.assertIsInstance(data, list)
+
+        with patch('sys.stdout') as mock_stdout:
+            ngrams.main(fname=self.sample_json, oname='-', gmin=2, gmax=2, use_csv=True, dry_run=False)
+            output = "".join(call.args[0] for call in mock_stdout.write.call_args_list)
+            self.assertIn("ngram,count", output)
+
+    def test_invalid_gram_size_json_csv(self):
+        with self.assertRaises(SystemExit):
+            ngrams.main(fname=self.sample_json, oname="dummy", gmin=5, gmax=2, use_json=True)
+
+        with self.assertRaises(SystemExit):
+            ngrams.main(fname=self.sample_json, oname="dummy", gmin=5, gmax=2, use_csv=True)
+
+    def test_cli_json_and_csv_flags(self):
+        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../scripts/ngrams.py'))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            json_out = os.path.join(tmpdir, 'cli_out.json')
+            with patch('sys.argv', ['ngrams.py', self.sample_json, json_out, '-j', '-min', '2', '-max', '2']):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_path(script_path, run_name='__main__')
+                self.assertEqual(cm.exception.code, 0)
+            self.assertTrue(os.path.exists(json_out))
+
+            csv_out = os.path.join(tmpdir, 'cli_out.csv')
+            with patch('sys.argv', ['ngrams.py', self.sample_json, csv_out, '--csv', '-min', '2', '-max', '2']):
+                with self.assertRaises(SystemExit) as cm:
+                    runpy.run_path(script_path, run_name='__main__')
+                self.assertEqual(cm.exception.code, 0)
+            self.assertTrue(os.path.exists(csv_out))
 
 if __name__ == '__main__':
     unittest.main()
