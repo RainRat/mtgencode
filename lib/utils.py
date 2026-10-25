@@ -385,12 +385,9 @@ def mana_decode_direct_forum(sym):
     return mana_sym_to_forum(mana_symall_decode[sym])
 
 # processing entire strings
-def unique_string(s):
-    return ''.join(set(s))
-
 mana_charset_special = mana_unary_marker + mana_unary_counter
-mana_charset_strict = unique_string(''.join(mana_symall) + mana_charset_special)
-mana_charset = unique_string(mana_charset_strict + mana_charset_strict.lower())
+mana_charset_strict = ''.join(set(''.join(mana_symall) + mana_charset_special))
+mana_charset = ''.join(set(mana_charset_strict + mana_charset_strict.lower()))
 
 mana_regex_strict = (re.escape(mana_open_delimiter) + '['
                      + re.escape(mana_charset_strict) 
@@ -401,8 +398,8 @@ mana_regex = (re.escape(mana_open_delimiter) + '['
 
 # as a special case, we let unary or decimal numbers exist in json mana strings
 mana_json_charset_special = ('0123456789' + unary_marker + unary_counter)
-mana_json_charset_strict = unique_string(''.join(mana_symall_jdecode) + mana_json_charset_special)
-mana_json_charset = unique_string(mana_json_charset_strict + mana_json_charset_strict.lower())
+mana_json_charset_strict = ''.join(set(''.join(mana_symall_jdecode) + mana_json_charset_special))
+mana_json_charset = ''.join(set(mana_json_charset_strict + mana_json_charset_strict.lower()))
 
 # note that json mana strings can't be empty between the delimiters
 mana_json_regex_strict = (re.escape(mana_json_open_delimiter) + '['

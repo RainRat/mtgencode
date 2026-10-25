@@ -131,9 +131,6 @@ def test_mana_encode_decode_direct():
     with pytest.raises(ValueError):
         utils.mana_decode_direct_forum('INVALID')
 
-def test_unique_string():
-    assert utils.unique_string("aabbc") in ["abc", "acb", "bac", "bca", "cab", "cba"]
-
 def test_to_mana_translation():
     assert utils.to_mana("{W}{U}") == "{WWUU}"
     assert utils.to_mana("{2/W}") == "{2W}"
