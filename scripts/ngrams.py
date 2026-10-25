@@ -3,6 +3,8 @@ import sys
 import os
 import pickle
 import argparse
+import json
+import csv
 
 libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../lib')
 sys.path.append(libdir)
@@ -74,9 +76,15 @@ def build_ngram_model(cards, n, separate_lines=True, verbose=False):
     lm = NgramModelWrapper(n, lang)
     return lm
 
-def main(fname=None, oname=None, gmin=2, gmax=8, nltk=False, sep=False, verbose=False, dry_run=False):
+def main(fname=None, oname=None, gmin=2, gmax=8, nltk=False, sep=False, verbose=False, dry_run=False, use_json=False, use_csv=False):
     gmin = int(gmin)
     gmax = int(gmax)
+
+    if oname and not use_json and not use_csv and not nltk:
+        if oname.lower().endswith('.json'):
+            use_json = True
+        elif oname.lower().endswith('.csv'):
+            use_csv = True
 
     # Determine default dataset if fname is omitted
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -150,6 +158,71 @@ def main(fname=None, oname=None, gmin=2, gmax=8, nltk=False, sep=False, verbose=
         with open(oname, 'wb') as f:
             pickle.dump(lm, f)
 
+    elif use_json:
+        if gmin < 2 or gmax < gmin:
+            print('invalid gram sizes: ' + str(gmin) + '-' + str(gmax))
+            sys.exit(1)
+
+        for grams in range(gmin, gmax + 1):
+            if verbose:
+                print('generating ' + str(grams) + '-grams...')
+            gramdict = {}
+            for card in cards:
+                update_ngrams(getattr(card, 'text_lines_words', []), gramdict, grams)
+
+            json_records = [{"ngram": ngram, "count": gramdict[ngram]}
+                            for ngram in sorted(gramdict, key=lambda x: gramdict[x], reverse=True)]
+
+            if oname and oname != '-':
+                if oname.lower().endswith('.json'):
+                    base = oname[:-5]
+                    oname_full = oname if (gmin == gmax) else f"{base}.{grams}g.json"
+                else:
+                    oname_full = f"{oname}.{grams}g.json"
+
+                if verbose:
+                    print(('  writing ' + str(len(gramdict)) + ' unique ' + str(grams)
+                           + '-grams to ' + oname_full))
+                with open(oname_full, 'w', encoding='utf-8') as f:
+                    json.dump(json_records, f, indent=2)
+                    f.write('\n')
+            else:
+                json.dump(json_records, sys.stdout, indent=2)
+                sys.stdout.write('\n')
+
+    elif use_csv:
+        if gmin < 2 or gmax < gmin:
+            print('invalid gram sizes: ' + str(gmin) + '-' + str(gmax))
+            sys.exit(1)
+
+        for grams in range(gmin, gmax + 1):
+            if verbose:
+                print('generating ' + str(grams) + '-grams...')
+            gramdict = {}
+            for card in cards:
+                update_ngrams(getattr(card, 'text_lines_words', []), gramdict, grams)
+
+            if oname and oname != '-':
+                if oname.lower().endswith('.csv'):
+                    base = oname[:-4]
+                    oname_full = oname if (gmin == gmax) else f"{base}.{grams}g.csv"
+                else:
+                    oname_full = f"{oname}.{grams}g.csv"
+
+                if verbose:
+                    print(('  writing ' + str(len(gramdict)) + ' unique ' + str(grams)
+                           + '-grams to ' + oname_full))
+                with open(oname_full, 'w', encoding='utf-8', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(['ngram', 'count'])
+                    for ngram in sorted(gramdict, key=lambda x: gramdict[x], reverse=True):
+                        writer.writerow([ngram, gramdict[ngram]])
+            else:
+                writer = csv.writer(sys.stdout)
+                writer.writerow(['ngram', 'count'])
+                for ngram in sorted(gramdict, key=lambda x: gramdict[x], reverse=True):
+                    writer.writerow([ngram, gramdict[ngram]])
+
     else:
         bins = [1, 2, 3, 10, 30, 100, 300, 1000]
         if gmin < 2 or gmax < gmin:
@@ -186,6 +259,12 @@ Example Usage:
   # Generate n-grams for 2-gram to 8-gram
   python3 scripts/ngrams.py testdata/uthros.json my_ngrams
 
+  # Export 2-gram frequency distribution in JSON format
+  python3 scripts/ngrams.py testdata/uthros.json my_ngrams.json -min 2 -max 2
+
+  # Export 2-gram frequency distribution in CSV format
+  python3 scripts/ngrams.py testdata/uthros.json my_ngrams.csv --csv -min 2 -max 2
+
   # Preview n-gram statistics without writing output files (dry run mode)
   python3 scripts/ngrams.py testdata/uthros.json --dry-run
 
@@ -204,6 +283,14 @@ Example Usage:
     io_group.add_argument('-o', '--outfile', dest='outfile_flag', default=None,
                         help='Base name of output file destination. Overrides positional output path if specified.')
     
+    # Output Format Options
+    fmt_group = parser.add_argument_group('Output Format Options')
+    mutex_fmt = fmt_group.add_mutually_exclusive_group()
+    mutex_fmt.add_argument('-j', '--json', action='store_true',
+                          help='Export n-gram frequency distributions in structured JSON format (Auto-detected if outfile ends with .json).')
+    mutex_fmt.add_argument('--csv', action='store_true',
+                          help='Export n-gram frequency distributions in CSV format (Auto-detected if outfile ends with .csv).')
+
     # Processing & Debugging
     proc_group = parser.add_argument_group('Processing Options')
     proc_group.add_argument('-p', '--preview', '--dry-run', dest='dry_run', action='store_true',
@@ -222,5 +309,6 @@ Example Usage:
     args = parser.parse_args()
     outfile = args.outfile_flag if args.outfile_flag is not None else args.outfile
     main(args.infile, outfile, gmin=args.min, gmax=args.max, nltk=args.nltk,
-         sep=args.separate, verbose=args.verbose, dry_run=args.dry_run)
+         sep=args.separate, verbose=args.verbose, dry_run=args.dry_run,
+         use_json=args.json, use_csv=args.csv)
     sys.exit(0)
