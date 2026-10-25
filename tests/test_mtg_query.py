@@ -44,6 +44,16 @@ def test_query_oracle_basic():
     assert "Artifact - Spacecraft" in result.stdout
     assert "Flying" in result.stdout
 
+def test_query_oracle_summary():
+    """Test oracle lookup with -S/--summary flag."""
+    cmd = ["python3", SCRIPT_PATH, "oracle", "Uthros", "testdata/uthros.json", "-S", "--no-color"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "Uthros Research Craft" in result.stdout
+    assert "Artifact - Spacecraft" in result.stdout
+    # In summary view, detailed rules text block and RULINGS are omitted
+    assert "RULINGS:" not in result.stdout
+
 def test_query_sets_basic():
     """Test basic sets listing."""
     # Use tarkir.json which has a standard MTGJSON data structure
