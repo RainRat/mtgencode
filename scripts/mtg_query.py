@@ -614,7 +614,7 @@ def _execute_oracle(cards, args, include_indices=False):
         display_cards = display_cards[:args.limit]
 
     force_full = getattr(args, 'full', False)
-    show_summary = not force_full and len(display_cards) > 1 and not getattr(args, 'gatherer', False)
+    show_summary = getattr(args, 'summary', False) or (not force_full and len(display_cards) > 1 and not getattr(args, 'gatherer', False))
 
     term_width = utils.get_terminal_width()
 
