@@ -19,7 +19,8 @@ This project helps you turn Magic: The Gathering card data into a format that AI
 1.  Make sure Docker Desktop or Docker Engine is running on your system.
 2.  Start an interactive terminal session:
     *   **Linux/macOS:** Run `bash docker-interactive.sh` or `./docker-interactive.sh`
-    *   **Windows:** Run `./docker-interactive.bat`
+    *   **Windows (PowerShell):** Run `.\docker-interactive.bat`
+    *   **Windows (Command Prompt):** Run `docker-interactive.bat`
 
 ### Option 2: Install directly
 1.  **Download this project:**
