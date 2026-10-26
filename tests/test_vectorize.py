@@ -74,6 +74,41 @@ def test_vectorize_battle():
     unary_5 = utils.to_unary("5")
     assert f"[[{unary_5}]]" in vectorized
 
+def test_vectorize_bside():
+    card_data = {
+        "name": "Front Side",
+        "manaCost": "{1}{R}",
+        "type": "Instant",
+        "types": ["Instant"],
+        "rarity": "Uncommon",
+        "text": "Deal 2 damage.",
+        "bside": {
+            "name": "Back Side",
+            "manaCost": "{2}{U}",
+            "type": "Sorcery",
+            "types": ["Sorcery"],
+            "rarity": "Uncommon",
+            "text": "Draw 2 cards."
+        }
+    }
+    card = Card(card_data)
+    vectorized = card.vectorize()
+
+    assert vectorized.startswith("_ASIDE_ ")
+    assert "\n\n_BSIDE_ " in vectorized
+
+    parts = vectorized.split("\n\n_BSIDE_ ")
+    front_part = parts[0]
+    back_part = parts[1]
+
+    # Front face assertions
+    assert "(instant)" in front_part
+    assert "(N)" in front_part  # Uncommon -> N
+
+    # Back face assertions
+    assert "(sorcery)" in back_part
+    assert "(N)" in back_part
+
 def test_encode_randomization():
     card_data = {
         "name": "Chaotic Card",
