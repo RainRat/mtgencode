@@ -105,5 +105,19 @@ class TestMtgCurve(unittest.TestCase):
             code, out, err = self.run_main(['testdata/uthros.json', '--no-color'])
             self.assertIn("7+", out)
 
+    def test_curve_json_output(self):
+        code, out, err = self.run_main(['testdata/uthros.json', '--json'])
+        self.assertEqual(code, 0)
+        self.assertIn('"total_cards": 1', out)
+        self.assertIn('"average_cmc": 3.0', out)
+        self.assertIn('"cmc_curve"', out)
+        self.assertIn('"color_breakdown"', out)
+
+    def test_curve_csv_output(self):
+        code, out, err = self.run_main(['testdata/uthros.json', '--csv'])
+        self.assertEqual(code, 0)
+        self.assertIn("CMC,Count,Percent,Creatures,Non-Creatures", out)
+        self.assertIn("Color,Avg CMC,Count,Percentage", out)
+
 if __name__ == '__main__':
     unittest.main()
