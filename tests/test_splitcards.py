@@ -555,3 +555,62 @@ def test_splitcards_auto_format_detection(tmp_path):
     # Content should be encoded text format even though file ends in .json
     content = out_override1.read_text()
     assert "|1Card Alpha" in content
+
+
+def test_splitcards_xml_format(tmp_path):
+    infile = tmp_path / "input.json"
+    data = {
+        "data": {
+            "MOM": {
+                "name": "March of the Machine",
+                "code": "MOM",
+                "type": "expansion",
+                "cards": [
+                    {"name": "Card A", "types": ["Creature"], "rarity": "common", "power": "2", "toughness": "2"},
+                    {"name": "Card B", "types": ["Instant"], "rarity": "rare"}
+                ]
+            }
+        }
+    }
+    infile.write_text(json.dumps(data))
+
+    out1 = tmp_path / "out1.xml"
+    out2 = tmp_path / "out2.xml"
+
+    # Test explicit -f xml
+    args_xml = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out1), str(out2),
+        "--ratios", "0.5", "0.5",
+        "-f", "xml",
+        "-s"
+    ]
+    with patch("sys.argv", args_xml):
+        main()
+
+    assert out1.exists()
+    assert out2.exists()
+
+    content1 = out1.read_text()
+    assert '<?xml version="1.0" encoding="UTF-8"?>' in content1
+    assert '<cockatrice_carddatabase version="4">' in content1
+    assert '<card>' in content1
+    assert '<name>Card A</name>' in content1
+
+    # Test auto-detection via .xml extension
+    out_auto1 = tmp_path / "auto1.xml"
+    out_auto2 = tmp_path / "auto2.xml"
+    args_auto = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_auto1), str(out_auto2),
+        "--ratios", "0.5", "0.5",
+        "-s"
+    ]
+    with patch("sys.argv", args_auto):
+        main()
+
+    assert out_auto1.exists()
+    content_auto1 = out_auto1.read_text()
+    assert '<cockatrice_carddatabase version="4">' in content_auto1
