@@ -555,3 +555,47 @@ def test_splitcards_auto_format_detection(tmp_path):
     # Content should be encoded text format even though file ends in .json
     content = out_override1.read_text()
     assert "|1Card Alpha" in content
+
+
+def test_splitcards_xml_export(tmp_path):
+    infile = tmp_path / "input.txt"
+    cards = ["|1Card Alpha|7common|5Creature\n\n", "|1Card Beta|7common|5Creature\n\n"]
+    infile.write_text("".join(cards))
+
+    # 1. Test auto-detection via .xml extension
+    out_xml1 = tmp_path / "split1.xml"
+    out_xml2 = tmp_path / "split2.xml"
+    args_xml_auto = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_xml1), str(out_xml2),
+        "--ratios", "0.5", "0.5",
+        "-s"
+    ]
+    with patch("sys.argv", args_xml_auto):
+        main()
+
+    content1 = out_xml1.read_text()
+    assert '<?xml version="1.0" encoding="UTF-8"?>' in content1
+    assert '<cockatrice_carddatabase version="3">' in content1
+    assert '<cards>' in content1
+    assert '<name>Card Alpha</name>' in content1
+    assert '</cockatrice_carddatabase>' in content1
+
+    # 2. Test explicit -f xml option flag
+    out_exp1 = tmp_path / "out1.dat"
+    out_exp2 = tmp_path / "out2.dat"
+    args_xml_flag = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_exp1), str(out_exp2),
+        "--ratios", "0.5", "0.5",
+        "-f", "xml",
+        "-s"
+    ]
+    with patch("sys.argv", args_xml_flag):
+        main()
+
+    content_exp1 = out_exp1.read_text()
+    assert '<cockatrice_carddatabase version="3">' in content_exp1
+    assert '<name>Card Alpha</name>' in content_exp1
