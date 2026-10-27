@@ -138,7 +138,7 @@ def apply_replacement_to_string(s, is_regex, pattern, replacement, flags):
     if is_regex:
         try:
             return re.sub(pattern, replacement, s, flags=flags)
-        except Exception as e:
+        except re.error as e:
             raise ValueError(f"Regex substitution failed for pattern '{pattern}': {e}")
     else:
         return s.replace(pattern, replacement)
