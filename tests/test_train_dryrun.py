@@ -108,5 +108,35 @@ class TestTrainDryRun(unittest.TestCase):
         out = buf.getvalue()
         self.assertIn("Dry Run Summary: Neural network training configuration (train mode).", out)
 
+    def test_interactive_missing_dataset(self):
+        err_buf = io.StringIO()
+        test_args = ['train.py', '--mode', 'train']
+        real_exists = os.path.exists
+        with patch.object(sys, 'argv', test_args), \
+             patch('sys.stdin.isatty', return_value=True), \
+             patch('os.path.exists', side_effect=lambda path: False if path == 'data/output.txt' else real_exists(path)), \
+             patch('sys.stderr', err_buf), \
+             self.assertRaises(SystemExit) as cm:
+            runpy.run_module('train', run_name='__main__')
+
+        self.assertEqual(cm.exception.code, 1)
+        err = err_buf.getvalue()
+        self.assertIn("Error: Default training data file (data/output.txt) not found.", err)
+
+    def test_interactive_missing_checkpoint(self):
+        err_buf = io.StringIO()
+        test_args = ['train.py', '--mode', 'sample', '--checkpoint', 'missing_cp.pt']
+        real_exists = os.path.exists
+        with patch.object(sys, 'argv', test_args), \
+             patch('sys.stdin.isatty', return_value=True), \
+             patch('os.path.exists', side_effect=lambda path: False if path == 'missing_cp.pt' else real_exists(path)), \
+             patch('sys.stderr', err_buf), \
+             self.assertRaises(SystemExit) as cm:
+            runpy.run_module('train', run_name='__main__')
+
+        self.assertEqual(cm.exception.code, 1)
+        err = err_buf.getvalue()
+        self.assertIn("Error: Checkpoint file 'missing_cp.pt' not found.", err)
+
 if __name__ == '__main__':
     unittest.main()

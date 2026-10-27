@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -466,6 +467,22 @@ if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
     
+    # Graceful handling for missing input files in interactive terminal sessions
+    if args.mode == "train" and not args.dry_run and args.infile == "data/output.txt" and not os.path.exists(args.infile) and sys.stdin.isatty():
+        parser.print_help(sys.stderr)
+        print("\nError: Default training data file (data/output.txt) not found. "
+              "Please encode card data first (for example, python3 encode.py data/AllPrintings.json -o data/output.txt) "
+              "or specify an input file with --infile.",
+              file=sys.stderr)
+        sys.exit(1)
+
+    if args.mode == "sample" and not args.dry_run and not os.path.exists(args.checkpoint) and sys.stdin.isatty():
+        parser.print_help(sys.stderr)
+        print(f"\nError: Checkpoint file '{args.checkpoint}' not found. "
+              "Please train a model first using '--mode train' or specify a checkpoint file with '--checkpoint'.",
+              file=sys.stderr)
+        sys.exit(1)
+
     if args.mode == "train":
         train(args)
     else:
