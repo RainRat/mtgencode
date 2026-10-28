@@ -211,5 +211,33 @@ class TestMtgDeckgenFormats(unittest.TestCase):
         stderr = mock_stderr.getvalue()
         self.assertIn("Sideboard:", stderr)
 
+    @patch('jdecode.mtg_open_file')
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_format_short_option_flag(self, mock_stderr, mock_stdout, mock_open):
+        """Test that short option flag -f correctly sets the deck format."""
+        creature = cardlib.Card({
+            'name': 'Bear',
+            'types': ['Creature'],
+            'manaCost': '{1}{G}',
+            'rarity': 'common',
+            'text': ''
+        })
+        spell = cardlib.Card({
+            'name': 'Growth',
+            'types': ['Instant'],
+            'manaCost': '{G}',
+            'rarity': 'common',
+            'text': ''
+        })
+        mock_open.return_value = [creature, spell]
+
+        with patch('sys.argv', ['mtg_deckgen.py', 'dummy.json', '-f', 'limited', '--seed', '42']):
+            mtg_deckgen.main()
+
+        output = mock_stdout.getvalue()
+        self.assertIn("Bear", output)
+        self.assertIn("Forest", output)
+
 if __name__ == '__main__':
     unittest.main()

@@ -175,7 +175,7 @@ Usage Examples:
 
     # Group: Deck Configuration
     deck_group = parser.add_argument_group('Deck Configuration')
-    deck_group.add_argument('--format', choices=['commander', 'standard', 'brawl', 'pauper', 'limited'], default='commander',
+    deck_group.add_argument('-f', '--format', choices=['commander', 'standard', 'brawl', 'pauper', 'limited'], default='commander',
                             help='Deck format (Default: commander).')
     deck_group.add_argument('--preset', choices=['aggro', 'control', 'midrange', 'ramp'],
                             help='Apply strategic deck archetype composition preset (aggro, control, midrange, ramp) adjusting creature/spell/land counts and mana curve targets.')
