@@ -204,5 +204,165 @@ class TestMtgManabaseGaps(unittest.TestCase):
                     self.assertEqual(cm.exception.code, 1)
                     self.assertIn("Error: Mana base calculation requires an input dataset", fake_err.getvalue())
 
+    def test_calculate_manabase_bside_include_text(self):
+        card = MagicMock(spec=cardlib.Card)
+        card.is_land = False
+        card.cost = MagicMock(spec=Manacost)
+        card.cost.allsymbols = {}
+        card.text = MagicMock(spec=Manatext)
+        card.text.costs = []
+
+        bside = MagicMock()
+        bside.cost = MagicMock(spec=Manacost)
+        bside.cost.allsymbols = {}
+        bside.text = MagicMock(spec=Manatext)
+        act_cost = MagicMock(spec=Manacost)
+        act_cost.allsymbols = {'B': 2}
+        bside.text.costs = [act_cost]
+
+        card.bside = bside
+
+        rec, pips, total = calculate_manabase([card], 10, include_text=True)
+        self.assertEqual(total, 2)
+        self.assertEqual(pips['B'], 2)
+        self.assertEqual(rec['Swamp'], 10)
+
+    def test_main_no_matching_cards_quiet_and_verbose(self):
+        with patch('os.path.exists', return_value=True):
+            with patch('jdecode.mtg_open_file', return_value=[]):
+                with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                    with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '-g', 'NonExistent']):
+                        main()
+                        self.assertIn("No cards found matching the criteria.", fake_err.getvalue())
+
+                with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                    with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '-g', 'NonExistent', '-q']):
+                        main()
+                        self.assertEqual(fake_err.getvalue(), "")
+
+    def test_main_deck_output_with_set_code_and_number(self):
+        card = MagicMock()
+        card.is_land = False
+        card.name = "Serra Angel"
+        card.set_code = "mom"
+        card.number = "123"
+        card.cost = MagicMock(spec=Manacost)
+        card.cost.allsymbols = {'W': 2}
+        card.text = MagicMock(spec=Manatext)
+        card.text.costs = []
+        card.bside = None
+
+        with patch('os.path.exists', return_value=True):
+            with patch('jdecode.mtg_open_file', return_value=[card]):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '--deck']):
+                        main()
+                        output = fake_out.getvalue()
+                        self.assertIn("1 Serra Angel (MOM) 123", output)
+                        self.assertIn("24 Plains", output)
+
+    def test_main_table_output_with_color(self):
+        card = MagicMock(spec=cardlib.Card)
+        card.is_land = False
+        card.cost = MagicMock(spec=Manacost)
+        card.cost.allsymbols = {'W': 1, 'U': 1}
+        card.text = MagicMock(spec=Manatext)
+        card.text.costs = []
+        card.bside = None
+
+        with patch('os.path.exists', return_value=True):
+            with patch('jdecode.mtg_open_file', return_value=[card]):
+                with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                    with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '--color', '--lands', '20']):
+                        main()
+                        output = fake_out.getvalue()
+                        self.assertIn("MANA BASE ADVISOR", output)
+                        self.assertIn("\033[", output)
+
+    def test_main_table_outfile_writing(self):
+        card = MagicMock(spec=cardlib.Card)
+        card.is_land = False
+        card.cost = MagicMock(spec=Manacost)
+        card.cost.allsymbols = {'R': 1}
+        card.text = MagicMock(spec=Manatext)
+        card.text.costs = []
+        card.bside = None
+
+        outfile = os.path.join(self.tmpdir.name if hasattr(self, 'tmpdir') else '/tmp', 'manabase_table.txt')
+        if os.path.exists(outfile):
+            os.remove(outfile)
+
+        real_exists = os.path.exists
+        def exists_side_effect(path):
+            if path == 'dummy.json':
+                return True
+            return real_exists(path)
+
+        try:
+            with patch('os.path.exists', side_effect=exists_side_effect):
+                with patch('jdecode.mtg_open_file', return_value=[card]):
+                    with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '-o', outfile, '-v', '--no-color']):
+                        main()
+                        self.assertTrue(os.path.exists(outfile))
+                        with open(outfile, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            self.assertIn("MANA BASE ADVISOR", content)
+                            self.assertIn("Mountain", content)
+        finally:
+            if os.path.exists(outfile):
+                os.remove(outfile)
+
+    def test_main_default_dataset_notice_interactive(self):
+        real_exists = os.path.exists
+        def exists_side_effect(path):
+            if 'AllPrintings.json' in path:
+                return True
+            return real_exists(path)
+
+        with patch('sys.stdin.isatty', return_value=True):
+            with patch('os.path.exists', side_effect=exists_side_effect):
+                with patch('jdecode.mtg_open_file', return_value=[]):
+                    with patch('sys.stderr', new=io.StringIO()) as fake_err:
+                        with patch('sys.argv', ['mtg_manabase.py']):
+                            main()
+                            self.assertIn("Notice: Using default dataset:", fake_err.getvalue())
+
+    def test_main_auto_color_tty(self):
+        card = MagicMock(spec=cardlib.Card)
+        card.is_land = False
+        card.cost = MagicMock(spec=Manacost)
+        card.cost.allsymbols = {'W': 1}
+        card.text = MagicMock(spec=Manatext)
+        card.text.costs = []
+        card.bside = None
+
+        fake_out = io.StringIO()
+        fake_out.isatty = lambda: True
+
+        with patch('os.path.exists', return_value=True):
+            with patch('jdecode.mtg_open_file', return_value=[card]):
+                with patch('sys.stdout', fake_out):
+                    with patch('sys.argv', ['mtg_manabase.py', 'dummy.json']):
+                        main()
+                        output = fake_out.getvalue()
+                        self.assertIn("MANA BASE ADVISOR", output)
+                        self.assertIn("\033[", output)
+
+    def test_main_module_execution(self):
+        import runpy
+        card = MagicMock(spec=cardlib.Card)
+        card.is_land = False
+        card.cost = MagicMock(spec=Manacost)
+        card.cost.allsymbols = {'W': 1}
+        card.text = MagicMock(spec=Manatext)
+        card.text.costs = []
+        card.bside = None
+
+        with patch('os.path.exists', return_value=True):
+            with patch('jdecode.mtg_open_file', return_value=[card]):
+                with patch('sys.stdout', new=io.StringIO()):
+                    with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '--no-color']):
+                        runpy.run_path('scripts/mtg_manabase.py', run_name='__main__')
+
 if __name__ == '__main__':
     unittest.main()
