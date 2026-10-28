@@ -224,8 +224,9 @@ class TestMtgManabase(unittest.TestCase):
         out_json = "test_manabase_out_flag.json"
         out_csv = "test_manabase_out_flag.csv"
         out_deck = "test_manabase_out_flag.deck"
+        out_md = "test_manabase_out_flag.md"
 
-        for filepath in (out_json, out_csv, out_deck):
+        for filepath in (out_json, out_csv, out_deck, out_md):
             if os.path.exists(filepath):
                 os.remove(filepath)
 
@@ -260,10 +261,48 @@ class TestMtgManabase(unittest.TestCase):
                         content = f.read()
                         self.assertIn("Plains", content)
                         self.assertIn("Island", content)
+
+            # Test -o with .md auto-detection
+            with patch('jdecode.mtg_open_file', return_value=[card_w]):
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '-o', out_md, '--lands', '20']):
+                    main()
+                    self.assertTrue(os.path.exists(out_md))
+                    with open(out_md, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        self.assertIn("# Mana Base Advisor Summary", content)
+                        self.assertIn("## Spell Pip Requirements", content)
+                        self.assertIn("| Color | Pips | Requirement % |", content)
+                        self.assertIn("## Recommended Land Distribution (20 lands)", content)
+                        self.assertIn("| Basic Land | Count | Allocation % |", content)
         finally:
-            for filepath in (out_json, out_csv, out_deck):
+            for filepath in (out_json, out_csv, out_deck, out_md):
                 if os.path.exists(filepath):
                     os.remove(filepath)
+
+    def test_main_markdown_flags(self):
+        card_w = MagicMock(spec=cardlib.Card)
+        card_w.is_land = False
+        card_w.cost = MagicMock(spec=Manacost)
+        card_w.cost.allsymbols = {'W': 2, 'R': 1}
+        card_w.text = MagicMock(spec=Manatext)
+        card_w.text.costs = []
+        card_w.bside = None
+
+        with patch('jdecode.mtg_open_file', return_value=[card_w]):
+            # Test stdout output with -m / --markdown
+            with patch('sys.stdout', new=io.StringIO()) as fake_out:
+                with patch('sys.argv', ['mtg_manabase.py', 'dummy.json', '-m', '--lands', '18']):
+                    main()
+                    output = fake_out.getvalue()
+                    self.assertIn("# Mana Base Advisor Summary", output)
+                    self.assertIn("* **Total Cards Evaluated:** 1", output)
+                    self.assertIn("* **Target Lands:** 18", output)
+                    self.assertIn("| Color | Pips | Requirement % |", output)
+                    self.assertIn("| W | 2 | 66.7% |", output)
+                    self.assertIn("| R | 1 | 33.3% |", output)
+                    self.assertIn("## Recommended Land Distribution (18 lands)", output)
+                    self.assertIn("| Plains | 12 | 66.7% |", output)
+                    self.assertIn("| Mountain | 6 | 33.3% |", output)
 
 if __name__ == '__main__':
     unittest.main()
