@@ -115,8 +115,9 @@ Usage Examples:
   # Use the default dataset to calculate a mana base for a specific set (40-card Limited deck, 17 lands)
   python3 scripts/mtg_manabase.py data/AllPrintings.json --set MOM --format limited
 
-  # Export recommended mana base report to a JSON file using -o/--outfile
+  # Export recommended mana base report to a JSON file or Markdown table using -o/--outfile
   python3 scripts/mtg_manabase.py my_deck.txt -o manabase.json
+  python3 scripts/mtg_manabase.py my_deck.txt -o manabase.md
 
   # Include activation costs in the pip analysis
   python3 scripts/mtg_manabase.py my_deck.txt --include-text
@@ -154,6 +155,8 @@ Usage Examples:
     fmt_group_title = parser.add_argument_group('Output Format')
     fmt_group = fmt_group_title.add_mutually_exclusive_group()
     fmt_group.add_argument('--table', action='store_true', help='Generate a formatted table (Default).')
+    fmt_group.add_argument('-m', '--md', '--markdown', dest='use_md', action='store_true',
+                           help='Generate a Markdown table report (Auto-detected for .md or .markdown).')
     fmt_group.add_argument('-j', '--json', action='store_true', help='Generate a structured JSON file.')
     fmt_group.add_argument('--csv', action='store_true', help='Generate a CSV file.')
     fmt_group.add_argument('--deck', '--decklist', dest='deck_out', action='store_true',
@@ -225,10 +228,11 @@ Usage Examples:
         sys.exit(1)
 
     # Auto-detect format from extension
-    if not (args.json or args.csv or args.table or args.deck_out):
+    if not (args.json or args.csv or args.use_md or args.table or args.deck_out):
         if args.outfile:
             if args.outfile.endswith('.json'): args.json = True
             elif args.outfile.endswith('.csv'): args.csv = True
+            elif args.outfile.endswith(('.md', '.markdown')): args.use_md = True
             elif args.outfile.endswith('.deck') or args.outfile.endswith('.dek'): args.deck_out = True
             else: args.table = True
         else:
@@ -238,7 +242,7 @@ Usage Examples:
     use_color = False
     if args.color is True:
         use_color = True
-    elif args.color is None and not (args.json or args.csv or args.deck_out) and sys.stdout.isatty():
+    elif args.color is None and not (args.json or args.csv or args.use_md or args.deck_out) and sys.stdout.isatty():
         use_color = True
 
     # Load and filter cards
@@ -316,6 +320,32 @@ Usage Examples:
             for land, count in recommendation.items():
                 percent = (count / args.lands * 100) if args.lands > 0 else 0
                 writer.writerow(['Recommended Land', land, count, f"{percent:.2f}%"])
+        elif args.use_md:
+            output_f.write("# Mana Base Advisor Summary\n\n")
+            output_f.write(f"* **Total Cards Evaluated:** {len(cards)}\n")
+            output_f.write(f"* **Target Lands:** {args.lands}\n")
+            output_f.write(f"* **Total Pips:** {total_pips}\n\n")
+
+            output_f.write("## Spell Pip Requirements\n\n")
+            output_f.write("| Color | Pips | Requirement % |\n")
+            output_f.write("| :--- | ---: | ---: |\n")
+            for c in 'WUBRG':
+                count = pips[c]
+                percent = (count / total_pips * 100) if total_pips > 0 else 0
+                output_f.write(f"| {c} | {count} | {percent:.1f}% |\n")
+            output_f.write("\n")
+
+            output_f.write(f"## Recommended Land Distribution ({args.lands} lands)\n\n")
+            output_f.write("| Basic Land | Count | Allocation % |\n")
+            output_f.write("| :--- | ---: | ---: |\n")
+            land_order = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']
+            for land in land_order:
+                count = recommendation.get(land, 0)
+                if count == 0 and land != 'Wastes': continue
+                if land == 'Wastes' and count == 0 and total_pips > 0: continue
+                percent = (count / args.lands * 100) if args.lands > 0 else 0
+                output_f.write(f"| {land} | {count} | {percent:.1f}% |\n")
+            output_f.write("\n")
         else:
             # 1. Header
             utils.print_header("MANA BASE ADVISOR", count=len(cards), use_color=use_color, file=output_f)
