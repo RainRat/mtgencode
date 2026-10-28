@@ -54,24 +54,18 @@ def rare_grams(card, thresh = 2, grams = 2):
                 rares += 1
     return rares
 
-def list_only(l, items):
-    for e in l:
-        if e not in items:
-            return False
-    return True
-
 def check_types(card):
     if 'instant' in card.types:
-        return list_only(card.types, ['tribal', 'instant'])
+        return all(t in ('tribal', 'instant') for t in card.types)
     if 'sorcery' in card.types:
-        return list_only(card.types, ['tribal', 'sorcery'])
+        return all(t in ('tribal', 'sorcery') for t in card.types)
     if 'creature' in card.types:
-        return list_only(card.types, ['tribal', 'creature', 'artifact', 'land', 'enchantment'])
+        return all(t in ('tribal', 'creature', 'artifact', 'land', 'enchantment') for t in card.types)
     if 'planeswalker' in card.types:
-        return list_only(card.types, ['tribal', 'planeswalker', 'artifact', 'land', 'enchantment'])
+        return all(t in ('tribal', 'planeswalker', 'artifact', 'land', 'enchantment') for t in card.types)
     if 'battle' in card.types:
-        return list_only(card.types, ['tribal', 'battle', 'artifact', 'land', 'enchantment'])
-    return list_only(card.types, ['tribal', 'artifact', 'land', 'enchantment'])
+        return all(t in ('tribal', 'battle', 'artifact', 'land', 'enchantment') for t in card.types)
+    return all(t in ('tribal', 'artifact', 'land', 'enchantment') for t in card.types)
 
 def check_pt(card):
     if 'battle' in card.types:
@@ -269,7 +263,7 @@ def check_activated(card):
             elif ':' in subtext:
                 activated += 1
     if activated > 0:
-        return list_only(card.types, ['creature', 'land', 'artifact', 'enchantment', 'planeswalker', 'tribal'])
+        return all(t in ('creature', 'land', 'artifact', 'enchantment', 'planeswalker', 'tribal') for t in card.types)
     return None
 
 def check_triggered(card):
@@ -305,7 +299,7 @@ def check_triggered(card):
                 triggered += 1
             
     if triggered > 0:
-        return list_only(card.types, ['creature', 'land', 'artifact', 'enchantment', 'planeswalker', 'tribal'])
+        return all(t in ('creature', 'land', 'artifact', 'enchantment', 'planeswalker', 'tribal') for t in card.types)
     elif triggered_2:
         return True
     return None
