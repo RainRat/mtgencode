@@ -121,7 +121,7 @@ Usage Examples:
                 sys.exit(1)
             with open(args.infile, 'rt', encoding='utf-8') as f:
                 cardstats = [line.strip().split('|') for line in f if len(line.split('|')) >= 4]
-    except Exception as e:
+    except (OSError, UnicodeDecodeError) as e:
         filename = args.infile if args.infile != '-' else 'stdin'
         print(f"Error reading {filename}: {e}", file=sys.stderr)
         sys.exit(1)
