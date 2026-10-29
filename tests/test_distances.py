@@ -281,5 +281,113 @@ class TestDistances(unittest.TestCase):
             self.assertEqual(cm.exception.code, 0)
         self.assertTrue(os.path.exists(outfile_flag))
 
+    @patch('scripts.distances.CBOW')
+    @patch('scripts.distances.Namediff')
+    def test_main_markdown_export_and_autodetect(self, mock_namediff_cls, mock_cbow_cls):
+        infile = os.path.join('testdata', 'tarkir.json')
+        outfile_explicit = os.path.join(self.temp_dir.name, 'out.txt')
+        outfile_autodetect = os.path.join(self.temp_dir.name, 'out.md')
+
+        mock_nd = MagicMock()
+        mock_nd.nearest_par.side_effect = lambda names, n=1: [[(0.85, 'Target Name')] for _ in names]
+        mock_namediff_cls.return_value = mock_nd
+
+        mock_cb = MagicMock()
+        mock_cb.nearest_par.side_effect = lambda cards, n=1: [[(0.92, 'Target Card')] for _ in cards]
+        mock_cbow_cls.return_value = mock_cb
+
+        # Test explicit use_markdown=True
+        distances.main(infile, outfile_explicit, verbose=False, parallel=True, use_markdown=True)
+        self.assertTrue(os.path.exists(outfile_explicit))
+        with open(outfile_explicit, 'r', encoding='utf-8') as f:
+            content = f.read()
+        self.assertIn('| Index | Name | Name Similarity | Card Similarity |', content)
+        self.assertIn('| 0 |', content)
+        self.assertIn('0.8500 | 0.9200 |', content)
+
+        # Test auto-detection via .md extension
+        distances.main(infile, outfile_autodetect, verbose=False, parallel=True)
+        self.assertTrue(os.path.exists(outfile_autodetect))
+        with open(outfile_autodetect, 'r', encoding='utf-8') as f:
+            content_auto = f.read()
+        self.assertEqual(content, content_auto)
+
+    @patch('scripts.distances.CBOW')
+    @patch('scripts.distances.Namediff')
+    def test_main_summary_only(self, mock_namediff_cls, mock_cbow_cls):
+        import json
+        infile = os.path.join('testdata', 'tarkir.json')
+        outfile_txt = os.path.join(self.temp_dir.name, 'summary.txt')
+        outfile_json = os.path.join(self.temp_dir.name, 'summary.json')
+        outfile_csv = os.path.join(self.temp_dir.name, 'summary.csv')
+        outfile_md = os.path.join(self.temp_dir.name, 'summary.md')
+
+        mock_nd = MagicMock()
+        mock_nd.nearest_par.side_effect = lambda names, n=1: [[(1.0, 'Target Name')] for _ in names]
+        mock_namediff_cls.return_value = mock_nd
+
+        mock_cb = MagicMock()
+        mock_cb.nearest_par.side_effect = lambda cards, n=1: [[(0.8, 'Target Card')] for _ in cards]
+        mock_cbow_cls.return_value = mock_cb
+
+        # Plain summary text
+        distances.main(infile, outfile_txt, verbose=False, parallel=True, summary_only=True)
+        self.assertTrue(os.path.exists(outfile_txt))
+        with open(outfile_txt, 'r', encoding='utf-8') as f:
+            txt_content = f.read()
+        self.assertIn('Distance Summary', txt_content)
+        self.assertIn('Name Similarity Avg: 1.0000', txt_content)
+
+        # Summary JSON
+        distances.main(infile, outfile_json, verbose=False, parallel=True, summary_only=True, use_json=True)
+        self.assertTrue(os.path.exists(outfile_json))
+        with open(outfile_json, 'r', encoding='utf-8') as f:
+            json_data = json.load(f)
+        self.assertEqual(json_data['total_records'], 1)
+        self.assertEqual(json_data['name_similarity']['average'], 1.0)
+        self.assertEqual(json_data['name_similarity']['duplicates'], 1)
+
+        # Summary CSV
+        distances.main(infile, outfile_csv, verbose=False, parallel=True, summary_only=True, use_csv=True)
+        self.assertTrue(os.path.exists(outfile_csv))
+        with open(outfile_csv, 'r', encoding='utf-8') as f:
+            csv_content = f.read()
+        self.assertIn('Category,Avg Similarity,Duplicates', csv_content)
+        self.assertIn('Names,1.0000,1', csv_content)
+
+        # Summary Markdown
+        distances.main(infile, outfile_md, verbose=False, parallel=True, summary_only=True, use_markdown=True)
+        self.assertTrue(os.path.exists(outfile_md))
+        with open(outfile_md, 'r', encoding='utf-8') as f:
+            md_content = f.read()
+        self.assertIn('| Category | Avg Similarity | Duplicates |', md_content)
+        self.assertIn('| Names | 1.0000 | 1 |', md_content)
+
+    @patch('cbow.CBOW')
+    @patch('namediff.Namediff')
+    def test_cli_markdown_and_summary_flags(self, mock_namediff_cls, mock_cbow_cls):
+        infile = os.path.join('testdata', 'tarkir.json')
+        outfile_md = os.path.join(self.temp_dir.name, 'out_summary.md')
+
+        mock_nd = MagicMock()
+        mock_nd.nearest.return_value = [(0.9, 'Target')]
+        mock_nd.nearest_par.side_effect = lambda names, n=1: [[(0.9, 'Target')] for _ in names]
+        mock_namediff_cls.return_value = mock_nd
+
+        mock_cb = MagicMock()
+        mock_cb.nearest.return_value = [(0.8, 'Target')]
+        mock_cb.nearest_par.side_effect = lambda cards, n=1: [[(0.8, 'Target')] for _ in cards]
+        mock_cbow_cls.return_value = mock_cb
+
+        test_args = ['distances.py', infile, outfile_md, '-s', '-m']
+        with patch.object(sys, 'argv', test_args):
+            with self.assertRaises(SystemExit) as cm:
+                runpy.run_module('scripts.distances', run_name='__main__')
+            self.assertEqual(cm.exception.code, 0)
+        self.assertTrue(os.path.exists(outfile_md))
+        with open(outfile_md, 'r', encoding='utf-8') as f:
+            content = f.read()
+        self.assertIn('| Category | Avg Similarity | Duplicates |', content)
+
 if __name__ == '__main__':
     unittest.main()
