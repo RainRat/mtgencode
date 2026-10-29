@@ -227,6 +227,8 @@ Usage Examples:
                         help='Input card data (JSON, encoded text, etc.). Defaults to stdin or data/AllPrintings.json.')
     io_group.add_argument('outfile', nargs='?', default=None,
                         help='Optional path to save the validation report.')
+    io_group.add_argument('-o', '--outfile', dest='outfile_opt', default=None,
+                        help='Optional path to save the validation report (alternative to positional argument).')
 
     # Group: Model Options
     model_group = parser.add_argument_group('Model Options')
@@ -251,7 +253,7 @@ Usage Examples:
     # Group: Output Format
     fmt_group = parser.add_argument_group('Output Format')
     fmt_group.add_argument('-j', '--json', action='store_true', help='Output results as JSON.')
-    fmt_group.add_argument('--csv', action='store_true', help='Output results as CSV.')
+    fmt_group.add_argument('-c', '--csv', action='store_true', help='Output results as CSV.')
     fmt_group.add_argument('-t', '--table', action='store_true', help='Output results as a table (Default).')
     fmt_group.add_argument('--only-valid', action='store_true', help='Only include valid cards in the output.')
 
@@ -262,7 +264,7 @@ Usage Examples:
 
     # Group: Filtering Options
     filter_group = parser.add_argument_group('Filtering Options')
-    filter_group.add_argument('--limit', type=int, default=0, help='Limit the number of cards to process.')
+    filter_group.add_argument('-n', '--limit', type=int, default=0, help='Limit the number of cards to process.')
     filter_group.add_argument('--grep', action='append', help='Filter cards by search pattern.')
     filter_group.add_argument('--set', action='append', help='Filter cards by set code.')
     filter_group.add_argument('--rarity', action='append', help='Filter cards by rarity.')
@@ -279,6 +281,17 @@ Usage Examples:
     color_group.add_argument('--no-color', action='store_false', dest='color', help='Disable ANSI color output.')
 
     args = parser.parse_args()
+
+    # Consolidate positional outfile and -o/--outfile flag
+    if args.outfile_opt:
+        args.outfile = args.outfile_opt
+
+    # Auto-detect format from extension if not explicitly requested
+    if args.outfile and not args.json and not args.csv:
+        if args.outfile.lower().endswith('.json'):
+            args.json = True
+        elif args.outfile.lower().endswith('.csv'):
+            args.csv = True
 
     # Smart positional argument handling
     if args.infile and args.infile != '-' and not os.path.exists(args.infile):
@@ -300,6 +313,9 @@ Usage Examples:
             args.infile = default_data
             if not args.quiet:
                 print(f"Notice: Using default dataset: {args.infile}", file=sys.stderr)
+        elif len(sys.argv) == 1:
+            parser.print_help()
+            sys.exit(0)
 
     # Load cards
     cards = jdecode.mtg_open_file(args.infile, verbose=args.verbose, grep=args.grep, sets=args.set, rarities=args.rarity, produces=args.produces)

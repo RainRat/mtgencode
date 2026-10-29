@@ -292,5 +292,71 @@ class TestMtgLlmValidateGaps(unittest.TestCase):
         self.assertIn("Notice: Using default dataset: data/AllPrintings.json", stderr.getvalue())
         mock_open_file.assert_called_with('data/AllPrintings.json', verbose=False, grep=None, sets=None, rarities=None, produces=None)
 
+    @patch('sys.stdin.isatty', return_value=True)
+    @patch('os.path.exists', return_value=False)
+    def test_main_interactive_no_args_no_default_dataset_prints_help(self, mock_exists, mock_isatty):
+        stdout = io.StringIO()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()):
+            with patch('sys.argv', ['mtg_llm_validate.py']):
+                with self.assertRaises(SystemExit) as cm:
+                    mtg_llm_validate.main()
+                self.assertEqual(cm.exception.code, 0)
+
+        output = stdout.getvalue()
+        self.assertIn("usage: mtg_llm_validate.py", output)
+
+    @patch('mtg_llm_validate.validate_cards_llm')
+    @patch('jdecode.mtg_open_file')
+    def test_main_outfile_option_flag_and_auto_json_detection(self, mock_open_file, mock_validate):
+        mock_card = MagicMock(spec=cardlib.Card)
+        mock_card.name = "Auto JSON Card"
+        mock_card.to_dict.return_value = {"name": "Auto JSON Card"}
+        mock_open_file.return_value = [mock_card]
+
+        mock_validate.return_value = [{
+            'card': mock_card,
+            'judgment': 'VALID',
+            'reason': 'Auto JSON Reason'
+        }]
+
+        m_open = mock_open()
+        with patch('builtins.open', m_open), patch('sys.stderr', io.StringIO()):
+            with patch('sys.argv', ['mtg_llm_validate.py', 'dummy.txt', '-o', 'report.json']):
+                mtg_llm_validate.main()
+
+        m_open.assert_called_with('report.json', 'w', encoding='utf8')
+        handle = m_open()
+        written = "".join(call.args[0] for call in handle.write.call_args_list)
+        data = json.loads(written)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['name'], "Auto JSON Card")
+
+    @patch('mtg_llm_validate.validate_cards_llm')
+    @patch('jdecode.mtg_open_file')
+    def test_main_short_csv_and_limit_flags(self, mock_open_file, mock_validate):
+        cards = [MagicMock(spec=cardlib.Card) for _ in range(5)]
+        for i, c in enumerate(cards):
+            c.name = f"Card {i}"
+            c.text = MagicMock()
+            c.text.text = "Rules text"
+        mock_open_file.return_value = cards
+
+        mock_validate.return_value = [{
+            'card': cards[0],
+            'judgment': 'VALID',
+            'reason': 'Short flags ok'
+        }]
+
+        stdout = io.StringIO()
+        with patch('sys.stdout', stdout), patch('sys.stderr', io.StringIO()):
+            with patch('sys.argv', ['mtg_llm_validate.py', 'dummy.txt', '-c', '-n', '1']):
+                mtg_llm_validate.main()
+
+        # Check limit passed to validate
+        self.assertEqual(len(mock_validate.call_args[0][0]), 1)
+        # Check CSV header in stdout
+        output = stdout.getvalue()
+        self.assertIn("name,judgment,reason,text", output)
+
 if __name__ == '__main__':
     unittest.main()
