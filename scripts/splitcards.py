@@ -28,8 +28,8 @@ def main():
 
     # Group: Output Format
     fmt_group = parser.add_argument_group('Output Format')
-    fmt_group.add_argument('-f', '--format', choices=['text', 'json', 'jsonl', 'csv'], default=None,
-                        help="Output format for the splits (text, json, jsonl, csv). Auto-detected from output file extensions if omitted.")
+    fmt_group.add_argument('-f', '--format', choices=['text', 'json', 'jsonl', 'csv', 'xml'], default=None,
+                        help="Output format for the splits (text, json, jsonl, csv, xml). Auto-detected from output file extensions if omitted.")
     fmt_group.add_argument('-e', '--encoding', default='std', choices=utils.formats,
                         help="The encoding format to use if output is text: 'std' (default), 'named', 'noname', 'rfields', 'old', 'norarity', 'vec', or 'custom'.")
     fmt_group.add_argument('--nolabel', action='store_true',
@@ -166,6 +166,8 @@ def main():
                 args.format = 'jsonl'
             elif first_ext == '.csv':
                 args.format = 'csv'
+            elif first_ext == '.xml':
+                args.format = 'xml'
             elif first_ext in ['.txt', '.text', '.encoded']:
                 args.format = 'text'
             else:
@@ -180,7 +182,7 @@ def main():
         '50-50': {'ratios': [0.5, 0.5], 'names': ['split1', 'split2']},
     }
 
-    ext_map = {'json': 'json', 'jsonl': 'jsonl', 'csv': 'csv', 'text': 'txt'}
+    ext_map = {'json': 'json', 'jsonl': 'jsonl', 'csv': 'csv', 'text': 'txt', 'xml': 'xml'}
     ext = ext_map.get(args.format, 'txt')
 
     if args.preset:
@@ -308,6 +310,27 @@ def main():
                         'rarity': d.get('rarity', ''),
                     }
                     writer.writerow(row)
+            elif args.format == 'xml':
+                from xml.sax.saxutils import escape
+                f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+                f.write('<cockatrice_carddatabase version="4">\n')
+                f.write('  <sets>\n')
+                found_sets = {}
+                for card in split_cards:
+                    if card.set_code:
+                        code = card.set_code.upper()
+                        if code not in found_sets:
+                            found_sets[code] = getattr(card, 'set_name', code)
+                if not found_sets:
+                    found_sets['CUS'] = 'Custom Set'
+                for code, name in sorted(found_sets.items()):
+                    f.write(f'    <set>\n      <name>{escape(code)}</name>\n      <longname>{escape(name)}</longname>\n      <settype>Custom</settype>\n    </set>\n')
+                f.write('  </sets>\n')
+                f.write('  <cards>\n')
+                for c in split_cards:
+                    f.write(c.to_cockatrice_xml() + '\n')
+                f.write('  </cards>\n')
+                f.write('</cockatrice_carddatabase>\n')
             else: # text (encoded)
                 # determine the encoding parameters
                 fmt_ordered = cardlib.fmt_ordered_default

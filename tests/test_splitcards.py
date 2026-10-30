@@ -112,6 +112,34 @@ def test_splitcards_csv(tmp_path):
         assert len(rows) == 1
         assert rows[0]['name'] == "C1"
 
+def test_splitcards_xml(tmp_path):
+    infile = tmp_path / "input.txt"
+    cards = ["|1Card Alpha|7common|5Creature\n\n", "|1Card Beta|7common|5Creature\n\n"]
+    infile.write_text("".join(cards))
+
+    out1 = tmp_path / "out1.xml"
+    out2 = tmp_path / "out2.xml"
+
+    args = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out1), str(out2),
+        "--ratios", "0.5", "0.5",
+        "--format", "xml",
+        "-s"
+    ]
+    with patch("sys.argv", args):
+        main()
+
+    assert out1.exists()
+    assert out2.exists()
+
+    xml_content = out1.read_text(encoding="utf-8")
+    assert '<cockatrice_carddatabase version="4">' in xml_content
+    assert '<card>' in xml_content
+    assert 'Card Alpha' in xml_content
+
+
 def test_splitcards_jsonl(tmp_path):
     infile = tmp_path / "input.txt"
     cards = ["|1Card Alpha|7common|5Creature\n\n", "|1Card Beta|7common|5Creature\n\n"]
@@ -538,7 +566,24 @@ def test_splitcards_auto_format_detection(tmp_path):
     data_jsonl = json.loads(line)
     assert data_jsonl['name'] == "Card Alpha"
 
-    # 4. Test explicit -f/--format overriding output file extension
+    # 4. Test .xml extension auto-detection
+    out_xml1 = tmp_path / "split1.xml"
+    out_xml2 = tmp_path / "split2.xml"
+    args_xml = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_xml1), str(out_xml2),
+        "--ratios", "0.5", "0.5",
+        "-s"
+    ]
+    with patch("sys.argv", args_xml):
+        main()
+
+    xml_text = out_xml1.read_text(encoding="utf-8")
+    assert '<cockatrice_carddatabase version="4">' in xml_text
+    assert 'Card Alpha' in xml_text
+
+    # 5. Test explicit -f/--format overriding output file extension
     out_override1 = tmp_path / "override1.json"
     out_override2 = tmp_path / "override2.json"
     args_override = [
