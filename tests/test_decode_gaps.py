@@ -352,5 +352,104 @@ class TestDecodeGaps(unittest.TestCase):
                 decode.main('dummy.json', table_out=True, verbose=False, quiet=True)
             self.assertIn("DECODED CARDS", stdout_cap.getvalue())
 
+    def test_creativity_hoverimg_scryfall_url_branches(self):
+        mock_nd = unittest.mock.MagicMock()
+        mock_nd.nearest_par.side_effect = lambda names, n=3, quiet=False: [[(0.123, names[0])]] * len(names)
+        mock_nd.names = {
+            "lightning bolt": "Lightning Bolt",
+            "counterspell": "Counterspell",
+            "unknown": "Unknown Card"
+        }
+        mock_nd.codes = {
+            "lightning bolt": "TST/1.jpg",
+            "counterspell": "invalidcode",
+            "unknown": None
+        }
+
+        mock_cbow = unittest.mock.MagicMock()
+        mock_cbow.nearest_par.side_effect = lambda cards, quiet=False: [[(0.456, "lightning bolt")]] * len(cards)
+
+        with patch('decode.Namediff', return_value=mock_nd), \
+             patch('decode.CBOW', return_value=mock_cbow):
+
+            # HTML with Scryfall image URL
+            with patch('decode.utils.get_scryfall_image_url', return_value="https://img.scryfall.com/bolt.jpg"):
+                stdout_cap = io.StringIO()
+                with patch('sys.stdout', stdout_cap):
+                    decode.main(self.temp_file.name, creativity=True, html=True, verbose=False, quiet=True)
+                html_out = stdout_cap.getvalue()
+                self.assertIn("https://img.scryfall.com/bolt.jpg", html_out)
+
+            # HTML without Scryfall image URL (fallback)
+            with patch('decode.utils.get_scryfall_image_url', return_value=None):
+                stdout_cap = io.StringIO()
+                with patch('sys.stdout', stdout_cap):
+                    decode.main(self.temp_file.name, creativity=True, html=True, verbose=False, quiet=True)
+                html_out_fallback = stdout_cap.getvalue()
+                self.assertIn("<div>Lightning Bolt:", html_out_fallback)
+
+            # Markdown with Scryfall URL vs without
+            with patch('decode.utils.get_scryfall_url', return_value="https://scryfall.com/card/tst/1"):
+                stdout_cap = io.StringIO()
+                with patch('sys.stdout', stdout_cap):
+                    decode.main(self.temp_file.name, creativity=True, md_out=True, verbose=False, quiet=True)
+                md_out = stdout_cap.getvalue()
+                self.assertIn("[Lightning Bolt](https://scryfall.com/card/tst/1)", md_out)
+
+            with patch('decode.utils.get_scryfall_url', return_value=None):
+                stdout_cap = io.StringIO()
+                with patch('sys.stdout', stdout_cap):
+                    decode.main(self.temp_file.name, creativity=True, md_out=True, verbose=False, quiet=True)
+                md_out_fallback = stdout_cap.getvalue()
+                self.assertIn("* Lightning Bolt:", md_out_fallback)
+
+    def test_file_export_json_jsonl_csv_verbose_with_pack_id(self):
+        mock_card = unittest.mock.MagicMock()
+        mock_card.pack_id = 1
+        mock_card.to_dict.return_value = {
+            "name": "Pack Card",
+            "manaCost": "{1}{R}",
+            "types": ["Creature"],
+            "supertypes": [],
+            "subtypes": ["Goblin"],
+            "text": "Haste",
+            "power": "2",
+            "toughness": "1",
+            "rarity": "common"
+        }
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            json_file = os.path.join(tmp_dir, "out.json")
+            jsonl_file = os.path.join(tmp_dir, "out.jsonl")
+            csv_file = os.path.join(tmp_dir, "out.csv")
+
+            with patch('decode.jdecode.mtg_open_file', return_value=[mock_card]), \
+                 patch('sys.stderr', new_callable=io.StringIO) as mock_stderr:
+
+                # JSON file export verbose
+                decode.main('dummy.json', oname=json_file, json_out=True, verbose=True, quiet=True)
+                self.assertIn("Writing json output to:", mock_stderr.getvalue())
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                self.assertEqual(data[0]['pack_id'], 1)
+
+                # JSONL file export verbose
+                mock_stderr.seek(0)
+                mock_stderr.truncate()
+                decode.main('dummy.json', oname=jsonl_file, jsonl_out=True, verbose=True, quiet=True)
+                self.assertIn("Writing jsonl output to:", mock_stderr.getvalue())
+                with open(jsonl_file, 'r', encoding='utf-8') as f:
+                    line = f.readline()
+                self.assertEqual(json.loads(line)['pack_id'], 1)
+
+                # CSV file export verbose
+                mock_stderr.seek(0)
+                mock_stderr.truncate()
+                decode.main('dummy.json', oname=csv_file, csv_out=True, verbose=True, quiet=True)
+                self.assertIn("Writing csv output to:", mock_stderr.getvalue())
+                with open(csv_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                self.assertIn("Pack Card", content)
+
 if __name__ == '__main__':
     unittest.main()
