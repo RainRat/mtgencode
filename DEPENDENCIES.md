@@ -121,33 +121,45 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
         ```
 
 2.  **Generate Reference Data and Vectors:**
-    The creativity analyzer compares your custom cards against a reference dataset of real cards. This requires two files in your `data/` folder:
+    The creativity analyzer compares your custom cards against a reference dataset of real cards. This requires three files in your `data/` folder:
+    *   `data/AllSets.json`: The official card database in MTGJSON format. The name matcher (`Namediff`) uses this file to look up card names and printings.
     *   `data/output.txt`: The reference card dataset in standard-encoded text format.
     *   `data/cbow.bin`: The compiled Word2Vec binary model.
 
-    **Important:** The cards in both files must be in the exact same order. Always use the stable ordering flag (`-s`) when generating them.
+    **Important:** The cards in `output.txt` and `cbow.bin` must be in the exact same order. Always use the stable ordering flag (`-s`) when generating them.
 
-    Follow these steps to generate both files:
+    Follow these steps to set up all three files:
 
-    *   **Step A: Create the reference dataset (`data/output.txt`)**
+    *   **Step A: Set up `data/AllSets.json`**
+        MTGJSON now names its full database `AllPrintings.json`. Copy or link your downloaded file to `data/AllSets.json`:
+        ```bash
+        cp data/AllPrintings.json data/AllSets.json
+        ```
+
+    *   **Step B: Create the reference dataset (`data/output.txt`)**
         ```bash
         python3 encode.py data/AllPrintings.json data/output.txt -s
         ```
 
-    *   **Step B: Create the vector training text (`data/cbow.txt`)**
+    *   **Step C: Create the vector training text (`data/cbow.txt`)**
         ```bash
         python3 encode.py data/AllPrintings.json data/cbow.txt -s -e vec
         ```
 
-    *   **Step C: Compile `cbow.bin` using the `word2vec` tool**
+    *   **Step D: Compile `cbow.bin` using the `word2vec` tool**
         ```bash
         ./word2vec -train data/cbow.txt -output data/cbow.bin -cbow 1 -size 200 -window 8 -negative 25 -hs 0 -sample 1e-4 -threads 20 -binary 1 -iter 15
         ```
 
 3.  **Run with Creativity:**
-    Once both `data/cbow.bin` and `data/output.txt` exist in your `data/` folder, you can run decoding with creativity analysis:
+    Once `data/AllSets.json`, `data/cbow.bin`, and `data/output.txt` exist in your `data/` folder, you can run decoding with creativity analysis:
     ```bash
     python3 decode.py encoded_output.txt decoded.txt --creativity
+    ```
+
+    You can also calculate bulk creativity and semantic distances using `scripts/distances.py`:
+    ```bash
+    python3 scripts/distances.py encoded_output.txt distances.txt --parallel
     ```
 
 ---
