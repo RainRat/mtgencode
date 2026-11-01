@@ -332,6 +332,8 @@ def sample(args):
         print(f"  Generation Length: {args.length} characters")
         print(f"  Temperature: {args.temp}")
         print(f"  Start Text Prompt: '{args.start_text}'")
+        target_outfile = getattr(args, 'outfile', None)
+        print(f"  Output Destination: {target_outfile if target_outfile and target_outfile != '-' else 'Console (sys.stdout)'}")
 
         whisper_map = {
             'Name': getattr(args, 'name', None),
@@ -364,7 +366,14 @@ def sample(args):
     model.load_state_dict(checkpoint['model_state_dict'])
     
     generated = generate_text(model, char_to_idx, idx_to_char, vocab_size, device, args)
-    print(generated)
+    outfile = getattr(args, 'outfile', None)
+    if outfile and outfile != '-':
+        with open(outfile, 'w', encoding='utf-8') as f:
+            f.write(generated)
+            if not generated.endswith('\n'):
+                f.write('\n')
+    else:
+        print(generated)
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -381,14 +390,14 @@ Usage Examples:
   # 3. Train the model (Requires PyTorch)
   python3 train.py --mode train --infile data/training_data.txt --epochs 20 --randomize_fields
 
-  # 4. Generate new cards from a checkpoint
-  python3 train.py --mode sample --checkpoint checkpoint.pt --length 2000 > generated.txt
+  # 4. Generate new cards from a checkpoint to a file using -o / --outfile
+  python3 train.py --mode sample --checkpoint checkpoint.pt --length 2000 -o generated.txt
 
-  # 4. Force specific attributes during generation (Uses legacy field order)
+  # 5. Force specific attributes during generation (Uses legacy field order)
   # This example forces the AI to design a Legendary Creature named "Uthros":
-  python3 train.py --mode sample --name "uthros" --supertypes "legendary" --types "creature"
+  python3 train.py --mode sample --checkpoint checkpoint.pt --name "uthros" --supertypes "legendary" --types "creature"
 
-  # 5. Decode results back to readable cards
+  # 6. Decode results back to readable cards
   python3 decode.py generated.txt decoded_cards.txt
 """
     )
@@ -399,6 +408,8 @@ Usage Examples:
                         help="Choose 'train' to teach the AI using your data, or 'sample' to create new cards.")
     gen_group.add_argument("--infile", type=str, default="data/output.txt",
                         help="Path to the encoded card file for training. Default: data/output.txt")
+    gen_group.add_argument("-o", "--outfile", type=str, default=None,
+                        help="Output file destination for sampled text generation (default: write to standard output).")
     gen_group.add_argument("--checkpoint", type=str, default="checkpoint.pt",
                         help="File path to save or load the model. Default: checkpoint.pt")
     gen_group.add_argument("-p", "--preview", "--dry-run", dest="dry_run", action="store_true",
