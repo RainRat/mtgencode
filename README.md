@@ -1383,7 +1383,7 @@ python3 scripts/sum.py distances.txt --dry-run
     *   `--csv`: Output summary in CSV format.
     *   `-p`, `--preview`, `--dry-run`: Print a dry run summary of distance statistics without writing output files.
     *   `--color` / `--no-color`: Enable or disable ANSI color output.
-*   **Note:** Like the `--creativity` flag in `decode.py`, these tools require `data/cbow.bin` and `data/output.txt`. See [DEPENDENCIES.md](DEPENDENCIES.md) for setup instructions.
+*   **Note:** Like the `--creativity` flag in `decode.py`, these tools require `data/AllSets.json`, `data/cbow.bin`, and `data/output.txt`. See [DEPENDENCIES.md](DEPENDENCIES.md) for setup instructions.
 
 ### `pairing.py`
 Pairs generated cards with nearest real Magic cards using continuous bag-of-words (CBOW) embeddings and n-gram perplexity metrics, and exports matched card pairs to a Magic Set Editor set file.
