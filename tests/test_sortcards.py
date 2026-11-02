@@ -178,5 +178,37 @@ class TestSortCards(unittest.TestCase):
                 content = f.read()
             self.assertIn("creatures", content)
 
+    def test_output_file_open_oserror(self):
+        import io
+        from unittest.mock import patch
+
+        card = Card({
+            "name": "Test Card",
+            "manaCost": "{1}{G}",
+            "types": ["Creature"],
+            "rarity": "Common",
+        })
+
+        invalid_path = "/nonexistent_dir_12345/sub/output.txt"
+        invalid_csv_path = "/nonexistent_dir_12345/sub/output.csv"
+
+        # Test text output error handling
+        captured_stderr = io.StringIO()
+        with patch("jdecode.mtg_open_file", return_value=[card]):
+            with patch("sys.stderr", captured_stderr):
+                with self.assertRaises(SystemExit) as cm:
+                    sortcards.main("dummy.json", invalid_path, quiet=True)
+                self.assertEqual(cm.exception.code, 1)
+        self.assertIn(f"Error opening output file {invalid_path}", captured_stderr.getvalue())
+
+        # Test CSV output error handling
+        captured_stderr = io.StringIO()
+        with patch("jdecode.mtg_open_file", return_value=[card]):
+            with patch("sys.stderr", captured_stderr):
+                with self.assertRaises(SystemExit) as cm:
+                    sortcards.main("dummy.json", invalid_csv_path, use_csv=True, quiet=True)
+                self.assertEqual(cm.exception.code, 1)
+        self.assertIn(f"Error opening output file {invalid_csv_path}", captured_stderr.getvalue())
+
 if __name__ == '__main__':
     unittest.main()
