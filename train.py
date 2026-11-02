@@ -393,6 +393,8 @@ Usage Examples:
 """
     )
 
+    parser.add_argument('-V', '--version', action='version', version='mtgencode 1.0.0')
+
     # Group: General Options
     gen_group = parser.add_argument_group('General Options')
     gen_group.add_argument("--mode", choices=["train", "sample"], default="train",
