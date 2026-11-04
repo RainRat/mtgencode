@@ -1367,6 +1367,13 @@ python3 scripts/distances.py generated_cards.txt distances.txt --parallel
 # Specify destination output file with -o / --outfile option flag
 python3 scripts/distances.py generated_cards.txt -o distances.txt --parallel
 
+# Export distance calculations to JSON or CSV format
+python3 scripts/distances.py generated_cards.txt distances.json
+python3 scripts/distances.py generated_cards.txt distances.csv --csv
+
+# Preview distance calculation settings without running (dry-run mode)
+python3 scripts/distances.py generated_cards.txt --dry-run
+
 # Summarize the results
 python3 scripts/sum.py distances.txt
 
@@ -1377,6 +1384,13 @@ python3 scripts/sum.py distances.txt --csv -o summary.csv
 # Preview distance summary statistics without writing output files (dry-run mode)
 python3 scripts/sum.py distances.txt --dry-run
 ```
+*   **`distances.py` Options:**
+    *   `-o FILE`, `--outfile FILE`: Path to save distance data (overrides positional output file path).
+    *   `-j`, `--json`: Export distance calculation results in structured JSON format (auto-detected if output file ends with `.json`).
+    *   `--csv`: Export distance calculation results in CSV format (auto-detected if output file ends with `.csv`).
+    *   `-p`, `--parallel`: Run calculations in parallel on all CPU cores for faster processing.
+    *   `-d`, `--dry-run`, `--preview`: Print a summary of distance analysis parameters (cards loaded, parallel status, output destination, and sample card preview) without running calculations or writing output files.
+    *   `-v`, `--verbose`: Enable detailed status messages.
 *   **`sum.py` Options:**
     *   `-o FILE`, `--outfile FILE`: Save summary results to a file (automatically detects `.json` or `.csv` format from extension).
     *   `-j`, `--json`: Output summary in structured JSON format.
