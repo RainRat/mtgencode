@@ -165,7 +165,7 @@ Usage Examples:
                         help='Input card data (JSON, CSV, XML, encoded text). '
                              'Defaults to stdin (-) or data/AllPrintings.json if run interactively. '
                              'If this is not a valid path, it is treated as a commander name query.')
-    io_group.add_argument('--outfile', help='Output decklist file (.txt or .dec). Prints to stdout if omitted.')
+    io_group.add_argument('-o', '--outfile', help='Output decklist file (.txt or .dec). Prints to stdout if omitted.')
 
     # Group: Output Format
     fmt_group_title = parser.add_argument_group('Output Format')
@@ -175,11 +175,11 @@ Usage Examples:
 
     # Group: Deck Configuration
     deck_group = parser.add_argument_group('Deck Configuration')
-    deck_group.add_argument('--format', choices=['commander', 'standard', 'brawl', 'pauper', 'limited'], default='commander',
+    deck_group.add_argument('-f', '--format', choices=['commander', 'standard', 'brawl', 'pauper', 'limited'], default='commander',
                             help='Deck format (Default: commander).')
     deck_group.add_argument('--preset', choices=['aggro', 'control', 'midrange', 'ramp'],
                             help='Apply strategic deck archetype composition preset (aggro, control, midrange, ramp) adjusting creature/spell/land counts and mana curve targets.')
-    deck_group.add_argument('--commander', help='Specific legendary creature to use as commander (case-insensitive).')
+    deck_group.add_argument('-c', '--commander', help='Specific legendary creature to use as commander (case-insensitive).')
     deck_group.add_argument('--creatures', type=int, help='Override target number of creatures.')
     deck_group.add_argument('--spells', type=int, help='Override target number of non-creature spells.')
     deck_group.add_argument('--lands', type=int, help='Override target number of lands.')

@@ -906,28 +906,28 @@ python3 scripts/mtg_analyze.py compare --set MOM --set ONE data/AllPrintings.jso
 Generates a complete Magic deck from a card pool. It supports Commander (EDH), Standard, Brawl, Pauper, and Limited formats, automatically handling commander color identity filtering and basic land distribution.
 ```bash
 # Generate a Commander deck with a random commander from a pool
-python3 scripts/mtg_deckgen.py data/AllPrintings.json --format commander
+python3 scripts/mtg_deckgen.py data/AllPrintings.json -f commander
 
 # Generate a deck using an archetype preset (aggro, control, midrange, ramp)
-python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard --preset aggro
+python3 scripts/mtg_deckgen.py data/AllPrintings.json -f standard --preset aggro
 
 # Generate a Commander deck with a specific commander
-python3 scripts/mtg_deckgen.py data/AllPrintings.json --commander "Atraxa, Praetors' Voice"
+python3 scripts/mtg_deckgen.py data/AllPrintings.json -c "Atraxa, Praetors' Voice"
 
 # Generate a Standard deck with a 15-card sideboard
-python3 scripts/mtg_deckgen.py data/AllPrintings.json --format standard --sideboard
+python3 scripts/mtg_deckgen.py data/AllPrintings.json -f standard --sideboard
 ```
 *   **Options:**
-    *   `--format {commander,standard,brawl,pauper,limited}`: Choose the deck format (Default: commander).
+    *   `-f`, `--format {commander,standard,brawl,pauper,limited}`: Choose the deck format (Default: commander).
     *   `--preset {aggro,control,midrange,ramp}`: Apply an archetype composition preset adjusting creature, spell, and land targets along with mana curve distribution.
-    *   `--commander NAME`: Specify a legendary creature to use as your commander.
+    *   `-c NAME`, `--commander NAME`: Specify a legendary creature to use as your commander.
     *   `--creatures N`, `--spells N`, `--lands N`: Override the target number of cards for each category.
     *   `--curve "1:5,2:10,..."`: Override the target mana curve for creatures.
     *   `--sideboard`: Generate a sideboard for the deck (default size: 15 for Standard/Pauper/Limited, 10 for Commander/Brawl).
     *   `--sideboard-size N`: Override the target number of cards for the sideboard.
     *   `-j`, `--json`: Export decklist in structured JSON format.
     *   `--csv`: Export decklist in CSV format.
-    *   `--outfile FILE`: Save the decklist to a file instead of printing to the console (auto-detects `.json` or `.csv` from extension).
+    *   `-o FILE`, `--outfile FILE`: Save the decklist to a file instead of printing to the console (auto-detects `.json` or `.csv` from extension).
 
 ### `mtg_manabase.py`
 Recommends a basic land distribution (Mana Base) for a decklist or card dataset. It analyzes the mana pips in casting costs and suggests a proportional count of basic lands (Plains, Islands, Swamps, Mountains, Forests, and Wastes) to meet those requirements.
