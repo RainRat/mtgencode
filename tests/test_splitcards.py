@@ -555,3 +555,43 @@ def test_splitcards_auto_format_detection(tmp_path):
     # Content should be encoded text format even though file ends in .json
     content = out_override1.read_text()
     assert "|1Card Alpha" in content
+
+    out_custom1 = tmp_path / "custom1.unknown"
+    out_custom2 = tmp_path / "custom2.unknown"
+    args_custom = [
+        "splitcards.py",
+        str(infile),
+        "--outputs", str(out_custom1), str(out_custom2),
+        "--ratios", "0.5", "0.5",
+        "-s"
+    ]
+    with patch("sys.argv", args_custom):
+        main()
+
+    content_custom = out_custom1.read_text()
+    assert "|1Card Alpha" in content_custom
+
+
+def test_splitcards_stdin_fallback(tmp_path):
+    old_cwd = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        cards = "|1Card Alpha|7common|5Creature\n\n|1Card Beta|7common|5Creature\n\n"
+        out1 = tmp_path / "split1.txt"
+        out2 = tmp_path / "split2.txt"
+        args_stdin = [
+            "splitcards.py",
+            "--outputs", str(out1), str(out2),
+            "--ratios", "0.5", "0.5",
+            "-s"
+        ]
+        with patch("sys.argv", args_stdin):
+            with patch("sys.stdin.isatty", return_value=False):
+                with patch("sys.stdin", io.StringIO(cards)):
+                    main()
+
+        assert out1.exists()
+        assert out2.exists()
+        assert "|1Card Alpha" in out1.read_text()
+    finally:
+        os.chdir(old_cwd)
