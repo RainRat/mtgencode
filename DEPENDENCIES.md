@@ -121,13 +121,21 @@ It uses a vector model (Word2Vec) to measure the semantic distance between your 
         ```
 
 2.  **Generate Reference Data and Vectors:**
-    The creativity analyzer compares your custom cards against a reference dataset of real cards. This requires two files in your `data/` folder:
+    The creativity analyzer compares your custom cards against a reference dataset of real cards. This requires three files in your `data/` folder:
     *   `data/output.txt`: The reference card dataset in standard-encoded text format.
     *   `data/cbow.bin`: The compiled Word2Vec binary model.
+    *   `data/AllSets.json`: The card database used to look up official card names.
 
-    **Important:** The cards in both files must be in the exact same order. Always use the stable ordering flag (`-s`) when generating them.
+    > **Tip for AllSets.json:** `AllSets.json` was an earlier name for `AllPrintings.json`. You do not need to download a separate file. Simply copy or symlink your existing `data/AllPrintings.json` file:
+    > ```bash
+    > cp data/AllPrintings.json data/AllSets.json
+    > # Or create a symbolic link:
+    > ln -s AllPrintings.json data/AllSets.json
+    > ```
 
-    Follow these steps to generate both files:
+    **Important:** The cards in both `data/output.txt` and `data/cbow.bin` must be in the exact same order. Always use the stable ordering flag (`-s`) when generating them.
+
+    Follow these steps to generate the required files:
 
     *   **Step A: Create the reference dataset (`data/output.txt`)**
         ```bash
